@@ -37,8 +37,26 @@ export interface LoginValues {
   password: string;
 }
 
-/** Objeto con mensajes de error por campo. */
+/** Objeto con mensajes de error por campo (login). */
 export interface LoginErrors {
+  email?: string;
+  password?: string;
+}
+
+/** Resultado del intento de registro para la vista (POST /v1/users tambien devuelve token: auto-login). */
+export type RegisterActionResult =
+  { ok: true; user: User; token: string } | { ok: false; message: string };
+
+/** Valores del formulario de registro. */
+export interface RegisterValues {
+  name: string;
+  email: string;
+  password: string;
+}
+
+/** Objeto con mensajes de error por campo (registro). */
+export interface RegisterErrors {
+  name?: string;
   email?: string;
   password?: string;
 }
