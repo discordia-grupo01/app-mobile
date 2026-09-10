@@ -1,22 +1,36 @@
-import { StatusBar } from "expo-status-bar";
-import { StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
 
-import { APP_NAME } from "./src/lib/constants";
+import { AuthProvider, useAuth } from "./src/features/auth/auth-context";
+import { HomeScreen } from "./src/screens/HomeScreen";
+import { LoginScreen } from "./src/screens/LoginScreen";
+
+function AppContent() {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#2563eb" />
+      </View>
+    );
+  }
+
+  return isAuthenticated ? <HomeScreen /> : <LoginScreen />;
+}
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>{APP_NAME} - App Mobile</Text>
-      <StatusBar style="auto" />
-    </View>
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  loadingContainer: {
     flex: 1,
-    backgroundColor: "#fff",
-    alignItems: "center",
+    backgroundColor: "#0f172a",
     justifyContent: "center",
+    alignItems: "center",
   },
 });
