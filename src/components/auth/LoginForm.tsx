@@ -10,7 +10,11 @@ import { GoogleIcon } from "../icons/GoogleIcon";
 import { Button } from "../ui/Button";
 import { TextField } from "../ui/TextField";
 
-export function LoginForm() {
+interface LoginFormProps {
+  onSwitchToRegister: () => void;
+}
+
+export function LoginForm({ onSwitchToRegister }: LoginFormProps) {
   const { login } = useAuth();
 
   const [email, setEmail] = useState("");
@@ -102,7 +106,7 @@ export function LoginForm() {
       {/* Footer link */}
       <View style={styles.footerRow}>
         <Text style={styles.footerText}>¿No tienes cuenta? </Text>
-        <TouchableOpacity activeOpacity={0.7}>
+        <TouchableOpacity activeOpacity={0.7} onPress={onSwitchToRegister}>
           <Text style={styles.registerLink}>Regístrate gratis</Text>
         </TouchableOpacity>
       </View>
