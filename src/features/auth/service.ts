@@ -1,10 +1,45 @@
 import { ApiError, apiFetch } from "../../lib/api-client";
-import type { AuthResponse, LoginActionResult, LoginValues } from "./types";
+import type {
+  AuthResponse,
+  LoginActionResult,
+  LoginValues,
+  RegisterActionResult,
+  RegisterValues,
+} from "./types";
 
 /**
  * Servicio de llamadas HTTP a identify-service (via el Gateway):
- * `/v1/login` y `/v1/logout`.
+ * `/v1/users` (registro), `/v1/login` y `/v1/logout`.
  */
+
+export async function registerService(
+  values: RegisterValues,
+): Promise<RegisterActionResult> {
+  try {
+    const data = await apiFetch<AuthResponse>("/v1/users", {
+      method: "POST",
+      body: JSON.stringify({
+        name: values.name.trim(),
+        email: values.email.trim(),
+        password: values.password,
+      }),
+    });
+
+    return { ok: true, user: data.user, token: data.token };
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 409) {
+      return { ok: false, message: "Ese correo ya esta registrado." };
+    }
+    if (err instanceof ApiError && err.status === 400) {
+      return { ok: false, message: "Revisa los datos ingresados." };
+    }
+
+    return {
+      ok: false,
+      message: "No pudimos procesar la solicitud. Intenta de nuevo.",
+    };
+  }
+}
 
 export async function loginService(
   credentials: LoginValues,
@@ -41,5 +76,5 @@ export async function logoutService(token?: string | null): Promise<void> {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
     });
-  } catch { }
+  } catch {}
 }
