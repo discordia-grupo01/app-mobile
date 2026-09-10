@@ -33,7 +33,7 @@ export function LoginScreen() {
             />
           </View>
 
-          <Text style={styles.title}>Bienvenido de nuevo!</Text>
+          <Text style={styles.title}>¡Bienvenido de nuevo!</Text>
           <Text style={styles.subtitle}>
             Ingresa tus credenciales para acceder.
           </Text>
@@ -60,16 +60,7 @@ const styles = StyleSheet.create({
   container: {
     width: "100%",
     maxWidth: 420,
-    backgroundColor: colors.bgModal,
-    borderRadius: 20,
-    padding: 28,
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-    elevation: 10,
+    paddingHorizontal: 28,
   },
   logoWrapper: {
     alignItems: "center",

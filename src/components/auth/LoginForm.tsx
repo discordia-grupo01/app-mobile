@@ -38,7 +38,7 @@ export function LoginForm() {
   return (
     <View style={styles.formContainer}>
       <TextField
-        label="CORREO ELECTRONICO"
+        label="CORREO ELECTRÓNICO"
         placeholder="tu@email.com"
         keyboardType="email-address"
         autoCapitalize="none"
@@ -50,7 +50,7 @@ export function LoginForm() {
       />
 
       <TextField
-        label="CONTRASENA"
+        label="CONTRASEÑA"
         placeholder="••••••••"
         isPassword
         iconName="lock"
@@ -63,7 +63,7 @@ export function LoginForm() {
       <View style={styles.forgotPasswordContainer}>
         <TouchableOpacity activeOpacity={0.7}>
           <Text style={styles.forgotPasswordText}>
-            Olvidaste tu contrasena?
+            ¿Olvidaste tu contraseña?
           </Text>
         </TouchableOpacity>
       </View>
@@ -76,7 +76,7 @@ export function LoginForm() {
 
       {/* Submit Button */}
       <Button
-        title="Iniciar Sesion"
+        title="Iniciar Sesión"
         onPress={handleSubmit}
         isLoading={isSubmitting}
         iconRight="arrow-right"
@@ -86,7 +86,7 @@ export function LoginForm() {
       {/* Divider */}
       <View style={styles.dividerRow}>
         <View style={styles.dividerLine} />
-        <Text style={styles.dividerText}>o continua con</Text>
+        <Text style={styles.dividerText}>o continúa con</Text>
         <View style={styles.dividerLine} />
       </View>
 
@@ -101,9 +101,9 @@ export function LoginForm() {
 
       {/* Footer link */}
       <View style={styles.footerRow}>
-        <Text style={styles.footerText}>No tenes cuenta? </Text>
+        <Text style={styles.footerText}>¿No tienes cuenta? </Text>
         <TouchableOpacity activeOpacity={0.7}>
-          <Text style={styles.registerLink}>Registrate gratis</Text>
+          <Text style={styles.registerLink}>Regístrate gratis</Text>
         </TouchableOpacity>
       </View>
     </View>
