@@ -9,10 +9,15 @@ import {
   View,
 } from "react-native";
 
+import { AuthTabs, type AuthMode } from "../components/auth/AuthTabs";
 import { LoginForm } from "../components/auth/LoginForm";
 import { colors } from "../theme/colors";
 
-export function LoginScreen() {
+interface LoginScreenProps {
+  onSwitchMode: (mode: AuthMode) => void;
+}
+
+export function LoginScreen({ onSwitchMode }: LoginScreenProps) {
   return (
     <KeyboardAvoidingView
       style={styles.keyboardView}
@@ -33,13 +38,15 @@ export function LoginScreen() {
             />
           </View>
 
+          <AuthTabs active="login" onChange={onSwitchMode} />
+
           <Text style={styles.title}>¡Bienvenido de nuevo!</Text>
           <Text style={styles.subtitle}>
             Ingresa tus credenciales para acceder.
           </Text>
 
           {/* Login Form */}
-          <LoginForm />
+          <LoginForm onSwitchToRegister={() => onSwitchMode("register")} />
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
