@@ -53,15 +53,15 @@ Pasos para levantar todo el backend y probar app-mobile conectada de verdad, des
    npm start
    ```
 
-6. **Escanear el QR** que muestra la terminal (con la app Camara en iOS, o con el lector de Expo Go en Android). El celular tiene que estar conectado a la **misma red WiFi** que la compu donde corre Docker.
+5. **Escanear el QR** que muestra la terminal (con la app Camara en iOS, o con el lector de Expo Go en Android). El celular tiene que estar conectado a la **misma red WiFi** que la compu donde corre Docker.
 
    - En iOS, la primera vez puede aparecer un permiso de "Red Local" (Local Network) — hay que aceptarlo, si no la app no va a poder llegar ni al bundler ni al backend.
    - Si la red tiene "client isolation" (comun en WiFi de facultades/eventos, que aisla dispositivos entre si) o hay un firewall bloqueando el puerto 8000 en la compu, la conexion va a fallar aunque esten en la misma red.
 
 ## Variables de entorno
 
-| Variable            | Default | Descripcion                                                                                                                    |
-| ------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Variable            | Default | Descripcion                                                                                                                           |
+| ------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | EXPO_PUBLIC_API_URL | (vacio) | URL base del Gateway (Kong) al que le pega la app. Debe empezar con `EXPO_PUBLIC_` para que Expo la incluya en el bundle del cliente. |
 
 **Por qué `EXPO_PUBLIC_API_URL` queda vacía por default:** si tiene un valor, ese valor se usa tal cual (útil para apuntar a un backend hosteado más adelante). Si está vacía, `src/lib/env.ts` detecta sola la IP correcta usando `Constants.expoConfig.hostUri` de Expo — la misma IP que Expo Go ya usó para conectarse al bundler al escanear el QR — y arma la URL del backend a partir de esa IP en el puerto 8000. Esto evita tener que hardcodear y actualizar la IP a mano cada vez que alguien del equipo prueba desde otra red (localhost no sirve desde un celular; en emulador Android hace falta `10.0.2.2`; en celular fisico hace falta la IP de LAN de la compu; con auto-deteccion, ninguno de esos casos requiere tocar el `.env`).
