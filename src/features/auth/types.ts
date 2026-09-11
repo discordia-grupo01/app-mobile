@@ -60,3 +60,21 @@ export interface RegisterErrors {
   email?: string;
   password?: string;
 }
+
+/** Valores del formulario de recuperar contraseña. */
+export interface ForgotPasswordValues {
+  email: string;
+}
+
+/** Objeto con mensajes de error por campo (recuperar contraseña). */
+export interface ForgotPasswordErrors {
+  email?: string;
+}
+
+/**
+ * Resultado de recuperar contraseña para la vista. El backend responde 202
+ * exista o no el correo (para no permitir enumerar cuentas registradas), asi
+ * que `ok: true` no confirma que el email este registrado.
+ */
+export type ForgotPasswordActionResult =
+  { ok: true } | { ok: false; message: string };
