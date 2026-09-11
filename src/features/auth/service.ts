@@ -1,6 +1,7 @@
-import { ApiError, apiFetch } from "../../lib/api-client";
+import { ApiError, NetworkError, apiFetch } from "../../lib/api-client";
 import type {
   AuthResponse,
+  ForgotPasswordActionResult,
   LoginActionResult,
   LoginValues,
   RegisterActionResult,
@@ -9,8 +10,11 @@ import type {
 
 /**
  * Servicio de llamadas HTTP a identify-service (via el Gateway):
- * `/v1/users` (registro), `/v1/login` y `/v1/logout`.
+ * `/v1/users` (registro), `/v1/login`, `/v1/logout` y `/v1/password-recovery`.
  */
+
+const NETWORK_ERROR_MESSAGE =
+  "No hay conexión con el servidor. Revisá tu conexión a internet e intentá de nuevo.";
 
 export async function registerService(
   values: RegisterValues,
@@ -27,6 +31,9 @@ export async function registerService(
 
     return { ok: true, user: data.user, token: data.token };
   } catch (err) {
+    if (err instanceof NetworkError) {
+      return { ok: false, message: NETWORK_ERROR_MESSAGE };
+    }
     if (err instanceof ApiError && err.status === 409) {
       return { ok: false, message: "Ese correo ya esta registrado." };
     }
@@ -55,6 +62,9 @@ export async function loginService(
 
     return { ok: true, user: data.user, token: data.token };
   } catch (err) {
+    if (err instanceof NetworkError) {
+      return { ok: false, message: NETWORK_ERROR_MESSAGE };
+    }
     if (err instanceof ApiError && (err.status === 401 || err.status === 400)) {
       return {
         ok: false,
@@ -77,4 +87,42 @@ export async function logoutService(token?: string | null): Promise<void> {
       headers: { Authorization: `Bearer ${token}` },
     });
   } catch {}
+}
+
+/**
+ * Solicita el envio del mail de recuperacion. El backend responde 202
+ * exista o no el correo (para no permitir enumerar cuentas registradas), asi
+ * que un `ok: true` solo confirma que la solicitud se proceso, no que el
+ * email este registrado.
+ */
+export async function forgotPasswordService(
+  email: string,
+): Promise<ForgotPasswordActionResult> {
+  try {
+    await apiFetch<{ message: string }>("/v1/password-recovery", {
+      method: "POST",
+      body: JSON.stringify({ email: email.trim() }),
+    });
+
+    return { ok: true };
+  } catch (err) {
+    if (err instanceof NetworkError) {
+      return { ok: false, message: NETWORK_ERROR_MESSAGE };
+    }
+    if (err instanceof ApiError && err.status === 429) {
+      return {
+        ok: false,
+        message:
+          "Alcanzaste el limite de solicitudes. Intenta de nuevo mas tarde.",
+      };
+    }
+    if (err instanceof ApiError && err.status === 400) {
+      return { ok: false, message: "Ingresa un correo electronico valido." };
+    }
+
+    return {
+      ok: false,
+      message: "No pudimos procesar la solicitud. Intenta de nuevo mas tarde.",
+    };
+  }
 }
