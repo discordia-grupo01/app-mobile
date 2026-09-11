@@ -1,9 +1,28 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-
+import { getToken } from "./storage";
 import { env } from "./env";
 
-export async function apiFetch(path: string, options: RequestInit = {}) {
-  const token = await AsyncStorage.getItem("token");
+/**
+ Error tipado con el status HTTP, para que cada feature
+ */
+export class ApiError extends Error {
+  status: number;
+  body?: unknown;
+
+  constructor(status: number, message: string, body?: unknown) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.body = body;
+  }
+}
+
+/** Cliente HTTP unico hacia el backend (via el API Gateway) */
+export async function apiFetch<T = unknown>(
+  path: string,
+  options: RequestInit = {},
+): Promise<T> {
+  const token = await getToken();
+
   const res = await fetch(`${env.apiUrl}${path}`, {
     ...options,
     headers: {
@@ -12,6 +31,15 @@ export async function apiFetch(path: string, options: RequestInit = {}) {
       ...options.headers,
     },
   });
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
-  return res.json();
+
+  let body: unknown = null;
+  try {
+    body = await res.json();
+  } catch { }
+
+  if (!res.ok) {
+    throw new ApiError(res.status, `API error: ${res.status}`, body);
+  }
+
+  return body as T;
 }

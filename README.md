@@ -22,7 +22,7 @@ Desde ahí, Expo CLI muestra un QR para abrir la app en el celular (con Expo Go)
 
 | Variable            | Default               | Descripcion                                                                                                                    |
 | ------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| EXPO_PUBLIC_API_URL | http://localhost:3000 | URL base del Gateway al que le pega la app. Debe empezar con `EXPO_PUBLIC_` para que Expo la incluya en el bundle del cliente. |
+| EXPO_PUBLIC_API_URL | http://localhost:8000 | URL base del Gateway (Kong) al que le pega la app. Debe empezar con `EXPO_PUBLIC_` para que Expo la incluya en el bundle del cliente. |
 
 `.env.example` solo trae la estructura (sin valores sensibles). Los valores reales van en tu propio `.env`, que nunca se sube (ya esta en `.gitignore`).
 
@@ -35,13 +35,32 @@ app-mobile/
 ├── app.json                   configuracion de Expo (nombre, icono, splash, etc.)
 ├── eslint.config.js           config de ESLint (eslint-config-expo)
 ├── src/
-│   ├── components/             componentes de UI reutilizables
+│   ├── components/
+│   │   ├── auth/               componentes de UI especificos de autenticacion (LoginForm)
+│   │   ├── icons/               iconos custom (ej. GoogleIcon)
+│   │   └── ui/                   componentes de UI genericos y reutilizables (Button, TextField)
+│   ├── features/
+│   │   └── auth/                logica de negocio de autenticacion (archivos sueltos, sin subcarpetas)
+│   │       ├── auth-context.tsx    contexto de React + hook useAuth (sesion, login, logout)
+│   │       ├── service.ts           llamadas a la API de auth (login/logout)
+│   │       ├── types.ts              tipos del dominio de auth
+│   │       ├── validation.ts         validacion de formulario de login
+│   │       └── validation.test.ts    tests de la validacion
 │   ├── hooks/                  hooks de React reutilizables
-│   └── lib/
-│       ├── api-client.ts      cliente HTTP hacia el Gateway (token via AsyncStorage)
-│       ├── constants.ts       constantes de la app (ej. APP_NAME)
-│       └── env.ts              lectura centralizada de variables de entorno
-├── assets/                    iconos y splash screen
+│   ├── lib/
+│   │   ├── api-client.ts      cliente HTTP hacia el Gateway (token via AsyncStorage, ApiError tipado)
+│   │   ├── constants.ts       constantes de la app (ej. APP_NAME)
+│   │   ├── env.ts              lectura centralizada de variables de entorno
+│   │   └── storage.ts          helper unico de AsyncStorage para la sesion (token + usuario)
+│   ├── screens/
+│   │   ├── LoginScreen.tsx    pantalla de login
+│   │   └── HomeScreen.tsx     pantalla post-login
+│   └── theme/
+│       ├── colors.ts           paleta de colores (alineada a web-client)
+│       ├── spacing.ts          escala de espaciado y radios
+│       ├── typography.ts       tamaños y pesos de fuente
+│       └── index.ts             barrel de theme/
+├── assets/                    iconos, splash screen y logos de Discordia
 ├── .github/
 │   └── workflows/
 │       └── ci.yml             format:check, lint, typecheck y test en cada PR/push a main
@@ -50,7 +69,7 @@ app-mobile/
 └── .env.example                estructura de variables de entorno (sin valores sensibles)
 ```
 
-Las carpetas `src/components/` y `src/hooks/` vienen vacias (`.gitkeep`) porque el codigo de negocio todavia no existe en el template. Las carpetas `ios/` y `android/` no existen (son generadas por Expo solo si se hace un build nativo/prebuild) y estan en `.gitignore`.
+La carpeta `src/hooks/` viene vacia (`.gitkeep`) porque todavia no hay hooks custom. La estructura de `src/` sigue la misma convencion que `web-client` (feature-based: `features/<feature>/` con archivos sueltos, sin subcarpetas anidadas por tipo) para que el codigo se lea igual entre ambos clientes. Las carpetas `ios/` y `android/` no existen (son generadas por Expo solo si se hace un build nativo/prebuild) y estan en `.gitignore`.
 
 ## Comandos
 
@@ -81,5 +100,6 @@ El CI corre `npm run format:check` como red de seguridad (falla si encuentra arc
 
 ## Notas
 
-- Usa Expo (no React Native CLI bare) para que el CI no dependa de Xcode/Android SDK y para poder buildear en la nube con EAS mas adelante.
-- El cliente HTTP (`src/lib/api-client.ts`) sigue el mismo patron que `front-template`, pero usa `AsyncStorage` en vez de `localStorage` para guardar el token (React Native no tiene `localStorage`).
+- Las requests siempre van al Gateway (Kong), nunca directo a un microservicio (ADR-006).
+- `EXPO_PUBLIC_API_URL` apunta a `http://localhost:8000` por default. Funciona tal cual solo en simulador iOS, que comparte la red del host. En emulador Android hay que usar `http://10.0.2.2:8000`, y en celular fisico con Expo Go, la IP de LAN de la compu (ej. `http://192.168.x.x:8000`).
+- El cliente HTTP (`src/lib/api-client.ts`) sigue el mismo patron que `web-client` (fetch wrapper + `ApiError` tipado), pero usa `AsyncStorage` en vez de `localStorage` para guardar la sesion (React Native no tiene `localStorage`).
