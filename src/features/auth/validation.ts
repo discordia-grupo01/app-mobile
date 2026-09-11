@@ -1,4 +1,6 @@
 import type {
+  ForgotPasswordErrors,
+  ForgotPasswordValues,
   LoginErrors,
   LoginValues,
   RegisterErrors,
@@ -69,6 +71,23 @@ export function validateRegister(values: RegisterValues): RegisterErrors {
   return errors;
 }
 
-export function hasErrors(errors: LoginErrors | RegisterErrors): boolean {
+export function validateForgotPassword(
+  values: ForgotPasswordValues,
+): ForgotPasswordErrors {
+  const errors: ForgotPasswordErrors = {};
+
+  const email = values.email.trim();
+  if (email === "") {
+    errors.email = "Ingresa tu correo electronico";
+  } else if (!EMAIL_REGEX.test(email)) {
+    errors.email = "El correo electronico no es valido";
+  }
+
+  return errors;
+}
+
+export function hasErrors(
+  errors: LoginErrors | RegisterErrors | ForgotPasswordErrors,
+): boolean {
   return Object.values(errors).some((value) => value !== undefined);
 }

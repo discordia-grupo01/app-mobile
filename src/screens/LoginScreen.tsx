@@ -15,9 +15,13 @@ import { colors } from "../theme/colors";
 
 interface LoginScreenProps {
   onSwitchMode: (mode: AuthMode) => void;
+  onForgotPassword: () => void;
 }
 
-export function LoginScreen({ onSwitchMode }: LoginScreenProps) {
+export function LoginScreen({
+  onSwitchMode,
+  onForgotPassword,
+}: LoginScreenProps) {
   return (
     <KeyboardAvoidingView
       style={styles.keyboardView}
@@ -29,7 +33,6 @@ export function LoginScreen({ onSwitchMode }: LoginScreenProps) {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.container}>
-          {/* Logo Discordia (Light Version for Dark Background) */}
           <View style={styles.logoWrapper}>
             <Image
               source={require("../../assets/logo-light.png")}
@@ -46,7 +49,10 @@ export function LoginScreen({ onSwitchMode }: LoginScreenProps) {
           </Text>
 
           {/* Login Form */}
-          <LoginForm onSwitchToRegister={() => onSwitchMode("register")} />
+          <LoginForm
+            onSwitchToRegister={() => onSwitchMode("register")}
+            onForgotPassword={onForgotPassword}
+          />
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

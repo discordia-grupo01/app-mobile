@@ -12,9 +12,13 @@ import { TextField } from "../ui/TextField";
 
 interface LoginFormProps {
   onSwitchToRegister: () => void;
+  onForgotPassword: () => void;
 }
 
-export function LoginForm({ onSwitchToRegister }: LoginFormProps) {
+export function LoginForm({
+  onSwitchToRegister,
+  onForgotPassword,
+}: LoginFormProps) {
   const { login } = useAuth();
 
   const [email, setEmail] = useState("");
@@ -65,7 +69,7 @@ export function LoginForm({ onSwitchToRegister }: LoginFormProps) {
 
       {/* Forgot Password link */}
       <View style={styles.forgotPasswordContainer}>
-        <TouchableOpacity activeOpacity={0.7}>
+        <TouchableOpacity activeOpacity={0.7} onPress={onForgotPassword}>
           <Text style={styles.forgotPasswordText}>
             ¿Olvidaste tu contraseña?
           </Text>
