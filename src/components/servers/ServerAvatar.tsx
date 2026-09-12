@@ -55,18 +55,25 @@ function useResolvedIconUri(
 ) {
   const [resolvedUri, setResolvedUri] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
+  const [lastKey, setLastKey] = useState<string>(`${uri}::${authToken}`);
+
+  // Cuando cambia `uri`/`authToken` hay que resetear `resolvedUri`/`failed`
+  // antes de decidir si hace falta descargar algo. Ese reseteo va en el
+  // cuerpo del render (patron "adjust state when a prop changes" de React)
+  // en vez de en el useEffect, para cumplir con la regla de lint
+  // react-hooks/set-state-in-effect; el useEffect de abajo se limita a la
+  // descarga asincrona real.
+  const key = `${uri}::${authToken}`;
+  if (key !== lastKey) {
+    setLastKey(key);
+    setFailed(false);
+    setResolvedUri(uri && !authToken ? uri : null);
+  }
 
   useEffect(() => {
     let cancelled = false;
-    setFailed(false);
-    setResolvedUri(null);
 
-    if (!uri) return;
-
-    if (!authToken) {
-      setResolvedUri(uri);
-      return;
-    }
+    if (!uri || !authToken) return;
 
     async function resolve() {
       try {
