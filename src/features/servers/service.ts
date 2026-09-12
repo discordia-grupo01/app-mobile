@@ -8,42 +8,15 @@ import type {
   CreateServerParams,
   GetServerActionResult,
   JoinServerActionResult,
+  LeaveServerActionResult,
   ListServersActionResult,
   ServersApiErrorBody,
   ServerSummary,
 } from "./types";
 
-/**
- * Servicio de llamadas HTTP a `servers` (via el Gateway):
- * `GET /v1/servers`, `GET /v1/servers/:id`, `POST /v1/servers` y
- * `POST /v1/invites/:code/join`.
- *
- * A diferencia de identify-service, este cliente llama directo al gateway
- * (no hay BFF): el token sale de `lib/storage` via `apiFetch`, igual que en
- * `features/auth/service.ts`.
- */
-
 const NETWORK_ERROR_MESSAGE =
   "No hay conexión con el servidor. Revisá tu conexión a internet e intentá de nuevo.";
 const SESSION_EXPIRED_MESSAGE = "Tu sesión expiró. Volvé a iniciar sesión.";
-
-/** Traduce `details.reason` del back de `POST /v1/servers` a un mensaje en español. */
-const CREATE_REASON_MESSAGES: Record<string, string> = {
-  name_required: "Ingresá un nombre para el servidor.",
-  name_too_short: "El nombre debe tener entre 2 y 100 caracteres.",
-  name_too_long: "El nombre debe tener entre 2 y 100 caracteres.",
-  name_invalid_chars: "El nombre contiene caracteres no permitidos.",
-  name_taken: "Ya tenés un servidor con ese nombre.",
-  icon_too_large: "El archivo no puede pesar más de 20 MB.",
-  icon_unsupported_type: "El archivo debe ser PNG, JPG o WEBP.",
-  icon_unreadable: "No pudimos leer esa imagen. Probá con otra.",
-};
-
-/** Traduce `details.reason` del back de `POST /v1/invites/:code/join`. */
-const JOIN_REASON_MESSAGES: Record<string, string> = {
-  invitation_invalid: "Este enlace de invitación no es válido o expiró.",
-  user_banned: "No podés unirte a este servidor.",
-};
 
 function reasonOf(err: ApiError): string | undefined {
   const body = err.body as ServersApiErrorBody | undefined;
@@ -51,13 +24,6 @@ function reasonOf(err: ApiError): string | undefined {
   return typeof reason === "string" ? reason : undefined;
 }
 
-/**
- * URL del icono real de un servidor (`GET /v1/servers/:id/icon`). El
- * endpoint exige JWT (plugin jwt de Kong), asi que quien la use tiene que
- * mandar el token como header `Authorization` (ver `ServerAvatar`,
- * prop `authToken`) -- a diferencia de web-client, aca no hay BFF que
- * reenvie la cookie por nosotros.
- */
 export function serverIconUrl(serverId: string): string {
   return `${env.apiUrl}/v1/servers/${serverId}/icon`;
 }
@@ -95,19 +61,17 @@ export async function getServer(
   }
 }
 
-/**
- * `POST /v1/servers` es multipart/form-data (name + icon opcional). No
- * usamos `apiFetch` (fuerza `Content-Type: application/json`).
- *
- * Cuando hay icono, la uri que devuelve `expo-image-picker` (sobre todo en
- * Android, un `content://`) no siempre se puede leer de forma confiable
- * armando el `FormData` a mano y mandandolo con `fetch`: es un bug conocido
- * de React Native que tira "Network request failed" aunque el archivo sea
- * valido. `FileSystem.uploadAsync` es la API que recomienda Expo para subir
- * un archivo local elegido por el usuario -- resuelve la uri nativamente
- * antes de armar el request, evitando ese problema. Sin icono no hace
- * falta: mandamos un `FormData` comun con `fetch`, igual que antes.
- */
+const CREATE_REASON_MESSAGES: Record<string, string> = {
+  name_required: "Ingresá un nombre para el servidor.",
+  name_too_short: "El nombre debe tener entre 2 y 100 caracteres.",
+  name_too_long: "El nombre debe tener entre 2 y 100 caracteres.",
+  name_invalid_chars: "El nombre contiene caracteres no permitidos.",
+  name_taken: "Ya tenés un servidor con ese nombre.",
+  icon_too_large: "El archivo no puede pesar más de 20 MB.",
+  icon_unsupported_type: "El archivo debe ser PNG, JPG o WEBP.",
+  icon_unreadable: "No pudimos leer esa imagen. Probá con otra.",
+};
+
 export async function createServer(
   params: CreateServerParams,
 ): Promise<CreateServerActionResult> {
@@ -188,17 +152,16 @@ export async function createServer(
   return { ok: true, server: body as ServerSummary };
 }
 
-/** Acepta tanto un link completo (".../xY7z2Q") como el código pelado. */
 export function normalizeInviteCode(raw: string): string {
   const match = raw.trim().match(/([A-Za-z0-9_-]{4,20})$/);
   return match ? match[1] : raw.trim();
 }
 
-/**
- * A diferencia del prototipo de Figma (verificar -> preview -> confirmar),
- * esto es un solo paso: el backend no tiene un endpoint de preview de una
- * invitacion, solo `POST /v1/invites/:code/join`, que ya une directamente.
- */
+const JOIN_REASON_MESSAGES: Record<string, string> = {
+  invitation_invalid: "Este enlace de invitación no es válido o expiró.",
+  user_banned: "No podés unirte a este servidor.",
+};
+
 export async function joinServerByCode(
   code: string,
 ): Promise<JoinServerActionResult> {
@@ -252,6 +215,51 @@ export async function joinServerByCode(
     return {
       ok: false,
       message: "No pudimos procesar la solicitud. Intenta de nuevo.",
+    };
+  }
+}
+
+const LEAVE_REASON_MESSAGES: Record<string, string> = {
+  owner_must_transfer_or_delete:
+    "Sos el dueño de este servidor: transferí la propiedad o eliminalo antes de abandonarlo.",
+};
+
+export async function leaveServer(
+  serverId: string,
+  userId: number | string,
+): Promise<LeaveServerActionResult> {
+  try {
+    await apiFetch<void>(`/v1/servers/${serverId}/members/${userId}`, {
+      method: "DELETE",
+    });
+    return { ok: true };
+  } catch (err) {
+    if (err instanceof NetworkError) {
+      return { ok: false, message: NETWORK_ERROR_MESSAGE };
+    }
+    if (err instanceof ApiError) {
+      const reason = reasonOf(err);
+      if (reason === "owner_must_transfer_or_delete") {
+        return {
+          ok: false,
+          message: LEAVE_REASON_MESSAGES[reason],
+          reason,
+        };
+      }
+      if (err.status === 401) {
+        return { ok: false, message: SESSION_EXPIRED_MESSAGE };
+      }
+      if (err.status === 404) {
+        return {
+          ok: false,
+          message: "Este servidor ya no existe o ya no sos miembro.",
+        };
+      }
+    }
+
+    return {
+      ok: false,
+      message: "No pudimos abandonar el servidor. Intenta de nuevo.",
     };
   }
 }

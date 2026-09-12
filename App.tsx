@@ -7,6 +7,7 @@ import { ForgotPasswordScreen } from "./src/screens/ForgotPasswordScreen";
 import { HomeScreen } from "./src/screens/HomeScreen";
 import { LoginScreen } from "./src/screens/LoginScreen";
 import { RegisterScreen } from "./src/screens/RegisterScreen";
+import { colors } from "./src/theme/colors";
 
 type AuthScreen = AuthMode | "forgot-password";
 
@@ -17,7 +18,7 @@ function AppContent() {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2563eb" />
+        <ActivityIndicator size="large" color={colors.accentBright} />
       </View>
     );
   }
@@ -51,7 +52,7 @@ export default function App() {
 const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,
-    backgroundColor: "#0f172a",
+    backgroundColor: colors.bgServers,
     justifyContent: "center",
     alignItems: "center",
   },

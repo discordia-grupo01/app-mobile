@@ -1,5 +1,5 @@
 import { Feather } from "@expo/vector-icons";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   KeyboardAvoidingView,
   Modal,
@@ -45,8 +45,14 @@ export function JoinServerModal({
     server: ServerSummary;
     alreadyMember: boolean;
   } | null>(null);
+  const [wasVisible, setWasVisible] = useState(visible);
 
-  useEffect(() => {
+  // Reinicia el formulario cada vez que el modal pasa a visible. Esto va en
+  // el cuerpo del render (patron "adjust state when a prop changes" de
+  // React) en vez de en un useEffect para cumplir con la regla de lint
+  // react-hooks/set-state-in-effect.
+  if (visible !== wasVisible) {
+    setWasVisible(visible);
     if (visible) {
       setCode("");
       setFieldError("");
@@ -54,7 +60,7 @@ export function JoinServerModal({
       setIsSubmitting(false);
       setJoined(null);
     }
-  }, [visible]);
+  }
 
   async function handleSubmit() {
     setFieldError("");

@@ -1,6 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -50,8 +50,14 @@ export function CreateServerModal({
   const [iconError, setIconError] = useState("");
   const [globalError, setGlobalError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [wasVisible, setWasVisible] = useState(visible);
 
-  useEffect(() => {
+  // Reinicia el formulario cada vez que el modal pasa a visible. Esto va en
+  // el cuerpo del render (patron "adjust state when a prop changes" de
+  // React) en vez de en un useEffect para cumplir con la regla de lint
+  // react-hooks/set-state-in-effect.
+  if (visible !== wasVisible) {
+    setWasVisible(visible);
     if (visible) {
       setStep("form");
       setCreated(null);
@@ -62,7 +68,7 @@ export function CreateServerModal({
       setGlobalError("");
       setIsSubmitting(false);
     }
-  }, [visible]);
+  }
 
   const nameLength = name.length;
   const canSubmit =

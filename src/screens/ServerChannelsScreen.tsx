@@ -1,5 +1,7 @@
 import { Feather } from "@expo/vector-icons";
+import { useState } from "react";
 import {
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -7,9 +9,14 @@ import {
   View,
 } from "react-native";
 
+import { LeaveServerModal } from "../components/servers/LeaveServerModal";
 import { ServerRail } from "../components/servers/ServerRail";
 import { UserProfileBar } from "../components/servers/UserProfileBar";
-import type { Channel, ServerListItem } from "../features/servers/types";
+import type {
+  Channel,
+  LeaveServerActionResult,
+  ServerListItem,
+} from "../features/servers/types";
 import { colors } from "../theme/colors";
 
 interface ServerChannelsScreenProps {
@@ -22,6 +29,7 @@ interface ServerChannelsScreenProps {
   onSwitchServer: (serverId: string) => void;
   onAddServer: () => void;
   onLogout: () => void;
+  onLeaveServer: (serverId: string) => Promise<LeaveServerActionResult>;
 }
 
 function ChannelRow({
@@ -49,16 +57,6 @@ function ChannelRow({
   );
 }
 
-/**
- * Pantalla "home" del celular, con el look de la app real de Discord: a la
- * izquierda el rail vertical con los iconos de todos los servidores del
- * usuario (tocar uno lo selecciona, tocar el de Inicio vuelve al estado
- * sin servidor elegido), a la derecha el panel del servidor actual
- * (buscador decorativo, canales de texto y de voz) y abajo la barra de
- * perfil del usuario. El chat en si sigue siendo un segundo paso, en
- * `ChannelScreen`, para que no quede todo apretado en una pantalla de
- * celular.
- */
 export function ServerChannelsScreen({
   server,
   servers,
@@ -69,7 +67,11 @@ export function ServerChannelsScreen({
   onSwitchServer,
   onAddServer,
   onLogout,
+  onLeaveServer,
 }: ServerChannelsScreenProps) {
+  const [isServerMenuOpen, setIsServerMenuOpen] = useState(false);
+  const [isLeaveModalVisible, setIsLeaveModalVisible] = useState(false);
+
   const textChannels = server.channels.filter(
     (channel) => channel.kind === "text",
   );
@@ -89,12 +91,46 @@ export function ServerChannelsScreen({
       />
 
       <View style={styles.main}>
-        <View style={styles.header}>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          style={styles.header}
+          onPress={() => setIsServerMenuOpen((prev) => !prev)}
+          accessibilityRole="button"
+          accessibilityLabel="Opciones del servidor"
+        >
           <Text style={styles.headerTitle} numberOfLines={1}>
             {server.name}
           </Text>
-          <Feather name="chevron-down" size={18} color={colors.textSubtle} />
-        </View>
+          <Feather
+            name={isServerMenuOpen ? "chevron-up" : "chevron-down"}
+            size={18}
+            color={colors.textSubtle}
+          />
+        </TouchableOpacity>
+
+        {isServerMenuOpen ? (
+          <>
+            <Pressable
+              style={StyleSheet.absoluteFill}
+              onPress={() => setIsServerMenuOpen(false)}
+            />
+            <View style={styles.serverMenu}>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                style={styles.serverMenuItem}
+                onPress={() => {
+                  setIsServerMenuOpen(false);
+                  setIsLeaveModalVisible(true);
+                }}
+              >
+                <Feather name="log-out" size={16} color={colors.danger} />
+                <Text style={styles.serverMenuItemText}>
+                  Abandonar servidor
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </>
+        ) : null}
 
         <View style={styles.searchBar}>
           <Feather name="search" size={15} color={colors.textSubtle} />
@@ -152,6 +188,13 @@ export function ServerChannelsScreen({
 
         <UserProfileBar userName={userName} onLogout={onLogout} />
       </View>
+
+      <LeaveServerModal
+        visible={isLeaveModalVisible}
+        serverName={server.name}
+        onClose={() => setIsLeaveModalVisible(false)}
+        onConfirm={() => onLeaveServer(server.id)}
+      />
     </View>
   );
 }
@@ -175,9 +218,41 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
   },
   headerTitle: {
+    flexShrink: 1,
     fontSize: 17,
     fontWeight: "700",
     color: colors.text,
+  },
+  serverMenu: {
+    position: "absolute",
+    top: 58,
+    left: 10,
+    right: 10,
+    zIndex: 20,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    backgroundColor: colors.bgModal,
+    paddingVertical: 6,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  serverMenuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    borderRadius: 8,
+    marginHorizontal: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 12,
+  },
+  serverMenuItemText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: colors.danger,
   },
   searchBar: {
     flexDirection: "row",
