@@ -9,13 +9,6 @@ interface ChannelScreenProps {
   onBack: () => void;
 }
 
-/**
- * Canal abierto a pantalla completa (segundo paso del flujo "ir al
- * servidor" en el celular). Todavia no hay servicio de mensajes, asi que
- * -- igual que en web-client -- no fingimos mensajes reales, solo la
- * estructura: el header del canal, un estado de bienvenida, y un input de
- * chat deshabilitado.
- */
 export function ChannelScreen({ channel, onBack }: ChannelScreenProps) {
   const isText = channel.kind === "text";
 

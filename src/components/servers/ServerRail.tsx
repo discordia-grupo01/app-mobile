@@ -1,6 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 
+import { serverIconUrl } from "../../features/servers/service";
 import type { ServerListItem } from "../../features/servers/types";
 import { colors } from "../../theme/colors";
 import { ServerAvatar } from "./ServerAvatar";
@@ -37,7 +38,7 @@ function ServerRailIcon({
       {active ? <View style={styles.indicator} /> : null}
       <ServerAvatar
         name={item.name}
-        uri={item.hasCustomIcon ? item.icon_url : null}
+        uri={serverIconUrl(item.id)}
         authToken={authToken}
         size={48}
         borderRadius={active ? 16 : 24}

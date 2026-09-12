@@ -26,17 +26,15 @@ export interface ServersApiErrorBody {
 }
 
 /**
- * `ServerSummary` tal como lo maneja el front en memoria: agrega si el
- * usuario subio un icono propio en esta sesion. El backend no distingue
- * esto en su respuesta (siempre manda un `icon_url`, incluso el generado
- * por default), asi que esta info solo existe del lado del front -- un
- * server cargado por `GET /v1/servers` (de una sesion anterior) arranca
- * en `false`, no hay forma de saber si su icono es uno que el usuario
- * eligio o el default generado por el back.
+ * `ServerSummary` tal como lo maneja el front en memoria. Antes acarreaba
+ * un `hasCustomIcon` calculado al crear el servidor (el backend no
+ * distingue en su respuesta un icono subido por el usuario de uno
+ * generado por default, asi que esa info se perdia en cualquier
+ * `GET /v1/servers` posterior -- el icono real desaparecia al reabrir la
+ * app). Ya no hace falta: `ServerAvatar` intenta cargar el icono siempre
+ * (via `serverIconUrl`) y cae a la inicial si la carga falla.
  */
-export interface ServerListItem extends ServerSummary {
-  hasCustomIcon: boolean;
-}
+export type ServerListItem = ServerSummary;
 
 export interface CreateServerFieldErrors {
   name?: string;

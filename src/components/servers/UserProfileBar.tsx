@@ -8,11 +8,6 @@ interface UserProfileBarProps {
   onLogout: () => void;
 }
 
-/**
- * Barra de perfil fija abajo del panel principal, como en la app real de
- * Discord. Tocarla ofrece cerrar sesion -- es el unico lugar de la app
- * donde se puede salir ahora que ya no esta el boton "Salir" aparte.
- */
 export function UserProfileBar({ userName, onLogout }: UserProfileBarProps) {
   const displayName = userName?.trim() || "Mi cuenta";
   const initial = displayName.charAt(0).toUpperCase() || "?";

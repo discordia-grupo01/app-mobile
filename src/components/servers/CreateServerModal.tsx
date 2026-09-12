@@ -34,8 +34,7 @@ interface PickedIcon {
 interface CreateServerModalProps {
   visible: boolean;
   onClose: () => void;
-  /** `hasCustomIcon` es cierto solo si el usuario eligio una imagen en este form. */
-  onCreated: (server: ServerSummary, hasCustomIcon: boolean) => void;
+  onCreated: (server: ServerSummary) => void;
 }
 
 export function CreateServerModal({
@@ -214,7 +213,7 @@ export function CreateServerModal({
 
                 <Button
                   title="Ir al servidor"
-                  onPress={() => onCreated(created, icon !== null)}
+                  onPress={() => onCreated(created)}
                 />
               </View>
             ) : (

@@ -17,6 +17,7 @@ import { colors } from "../../theme/colors";
 import {
   joinServerByCode,
   normalizeInviteCode,
+  serverIconUrl,
 } from "../../features/servers/service";
 import type { ServerSummary } from "../../features/servers/types";
 import { Button } from "../ui/Button";
@@ -26,17 +27,15 @@ interface JoinServerModalProps {
   visible: boolean;
   onClose: () => void;
   onJoined: (server: ServerSummary) => void;
+  /** Para pedir el icono real del servidor al que te uniste (ver ServerAvatar). */
+  authToken: string | null;
 }
 
-/**
- * A diferencia del prototipo de Figma (verificar -> preview -> confirmar),
- * esto es un solo paso: el backend no tiene un endpoint de preview de una
- * invitacion, solo `POST /v1/invites/:code/join`, que ya une directamente.
- */
 export function JoinServerModal({
   visible,
   onClose,
   onJoined,
+  authToken,
 }: JoinServerModalProps) {
   const [code, setCode] = useState("");
   const [fieldError, setFieldError] = useState("");
@@ -112,6 +111,8 @@ export function JoinServerModal({
               <View style={styles.successWrap}>
                 <ServerAvatar
                   name={joined.server.name}
+                  uri={serverIconUrl(joined.server.id)}
+                  authToken={authToken}
                   size={64}
                   borderRadius={20}
                 />

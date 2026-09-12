@@ -49,20 +49,13 @@ export function HomeScreen() {
       const result = await listMyServers();
       if (cancelled) return;
 
-      // Los servers que ya existian al cargar la pantalla no tienen forma de
-      // saber si su icono es uno que el usuario eligio o el default que
-      // genera el back -- arrancan en `hasCustomIcon: false`.
       if (result.ok) {
-        const loaded = result.servers.map((server) => ({
-          ...server,
-          hasCustomIcon: false,
-        }));
-        setServers(loaded);
+        setServers(result.servers);
         // Al arrancar la app, si el usuario ya tiene servidores entramos
         // directo al primero -- el estado "Inicio" (nada seleccionado)
         // despues solo se llega tocando el boton de Inicio del rail.
-        if (loaded.length > 0) {
-          setSelectedServerId((prev) => prev ?? loaded[0].id);
+        if (result.servers.length > 0) {
+          setSelectedServerId((prev) => prev ?? result.servers[0].id);
         }
       }
       setIsLoadingServers(false);
@@ -86,21 +79,18 @@ export function HomeScreen() {
     setSelectedChannelId(null);
   }
 
-  const addAndSelect = useCallback(
-    (server: ServerSummary, hasCustomIcon: boolean) => {
-      setServers((prev) => {
-        const withoutDuplicate = prev.filter(
-          (existing) => existing.id !== server.id,
-        );
-        return [...withoutDuplicate, { ...server, hasCustomIcon }];
-      });
-      setSelectedServerId(server.id);
-      setSelectedChannelId(null);
-      setIsCreateModalVisible(false);
-      setIsJoinModalVisible(false);
-    },
-    [],
-  );
+  const addAndSelect = useCallback((server: ServerSummary) => {
+    setServers((prev) => {
+      const withoutDuplicate = prev.filter(
+        (existing) => existing.id !== server.id,
+      );
+      return [...withoutDuplicate, server];
+    });
+    setSelectedServerId(server.id);
+    setSelectedChannelId(null);
+    setIsCreateModalVisible(false);
+    setIsJoinModalVisible(false);
+  }, []);
 
   function handleAddServer() {
     setIsAddServerSheetVisible(true);
@@ -166,7 +156,8 @@ export function HomeScreen() {
         <JoinServerModal
           visible={isJoinModalVisible}
           onClose={() => setIsJoinModalVisible(false)}
-          onJoined={(server) => addAndSelect(server, false)}
+          onJoined={addAndSelect}
+          authToken={token}
         />
       </View>
     );
@@ -208,7 +199,8 @@ export function HomeScreen() {
         <JoinServerModal
           visible={isJoinModalVisible}
           onClose={() => setIsJoinModalVisible(false)}
-          onJoined={(server) => addAndSelect(server, false)}
+          onJoined={addAndSelect}
+          authToken={token}
         />
       </View>
     );
@@ -243,7 +235,8 @@ export function HomeScreen() {
       <JoinServerModal
         visible={isJoinModalVisible}
         onClose={() => setIsJoinModalVisible(false)}
-        onJoined={(server) => addAndSelect(server, false)}
+        onJoined={addAndSelect}
+        authToken={token}
       />
     </View>
   );
