@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   buttonDanger: {
-    backgroundColor: colors.danger,
+    backgroundColor: colors.dangerBright,
   },
   buttonDisabled: {
     opacity: 0.5,

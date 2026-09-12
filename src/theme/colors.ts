@@ -8,6 +8,7 @@ export const colors = {
   success: "#38a169",
   info: "#6b95bd",
   danger: "#e05252",
+  dangerBright: "#ff5c5c",
 
   bgServers: "#0f1922",
   bgChannels: "#1c293b",
