@@ -71,7 +71,7 @@ export function UserProfileBar({ userName, onLogout }: UserProfileBarProps) {
           accessibilityRole="button"
           accessibilityLabel="Apariencia"
         >
-          <Feather name="settings" size={17} color={colors.textSubtle} />
+          <Feather name="settings" size={21} color={colors.textSubtle} />
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -80,7 +80,7 @@ export function UserProfileBar({ userName, onLogout }: UserProfileBarProps) {
           accessibilityRole="button"
           accessibilityLabel="Cerrar sesión"
         >
-          <Feather name="log-out" size={17} color={colors.textSubtle} />
+          <Feather name="log-out" size={21} color={colors.textSubtle} />
         </TouchableOpacity>
       </View>
 
@@ -91,6 +91,13 @@ export function UserProfileBar({ userName, onLogout }: UserProfileBarProps) {
         onClose={() => setIsAppearanceVisible(false)}
       />
 
+      {/*
+        Antes esto era un Alert.alert nativo: en Android se ve como un
+        dialogo blanco del sistema, totalmente fuera del tema oscuro de la
+        app. Este modal reusa el mismo patron (backdrop + card) que
+        CreateServerModal/JoinServerModal para que el flujo de cerrar
+        sesion se sienta parte de Discordia y no del sistema operativo.
+      */}
       <Modal
         transparent
         visible={isConfirmVisible}
@@ -145,33 +152,33 @@ const styles = StyleSheet.create({
   profileBar: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
     borderTopWidth: 1,
     borderTopColor: colors.border,
     backgroundColor: colors.bgUserPanel,
   },
   avatar: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: colors.accent,
   },
   avatarText: {
     color: "#ffffff",
-    fontSize: 14,
+    fontSize: 17,
     fontWeight: "700",
   },
   statusDot: {
     position: "absolute",
     right: -1,
     bottom: -1,
-    width: 11,
-    height: 11,
-    borderRadius: 6,
+    width: 13,
+    height: 13,
+    borderRadius: 7,
     backgroundColor: colors.success,
     borderWidth: 2,
     borderColor: colors.bgUserPanel,
@@ -181,18 +188,18 @@ const styles = StyleSheet.create({
     marginRight: 4,
   },
   name: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "700",
     color: colors.text,
   },
   status: {
-    fontSize: 12,
+    fontSize: 13,
     color: colors.textSubtle,
   },
   iconButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
+    width: 40,
+    height: 40,
+    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
   },
