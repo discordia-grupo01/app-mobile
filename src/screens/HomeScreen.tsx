@@ -15,21 +15,17 @@ import { CreateServerModal } from "../components/servers/CreateServerModal";
 import { EmptyState } from "../components/servers/EmptyState";
 import { JoinServerModal } from "../components/servers/JoinServerModal";
 import { useAuth } from "../features/auth/auth-context";
-import { listMyServers } from "../features/servers/service";
-import type { ServerListItem, ServerSummary } from "../features/servers/types";
+import { leaveServer, listMyServers } from "../features/servers/service";
+import type {
+  LeaveServerActionResult,
+  ServerListItem,
+  ServerSummary,
+} from "../features/servers/types";
 import { colors } from "../theme/colors";
 import { ChannelScreen } from "./ChannelScreen";
 import { ServerChannelsScreen } from "./ServerChannelsScreen";
 import { ServerPickerScreen } from "./ServerPickerScreen";
 
-/**
- * Home de la app. Arranca pidiendo los servidores del usuario; si no tiene
- * ninguno muestra el estado vacio (crear / unirse), y si ya tiene alguno
- * entra directo al primero. Todo el flujo (crear, unirse, ver canales,
- * abrir un canal) vive aca como estado local -- no hay libreria de
- * navegacion todavia, sigue el mismo patron que `App.tsx` usa para login/
- * registro.
- */
 export function HomeScreen() {
   const { user, token, logout } = useAuth();
   const [servers, setServers] = useState<ServerListItem[]>([]);
@@ -51,9 +47,6 @@ export function HomeScreen() {
 
       if (result.ok) {
         setServers(result.servers);
-        // Al arrancar la app, si el usuario ya tiene servidores entramos
-        // directo al primero -- el estado "Inicio" (nada seleccionado)
-        // despues solo se llega tocando el boton de Inicio del rail.
         if (result.servers.length > 0) {
           setSelectedServerId((prev) => prev ?? result.servers[0].id);
         }
@@ -96,6 +89,26 @@ export function HomeScreen() {
     setIsAddServerSheetVisible(true);
   }
 
+  const handleLeaveServer = useCallback(
+    async (serverId: string): Promise<LeaveServerActionResult> => {
+      if (!user) {
+        return {
+          ok: false,
+          message: "Tu sesión expiró. Volvé a iniciar sesión.",
+        };
+      }
+
+      const result = await leaveServer(serverId, user.id);
+      if (result.ok) {
+        setServers((prev) => prev.filter((server) => server.id !== serverId));
+        setSelectedServerId((prev) => (prev === serverId ? null : prev));
+        setSelectedChannelId(null);
+      }
+      return result;
+    },
+    [user],
+  );
+
   if (isLoadingServers) {
     return (
       <View style={styles.loadingContainer}>
@@ -134,6 +147,7 @@ export function HomeScreen() {
           }}
           onAddServer={handleAddServer}
           onLogout={logout}
+          onLeaveServer={handleLeaveServer}
         />
 
         <AddServerSheet
