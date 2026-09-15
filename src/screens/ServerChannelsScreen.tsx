@@ -10,12 +10,15 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { CreateCategoryModal } from "../components/servers/CreateCategoryModal";
+import { CreateChannelModal } from "../components/servers/CreateChannelModal";
 import { InviteLinkModal } from "../components/servers/InviteLinkModal";
 import { LeaveServerModal } from "../components/servers/LeaveServerModal";
 import { ServerRail } from "../components/servers/ServerRail";
 import { TransferOwnershipModal } from "../components/servers/TransferOwnershipModal";
 import { UserProfileBar } from "../components/servers/UserProfileBar";
 import type {
+  Category,
   Channel,
   LeaveServerActionResult,
   ServerListItem,
@@ -31,7 +34,6 @@ interface ServerChannelsScreenProps {
   authToken: string | null;
   userName?: string | null;
   currentUserId?: string | null;
-  /** Si el usuario actual es el dueño del servidor (solo el dueño puede transferirlo). */
   isOwner?: boolean;
   onSelectChannel: (channelId: string) => void;
   onSelectHome: () => void;
@@ -39,6 +41,7 @@ interface ServerChannelsScreenProps {
   onAddServer: () => void;
   onLogout: () => void;
   onLeaveServer: (serverId: string) => Promise<LeaveServerActionResult>;
+  onServerUpdated: (server: ServerListItem) => void;
 }
 
 function ChannelRow({
@@ -79,19 +82,41 @@ export function ServerChannelsScreen({
   onAddServer,
   onLogout,
   onLeaveServer,
+  onServerUpdated,
 }: ServerChannelsScreenProps) {
   const [isServerMenuOpen, setIsServerMenuOpen] = useState(false);
   const [isLeaveModalVisible, setIsLeaveModalVisible] = useState(false);
   const [isInviteModalVisible, setIsInviteModalVisible] = useState(false);
   const [isTransferModalVisible, setIsTransferModalVisible] = useState(false);
+  const [isCreateChannelVisible, setIsCreateChannelVisible] = useState(false);
+  const [createChannelDefaultCategoryId, setCreateChannelDefaultCategoryId] =
+    useState<string | null>(null);
+  const [isCreateCategoryVisible, setIsCreateCategoryVisible] = useState(false);
   const insets = useSafeAreaInsets();
 
-  const textChannels = server.channels.filter(
-    (channel) => channel.kind === "text",
+  const uncategorized = server.channels
+    .filter((channel) => channel.category_id === null)
+    .sort((a, b) => a.position - b.position);
+  const sortedCategories = [...server.categories].sort(
+    (a, b) => a.position - b.position,
   );
-  const voiceChannels = server.channels.filter(
-    (channel) => channel.kind === "voice",
-  );
+
+  function handleChannelCreated(channel: Channel) {
+    setIsCreateChannelVisible(false);
+    setCreateChannelDefaultCategoryId(null);
+    onServerUpdated({
+      ...server,
+      channels: [...server.channels, channel],
+    });
+  }
+
+  function handleCategoryCreated(category: Category) {
+    setIsCreateCategoryVisible(false);
+    onServerUpdated({
+      ...server,
+      categories: [...server.categories, category],
+    });
+  }
 
   return (
     <View style={styles.container}>
@@ -181,6 +206,31 @@ export function ServerChannelsScreen({
           </>
         ) : null}
 
+        {isOwner ? (
+          <View style={styles.toolbarRow}>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              style={styles.toolbarButton}
+              onPress={() => {
+                setCreateChannelDefaultCategoryId(null);
+                setIsCreateChannelVisible(true);
+              }}
+            >
+              <Feather name="plus" size={14} color={colors.textSubtle} />
+              <Text style={styles.toolbarButtonText}>Crear canal</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              style={styles.toolbarIconButton}
+              onPress={() => setIsCreateCategoryVisible(true)}
+              accessibilityLabel="Crear categoría"
+              accessibilityRole="button"
+            >
+              <Feather name="folder-plus" size={15} color={colors.textSubtle} />
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
         <View style={styles.searchBar}>
           <Feather name="search" size={15} color={colors.textSubtle} />
           <Text style={styles.searchBarText}>Buscar</Text>
@@ -190,18 +240,13 @@ export function ServerChannelsScreen({
           style={styles.channelsScroll}
           contentContainerStyle={styles.channelsContent}
         >
-          {textChannels.length > 0 ? (
+          {uncategorized.length > 0 ? (
             <View style={styles.section}>
               <View style={styles.sectionTitleRow}>
-                <Text style={styles.sectionTitle}>Canales de texto</Text>
-                <Feather
-                  name="chevron-down"
-                  size={13}
-                  color={colors.textSubtle}
-                />
+                <Text style={styles.sectionTitle}>Sin categoría</Text>
               </View>
               <View style={styles.sectionList}>
-                {textChannels.map((channel) => (
+                {uncategorized.map((channel) => (
                   <ChannelRow
                     key={channel.id}
                     channel={channel}
@@ -212,26 +257,54 @@ export function ServerChannelsScreen({
             </View>
           ) : null}
 
-          {voiceChannels.length > 0 ? (
-            <View style={styles.section}>
-              <View style={styles.sectionTitleRow}>
-                <Text style={styles.sectionTitle}>Canales de voz</Text>
-                <Feather
-                  name="chevron-down"
-                  size={13}
-                  color={colors.textSubtle}
-                />
+          {sortedCategories.map((category) => {
+            const channels = server.channels
+              .filter((channel) => channel.category_id === category.id)
+              .sort((a, b) => a.position - b.position);
+
+            return (
+              <View key={category.id} style={styles.section}>
+                <View style={styles.sectionTitleRow}>
+                  <Text style={styles.sectionTitle} numberOfLines={1}>
+                    {category.name}
+                  </Text>
+                  {isOwner ? (
+                    <TouchableOpacity
+                      onPress={() => {
+                        setCreateChannelDefaultCategoryId(category.id);
+                        setIsCreateChannelVisible(true);
+                      }}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      accessibilityLabel="Añadir canal"
+                      accessibilityRole="button"
+                    >
+                      <Feather
+                        name="plus"
+                        size={13}
+                        color={colors.textSubtle}
+                      />
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+                <View style={styles.sectionList}>
+                  {channels.map((channel) => (
+                    <ChannelRow
+                      key={channel.id}
+                      channel={channel}
+                      onPress={() => onSelectChannel(channel.id)}
+                    />
+                  ))}
+                </View>
               </View>
-              <View style={styles.sectionList}>
-                {voiceChannels.map((channel) => (
-                  <ChannelRow
-                    key={channel.id}
-                    channel={channel}
-                    onPress={() => onSelectChannel(channel.id)}
-                  />
-                ))}
-              </View>
-            </View>
+            );
+          })}
+
+          {uncategorized.length === 0 && sortedCategories.length === 0 ? (
+            <Text style={styles.emptyChannelsText}>
+              {isOwner
+                ? "Todavía no hay canales. Creá el primero."
+                : "Todavía no hay canales en este servidor."}
+            </Text>
           ) : null}
         </ScrollView>
 
@@ -257,6 +330,27 @@ export function ServerChannelsScreen({
           serverName={server.name}
           currentUserId={currentUserId}
           onClose={() => setIsTransferModalVisible(false)}
+        />
+      ) : null}
+      {isOwner ? (
+        <CreateChannelModal
+          visible={isCreateChannelVisible}
+          serverId={server.id}
+          categories={server.categories}
+          defaultCategoryId={createChannelDefaultCategoryId}
+          onClose={() => {
+            setIsCreateChannelVisible(false);
+            setCreateChannelDefaultCategoryId(null);
+          }}
+          onCreated={handleChannelCreated}
+        />
+      ) : null}
+      {isOwner ? (
+        <CreateCategoryModal
+          visible={isCreateCategoryVisible}
+          serverId={server.id}
+          onClose={() => setIsCreateCategoryVisible(false)}
+          onCreated={handleCategoryCreated}
         />
       ) : null}
     </View>
@@ -329,6 +423,34 @@ const styles = StyleSheet.create({
     marginVertical: 4,
     marginHorizontal: 8,
   },
+  toolbarRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingTop: 8,
+  },
+  toolbarButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 7,
+  },
+  toolbarButtonText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.textSubtle,
+  },
+  toolbarIconButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
@@ -364,6 +486,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   sectionTitle: {
+    flex: 1,
     fontSize: 13,
     fontWeight: "700",
     letterSpacing: 0.6,
@@ -385,5 +508,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "500",
     color: colors.textMuted,
+  },
+  emptyChannelsText: {
+    paddingHorizontal: 8,
+    paddingTop: 8,
+    fontSize: 13,
+    color: colors.textSubtle,
   },
 });

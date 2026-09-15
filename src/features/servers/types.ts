@@ -3,6 +3,15 @@ export interface Channel {
   name: string;
   kind: "text" | "voice";
   position: number;
+  category_id: string | null;
+  topic: string | null;
+}
+
+export interface Category {
+  id: string;
+  server_id: string;
+  name: string;
+  position: number;
 }
 
 export interface ServerSummary {
@@ -12,6 +21,7 @@ export interface ServerSummary {
   owner_id: string;
   created_at: string;
   channels: Channel[];
+  categories: Category[];
 }
 
 export interface ServersApiErrorBody {
@@ -130,3 +140,20 @@ export interface MemberListResponse {
 export type ListMembersActionResult =
   | { ok: true; members: Member[]; total: number }
   | { ok: false; message: string };
+
+export interface CreateChannelFieldErrors {
+  name?: string;
+  kind?: string;
+}
+
+export type CreateChannelActionResult =
+  | { ok: true; channel: Channel }
+  | { ok: false; message: string; fieldErrors?: CreateChannelFieldErrors };
+
+export interface CategoryFieldErrors {
+  name?: string;
+}
+
+export type CreateCategoryActionResult =
+  | { ok: true; category: Category }
+  | { ok: false; message: string; fieldErrors?: CategoryFieldErrors };

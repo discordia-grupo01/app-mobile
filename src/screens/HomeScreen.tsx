@@ -111,6 +111,13 @@ export function HomeScreen() {
     [user],
   );
 
+  /** El servidor cambió localmente (se creó un canal o una categoría). */
+  const handleServerUpdated = useCallback((updated: ServerSummary) => {
+    setServers((prev) =>
+      prev.map((existing) => (existing.id === updated.id ? updated : existing)),
+    );
+  }, []);
+
   if (isLoadingServers) {
     return (
       <View style={styles.loadingContainer}>
@@ -152,6 +159,7 @@ export function HomeScreen() {
           onAddServer={handleAddServer}
           onLogout={logout}
           onLeaveServer={handleLeaveServer}
+          onServerUpdated={handleServerUpdated}
         />
 
         <AddServerSheet
