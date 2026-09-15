@@ -99,6 +99,14 @@ export type GenerateInviteActionResult =
 export type RevokeInviteActionResult =
   { ok: true } | { ok: false; message: string };
 
+/**
+ * Resultado de `GET /v1/servers/:id/invites`. Trae TODAS las invitaciones del
+ * server (activas, revocadas o vencidas), más nuevas primero -- el back no
+ * filtra por estado ni limita a una activa por server.
+ */
+export type ListInvitationsActionResult =
+  { ok: true; invitations: Invitation[] } | { ok: false; message: string };
+
 export type OwnershipTransferStatus = "pending" | "accepted" | "rejected";
 
 export interface OwnershipTransfer {
@@ -146,6 +154,7 @@ export interface CreateChannelFieldErrors {
   kind?: string;
 }
 
+/** Resultado de `POST /v1/servers/:id/channels`. */
 export type CreateChannelActionResult =
   | { ok: true; channel: Channel }
   | { ok: false; message: string; fieldErrors?: CreateChannelFieldErrors };
@@ -154,6 +163,7 @@ export interface CategoryFieldErrors {
   name?: string;
 }
 
+/** Resultado de `POST /v1/servers/:id/categories`. */
 export type CreateCategoryActionResult =
   | { ok: true; category: Category }
   | { ok: false; message: string; fieldErrors?: CategoryFieldErrors };

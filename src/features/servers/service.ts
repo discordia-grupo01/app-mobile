@@ -16,6 +16,7 @@ import type {
   Invitation,
   JoinServerActionResult,
   LeaveServerActionResult,
+  ListInvitationsActionResult,
   ListMembersActionResult,
   ListServersActionResult,
   MemberListResponse,
@@ -500,6 +501,42 @@ export async function revokeInvite(
     return {
       ok: false,
       message: "No pudimos revocar el enlace. Intenta de nuevo.",
+    };
+  }
+}
+
+/**
+ * Cualquier miembro puede ver todas las invitaciones del server (mismo
+ * chequeo que generar/revocar).
+ */
+export async function listInvitations(
+  serverId: string,
+): Promise<ListInvitationsActionResult> {
+  try {
+    const invitations = await apiFetch<Invitation[]>(
+      `/v1/servers/${serverId}/invites`,
+      { method: "GET" },
+    );
+    return { ok: true, invitations };
+  } catch (err) {
+    if (err instanceof NetworkError) {
+      return { ok: false, message: NETWORK_ERROR_MESSAGE };
+    }
+    if (err instanceof ApiError) {
+      if (err.status === 401) {
+        return { ok: false, message: SESSION_EXPIRED_MESSAGE };
+      }
+      if (err.status === 403) {
+        return { ok: false, message: "No sos miembro de este servidor." };
+      }
+      if (err.status === 404) {
+        return { ok: false, message: "Este servidor ya no existe." };
+      }
+    }
+
+    return {
+      ok: false,
+      message: "No pudimos cargar las invitaciones. Intenta de nuevo.",
     };
   }
 }
