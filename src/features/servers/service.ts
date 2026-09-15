@@ -22,6 +22,7 @@ import type {
   ListServersActionResult,
   MemberListResponse,
   OwnershipTransfer,
+  ReorderChannelsActionResult,
   RevokeInviteActionResult,
   ServersApiErrorBody,
   ServerSummary,
@@ -257,6 +258,67 @@ export async function deleteChannel(
     return {
       ok: false,
       message: "No pudimos eliminar el canal. Intenta de nuevo.",
+    };
+  }
+}
+
+const REORDER_CHANNELS_REASON_MESSAGES: Record<string, string> = {
+  channel_set_mismatch:
+    "La lista de canales cambió mientras reordenabas. Recargá e intentá de nuevo.",
+  category_server_mismatch: "Esa categoría no pertenece a este servidor.",
+};
+
+/**
+ * `PATCH /v1/servers/:id/channels/reorder` contra el gateway. Solo el owner
+ * del server puede reordenar canales. `categoryId` es `null` para reordenar
+ * dentro del balde "Sin categoría".
+ */
+export async function reorderChannels(
+  serverId: string,
+  categoryId: string | null,
+  channelIds: string[],
+): Promise<ReorderChannelsActionResult> {
+  try {
+    await apiFetch<void>(`/v1/servers/${serverId}/channels/reorder`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        category_id: categoryId,
+        channel_ids: channelIds,
+      }),
+    });
+    return { ok: true };
+  } catch (err) {
+    if (err instanceof NetworkError) {
+      return { ok: false, message: NETWORK_ERROR_MESSAGE };
+    }
+    if (err instanceof ApiError) {
+      const reason = reasonOf(err);
+      const friendly = reason
+        ? REORDER_CHANNELS_REASON_MESSAGES[reason]
+        : undefined;
+
+      if (err.status === 401) {
+        return { ok: false, message: SESSION_EXPIRED_MESSAGE };
+      }
+      if (err.status === 403) {
+        return {
+          ok: false,
+          message: "Solo el propietario puede reordenar canales.",
+        };
+      }
+      if (err.status === 404) {
+        return { ok: false, message: "Este servidor ya no existe." };
+      }
+      return {
+        ok: false,
+        message:
+          friendly ?? "No pudimos reordenar los canales. Intenta de nuevo.",
+      };
+    }
+
+    return {
+      ok: false,
+      message: "No pudimos reordenar los canales. Intenta de nuevo.",
     };
   }
 }

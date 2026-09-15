@@ -172,11 +172,12 @@ export interface UpdateChannelFieldErrors {
   name?: string;
 }
 
-/** Resultado de `PATCH /v1/channels/:id`. */
 export type UpdateChannelActionResult =
   | { ok: true; channel: Channel }
   | { ok: false; message: string; fieldErrors?: UpdateChannelFieldErrors };
 
-/** Resultado de `DELETE /v1/channels/:id`. */
 export type DeleteChannelActionResult =
+  { ok: true } | { ok: false; message: string };
+
+export type ReorderChannelsActionResult =
   { ok: true } | { ok: false; message: string };

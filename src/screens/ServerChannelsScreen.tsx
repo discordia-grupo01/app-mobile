@@ -14,6 +14,7 @@ import { ChannelOptionsSheet } from "../components/servers/ChannelOptionsSheet";
 import { CreateCategoryModal } from "../components/servers/CreateCategoryModal";
 import { CreateChannelModal } from "../components/servers/CreateChannelModal";
 import { DeleteChannelModal } from "../components/servers/DeleteChannelModal";
+import { DraggableChannelList } from "../components/servers/DraggableChannelList";
 import { EditChannelModal } from "../components/servers/EditChannelModal";
 import { InviteLinkModal } from "../components/servers/InviteLinkModal";
 import { LeaveServerModal } from "../components/servers/LeaveServerModal";
@@ -26,6 +27,7 @@ import type {
   LeaveServerActionResult,
   ServerListItem,
 } from "../features/servers/types";
+import { reorderChannels } from "../features/servers/service";
 import { colors } from "../theme/colors";
 
 const HEADER_HEIGHT = 52;
@@ -124,6 +126,8 @@ export function ServerChannelsScreen({
   );
   const [editingChannel, setEditingChannel] = useState<Channel | null>(null);
   const [deletingChannel, setDeletingChannel] = useState<Channel | null>(null);
+  const [dragError, setDragError] = useState("");
+  const [isChannelDragActive, setIsChannelDragActive] = useState(false);
   const insets = useSafeAreaInsets();
 
   const uncategorized = server.channels
@@ -176,6 +180,37 @@ export function ServerChannelsScreen({
     );
     setDeletingChannel(null);
     onServerUpdated({ ...server, channels: remaining });
+  }
+
+  /**
+   * Reordena canales dentro de un mismo balde (una categoría, o `null` para
+   * "sin categoría"), arrastrando -- igual que `handleDragEnd` en
+   * `server-view.tsx` de web-client, pero limitado a same-bucket reorder
+   * (esta historia de usuario no incluye mover canales entre categorías).
+   * Actualiza la UI de forma optimista y revierte si el back rechaza el
+   * cambio.
+   */
+  async function handleChannelsReordered(
+    categoryId: string | null,
+    orderedIds: string[],
+  ) {
+    const previousServer = server;
+    setDragError("");
+
+    const reorderedChannels = server.channels.map((channel) => {
+      if (channel.category_id !== categoryId) return channel;
+      const newPosition = orderedIds.indexOf(channel.id);
+      return newPosition === -1
+        ? channel
+        : { ...channel, position: newPosition };
+    });
+    onServerUpdated({ ...server, channels: reorderedChannels });
+
+    const result = await reorderChannels(server.id, categoryId, orderedIds);
+    if (!result.ok) {
+      setDragError(result.message);
+      onServerUpdated(previousServer);
+    }
   }
 
   function renderChannelList(channels: Channel[]) {
@@ -308,9 +343,27 @@ export function ServerChannelsScreen({
           <Text style={styles.searchBarText}>Buscar</Text>
         </View>
 
+        {dragError ? (
+          <View style={styles.dragErrorBanner}>
+            <Feather name="alert-circle" size={14} color={colors.danger} />
+            <Text style={styles.dragErrorText} numberOfLines={2}>
+              {dragError}
+            </Text>
+            <TouchableOpacity
+              onPress={() => setDragError("")}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityLabel="Cerrar"
+              accessibilityRole="button"
+            >
+              <Feather name="x" size={14} color={colors.textSubtle} />
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
         <ScrollView
           style={styles.channelsScroll}
           contentContainerStyle={styles.channelsContent}
+          scrollEnabled={!isChannelDragActive}
         >
           {uncategorized.length > 0 ? (
             <View style={styles.section}>
@@ -332,9 +385,27 @@ export function ServerChannelsScreen({
                 <Text style={styles.sectionTitle}>Sin categoría</Text>
               </TouchableOpacity>
               {!collapsedSectionIds.has(UNCATEGORIZED_KEY) ? (
-                <View style={styles.sectionList}>
-                  {renderChannelList(uncategorized)}
-                </View>
+                isOwner && uncategorized.length > 1 ? (
+                  <DraggableChannelList
+                    channels={uncategorized}
+                    onReorder={(orderedIds) =>
+                      handleChannelsReordered(null, orderedIds)
+                    }
+                    onDragActiveChange={setIsChannelDragActive}
+                    renderChannel={(channel) => (
+                      <ChannelRow
+                        channel={channel}
+                        isOwner={isOwner}
+                        onPress={() => onSelectChannel(channel.id)}
+                        onOptions={() => setChannelOptionsFor(channel)}
+                      />
+                    )}
+                  />
+                ) : (
+                  <View style={styles.sectionList}>
+                    {renderChannelList(uncategorized)}
+                  </View>
+                )
               ) : null}
             </View>
           ) : null}
@@ -382,9 +453,27 @@ export function ServerChannelsScreen({
                   ) : null}
                 </View>
                 {!collapsed ? (
-                  <View style={styles.sectionList}>
-                    {renderChannelList(channels)}
-                  </View>
+                  isOwner && channels.length > 1 ? (
+                    <DraggableChannelList
+                      channels={channels}
+                      onReorder={(orderedIds) =>
+                        handleChannelsReordered(category.id, orderedIds)
+                      }
+                      onDragActiveChange={setIsChannelDragActive}
+                      renderChannel={(channel) => (
+                        <ChannelRow
+                          channel={channel}
+                          isOwner={isOwner}
+                          onPress={() => onSelectChannel(channel.id)}
+                          onOptions={() => setChannelOptionsFor(channel)}
+                        />
+                      )}
+                    />
+                  ) : (
+                    <View style={styles.sectionList}>
+                      {renderChannelList(channels)}
+                    </View>
+                  )
                 ) : null}
               </View>
             );
@@ -587,6 +676,24 @@ const styles = StyleSheet.create({
   searchBarText: {
     fontSize: 13,
     color: colors.textSubtle,
+  },
+  dragErrorBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginHorizontal: 12,
+    marginTop: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "rgba(224,82,82,0.3)",
+    backgroundColor: "rgba(224,82,82,0.1)",
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+  },
+  dragErrorText: {
+    flex: 1,
+    fontSize: 12,
+    color: colors.danger,
   },
   channelsScroll: {
     flex: 1,

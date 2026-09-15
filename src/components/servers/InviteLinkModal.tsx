@@ -204,11 +204,17 @@ export function InviteLinkModal({
   const [maxUsesInput, setMaxUsesInput] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [wasVisible, setWasVisible] = useState(visible);
 
-  if (visible !== wasVisible) {
-    setWasVisible(visible);
-    if (visible) {
+  // Cada vez que el modal se abre (o cambia de server mientras está
+  // abierto) hay que volver a pedir las invitaciones desde cero. Se ajusta
+  // el estado acá, durante el render, en vez de al toque en un efecto, para
+  // no disparar un render en cascada.
+  const fetchKey = visible ? serverId : null;
+  const [lastFetchKey, setLastFetchKey] = useState<string | null>(null);
+  if (fetchKey !== lastFetchKey) {
+    setLastFetchKey(fetchKey);
+    if (fetchKey !== null) {
+      setInvitations(null);
       setMaxUsesInput("");
       setErrorMessage("");
     }
@@ -218,7 +224,6 @@ export function InviteLinkModal({
     if (!visible) return;
     let cancelled = false;
 
-    setInvitations(null);
     listInvitations(serverId).then((result) => {
       if (cancelled) return;
       if (!result.ok) {
