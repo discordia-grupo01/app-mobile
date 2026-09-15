@@ -65,3 +65,68 @@ export type LeaveServerActionResult =
       message: string;
       reason?: "owner_must_transfer_or_delete";
     };
+
+export interface Invitation {
+  code: string;
+  url: string;
+  server_id: string;
+  created_by: string;
+  max_uses: number | null;
+  uses: number;
+  expires_at: string;
+  revoked_at: string | null;
+  created_at: string;
+}
+
+export interface GenerateInviteFieldErrors {
+  maxUses?: string;
+}
+
+export type GenerateInviteActionResult =
+  | { ok: true; invitation: Invitation }
+  | { ok: false; message: string; fieldErrors?: GenerateInviteFieldErrors };
+
+export type RevokeInviteActionResult =
+  { ok: true } | { ok: false; message: string };
+
+export type OwnershipTransferStatus = "pending" | "accepted" | "rejected";
+
+export interface OwnershipTransfer {
+  id: string;
+  server_id: string;
+  from_user_id: string;
+  to_user_id: string;
+  status: OwnershipTransferStatus;
+  created_at: string;
+  resolved_at: string | null;
+}
+
+export interface InitiateTransferFieldErrors {
+  toUserId?: string;
+}
+
+export type InitiateTransferActionResult =
+  | { ok: true; transfer: OwnershipTransfer }
+  | {
+      ok: false;
+      message: string;
+      fieldErrors?: InitiateTransferFieldErrors;
+      reason?: "transfer_already_pending";
+    };
+
+export interface Member {
+  user_id: string;
+  is_owner: boolean;
+  joined_at: string;
+}
+
+export interface MemberListResponse {
+  members: Member[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export type ListMembersActionResult =
+  | { ok: true; members: Member[]; total: number }
+  | { ok: false; message: string };

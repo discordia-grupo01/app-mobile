@@ -78,3 +78,14 @@ export interface ForgotPasswordErrors {
  */
 export type ForgotPasswordActionResult =
   { ok: true } | { ok: false; message: string };
+
+/** Perfil publico de otro usuario (`GET /v1/users/:id`): sin email ni descripcion. */
+export interface PublicUser {
+  id: string;
+  name: string;
+  avatar_url: string;
+  status_text?: string;
+  status_emoji?: string;
+  created_at: string;
+  mutual_server_ids: string[];
+}

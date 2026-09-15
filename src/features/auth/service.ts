@@ -4,6 +4,7 @@ import type {
   ForgotPasswordActionResult,
   LoginActionResult,
   LoginValues,
+  PublicUser,
   RegisterActionResult,
   RegisterValues,
 } from "./types";
@@ -87,6 +88,26 @@ export async function logoutService(token?: string | null): Promise<void> {
       headers: { Authorization: `Bearer ${token}` },
     });
   } catch {}
+}
+
+/**
+ * Perfil publico de otro usuario (`GET /v1/users/:id`), para pintar
+ * nombre/avatar en listas como el picker de "Transferir propiedad"
+ * (`TransferOwnershipModal`). Es "best effort": si falla (red, 404, etc.)
+ * devuelve `null` en vez de tirar, para que el llamador pueda mostrar un
+ * fallback (inicial del ID) en vez de romper toda la lista por un solo
+ * perfil que no cargo.
+ */
+export async function getPublicUser(
+  userId: string,
+): Promise<PublicUser | null> {
+  try {
+    return await apiFetch<PublicUser>(`/v1/users/${userId}`, {
+      method: "GET",
+    });
+  } catch {
+    return null;
+  }
 }
 
 /**
