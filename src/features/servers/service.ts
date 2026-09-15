@@ -10,6 +10,7 @@ import type {
   CreateChannelActionResult,
   CreateServerActionResult,
   CreateServerParams,
+  DeleteChannelActionResult,
   GenerateInviteActionResult,
   GetServerActionResult,
   InitiateTransferActionResult,
@@ -24,6 +25,7 @@ import type {
   RevokeInviteActionResult,
   ServersApiErrorBody,
   ServerSummary,
+  UpdateChannelActionResult,
 } from "./types";
 
 const NETWORK_ERROR_MESSAGE =
@@ -154,6 +156,107 @@ export async function createChannel(
     return {
       ok: false,
       message: "No pudimos crear el canal. Intenta de nuevo.",
+    };
+  }
+}
+
+const UPDATE_CHANNEL_REASON_MESSAGES: Record<string, string> = {
+  name_required: "Ingresá un nombre para el canal.",
+  name_too_long: "El nombre es demasiado largo.",
+  name_invalid_chars: "El nombre tiene caracteres inválidos.",
+  name_taken: "Ya existe un canal con ese nombre en esa categoría.",
+};
+
+/**
+ * `PATCH /v1/channels/:id` contra el gateway. Solo el owner del server puede
+ * editar canales (el back devuelve 403 si no).
+ */
+export async function updateChannel(
+  channelId: string,
+  input: { name: string },
+): Promise<UpdateChannelActionResult> {
+  try {
+    const channel = await apiFetch<Channel>(`/v1/channels/${channelId}`, {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    });
+    return { ok: true, channel };
+  } catch (err) {
+    if (err instanceof NetworkError) {
+      return { ok: false, message: NETWORK_ERROR_MESSAGE };
+    }
+    if (err instanceof ApiError) {
+      const reason = reasonOf(err);
+      const field = fieldOf(err);
+      const friendly = reason
+        ? UPDATE_CHANNEL_REASON_MESSAGES[reason]
+        : undefined;
+
+      if (field === "name" && friendly) {
+        return {
+          ok: false,
+          message: friendly,
+          fieldErrors: { name: friendly },
+        };
+      }
+      if (err.status === 401) {
+        return { ok: false, message: SESSION_EXPIRED_MESSAGE };
+      }
+      if (err.status === 403) {
+        return {
+          ok: false,
+          message: "Solo el propietario puede editar canales.",
+        };
+      }
+      if (err.status === 404) {
+        return { ok: false, message: "Este canal ya no existe." };
+      }
+      return {
+        ok: false,
+        message: friendly ?? "No pudimos editar el canal. Intenta de nuevo.",
+      };
+    }
+
+    return {
+      ok: false,
+      message: "No pudimos editar el canal. Intenta de nuevo.",
+    };
+  }
+}
+
+/**
+ * `DELETE /v1/channels/:id` contra el gateway. Solo el owner del server
+ * puede eliminar canales (el back devuelve 403 si no). Idempotente del lado
+ * del back para un id que ya no existe (404, ya tratado como error acá).
+ */
+export async function deleteChannel(
+  channelId: string,
+): Promise<DeleteChannelActionResult> {
+  try {
+    await apiFetch<void>(`/v1/channels/${channelId}`, { method: "DELETE" });
+    return { ok: true };
+  } catch (err) {
+    if (err instanceof NetworkError) {
+      return { ok: false, message: NETWORK_ERROR_MESSAGE };
+    }
+    if (err instanceof ApiError) {
+      if (err.status === 401) {
+        return { ok: false, message: SESSION_EXPIRED_MESSAGE };
+      }
+      if (err.status === 403) {
+        return {
+          ok: false,
+          message: "Solo el propietario puede eliminar canales.",
+        };
+      }
+      if (err.status === 404) {
+        return { ok: false, message: "Este canal ya no existe." };
+      }
+    }
+
+    return {
+      ok: false,
+      message: "No pudimos eliminar el canal. Intenta de nuevo.",
     };
   }
 }

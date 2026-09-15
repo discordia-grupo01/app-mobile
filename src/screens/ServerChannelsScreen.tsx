@@ -10,8 +10,11 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { ChannelOptionsSheet } from "../components/servers/ChannelOptionsSheet";
 import { CreateCategoryModal } from "../components/servers/CreateCategoryModal";
 import { CreateChannelModal } from "../components/servers/CreateChannelModal";
+import { DeleteChannelModal } from "../components/servers/DeleteChannelModal";
+import { EditChannelModal } from "../components/servers/EditChannelModal";
 import { InviteLinkModal } from "../components/servers/InviteLinkModal";
 import { LeaveServerModal } from "../components/servers/LeaveServerModal";
 import { ServerRail } from "../components/servers/ServerRail";
@@ -27,6 +30,8 @@ import { colors } from "../theme/colors";
 
 const HEADER_HEIGHT = 52;
 const MENU_TOP = 58;
+/** Clave usada en `collapsedSectionIds` para el balde "Sin categoría". */
+const UNCATEGORIZED_KEY = "none";
 
 interface ServerChannelsScreenProps {
   server: ServerListItem;
@@ -34,6 +39,7 @@ interface ServerChannelsScreenProps {
   authToken: string | null;
   userName?: string | null;
   currentUserId?: string | null;
+  /** Si el usuario actual es el dueño del servidor (solo el dueño puede transferirlo, y crear/editar/eliminar canales y categorías). */
   isOwner?: boolean;
   onSelectChannel: (channelId: string) => void;
   onSelectHome: () => void;
@@ -41,31 +47,49 @@ interface ServerChannelsScreenProps {
   onAddServer: () => void;
   onLogout: () => void;
   onLeaveServer: (serverId: string) => Promise<LeaveServerActionResult>;
+  /** Notifica al padre (dueño del estado de `servers`) que este server cambió. */
   onServerUpdated: (server: ServerListItem) => void;
 }
 
 function ChannelRow({
   channel,
+  isOwner,
   onPress,
+  onOptions,
 }: {
   channel: Channel;
+  isOwner: boolean;
   onPress: () => void;
+  onOptions: () => void;
 }) {
   return (
-    <TouchableOpacity
-      activeOpacity={0.7}
-      onPress={onPress}
-      style={styles.channelRow}
-    >
-      <Feather
-        name={channel.kind === "text" ? "hash" : "volume-2"}
-        size={20}
-        color={colors.textMuted}
-      />
-      <Text style={styles.channelName} numberOfLines={1}>
-        {channel.name}
-      </Text>
-    </TouchableOpacity>
+    <View style={styles.channelRowWrap}>
+      <TouchableOpacity
+        activeOpacity={0.7}
+        onPress={onPress}
+        style={styles.channelRow}
+      >
+        <Feather
+          name={channel.kind === "text" ? "hash" : "volume-2"}
+          size={20}
+          color={colors.textMuted}
+        />
+        <Text style={styles.channelName} numberOfLines={1}>
+          {channel.name}
+        </Text>
+      </TouchableOpacity>
+      {isOwner ? (
+        <TouchableOpacity
+          onPress={onOptions}
+          style={styles.channelOptionsButton}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityLabel="Opciones del canal"
+          accessibilityRole="button"
+        >
+          <Feather name="more-vertical" size={16} color={colors.textSubtle} />
+        </TouchableOpacity>
+      ) : null}
+    </View>
   );
 }
 
@@ -92,6 +116,14 @@ export function ServerChannelsScreen({
   const [createChannelDefaultCategoryId, setCreateChannelDefaultCategoryId] =
     useState<string | null>(null);
   const [isCreateCategoryVisible, setIsCreateCategoryVisible] = useState(false);
+  const [collapsedSectionIds, setCollapsedSectionIds] = useState<Set<string>>(
+    new Set(),
+  );
+  const [channelOptionsFor, setChannelOptionsFor] = useState<Channel | null>(
+    null,
+  );
+  const [editingChannel, setEditingChannel] = useState<Channel | null>(null);
+  const [deletingChannel, setDeletingChannel] = useState<Channel | null>(null);
   const insets = useSafeAreaInsets();
 
   const uncategorized = server.channels
@@ -100,6 +132,15 @@ export function ServerChannelsScreen({
   const sortedCategories = [...server.categories].sort(
     (a, b) => a.position - b.position,
   );
+
+  function toggleCollapsed(id: string) {
+    setCollapsedSectionIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   function handleChannelCreated(channel: Channel) {
     setIsCreateChannelVisible(false);
@@ -116,6 +157,37 @@ export function ServerChannelsScreen({
       ...server,
       categories: [...server.categories, category],
     });
+  }
+
+  function handleChannelUpdated(channel: Channel) {
+    setEditingChannel(null);
+    onServerUpdated({
+      ...server,
+      channels: server.channels.map((existing) =>
+        existing.id === channel.id ? channel : existing,
+      ),
+    });
+  }
+
+  function handleChannelDeleted() {
+    if (!deletingChannel) return;
+    const remaining = server.channels.filter(
+      (existing) => existing.id !== deletingChannel.id,
+    );
+    setDeletingChannel(null);
+    onServerUpdated({ ...server, channels: remaining });
+  }
+
+  function renderChannelList(channels: Channel[]) {
+    return channels.map((channel) => (
+      <ChannelRow
+        key={channel.id}
+        channel={channel}
+        isOwner={isOwner}
+        onPress={() => onSelectChannel(channel.id)}
+        onOptions={() => setChannelOptionsFor(channel)}
+      />
+    ));
   }
 
   return (
@@ -242,18 +314,28 @@ export function ServerChannelsScreen({
         >
           {uncategorized.length > 0 ? (
             <View style={styles.section}>
-              <View style={styles.sectionTitleRow}>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                style={styles.sectionTitleRow}
+                onPress={() => toggleCollapsed(UNCATEGORIZED_KEY)}
+                accessibilityRole="button"
+              >
+                <Feather
+                  name={
+                    collapsedSectionIds.has(UNCATEGORIZED_KEY)
+                      ? "chevron-right"
+                      : "chevron-down"
+                  }
+                  size={12}
+                  color={colors.textSubtle}
+                />
                 <Text style={styles.sectionTitle}>Sin categoría</Text>
-              </View>
-              <View style={styles.sectionList}>
-                {uncategorized.map((channel) => (
-                  <ChannelRow
-                    key={channel.id}
-                    channel={channel}
-                    onPress={() => onSelectChannel(channel.id)}
-                  />
-                ))}
-              </View>
+              </TouchableOpacity>
+              {!collapsedSectionIds.has(UNCATEGORIZED_KEY) ? (
+                <View style={styles.sectionList}>
+                  {renderChannelList(uncategorized)}
+                </View>
+              ) : null}
             </View>
           ) : null}
 
@@ -261,13 +343,26 @@ export function ServerChannelsScreen({
             const channels = server.channels
               .filter((channel) => channel.category_id === category.id)
               .sort((a, b) => a.position - b.position);
+            const collapsed = collapsedSectionIds.has(category.id);
 
             return (
               <View key={category.id} style={styles.section}>
                 <View style={styles.sectionTitleRow}>
-                  <Text style={styles.sectionTitle} numberOfLines={1}>
-                    {category.name}
-                  </Text>
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    style={styles.sectionTitleToggle}
+                    onPress={() => toggleCollapsed(category.id)}
+                    accessibilityRole="button"
+                  >
+                    <Feather
+                      name={collapsed ? "chevron-right" : "chevron-down"}
+                      size={12}
+                      color={colors.textSubtle}
+                    />
+                    <Text style={styles.sectionTitle} numberOfLines={1}>
+                      {category.name}
+                    </Text>
+                  </TouchableOpacity>
                   {isOwner ? (
                     <TouchableOpacity
                       onPress={() => {
@@ -286,15 +381,11 @@ export function ServerChannelsScreen({
                     </TouchableOpacity>
                   ) : null}
                 </View>
-                <View style={styles.sectionList}>
-                  {channels.map((channel) => (
-                    <ChannelRow
-                      key={channel.id}
-                      channel={channel}
-                      onPress={() => onSelectChannel(channel.id)}
-                    />
-                  ))}
-                </View>
+                {!collapsed ? (
+                  <View style={styles.sectionList}>
+                    {renderChannelList(channels)}
+                  </View>
+                ) : null}
               </View>
             );
           })}
@@ -351,6 +442,37 @@ export function ServerChannelsScreen({
           serverId={server.id}
           onClose={() => setIsCreateCategoryVisible(false)}
           onCreated={handleCategoryCreated}
+        />
+      ) : null}
+      {isOwner ? (
+        <ChannelOptionsSheet
+          visible={channelOptionsFor !== null}
+          channel={channelOptionsFor}
+          onClose={() => setChannelOptionsFor(null)}
+          onEdit={() => {
+            const channel = channelOptionsFor;
+            setChannelOptionsFor(null);
+            setEditingChannel(channel);
+          }}
+          onDelete={() => {
+            const channel = channelOptionsFor;
+            setChannelOptionsFor(null);
+            setDeletingChannel(channel);
+          }}
+        />
+      ) : null}
+      {editingChannel ? (
+        <EditChannelModal
+          channel={editingChannel}
+          onClose={() => setEditingChannel(null)}
+          onUpdated={handleChannelUpdated}
+        />
+      ) : null}
+      {deletingChannel ? (
+        <DeleteChannelModal
+          channel={deletingChannel}
+          onClose={() => setDeletingChannel(null)}
+          onDeleted={handleChannelDeleted}
         />
       ) : null}
     </View>
@@ -485,6 +607,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     marginBottom: 4,
   },
+  sectionTitleToggle: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingVertical: 2,
+  },
   sectionTitle: {
     flex: 1,
     fontSize: 13,
@@ -495,13 +624,22 @@ const styles = StyleSheet.create({
   sectionList: {
     gap: 1,
   },
+  channelRowWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
   channelRow: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 11,
+  },
+  channelOptionsButton: {
+    paddingHorizontal: 8,
+    paddingVertical: 8,
   },
   channelName: {
     flex: 1,
