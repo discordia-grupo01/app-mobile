@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AddServerSheet } from "../components/servers/AddServerSheet";
 import { CreateServerModal } from "../components/servers/CreateServerModal";
@@ -28,6 +29,7 @@ import { ServerPickerScreen } from "./ServerPickerScreen";
 
 export function HomeScreen() {
   const { user, token, logout } = useAuth();
+  const insets = useSafeAreaInsets();
   const [servers, setServers] = useState<ServerListItem[]>([]);
   const [isLoadingServers, setIsLoadingServers] = useState(true);
   const [selectedServerId, setSelectedServerId] = useState<string | null>(null);
@@ -139,6 +141,8 @@ export function HomeScreen() {
           servers={servers}
           authToken={token}
           userName={user?.name}
+          currentUserId={user ? String(user.id) : null}
+          isOwner={user != null && String(user.id) === selectedServer.owner_id}
           onSelectChannel={setSelectedChannelId}
           onSelectHome={handleSelectHome}
           onSwitchServer={(id) => {
@@ -223,7 +227,7 @@ export function HomeScreen() {
   return (
     <View style={styles.emptyContainer}>
       <StatusBar style="light" />
-      <View style={styles.emptyTopBar}>
+      <View style={[styles.emptyTopBar, { paddingTop: insets.top + 12 }]}>
         <TouchableOpacity
           onPress={logout}
           style={styles.emptyLogoutButton}

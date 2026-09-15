@@ -81,24 +81,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  // POST /v1/users tambien devuelve { user, token }: registrarse deja la
-  // sesion iniciada, no hace falta un login por separado despues.
+  // POST /v1/users ya NO devuelve token: registrarse no deja la sesion
+  // iniciada, igual que en web-client. La vista redirige a login con un
+  // aviso de exito y el usuario ingresa con sus credenciales.
   const register = useCallback(
     async (values: RegisterValues): Promise<RegisterActionResult> => {
-      const result = await registerService(values);
-
-      if (result.ok) {
-        setToken(result.token);
-        setUser(result.user);
-
-        try {
-          await setSession(result.token, result.user);
-        } catch {
-          // Error escribiendo storage local
-        }
-      }
-
-      return result;
+      return registerService(values);
     },
     [],
   );

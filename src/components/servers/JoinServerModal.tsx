@@ -27,7 +27,6 @@ interface JoinServerModalProps {
   visible: boolean;
   onClose: () => void;
   onJoined: (server: ServerSummary) => void;
-  /** Para pedir el icono real del servidor al que te uniste (ver ServerAvatar). */
   authToken: string | null;
 }
 
@@ -47,10 +46,6 @@ export function JoinServerModal({
   } | null>(null);
   const [wasVisible, setWasVisible] = useState(visible);
 
-  // Reinicia el formulario cada vez que el modal pasa a visible. Esto va en
-  // el cuerpo del render (patron "adjust state when a prop changes" de
-  // React) en vez de en un useEffect para cumplir con la regla de lint
-  // react-hooks/set-state-in-effect.
   if (visible !== wasVisible) {
     setWasVisible(visible);
     if (visible) {
@@ -194,7 +189,7 @@ export function JoinServerModal({
                         setFieldError("");
                         setGlobalError("");
                       }}
-                      placeholder="discordia.gg/xY7z2Q"
+                      placeholder="ej: /invite/xY7z2Q"
                       placeholderTextColor={colors.textSubtle}
                       autoFocus
                       autoCapitalize="none"
@@ -215,7 +210,7 @@ export function JoinServerModal({
 
                 <Text style={styles.helperText}>
                   Los enlaces de invitación tienen este formato:{" "}
-                  <Text style={styles.helperTextMono}>discordia.gg/xY7z2Q</Text>
+                  <Text style={styles.helperTextMono}>/invite/xY7z2Q</Text>
                 </Text>
 
                 <View style={styles.footer}>

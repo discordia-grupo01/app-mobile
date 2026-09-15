@@ -13,11 +13,13 @@ import { TextField } from "../ui/TextField";
 interface LoginFormProps {
   onSwitchToRegister: () => void;
   onForgotPassword: () => void;
+  justRegistered?: boolean;
 }
 
 export function LoginForm({
   onSwitchToRegister,
   onForgotPassword,
+  justRegistered = false,
 }: LoginFormProps) {
   const { login } = useAuth();
 
@@ -45,6 +47,14 @@ export function LoginForm({
 
   return (
     <View style={styles.formContainer}>
+      {justRegistered ? (
+        <View style={styles.successBanner}>
+          <Text style={styles.successBannerText}>
+            ¡Cuenta creada con éxito! Ingresa tus datos para continuar.
+          </Text>
+        </View>
+      ) : null}
+
       <TextField
         label="CORREO ELECTRÓNICO"
         placeholder="tu@email.com"
@@ -142,6 +152,19 @@ const styles = StyleSheet.create({
   },
   errorBannerText: {
     color: colors.danger,
+    fontSize: 13,
+    textAlign: "center",
+  },
+  successBanner: {
+    backgroundColor: "rgba(56, 161, 105, 0.12)",
+    borderColor: "rgba(56, 161, 105, 0.3)",
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 18,
+  },
+  successBannerText: {
+    color: colors.success,
     fontSize: 13,
     textAlign: "center",
   },

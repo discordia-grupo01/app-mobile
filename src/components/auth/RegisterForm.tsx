@@ -12,9 +12,13 @@ import { TextField } from "../ui/TextField";
 
 interface RegisterFormProps {
   onSwitchToLogin: () => void;
+  onRegistered: () => void;
 }
 
-export function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
+export function RegisterForm({
+  onSwitchToLogin,
+  onRegistered,
+}: RegisterFormProps) {
   const { register } = useAuth();
 
   const [name, setName] = useState("");
@@ -41,7 +45,10 @@ export function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
 
     if (!result.ok) {
       setFormError(result.message);
+      return;
     }
+
+    onRegistered();
   }
 
   return (

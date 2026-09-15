@@ -1,5 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { Channel } from "../features/servers/types";
 import { colors } from "../theme/colors";
@@ -11,10 +12,11 @@ interface ChannelScreenProps {
 
 export function ChannelScreen({ channel, onBack }: ChannelScreenProps) {
   const isText = channel.kind === "text";
+  const insets = useSafeAreaInsets();
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top }]}>
         <TouchableOpacity
           onPress={onBack}
           style={styles.backButton}
@@ -72,7 +74,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    height: 60,
+    minHeight: 60,
     paddingHorizontal: 12,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,

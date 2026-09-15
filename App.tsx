@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import type { AuthMode } from "./src/components/auth/AuthTabs";
 import { AuthProvider, useAuth } from "./src/features/auth/auth-context";
@@ -14,6 +15,17 @@ type AuthScreen = AuthMode | "forgot-password";
 function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
   const [authScreen, setAuthScreen] = useState<AuthScreen>("login");
+  const [justRegistered, setJustRegistered] = useState(false);
+
+  function handleSwitchMode(mode: AuthScreen) {
+    setAuthScreen(mode);
+    setJustRegistered(false);
+  }
+
+  function handleRegistered() {
+    setJustRegistered(true);
+    setAuthScreen("login");
+  }
 
   if (isLoading) {
     return (
@@ -28,24 +40,30 @@ function AppContent() {
   }
 
   if (authScreen === "forgot-password") {
-    return <ForgotPasswordScreen onBack={() => setAuthScreen("login")} />;
+    return <ForgotPasswordScreen onBack={() => handleSwitchMode("login")} />;
   }
 
   return authScreen === "login" ? (
     <LoginScreen
-      onSwitchMode={setAuthScreen}
+      onSwitchMode={handleSwitchMode}
       onForgotPassword={() => setAuthScreen("forgot-password")}
+      justRegistered={justRegistered}
     />
   ) : (
-    <RegisterScreen onSwitchMode={setAuthScreen} />
+    <RegisterScreen
+      onSwitchMode={handleSwitchMode}
+      onRegistered={handleRegistered}
+    />
   );
 }
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <SafeAreaProvider>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </SafeAreaProvider>
   );
 }
 

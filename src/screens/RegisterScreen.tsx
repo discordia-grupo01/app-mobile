@@ -15,9 +15,13 @@ import { colors } from "../theme/colors";
 
 interface RegisterScreenProps {
   onSwitchMode: (mode: AuthMode) => void;
+  onRegistered: () => void;
 }
 
-export function RegisterScreen({ onSwitchMode }: RegisterScreenProps) {
+export function RegisterScreen({
+  onSwitchMode,
+  onRegistered,
+}: RegisterScreenProps) {
   return (
     <KeyboardAvoidingView
       style={styles.keyboardView}
@@ -44,7 +48,10 @@ export function RegisterScreen({ onSwitchMode }: RegisterScreenProps) {
           <Text style={styles.subtitle}>Es gratis y siempre lo será.</Text>
 
           {/* Register Form */}
-          <RegisterForm onSwitchToLogin={() => onSwitchMode("login")} />
+          <RegisterForm
+            onSwitchToLogin={() => onSwitchMode("login")}
+            onRegistered={onRegistered}
+          />
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

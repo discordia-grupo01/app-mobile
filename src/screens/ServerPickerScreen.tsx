@@ -15,13 +15,6 @@ interface ServerPickerScreenProps {
   onLogout: () => void;
 }
 
-/**
- * Estado "home" cuando el usuario ya tiene servidores pero no eligio
- * ninguno todavia (por ejemplo, tras tocar el boton de Inicio del rail).
- * Muestra el rail completo a la izquierda -- para que pueda elegir -- y a
- * la derecha un panel placeholder, igual al que usa `web-client` cuando no
- * hay servidor seleccionado.
- */
 export function ServerPickerScreen({
   servers,
   authToken,
