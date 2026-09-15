@@ -1,5 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { serverIconUrl } from "../../features/servers/service";
 import type { ServerListItem } from "../../features/servers/types";
@@ -10,7 +11,6 @@ export const RAIL_WIDTH = 72;
 
 interface ServerRailProps {
   servers: ServerListItem[];
-  /** `null` cuando estamos en el "home" (nada seleccionado todavia). */
   activeServerId: string | null;
   authToken: string | null;
   onSelectHome: () => void;
@@ -47,13 +47,6 @@ function ServerRailIcon({
   );
 }
 
-/**
- * Rail vertical de servidores, igual al de la app real de Discord: arriba
- * el boton "Home" (te lleva al estado sin servidor seleccionado), despues
- * el icono de cada servidor al que perteneces, y al final el "+" para
- * sumar uno nuevo. Se comparte entre `ServerPickerScreen` (nada
- * seleccionado) y `ServerChannelsScreen` (un servidor abierto).
- */
 export function ServerRail({
   servers,
   activeServerId,
@@ -63,11 +56,15 @@ export function ServerRail({
   onAddServer,
 }: ServerRailProps) {
   const isHomeActive = activeServerId === null;
+  const insets = useSafeAreaInsets();
 
   return (
     <ScrollView
       style={styles.rail}
-      contentContainerStyle={styles.railContent}
+      contentContainerStyle={[
+        styles.railContent,
+        { paddingTop: insets.top + 12 },
+      ]}
       showsVerticalScrollIndicator={false}
     >
       <TouchableOpacity

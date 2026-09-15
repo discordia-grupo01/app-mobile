@@ -8,9 +8,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { InviteLinkModal } from "../components/servers/InviteLinkModal";
 import { LeaveServerModal } from "../components/servers/LeaveServerModal";
 import { ServerRail } from "../components/servers/ServerRail";
+import { TransferOwnershipModal } from "../components/servers/TransferOwnershipModal";
 import { UserProfileBar } from "../components/servers/UserProfileBar";
 import type {
   Channel,
@@ -19,11 +22,17 @@ import type {
 } from "../features/servers/types";
 import { colors } from "../theme/colors";
 
+const HEADER_HEIGHT = 52;
+const MENU_TOP = 58;
+
 interface ServerChannelsScreenProps {
   server: ServerListItem;
   servers: ServerListItem[];
   authToken: string | null;
   userName?: string | null;
+  currentUserId?: string | null;
+  /** Si el usuario actual es el dueño del servidor (solo el dueño puede transferirlo). */
+  isOwner?: boolean;
   onSelectChannel: (channelId: string) => void;
   onSelectHome: () => void;
   onSwitchServer: (serverId: string) => void;
@@ -62,6 +71,8 @@ export function ServerChannelsScreen({
   servers,
   authToken,
   userName,
+  currentUserId,
+  isOwner = false,
   onSelectChannel,
   onSelectHome,
   onSwitchServer,
@@ -71,6 +82,9 @@ export function ServerChannelsScreen({
 }: ServerChannelsScreenProps) {
   const [isServerMenuOpen, setIsServerMenuOpen] = useState(false);
   const [isLeaveModalVisible, setIsLeaveModalVisible] = useState(false);
+  const [isInviteModalVisible, setIsInviteModalVisible] = useState(false);
+  const [isTransferModalVisible, setIsTransferModalVisible] = useState(false);
+  const insets = useSafeAreaInsets();
 
   const textChannels = server.channels.filter(
     (channel) => channel.kind === "text",
@@ -93,7 +107,10 @@ export function ServerChannelsScreen({
       <View style={styles.main}>
         <TouchableOpacity
           activeOpacity={0.7}
-          style={styles.header}
+          style={[
+            styles.header,
+            { height: HEADER_HEIGHT + insets.top, paddingTop: insets.top },
+          ]}
           onPress={() => setIsServerMenuOpen((prev) => !prev)}
           accessibilityRole="button"
           accessibilityLabel="Opciones del servidor"
@@ -114,7 +131,39 @@ export function ServerChannelsScreen({
               style={StyleSheet.absoluteFill}
               onPress={() => setIsServerMenuOpen(false)}
             />
-            <View style={styles.serverMenu}>
+            <View style={[styles.serverMenu, { top: MENU_TOP + insets.top }]}>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                style={styles.serverMenuItem}
+                onPress={() => {
+                  setIsServerMenuOpen(false);
+                  setIsInviteModalVisible(true);
+                }}
+              >
+                <Feather name="user-plus" size={16} color={colors.info} />
+                <Text style={styles.serverMenuItemTextNeutral}>
+                  Invitar gente
+                </Text>
+              </TouchableOpacity>
+
+              {isOwner ? (
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  style={styles.serverMenuItem}
+                  onPress={() => {
+                    setIsServerMenuOpen(false);
+                    setIsTransferModalVisible(true);
+                  }}
+                >
+                  <Feather name="shield" size={16} color={colors.info} />
+                  <Text style={styles.serverMenuItemTextNeutral}>
+                    Transferir propiedad
+                  </Text>
+                </TouchableOpacity>
+              ) : null}
+
+              <View style={styles.serverMenuDivider} />
+
               <TouchableOpacity
                 activeOpacity={0.7}
                 style={styles.serverMenuItem}
@@ -195,6 +244,21 @@ export function ServerChannelsScreen({
         onClose={() => setIsLeaveModalVisible(false)}
         onConfirm={() => onLeaveServer(server.id)}
       />
+      <InviteLinkModal
+        visible={isInviteModalVisible}
+        serverId={server.id}
+        serverName={server.name}
+        onClose={() => setIsInviteModalVisible(false)}
+      />
+      {isOwner ? (
+        <TransferOwnershipModal
+          visible={isTransferModalVisible}
+          serverId={server.id}
+          serverName={server.name}
+          currentUserId={currentUserId}
+          onClose={() => setIsTransferModalVisible(false)}
+        />
+      ) : null}
     </View>
   );
 }
@@ -253,6 +317,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: colors.danger,
+  },
+  serverMenuItemTextNeutral: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: colors.text,
+  },
+  serverMenuDivider: {
+    height: 1,
+    backgroundColor: colors.border,
+    marginVertical: 4,
+    marginHorizontal: 8,
   },
   searchBar: {
     flexDirection: "row",
