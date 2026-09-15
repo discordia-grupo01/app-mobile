@@ -15,6 +15,17 @@ type AuthScreen = AuthMode | "forgot-password";
 function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
   const [authScreen, setAuthScreen] = useState<AuthScreen>("login");
+  const [justRegistered, setJustRegistered] = useState(false);
+
+  function handleSwitchMode(mode: AuthScreen) {
+    setAuthScreen(mode);
+    setJustRegistered(false);
+  }
+
+  function handleRegistered() {
+    setJustRegistered(true);
+    setAuthScreen("login");
+  }
 
   if (isLoading) {
     return (
@@ -29,16 +40,20 @@ function AppContent() {
   }
 
   if (authScreen === "forgot-password") {
-    return <ForgotPasswordScreen onBack={() => setAuthScreen("login")} />;
+    return <ForgotPasswordScreen onBack={() => handleSwitchMode("login")} />;
   }
 
   return authScreen === "login" ? (
     <LoginScreen
-      onSwitchMode={setAuthScreen}
+      onSwitchMode={handleSwitchMode}
       onForgotPassword={() => setAuthScreen("forgot-password")}
+      justRegistered={justRegistered}
     />
   ) : (
-    <RegisterScreen onSwitchMode={setAuthScreen} />
+    <RegisterScreen
+      onSwitchMode={handleSwitchMode}
+      onRegistered={handleRegistered}
+    />
   );
 }
 

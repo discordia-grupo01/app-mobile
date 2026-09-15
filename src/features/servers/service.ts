@@ -233,7 +233,7 @@ const LEAVE_REASON_MESSAGES: Record<string, string> = {
 
 export async function leaveServer(
   serverId: string,
-  userId: number | string,
+  userId: string,
 ): Promise<LeaveServerActionResult> {
   try {
     await apiFetch<void>(`/v1/servers/${serverId}/members/${userId}`, {

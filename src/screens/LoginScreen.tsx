@@ -16,11 +16,13 @@ import { colors } from "../theme/colors";
 interface LoginScreenProps {
   onSwitchMode: (mode: AuthMode) => void;
   onForgotPassword: () => void;
+  justRegistered?: boolean;
 }
 
 export function LoginScreen({
   onSwitchMode,
   onForgotPassword,
+  justRegistered = false,
 }: LoginScreenProps) {
   return (
     <KeyboardAvoidingView
@@ -52,6 +54,7 @@ export function LoginScreen({
           <LoginForm
             onSwitchToRegister={() => onSwitchMode("register")}
             onForgotPassword={onForgotPassword}
+            justRegistered={justRegistered}
           />
         </View>
       </ScrollView>

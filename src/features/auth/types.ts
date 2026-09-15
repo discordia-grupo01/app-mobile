@@ -1,12 +1,12 @@
-/** Usuario tal como lo devuelve identify-service. */
+/** Usuario tal como lo devuelve identify-service. El id es un UUID (string), no un numero. */
 export interface User {
-  id: number;
+  id: string;
   name: string;
   email: string;
   created_at: string;
 }
 
-/** Respuesta OK de `POST /v1/login` y `POST /v1/users`. */
+/** Respuesta OK de `POST /v1/login`. */
 export interface AuthResponse {
   user: User;
   token: string;
@@ -43,9 +43,14 @@ export interface LoginErrors {
   password?: string;
 }
 
-/** Resultado del intento de registro para la vista (POST /v1/users tambien devuelve token: auto-login). */
+/**
+ * Resultado del intento de registro para la vista. `POST /v1/users` ya NO
+ * devuelve token (registrarse no deja la sesion iniciada, igual que en
+ * web-client): la vista redirige a la pantalla de login con un aviso de
+ * exito y el usuario ingresa con sus credenciales.
+ */
 export type RegisterActionResult =
-  { ok: true; user: User; token: string } | { ok: false; message: string };
+  { ok: true } | { ok: false; message: string };
 
 /** Valores del formulario de registro. */
 export interface RegisterValues {

@@ -7,12 +7,8 @@ import type {
   PublicUser,
   RegisterActionResult,
   RegisterValues,
+  User,
 } from "./types";
-
-/**
- * Servicio de llamadas HTTP a identify-service (via el Gateway):
- * `/v1/users` (registro), `/v1/login`, `/v1/logout` y `/v1/password-recovery`.
- */
 
 const NETWORK_ERROR_MESSAGE =
   "No hay conexión con el servidor. Revisá tu conexión a internet e intentá de nuevo.";
@@ -21,7 +17,7 @@ export async function registerService(
   values: RegisterValues,
 ): Promise<RegisterActionResult> {
   try {
-    const data = await apiFetch<AuthResponse>("/v1/users", {
+    await apiFetch<User>("/v1/users", {
       method: "POST",
       body: JSON.stringify({
         name: values.name.trim(),
@@ -30,7 +26,7 @@ export async function registerService(
       }),
     });
 
-    return { ok: true, user: data.user, token: data.token };
+    return { ok: true };
   } catch (err) {
     if (err instanceof NetworkError) {
       return { ok: false, message: NETWORK_ERROR_MESSAGE };
@@ -90,14 +86,6 @@ export async function logoutService(token?: string | null): Promise<void> {
   } catch {}
 }
 
-/**
- * Perfil publico de otro usuario (`GET /v1/users/:id`), para pintar
- * nombre/avatar en listas como el picker de "Transferir propiedad"
- * (`TransferOwnershipModal`). Es "best effort": si falla (red, 404, etc.)
- * devuelve `null` en vez de tirar, para que el llamador pueda mostrar un
- * fallback (inicial del ID) en vez de romper toda la lista por un solo
- * perfil que no cargo.
- */
 export async function getPublicUser(
   userId: string,
 ): Promise<PublicUser | null> {
@@ -110,12 +98,6 @@ export async function getPublicUser(
   }
 }
 
-/**
- * Solicita el envio del mail de recuperacion. El backend responde 202
- * exista o no el correo (para no permitir enumerar cuentas registradas), asi
- * que un `ok: true` solo confirma que la solicitud se proceso, no que el
- * email este registrado.
- */
 export async function forgotPasswordService(
   email: string,
 ): Promise<ForgotPasswordActionResult> {
