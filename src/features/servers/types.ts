@@ -3,6 +3,15 @@ export interface Channel {
   name: string;
   kind: "text" | "voice";
   position: number;
+  category_id: string | null;
+  topic: string | null;
+}
+
+export interface Category {
+  id: string;
+  server_id: string;
+  name: string;
+  position: number;
 }
 
 export interface ServerSummary {
@@ -12,6 +21,7 @@ export interface ServerSummary {
   owner_id: string;
   created_at: string;
   channels: Channel[];
+  categories: Category[];
 }
 
 export interface ServersApiErrorBody {
@@ -89,6 +99,14 @@ export type GenerateInviteActionResult =
 export type RevokeInviteActionResult =
   { ok: true } | { ok: false; message: string };
 
+/**
+ * Resultado de `GET /v1/servers/:id/invites`. Trae TODAS las invitaciones del
+ * server (activas, revocadas o vencidas), más nuevas primero -- el back no
+ * filtra por estado ni limita a una activa por server.
+ */
+export type ListInvitationsActionResult =
+  { ok: true; invitations: Invitation[] } | { ok: false; message: string };
+
 export type OwnershipTransferStatus = "pending" | "accepted" | "rejected";
 
 export interface OwnershipTransfer {
@@ -130,3 +148,36 @@ export interface MemberListResponse {
 export type ListMembersActionResult =
   | { ok: true; members: Member[]; total: number }
   | { ok: false; message: string };
+
+export interface CreateChannelFieldErrors {
+  name?: string;
+  kind?: string;
+}
+
+/** Resultado de `POST /v1/servers/:id/channels`. */
+export type CreateChannelActionResult =
+  | { ok: true; channel: Channel }
+  | { ok: false; message: string; fieldErrors?: CreateChannelFieldErrors };
+
+export interface CategoryFieldErrors {
+  name?: string;
+}
+
+/** Resultado de `POST /v1/servers/:id/categories`. */
+export type CreateCategoryActionResult =
+  | { ok: true; category: Category }
+  | { ok: false; message: string; fieldErrors?: CategoryFieldErrors };
+
+export interface UpdateChannelFieldErrors {
+  name?: string;
+}
+
+export type UpdateChannelActionResult =
+  | { ok: true; channel: Channel }
+  | { ok: false; message: string; fieldErrors?: UpdateChannelFieldErrors };
+
+export type DeleteChannelActionResult =
+  { ok: true } | { ok: false; message: string };
+
+export type ReorderChannelsActionResult =
+  { ok: true } | { ok: false; message: string };

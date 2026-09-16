@@ -2,16 +2,13 @@ import { Feather } from "@expo/vector-icons";
 import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-import { forgotPasswordService } from "../../features/auth/service";
-import type { ForgotPasswordErrors } from "../../features/auth/types";
-import {
-  hasErrors,
-  validateForgotPassword,
-} from "../../features/auth/validation";
-import { colors } from "../../theme/colors";
+import { forgotPasswordService } from "../service";
+import type { ForgotPasswordErrors } from "../types";
+import { hasErrors, validateForgotPassword } from "../validation";
+import { colors } from "../../../theme/colors";
 
-import { Button } from "../ui/Button";
-import { TextField } from "../ui/TextField";
+import { Button } from "../../../components/ui/Button";
+import { TextField } from "../../../components/ui/TextField";
 
 interface ForgotPasswordFormProps {
   onBack: () => void;

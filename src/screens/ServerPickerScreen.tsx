@@ -1,8 +1,8 @@
 import { Feather } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 
-import { ServerRail } from "../components/servers/ServerRail";
-import { UserProfileBar } from "../components/servers/UserProfileBar";
+import { ServerRail } from "../features/servers/components/rail/ServerRail";
+import { UserProfileBar } from "../features/servers/components/account/UserProfileBar";
 import type { ServerListItem } from "../features/servers/types";
 import { colors } from "../theme/colors";
 

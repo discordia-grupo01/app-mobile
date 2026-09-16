@@ -8,7 +8,7 @@ import {
   View,
 } from "react-native";
 
-import { ForgotPasswordForm } from "../components/auth/ForgotPasswordForm";
+import { ForgotPasswordForm } from "../features/auth/components/ForgotPasswordForm";
 import { colors } from "../theme/colors";
 
 interface ForgotPasswordScreenProps {

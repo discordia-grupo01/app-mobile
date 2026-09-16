@@ -15,11 +15,11 @@ import {
   View,
 } from "react-native";
 
-import { colors } from "../../theme/colors";
-import { createServer } from "../../features/servers/service";
-import type { ServerSummary } from "../../features/servers/types";
-import { Button } from "../ui/Button";
-import { ServerAvatar } from "./ServerAvatar";
+import { colors } from "../../../../theme/colors";
+import { createServer } from "../../api";
+import type { ServerSummary } from "../../types";
+import { Button } from "../../../../components/ui/Button";
+import { ServerAvatar } from "../ServerAvatar";
 
 const MAX_NAME = 100;
 const MAX_FILE_MB = 20;

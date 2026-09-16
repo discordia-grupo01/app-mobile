@@ -9,9 +9,9 @@ import {
   View,
 } from "react-native";
 
-import type { LeaveServerActionResult } from "../../features/servers/types";
-import { colors } from "../../theme/colors";
-import { Button } from "../ui/Button";
+import type { LeaveServerActionResult } from "../../types";
+import { colors } from "../../../../theme/colors";
+import { Button } from "../../../../components/ui/Button";
 
 interface LeaveServerModalProps {
   visible: boolean;

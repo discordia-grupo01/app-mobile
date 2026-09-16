@@ -8,7 +8,7 @@ import {
   View,
 } from "react-native";
 
-import { colors } from "../../theme/colors";
+import { colors } from "../../../../theme/colors";
 
 interface AddServerSheetProps {
   visible: boolean;

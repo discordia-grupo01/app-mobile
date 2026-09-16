@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-import { useAuth } from "../../features/auth/auth-context";
-import type { LoginErrors } from "../../features/auth/types";
-import { hasErrors, validateLogin } from "../../features/auth/validation";
-import { colors } from "../../theme/colors";
+import { useAuth } from "../auth-context";
+import type { LoginErrors } from "../types";
+import { hasErrors, validateLogin } from "../validation";
+import { colors } from "../../../theme/colors";
 
-import { GoogleIcon } from "../icons/GoogleIcon";
-import { Button } from "../ui/Button";
-import { TextField } from "../ui/TextField";
+import { GoogleIcon } from "../../../components/icons/GoogleIcon";
+import { Button } from "../../../components/ui/Button";
+import { TextField } from "../../../components/ui/TextField";
 
 interface LoginFormProps {
   onSwitchToRegister: () => void;

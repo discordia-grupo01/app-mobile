@@ -60,6 +60,9 @@ export function Button({
                 ? styles.textSecondary
                 : styles.textPrimary,
             ]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
           >
             {title}
           </Text>
@@ -81,7 +84,7 @@ const styles = StyleSheet.create({
   button: {
     borderRadius: 12,
     paddingVertical: 14,
-    paddingHorizontal: 20,
+    paddingHorizontal: 14,
     alignItems: "center",
     justifyContent: "center",
     width: "100%",
@@ -105,6 +108,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    width: "100%",
   },
   iconLeftWrapper: {
     marginRight: 8,
@@ -115,6 +119,8 @@ const styles = StyleSheet.create({
   text: {
     fontSize: 14,
     fontWeight: "700",
+    textAlign: "center",
+    flexShrink: 1,
   },
   textPrimary: {
     color: "#ffffff",

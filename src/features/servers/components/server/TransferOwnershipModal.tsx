@@ -14,14 +14,11 @@ import {
   View,
 } from "react-native";
 
-import { getPublicUser } from "../../features/auth/service";
-import {
-  initiateOwnershipTransfer,
-  listMembers,
-} from "../../features/servers/service";
-import { colors } from "../../theme/colors";
-import { Button } from "../ui/Button";
-import { ServerAvatar } from "./ServerAvatar";
+import { getPublicUser } from "../../../../features/auth/service";
+import { initiateOwnershipTransfer, listMembers } from "../../api";
+import { colors } from "../../../../theme/colors";
+import { Button } from "../../../../components/ui/Button";
+import { ServerAvatar } from "../ServerAvatar";
 
 interface TransferOwnershipModalProps {
   visible: boolean;

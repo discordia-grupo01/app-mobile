@@ -8,8 +8,8 @@ import {
   View,
 } from "react-native";
 
-import type { ThemePreference } from "../../lib/storage";
-import { colors } from "../../theme/colors";
+import type { ThemePreference } from "../../../../lib/storage";
+import { colors } from "../../../../theme/colors";
 
 interface AppearanceSheetProps {
   visible: boolean;
