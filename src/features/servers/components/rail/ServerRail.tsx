@@ -2,10 +2,10 @@ import { Feather } from "@expo/vector-icons";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { serverIconUrl } from "../../features/servers/service";
-import type { ServerListItem } from "../../features/servers/types";
-import { colors } from "../../theme/colors";
-import { ServerAvatar } from "./ServerAvatar";
+import { serverIconUrl } from "../../api";
+import type { ServerListItem } from "../../types";
+import { colors } from "../../../../theme/colors";
+import { ServerAvatar } from "../ServerAvatar";
 
 export const RAIL_WIDTH = 72;
 

@@ -8,21 +8,25 @@ import {
   View,
 } from "react-native";
 
-import { colors } from "../../theme/colors";
+import type { Channel } from "../../types";
+import { colors } from "../../../../theme/colors";
 
-interface AddServerSheetProps {
+interface ChannelOptionsSheetProps {
   visible: boolean;
+  channel: Channel | null;
   onClose: () => void;
-  onCreatePress: () => void;
-  onJoinPress: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
 }
 
-export function AddServerSheet({
+/** Menú de "..." de un canal (equivalente al popover de web-client). */
+export function ChannelOptionsSheet({
   visible,
+  channel,
   onClose,
-  onCreatePress,
-  onJoinPress,
-}: AddServerSheetProps) {
+  onEdit,
+  onDelete,
+}: ChannelOptionsSheetProps) {
   return (
     <Modal
       transparent
@@ -35,40 +39,42 @@ export function AddServerSheet({
 
         <View style={styles.sheet}>
           <View style={styles.handle} />
-          <Text style={styles.title}>Agregar servidor</Text>
+
+          {channel ? (
+            <View style={styles.titleRow}>
+              <Feather
+                name={channel.kind === "text" ? "hash" : "volume-2"}
+                size={14}
+                color={colors.textSubtle}
+              />
+              <Text style={styles.title} numberOfLines={1}>
+                {channel.name}
+              </Text>
+            </View>
+          ) : null}
 
           <TouchableOpacity
             activeOpacity={0.75}
             style={styles.option}
-            onPress={onCreatePress}
+            onPress={onEdit}
           >
-            <View style={[styles.optionIcon, styles.optionIconAccent]}>
-              <Feather name="plus" size={19} color={colors.sky} />
+            <View style={styles.optionIcon}>
+              <Feather name="edit-2" size={16} color={colors.info} />
             </View>
-            <View style={styles.optionTextWrap}>
-              <Text style={styles.optionTitle}>Crear servidor</Text>
-              <Text style={styles.optionDescription}>
-                Elegí un nombre e ícono para tu propio servidor.
-              </Text>
-            </View>
-            <Feather name="chevron-right" size={18} color={colors.textSubtle} />
+            <Text style={styles.optionTitle}>Editar Canal</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             activeOpacity={0.75}
             style={styles.option}
-            onPress={onJoinPress}
+            onPress={onDelete}
           >
-            <View style={styles.optionIcon}>
-              <Feather name="link-2" size={19} color={colors.info} />
+            <View style={[styles.optionIcon, styles.optionIconDanger]}>
+              <Feather name="trash-2" size={16} color={colors.danger} />
             </View>
-            <View style={styles.optionTextWrap}>
-              <Text style={styles.optionTitle}>Unirme con enlace</Text>
-              <Text style={styles.optionDescription}>
-                Pegá un código o link de invitación.
-              </Text>
-            </View>
-            <Feather name="chevron-right" size={18} color={colors.textSubtle} />
+            <Text style={[styles.optionTitle, styles.optionTitleDanger]}>
+              Eliminar Canal
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -108,11 +114,18 @@ const styles = StyleSheet.create({
     backgroundColor: colors.borderStrong,
     marginBottom: 16,
   },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 10,
+    paddingHorizontal: 8,
+  },
   title: {
-    fontSize: 17,
+    flex: 1,
+    fontSize: 14,
     fontWeight: "700",
-    color: colors.text,
-    marginBottom: 14,
+    color: colors.textSubtle,
   },
   option: {
     flexDirection: "row",
@@ -123,29 +136,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   optionIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
+    width: 38,
+    height: 38,
+    borderRadius: 11,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "rgba(107,149,189,0.15)",
   },
-  optionIconAccent: {
-    backgroundColor: "rgba(36,92,107,0.3)",
-  },
-  optionTextWrap: {
-    flex: 1,
+  optionIconDanger: {
+    backgroundColor: "rgba(224,82,82,0.12)",
   },
   optionTitle: {
     fontSize: 15,
     fontWeight: "700",
     color: colors.text,
-    marginBottom: 2,
   },
-  optionDescription: {
-    fontSize: 12,
-    lineHeight: 17,
-    color: colors.textMuted,
+  optionTitleDanger: {
+    color: colors.danger,
   },
   cancelButton: {
     marginTop: 8,

@@ -13,10 +13,10 @@ import {
   View,
 } from "react-native";
 
-import { createChannel } from "../../features/servers/service";
-import type { Category, Channel } from "../../features/servers/types";
-import { colors } from "../../theme/colors";
-import { Button } from "../ui/Button";
+import { createChannel } from "../../api";
+import type { Category, Channel } from "../../types";
+import { colors } from "../../../../theme/colors";
+import { Button } from "../../../../components/ui/Button";
 
 const MAX_NAME = 100;
 

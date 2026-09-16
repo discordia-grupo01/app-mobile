@@ -2,7 +2,7 @@ import * as FileSystem from "expo-file-system/legacy";
 import { useEffect, useState } from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
 
-import { colors } from "../../theme/colors";
+import { colors } from "../../../theme/colors";
 
 interface ServerAvatarProps {
   name: string;

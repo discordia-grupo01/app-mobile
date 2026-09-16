@@ -1,0 +1,456 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+================================================================
+File Summary
+================================================================
+
+Purpose:
+--------
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+
+File Format:
+------------
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  a. A separator line (================)
+  b. The file path (File: path/to/file)
+  c. Another separator line
+  d. The full contents of the file
+  e. A blank line
+
+Usage Guidelines:
+-----------------
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+
+Notes:
+------
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+
+
+================================================================
+Directory Structure
+================================================================
+.githooks/
+  pre-commit
+.github/
+  workflows/
+    ci.yml
+assets/
+  android-icon-background.png
+  android-icon-foreground.png
+  android-icon-monochrome.png
+  favicon.png
+  icon.png
+  splash-icon.png
+src/
+  components/
+    .gitkeep
+  hooks/
+    .gitkeep
+  lib/
+    api-client.ts
+    constants.ts
+    env.ts
+.env.example
+.gitignore
+.prettierrc
+app.json
+App.tsx
+eslint.config.js
+index.ts
+package.json
+README.md
+tsconfig.json
+
+================================================================
+Files
+================================================================
+
+================
+File: .githooks/pre-commit
+================
+#!/usr/bin/env bash
+# Autoformatea los archivos staged antes de cada commit.
+# Se activa una vez por clone con: git config core.hooksPath .githooks
+
+STAGED=$(git diff --cached --name-only --diff-filter=ACM -- "*.ts" "*.tsx" "*.js" "*.jsx")
+
+if [ -z "$STAGED" ]; then
+  exit 0
+fi
+
+echo "Formateando con prettier..."
+npx prettier --write $STAGED
+
+git add $STAGED
+
+exit 0
+
+================
+File: .github/workflows/ci.yml
+================
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test
+
+================
+File: src/components/.gitkeep
+================
+
+
+================
+File: src/hooks/.gitkeep
+================
+
+
+================
+File: src/lib/api-client.ts
+================
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+import { env } from "./env";
+
+export async function apiFetch(path: string, options: RequestInit = {}) {
+  const token = await AsyncStorage.getItem("token");
+  const res = await fetch(`${env.apiUrl}${path}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options.headers,
+    },
+  });
+  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  return res.json();
+}
+
+================
+File: src/lib/constants.ts
+================
+export const APP_NAME = "Discordia";
+
+================
+File: src/lib/env.ts
+================
+export const env = {
+  apiUrl: process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3000",
+};
+
+================
+File: .env.example
+================
+EXPO_PUBLIC_API_URL=http://localhost:3000
+
+================
+File: .gitignore
+================
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# local env files
+.env*.local
+
+# typescript
+*.tsbuildinfo
+
+# generated native folders
+/ios
+/android
+
+================
+File: .prettierrc
+================
+{
+  "trailingComma": "all"
+}
+
+================
+File: app.json
+================
+{
+  "expo": {
+    "name": "app-mobile",
+    "slug": "app-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}
+
+================
+File: App.tsx
+================
+import { StatusBar } from "expo-status-bar";
+import { StyleSheet, Text, View } from "react-native";
+
+import { APP_NAME } from "./src/lib/constants";
+
+export default function App() {
+  return (
+    <View style={styles.container}>
+      <Text>{APP_NAME} - App Mobile</Text>
+      <StatusBar style="auto" />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+});
+
+================
+File: eslint.config.js
+================
+// https://docs.expo.dev/guides/using-eslint/
+const { defineConfig } = require("eslint/config");
+const expoConfig = require("eslint-config-expo/flat");
+
+module.exports = defineConfig([
+  expoConfig,
+  {
+    ignores: ["dist/*"],
+  },
+]);
+
+================
+File: index.ts
+================
+import { registerRootComponent } from "expo";
+
+import App from "./App";
+
+// registerRootComponent calls AppRegistry.registerComponent('main', () => App);
+// It also ensures that whether you load the app in Expo Go or in a native build,
+// the environment is set up appropriately
+registerRootComponent(App);
+
+================
+File: package.json
+================
+{
+  "name": "app-mobile",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "dependencies": {
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "expo": "~57.0.20",
+    "expo-status-bar": "~57.0.1",
+    "react": "19.2.3",
+    "react-native": "0.86.3"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.2",
+    "eslint": "^9.0.0",
+    "eslint-config-expo": "~57.0.2",
+    "jest": "^30",
+    "jest-expo": "~57.0.5",
+    "prettier": "^3.3.0",
+    "typescript": "~6.0.3"
+  },
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "lint": "expo lint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "jest --passWithNoTests",
+    "typecheck": "tsc --noEmit"
+  },
+  "private": true,
+  "jest": {
+    "preset": "jest-expo"
+  }
+}
+
+================
+File: README.md
+================
+# discordia-app-mobile
+
+Cliente mobile de Discordia (React Native + Expo).
+
+## Stack
+
+- Lenguaje: TypeScript
+- Framework: React Native (Expo, SDK 57)
+- Testing: Jest (`jest-expo`)
+
+## Setup local
+
+```bash
+cp .env.example .env
+npm install
+npm start
+```
+
+Desde ahí, Expo CLI muestra un QR para abrir la app en el celular (con Expo Go) o las opciones para emulador Android / simulador iOS.
+
+## Variables de entorno
+
+| Variable            | Default               | Descripcion                                                                                                                    |
+| ------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| EXPO_PUBLIC_API_URL | http://localhost:3000 | URL base del Gateway al que le pega la app. Debe empezar con `EXPO_PUBLIC_` para que Expo la incluya en el bundle del cliente. |
+
+`.env.example` solo trae la estructura (sin valores sensibles). Los valores reales van en tu propio `.env`, que nunca se sube (ya esta en `.gitignore`).
+
+## Estructura de carpetas
+
+```
+app-mobile/
+├── App.tsx                    entrypoint: componente raiz de la app
+├── index.ts                   registra App.tsx como root component (no editar)
+├── app.json                   configuracion de Expo (nombre, icono, splash, etc.)
+├── eslint.config.js           config de ESLint (eslint-config-expo)
+├── src/
+│   ├── components/             componentes de UI reutilizables
+│   ├── hooks/                  hooks de React reutilizables
+│   └── lib/
+│       ├── api-client.ts      cliente HTTP hacia el Gateway (token via AsyncStorage)
+│       ├── constants.ts       constantes de la app (ej. APP_NAME)
+│       └── env.ts              lectura centralizada de variables de entorno
+├── assets/                    iconos y splash screen
+├── .github/
+│   └── workflows/
+│       └── ci.yml             format:check, lint, typecheck y test en cada PR/push a main
+├── .githooks/
+│   └── pre-commit             hook de prettier local
+└── .env.example                estructura de variables de entorno (sin valores sensibles)
+```
+
+Las carpetas `src/components/` y `src/hooks/` vienen vacias (`.gitkeep`) porque el codigo de negocio todavia no existe en el template. Las carpetas `ios/` y `android/` no existen (son generadas por Expo solo si se hace un build nativo/prebuild) y estan en `.gitignore`.
+
+## Comandos
+
+- `npm start` - levanta el bundler de Expo (dev server).
+- `npm run android` / `npm run ios` / `npm run web` - abre la app en esa plataforma.
+- `npm run lint` - corre ESLint (`eslint-config-expo`).
+- `npm run format` / `npm run format:check` - formatea o chequea el formato con Prettier.
+- `npm run typecheck` - chequea tipos con `tsc --noEmit`.
+- `npm run test` - corre los tests con Jest.
+
+## Tests
+
+```bash
+npm run test
+```
+
+## Formateo automatico
+
+Este repo se autoformatea con Prettier en cada commit. Activalo una vez por clone:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+Si usan VS Code con la extension oficial de Prettier, tambien formatea al guardar (ya configurado en .vscode/settings.json).
+
+El CI corre `npm run format:check` como red de seguridad (falla si encuentra archivos sin formatear), por si alguien clono sin activar el hook.
+
+## Notas
+
+- Usa Expo (no React Native CLI bare) para que el CI no dependa de Xcode/Android SDK y para poder buildear en la nube con EAS mas adelante.
+- El cliente HTTP (`src/lib/api-client.ts`) sigue el mismo patron que `front-template`, pero usa `AsyncStorage` en vez de `localStorage` para guardar el token (React Native no tiene `localStorage`).
+
+================
+File: tsconfig.json
+================
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true
+  }
+}
+
+
+
+
+
+================================================================
+End of Codebase
+================================================================

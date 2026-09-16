@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, PanResponder, StyleSheet, View } from "react-native";
 
-import type { Channel } from "../../features/servers/types";
+import type { Channel } from "../../types";
 
 /**
  * Alto fijo de cada fila mientras se arrastra. No hay ninguna librería de

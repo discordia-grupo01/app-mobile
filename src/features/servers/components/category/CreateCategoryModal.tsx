@@ -13,28 +13,41 @@ import {
   View,
 } from "react-native";
 
-import { updateChannel } from "../../features/servers/service";
-import type { Channel } from "../../features/servers/types";
-import { colors } from "../../theme/colors";
-import { Button } from "../ui/Button";
+import { createCategory } from "../../api";
+import type { Category } from "../../types";
+import { colors } from "../../../../theme/colors";
+import { Button } from "../../../../components/ui/Button";
 
 const MAX_NAME = 100;
 
-interface EditChannelModalProps {
-  channel: Channel;
+interface CreateCategoryModalProps {
+  visible: boolean;
+  serverId: string;
   onClose: () => void;
-  onUpdated: (channel: Channel) => void;
+  onCreated: (category: Category) => void;
 }
 
-export function EditChannelModal({
-  channel,
+export function CreateCategoryModal({
+  visible,
+  serverId,
   onClose,
-  onUpdated,
-}: EditChannelModalProps) {
-  const [name, setName] = useState(channel.name);
+  onCreated,
+}: CreateCategoryModalProps) {
+  const [name, setName] = useState("");
   const [nameError, setNameError] = useState("");
   const [globalError, setGlobalError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [wasVisible, setWasVisible] = useState(visible);
+
+  if (visible !== wasVisible) {
+    setWasVisible(visible);
+    if (visible) {
+      setName("");
+      setNameError("");
+      setGlobalError("");
+      setIsSubmitting(false);
+    }
+  }
 
   const trimmed = name.trim();
 
@@ -43,12 +56,12 @@ export function EditChannelModal({
     setGlobalError("");
 
     if (!trimmed) {
-      setNameError("Ingresá un nombre para el canal.");
+      setNameError("Ingresá un nombre para la categoría.");
       return;
     }
 
     setIsSubmitting(true);
-    const result = await updateChannel(channel.id, { name: trimmed });
+    const result = await createCategory(serverId, trimmed);
     setIsSubmitting(false);
 
     if (!result.ok) {
@@ -57,11 +70,16 @@ export function EditChannelModal({
       return;
     }
 
-    onUpdated(result.channel);
+    onCreated(result.category);
   }
 
   return (
-    <Modal transparent visible animationType="fade" onRequestClose={onClose}>
+    <Modal
+      transparent
+      visible={visible}
+      animationType="fade"
+      onRequestClose={onClose}
+    >
       <KeyboardAvoidingView
         style={styles.backdrop}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -84,17 +102,10 @@ export function EditChannelModal({
             showsVerticalScrollIndicator={false}
           >
             <View style={styles.header}>
-              <Feather
-                name={channel.kind === "text" ? "hash" : "volume-2"}
-                size={18}
-                color={colors.textSubtle}
-              />
-              <View style={styles.headerTextWrap}>
-                <Text style={styles.headerTitle}>Editar Canal</Text>
-                <Text style={styles.headerSubtitle} numberOfLines={1}>
-                  #{channel.name}
-                </Text>
-              </View>
+              <Text style={styles.headerTitle}>Crear Categoría</Text>
+              <Text style={styles.headerSubtitle}>
+                Agrupa canales relacionados bajo un mismo título.
+              </Text>
             </View>
 
             {globalError ? (
@@ -105,11 +116,10 @@ export function EditChannelModal({
             ) : null}
 
             <View style={styles.field}>
-              <Text style={styles.fieldLabel}>NOMBRE DEL CANAL</Text>
+              <Text style={styles.fieldLabel}>NOMBRE DE LA CATEGORÍA</Text>
               <View
                 style={[styles.input, nameError ? styles.inputError : null]}
               >
-                <Text style={styles.inputHash}>#</Text>
                 <TextInput
                   value={name}
                   onChangeText={(text) => {
@@ -117,9 +127,10 @@ export function EditChannelModal({
                     setNameError("");
                     setGlobalError("");
                   }}
+                  placeholder="NUEVA CATEGORÍA"
+                  placeholderTextColor={colors.textSubtle}
                   maxLength={MAX_NAME + 10}
                   autoFocus
-                  autoCapitalize="none"
                   style={styles.inputText}
                 />
               </View>
@@ -143,7 +154,7 @@ export function EditChannelModal({
                 style={{ flex: 1, width: undefined }}
               />
               <Button
-                title="Guardar cambios"
+                title="Crear Categoría"
                 onPress={handleSubmit}
                 disabled={!trimmed}
                 isLoading={isSubmitting}
@@ -194,14 +205,8 @@ const styles = StyleSheet.create({
     paddingTop: 32,
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
     marginBottom: 20,
     paddingRight: 24,
-  },
-  headerTextWrap: {
-    flex: 1,
   },
   headerTitle: {
     fontSize: 17,
@@ -211,7 +216,8 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: 12,
     color: colors.textSubtle,
-    marginTop: 2,
+    marginTop: 4,
+    lineHeight: 17,
   },
   errorBanner: {
     flexDirection: "row",
@@ -253,10 +259,6 @@ const styles = StyleSheet.create({
   },
   inputError: {
     borderColor: colors.danger,
-  },
-  inputHash: {
-    color: colors.textSubtle,
-    fontSize: 14,
   },
   inputText: {
     flex: 1,

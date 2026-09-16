@@ -9,8 +9,8 @@ import {
   View,
 } from "react-native";
 
-import { AuthTabs, type AuthMode } from "../components/auth/AuthTabs";
-import { RegisterForm } from "../components/auth/RegisterForm";
+import { AuthTabs, type AuthMode } from "../features/auth/components/AuthTabs";
+import { RegisterForm } from "../features/auth/components/RegisterForm";
 import { colors } from "../theme/colors";
 
 interface RegisterScreenProps {

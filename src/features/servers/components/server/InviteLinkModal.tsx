@@ -18,9 +18,9 @@ import {
   inviteLinkText,
   listInvitations,
   revokeInvite,
-} from "../../features/servers/service";
-import type { Invitation } from "../../features/servers/types";
-import { colors } from "../../theme/colors";
+} from "../../api";
+import type { Invitation } from "../../types";
+import { colors } from "../../../../theme/colors";
 
 interface InviteLinkModalProps {
   visible: boolean;

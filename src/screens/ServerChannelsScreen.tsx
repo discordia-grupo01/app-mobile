@@ -10,24 +10,24 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { ChannelOptionsSheet } from "../components/servers/ChannelOptionsSheet";
-import { CreateCategoryModal } from "../components/servers/CreateCategoryModal";
-import { CreateChannelModal } from "../components/servers/CreateChannelModal";
-import { DeleteChannelModal } from "../components/servers/DeleteChannelModal";
-import { DraggableChannelList } from "../components/servers/DraggableChannelList";
-import { EditChannelModal } from "../components/servers/EditChannelModal";
-import { InviteLinkModal } from "../components/servers/InviteLinkModal";
-import { LeaveServerModal } from "../components/servers/LeaveServerModal";
-import { ServerRail } from "../components/servers/ServerRail";
-import { TransferOwnershipModal } from "../components/servers/TransferOwnershipModal";
-import { UserProfileBar } from "../components/servers/UserProfileBar";
+import { ChannelOptionsSheet } from "../features/servers/components/channel/ChannelOptionsSheet";
+import { CreateCategoryModal } from "../features/servers/components/category/CreateCategoryModal";
+import { CreateChannelModal } from "../features/servers/components/channel/CreateChannelModal";
+import { DeleteChannelModal } from "../features/servers/components/channel/DeleteChannelModal";
+import { DraggableChannelList } from "../features/servers/components/channel/DraggableChannelList";
+import { EditChannelModal } from "../features/servers/components/channel/EditChannelModal";
+import { InviteLinkModal } from "../features/servers/components/server/InviteLinkModal";
+import { LeaveServerModal } from "../features/servers/components/server/LeaveServerModal";
+import { ServerRail } from "../features/servers/components/rail/ServerRail";
+import { TransferOwnershipModal } from "../features/servers/components/server/TransferOwnershipModal";
+import { UserProfileBar } from "../features/servers/components/account/UserProfileBar";
 import type {
   Category,
   Channel,
   LeaveServerActionResult,
   ServerListItem,
 } from "../features/servers/types";
-import { reorderChannels } from "../features/servers/service";
+import { reorderChannels } from "../features/servers/api";
 import { colors } from "../theme/colors";
 
 const HEADER_HEIGHT = 52;

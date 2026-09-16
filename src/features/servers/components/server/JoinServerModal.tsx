@@ -13,15 +13,15 @@ import {
   View,
 } from "react-native";
 
-import { colors } from "../../theme/colors";
+import { colors } from "../../../../theme/colors";
 import {
   joinServerByCode,
   normalizeInviteCode,
   serverIconUrl,
-} from "../../features/servers/service";
-import type { ServerSummary } from "../../features/servers/types";
-import { Button } from "../ui/Button";
-import { ServerAvatar } from "./ServerAvatar";
+} from "../../api";
+import type { ServerSummary } from "../../types";
+import { Button } from "../../../../components/ui/Button";
+import { ServerAvatar } from "../ServerAvatar";
 
 interface JoinServerModalProps {
   visible: boolean;

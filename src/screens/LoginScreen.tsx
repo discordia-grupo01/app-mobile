@@ -9,8 +9,8 @@ import {
   View,
 } from "react-native";
 
-import { AuthTabs, type AuthMode } from "../components/auth/AuthTabs";
-import { LoginForm } from "../components/auth/LoginForm";
+import { AuthTabs, type AuthMode } from "../features/auth/components/AuthTabs";
+import { LoginForm } from "../features/auth/components/LoginForm";
 import { colors } from "../theme/colors";
 
 interface LoginScreenProps {

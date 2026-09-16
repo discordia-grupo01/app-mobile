@@ -13,9 +13,9 @@ import {
   getThemePreference,
   setThemePreference,
   type ThemePreference,
-} from "../../lib/storage";
-import { colors } from "../../theme/colors";
-import { Button } from "../ui/Button";
+} from "../../../../lib/storage";
+import { colors } from "../../../../theme/colors";
+import { Button } from "../../../../components/ui/Button";
 import { AppearanceSheet } from "./AppearanceSheet";
 
 interface UserProfileBarProps {

@@ -11,12 +11,12 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { AddServerSheet } from "../components/servers/AddServerSheet";
-import { CreateServerModal } from "../components/servers/CreateServerModal";
-import { EmptyState } from "../components/servers/EmptyState";
-import { JoinServerModal } from "../components/servers/JoinServerModal";
+import { AddServerSheet } from "../features/servers/components/rail/AddServerSheet";
+import { CreateServerModal } from "../features/servers/components/server/CreateServerModal";
+import { EmptyState } from "../features/servers/components/home/EmptyState";
+import { JoinServerModal } from "../features/servers/components/server/JoinServerModal";
 import { useAuth } from "../features/auth/auth-context";
-import { leaveServer, listMyServers } from "../features/servers/service";
+import { leaveServer, listMyServers } from "../features/servers/api";
 import type {
   LeaveServerActionResult,
   ServerListItem,

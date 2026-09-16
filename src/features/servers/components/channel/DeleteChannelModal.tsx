@@ -9,10 +9,10 @@ import {
   View,
 } from "react-native";
 
-import { deleteChannel } from "../../features/servers/service";
-import type { Channel } from "../../features/servers/types";
-import { colors } from "../../theme/colors";
-import { Button } from "../ui/Button";
+import { deleteChannel } from "../../api";
+import type { Channel } from "../../types";
+import { colors } from "../../../../theme/colors";
+import { Button } from "../../../../components/ui/Button";
 
 interface DeleteChannelModalProps {
   channel: Channel;

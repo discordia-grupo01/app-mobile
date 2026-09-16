@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
-import type { AuthMode } from "./src/components/auth/AuthTabs";
+import type { AuthMode } from "./src/features/auth/components/AuthTabs";
 import { AuthProvider, useAuth } from "./src/features/auth/auth-context";
 import { ForgotPasswordScreen } from "./src/screens/ForgotPasswordScreen";
 import { HomeScreen } from "./src/screens/HomeScreen";
