@@ -14,6 +14,7 @@ import {
   getStoredUser,
   getToken,
   setSession,
+  updateStoredUser,
 } from "../../lib/storage";
 import { loginService, logoutService, registerService } from "./service";
 import type {
@@ -32,6 +33,7 @@ interface AuthContextValue {
   login: (credentials: LoginValues) => Promise<LoginActionResult>;
   register: (values: RegisterValues) => Promise<RegisterActionResult>;
   logout: () => Promise<void>;
+  updateUser: (user: User) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -56,7 +58,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => setAuthEventHandlers({});
   }, []);
 
-  // Cargar sesion persistida al iniciar la app
   useEffect(() => {
     async function loadStoredSession() {
       try {
@@ -74,7 +75,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         }
       } catch {
-        // Error leyendo storage, continuar como no autenticado
       } finally {
         setIsLoading(false);
       }
@@ -114,11 +114,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       await clearSession();
-    } catch {
-      // Error limpiando storage
-    }
+    } catch {}
 
     await logoutService();
+  }, []);
+
+  const updateUser = useCallback((updated: User): void => {
+    setUser(updated);
+    updateStoredUser(updated).catch(() => {});
   }, []);
 
   const value = useMemo<AuthContextValue>(
@@ -130,8 +133,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       register,
       logout,
+      updateUser,
     }),
-    [user, token, isLoading, login, register, logout],
+    [user, token, isLoading, login, register, logout, updateUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

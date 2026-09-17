@@ -21,11 +21,6 @@ const NETWORK_ERROR_MESSAGE =
   "No hay conexión con el servidor. Revisá tu conexión a internet e intentá de nuevo.";
 const SESSION_EXPIRED_MESSAGE = "Tu sesión expiró. Volvé a iniciar sesión.";
 
-/**
- * Perfil propio (`GET /v1/me/profile`). A diferencia de `getPublicUser` en
- * features/auth/service.ts (perfil de un tercero), este trae email y fecha
- * de registro.
- */
 export async function getOwnProfile(): Promise<GetOwnProfileActionResult> {
   try {
     const user = await apiFetch<User>("/v1/me/profile", { method: "GET" });
@@ -38,13 +33,6 @@ export async function getOwnProfile(): Promise<GetOwnProfileActionResult> {
   }
 }
 
-/**
- * Perfil público de otro usuario (`GET /v1/users/:id`). Es la misma
- * respuesta que `getPublicUser` (features/auth/service.ts), pero envuelta
- * como `ActionResult` con mensaje de error legible, igual que el resto de
- * esta feature -- se agrega acá en vez de cambiar la firma de
- * `getPublicUser` para no romper a quien ya la use.
- */
 export async function getPublicProfile(
   userId: string,
 ): Promise<GetPublicProfileActionResult> {
@@ -61,20 +49,6 @@ export async function getPublicProfile(
   }
 }
 
-/**
- * `PATCH /v1/me/profile` es multipart/form-data (name/description/image,
- * todos opcionales para el backend, pero acá se mandan siempre name +
- * description igual que en web-client's own-profile-modal.tsx: así ninguno
- * de los tres flujos -- nombre, descripción, foto -- depende de que el
- * backend interprete "campo ausente" como "no tocar", y el chequeo de
- * profile_service.go de "al menos un campo" nunca falla).
- *
- * Sigue el mismo patrón que `createServer` en features/servers/api/servers.ts:
- * `FileSystem.uploadAsync` (MULTIPART) cuando hay imagen nueva -- ya que
- * necesita leer un archivo local por URI --, `fetch` con `FormData` cuando
- * no la hay, y un reintento manual si el access token venció (esto no pasa
- * por `apiFetch`, que fuerza `Content-Type: application/json`).
- */
 async function performProfileUpdate(
   params: { name: string; description: string; image?: PickedProfileImage },
   token: string | null,
@@ -159,7 +133,6 @@ export async function updateOwnProfile(params: {
   return { ok: true, user: body as User };
 }
 
-/** `PUT /v1/me/status`: el backend devuelve el usuario completo actualizado. */
 export async function updateStatus(
   statusText: string,
 ): Promise<UpdateStatusActionResult> {
@@ -183,13 +156,6 @@ export async function updateStatus(
   }
 }
 
-/**
- * `DELETE /v1/me/status` devuelve 204 sin cuerpo (a diferencia de `PUT`,
- * ver profile_handler.go `DeleteStatus`), así que acá se arma el usuario
- * actualizado a partir de `currentUser` en vez de parsear una respuesta que
- * no existe -- `ClearStatus` en el backend siempre deja `status_text` y
- * `status_emoji` en "".
- */
 export async function clearStatus(
   currentUser: User,
 ): Promise<UpdateStatusActionResult> {

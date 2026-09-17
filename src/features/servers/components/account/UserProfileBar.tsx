@@ -14,8 +14,12 @@ import {
   setThemePreference,
   type ThemePreference,
 } from "../../../../lib/storage";
+import { env } from "../../../../lib/env";
 import { colors } from "../../../../theme/colors";
 import { Button } from "../../../../components/ui/Button";
+import { useAuth } from "../../../auth/auth-context";
+import { OwnProfileModal } from "../../../profile/components/OwnProfileModal";
+import { ServerAvatar } from "../ServerAvatar";
 import { AppearanceSheet } from "./AppearanceSheet";
 
 interface UserProfileBarProps {
@@ -24,12 +28,15 @@ interface UserProfileBarProps {
 }
 
 export function UserProfileBar({ userName, onLogout }: UserProfileBarProps) {
+  const { user } = useAuth();
   const [isConfirmVisible, setIsConfirmVisible] = useState(false);
   const [isAppearanceVisible, setIsAppearanceVisible] = useState(false);
+  const [isProfileVisible, setIsProfileVisible] = useState(false);
   const [themePreference, setThemePreferenceState] =
     useState<ThemePreference>("dark");
-  const displayName = userName?.trim() || "Mi cuenta";
-  const initial = displayName.charAt(0).toUpperCase() || "?";
+  const displayName = (user?.name ?? userName)?.trim() || "Mi cuenta";
+  const avatarSrc = user?.avatar_url ? `${env.apiUrl}${user.avatar_url}` : null;
+  const statusText = user?.status_text?.trim();
 
   useEffect(() => {
     let cancelled = false;
@@ -54,16 +61,26 @@ export function UserProfileBar({ userName, onLogout }: UserProfileBarProps) {
   return (
     <>
       <View style={styles.profileBar}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{initial}</Text>
-          <View style={styles.statusDot} />
-        </View>
-        <View style={styles.textWrap}>
-          <Text style={styles.name} numberOfLines={1}>
-            {displayName}
-          </Text>
-          <Text style={styles.status}>En línea</Text>
-        </View>
+        <TouchableOpacity
+          style={styles.identityWrap}
+          onPress={() => setIsProfileVisible(true)}
+          activeOpacity={0.75}
+          accessibilityRole="button"
+          accessibilityLabel="Ver mi perfil"
+        >
+          <View style={styles.avatarWrap}>
+            <ServerAvatar name={displayName} uri={avatarSrc} size={44} />
+            <View style={styles.statusDot} />
+          </View>
+          <View style={styles.textWrap}>
+            <Text style={styles.name} numberOfLines={1}>
+              {displayName}
+            </Text>
+            <Text style={styles.status} numberOfLines={1}>
+              {statusText || "En línea"}
+            </Text>
+          </View>
+        </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.iconButton}
@@ -84,6 +101,11 @@ export function UserProfileBar({ userName, onLogout }: UserProfileBarProps) {
         </TouchableOpacity>
       </View>
 
+      <OwnProfileModal
+        visible={isProfileVisible}
+        onClose={() => setIsProfileVisible(false)}
+      />
+
       <AppearanceSheet
         visible={isAppearanceVisible}
         selected={themePreference}
@@ -91,13 +113,6 @@ export function UserProfileBar({ userName, onLogout }: UserProfileBarProps) {
         onClose={() => setIsAppearanceVisible(false)}
       />
 
-      {/*
-        Antes esto era un Alert.alert nativo: en Android se ve como un
-        dialogo blanco del sistema, totalmente fuera del tema oscuro de la
-        app. Este modal reusa el mismo patron (backdrop + card) que
-        CreateServerModal/JoinServerModal para que el flujo de cerrar
-        sesion se sienta parte de Discordia y no del sistema operativo.
-      */}
       <Modal
         transparent
         visible={isConfirmVisible}
@@ -159,18 +174,15 @@ const styles = StyleSheet.create({
     borderTopColor: colors.border,
     backgroundColor: colors.bgUserPanel,
   },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+  identityWrap: {
+    flex: 1,
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.accent,
+    gap: 8,
+    minWidth: 0,
   },
-  avatarText: {
-    color: "#ffffff",
-    fontSize: 17,
-    fontWeight: "700",
+  avatarWrap: {
+    position: "relative",
   },
   statusDot: {
     position: "absolute",
