@@ -16,6 +16,16 @@ interface ButtonProps extends TouchableOpacityProps {
   variant?: "primary" | "secondary" | "danger";
   iconRight?: keyof typeof Feather.glyphMap;
   iconLeft?: React.ReactNode;
+  /**
+   * Por defecto el botón ocupa el 100% del ancho del padre (útil para CTAs
+   * de una sola columna). Pasar `false` cuando va en una fila junto a otro
+   * botón (ej. Cancelar/Guardar) -- antes esto se intentaba anular pasando
+   * `style={{ width: undefined }}`, pero en la práctica no siempre cancelaba
+   * el `width: "100%"` de la base (el botón terminaba empujado fuera de la
+   * fila). Con este prop directamente no se agrega `width: "100%"` a los
+   * estilos, sin depender de que un `style` posterior lo pise.
+   */
+  fullWidth?: boolean;
 }
 
 export function Button({
@@ -25,6 +35,7 @@ export function Button({
   variant = "primary",
   iconRight,
   iconLeft,
+  fullWidth = true,
   style,
   ...props
 }: ButtonProps) {
@@ -34,6 +45,7 @@ export function Button({
     <TouchableOpacity
       style={[
         styles.button,
+        fullWidth ? styles.buttonFullWidth : null,
         variant === "primary"
           ? styles.buttonPrimary
           : variant === "secondary"
@@ -87,8 +99,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     alignItems: "center",
     justifyContent: "center",
-    width: "100%",
     minHeight: 48,
+  },
+  buttonFullWidth: {
+    width: "100%",
   },
   buttonPrimary: {
     backgroundColor: colors.accent,

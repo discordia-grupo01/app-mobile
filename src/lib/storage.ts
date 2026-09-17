@@ -53,6 +53,10 @@ export async function updateToken(token: string): Promise<void> {
   await secureStorage.setItem(TOKEN_KEY, token);
 }
 
+export async function updateStoredUser(user: unknown): Promise<void> {
+  await AsyncStorage.setItem(USER_KEY, JSON.stringify(user));
+}
+
 export async function clearSession(): Promise<void> {
   await secureStorage.removeItem(TOKEN_KEY);
   await AsyncStorage.removeItem(USER_KEY);
