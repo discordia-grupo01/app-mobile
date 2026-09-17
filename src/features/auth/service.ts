@@ -76,6 +76,36 @@ export async function loginService(
   }
 }
 
+export async function loginWithGoogleService(
+  idToken: string,
+): Promise<LoginActionResult> {
+  try {
+    const data = await apiFetch<AuthResponse>("/v1/oauth/google", {
+      method: "POST",
+      body: JSON.stringify({ id_token: idToken }),
+    });
+
+    return { ok: true, user: data.user, token: data.token };
+  } catch (err) {
+    if (err instanceof NetworkError) {
+      return { ok: false, message: NETWORK_ERROR_MESSAGE };
+    }
+    if (err instanceof ApiError && err.status === 503) {
+      return {
+        ok: false,
+        message:
+          "Google no está disponible en este momento. Iniciá sesión con tu correo y contraseña.",
+      };
+    }
+
+    return {
+      ok: false,
+      message:
+        "No pudimos verificar tu cuenta de Google. Iniciá sesión con tu correo y contraseña.",
+    };
+  }
+}
+
 export async function logoutService(token?: string | null): Promise<void> {
   if (!token) return;
   try {
