@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 
+import { refreshAccessToken, setAuthEventHandlers } from "../../lib/api-client";
 import {
   clearSession,
   getStoredUser,
@@ -40,16 +41,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  useEffect(() => {
+    setAuthEventHandlers({
+      onTokenRefreshed: (newToken, refreshedUser) => {
+        setToken(newToken);
+        setUser(refreshedUser as User);
+      },
+      onSessionExpired: () => {
+        setToken(null);
+        setUser(null);
+      },
+    });
+
+    return () => setAuthEventHandlers({});
+  }, []);
+
   // Cargar sesion persistida al iniciar la app
   useEffect(() => {
     async function loadStoredSession() {
       try {
-        const storedToken = await getToken();
         const storedUser = await getStoredUser<User>();
+        const storedToken = await getToken();
 
-        if (storedToken && storedUser) {
-          setToken(storedToken);
+        if (storedUser && storedToken) {
           setUser(storedUser);
+          setToken(storedToken);
+
+          const freshToken = await refreshAccessToken();
+          if (!freshToken) {
+            setUser(null);
+            setToken(null);
+          }
         }
       } catch {
         // Error leyendo storage, continuar como no autenticado
@@ -66,14 +88,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const result = await loginService(credentials);
 
       if (result.ok) {
-        setToken(result.token);
-        setUser(result.user);
-
         try {
           await setSession(result.token, result.user);
-        } catch {
-          // Error escribiendo storage local
-        }
+        } catch {}
+
+        setToken(result.token);
+        setUser(result.user);
       }
 
       return result;
@@ -81,9 +101,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  // POST /v1/users ya NO devuelve token: registrarse no deja la sesion
-  // iniciada, igual que en web-client. La vista redirige a login con un
-  // aviso de exito y el usuario ingresa con sus credenciales.
   const register = useCallback(
     async (values: RegisterValues): Promise<RegisterActionResult> => {
       return registerService(values);
@@ -92,7 +109,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(async (): Promise<void> => {
-    const currentToken = token;
     setToken(null);
     setUser(null);
 
@@ -102,8 +118,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Error limpiando storage
     }
 
-    await logoutService(currentToken);
-  }, [token]);
+    await logoutService();
+  }, []);
 
   const value = useMemo<AuthContextValue>(
     () => ({

@@ -8,13 +8,6 @@ const THEME_KEY = "discordia_theme_preference";
 
 export type ThemePreference = "dark" | "light";
 
-/**
- * El token de sesion (JWT) es el unico dato sensible que persistimos: se
- * guarda cifrado en el Keychain (iOS) / Keystore (Android) via
- * expo-secure-store, en vez de AsyncStorage (que es un archivo plano, sin
- * cifrar)
- *
- */
 const secureStorage = {
   getItem(key: string): Promise<string | null> {
     if (Platform.OS === "web") {
@@ -54,6 +47,10 @@ export async function getStoredUser<T>(): Promise<T | null> {
 export async function setSession(token: string, user: unknown): Promise<void> {
   await secureStorage.setItem(TOKEN_KEY, token);
   await AsyncStorage.setItem(USER_KEY, JSON.stringify(user));
+}
+
+export async function updateToken(token: string): Promise<void> {
+  await secureStorage.setItem(TOKEN_KEY, token);
 }
 
 export async function clearSession(): Promise<void> {
