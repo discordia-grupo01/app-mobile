@@ -77,6 +77,11 @@ export function CustomStatusEditor({
 
       {isEditing ? (
         <View style={styles.editWrap}>
+          <View style={styles.counterRow}>
+            <Text style={styles.counter}>
+              {draft.length}/{MAX_CUSTOM_STATUS}
+            </Text>
+          </View>
           <TextInput
             ref={inputRef}
             value={draft}
@@ -87,27 +92,22 @@ export function CustomStatusEditor({
             editable={!isSubmitting}
             style={styles.input}
           />
-          <View style={styles.editFooter}>
-            <Text style={styles.counter}>
-              {draft.length}/{MAX_CUSTOM_STATUS}
-            </Text>
-            <View style={styles.editActions}>
-              <Button
-                title="Cancelar"
-                variant="secondary"
-                onPress={() => setIsEditing(false)}
-                disabled={isSubmitting}
-                fullWidth={false}
-                style={styles.actionButton}
-              />
-              <Button
-                title="Guardar"
-                onPress={handleSave}
-                isLoading={isSubmitting}
-                fullWidth={false}
-                style={styles.actionButton}
-              />
-            </View>
+          <View style={styles.editActions}>
+            <Button
+              title="Cancelar"
+              variant="secondary"
+              onPress={() => setIsEditing(false)}
+              disabled={isSubmitting}
+              fullWidth={false}
+              style={styles.actionButton}
+            />
+            <Button
+              title="Guardar"
+              onPress={handleSave}
+              isLoading={isSubmitting}
+              fullWidth={false}
+              style={styles.actionButton}
+            />
           </View>
         </View>
       ) : (
@@ -185,10 +185,8 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: 13,
   },
-  editFooter: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+  counterRow: {
+    alignItems: "flex-end",
   },
   counter: {
     fontSize: 11,
@@ -196,7 +194,7 @@ const styles = StyleSheet.create({
   },
   editActions: {
     flexDirection: "row",
-    gap: 8,
+    gap: 12,
   },
   actionButton: {
     flex: 1,
