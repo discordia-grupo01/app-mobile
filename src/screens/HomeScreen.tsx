@@ -133,6 +133,10 @@ export function HomeScreen() {
         <StatusBar style="light" />
         <ChannelScreen
           channel={selectedChannel}
+          serverId={selectedServer.id}
+          authToken={token}
+          currentUserId={user ? String(user.id) : null}
+          isOwner={user != null && String(user.id) === selectedServer.owner_id}
           onBack={() => setSelectedChannelId(null)}
         />
       </View>
@@ -148,7 +152,6 @@ export function HomeScreen() {
           servers={servers}
           authToken={token}
           userName={user?.name}
-          currentUserId={user ? String(user.id) : null}
           isOwner={user != null && String(user.id) === selectedServer.owner_id}
           onSelectChannel={setSelectedChannelId}
           onSelectHome={handleSelectHome}

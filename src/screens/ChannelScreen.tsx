@@ -1,18 +1,32 @@
 import { Feather } from "@expo/vector-icons";
+import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { MembersSidebar } from "../features/servers/components/channel/MembersSidebar";
 import type { Channel } from "../features/servers/types";
 import { colors } from "../theme/colors";
 
 interface ChannelScreenProps {
   channel: Channel;
+  serverId: string;
+  authToken?: string | null;
+  currentUserId?: string | null;
+  isOwner?: boolean;
   onBack: () => void;
 }
 
-export function ChannelScreen({ channel, onBack }: ChannelScreenProps) {
+export function ChannelScreen({
+  channel,
+  serverId,
+  authToken,
+  currentUserId,
+  isOwner = false,
+  onBack,
+}: ChannelScreenProps) {
   const isText = channel.kind === "text";
   const insets = useSafeAreaInsets();
+  const [isMembersVisible, setIsMembersVisible] = useState(false);
 
   return (
     <View style={styles.container}>
@@ -32,7 +46,24 @@ export function ChannelScreen({ channel, onBack }: ChannelScreenProps) {
         <Text style={styles.headerName} numberOfLines={1}>
           {channel.name}
         </Text>
+        <TouchableOpacity
+          onPress={() => setIsMembersVisible(true)}
+          style={styles.membersButton}
+          accessibilityLabel="Ver miembros"
+          accessibilityRole="button"
+        >
+          <Feather name="users" size={20} color={colors.textMuted} />
+        </TouchableOpacity>
       </View>
+
+      <MembersSidebar
+        visible={isMembersVisible}
+        serverId={serverId}
+        currentUserId={currentUserId}
+        authToken={authToken}
+        isOwner={isOwner}
+        onClose={() => setIsMembersVisible(false)}
+      />
 
       <View style={styles.content}>
         <View style={styles.iconCircle}>
@@ -80,6 +111,12 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
   },
   backButton: {
+    width: 34,
+    height: 34,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  membersButton: {
     width: 34,
     height: 34,
     alignItems: "center",

@@ -1,9 +1,6 @@
-import { getToken } from "./storage";
+import { getToken, updateToken } from "./storage";
 import { env } from "./env";
 
-/**
- Error tipado con el status HTTP, para que cada feature
- */
 export class ApiError extends Error {
   status: number;
   body?: unknown;
@@ -16,13 +13,6 @@ export class ApiError extends Error {
   }
 }
 
-/**
- * Error de conectividad: la request nunca llego a obtener una respuesta HTTP
- * (sin conexion a internet, el host de `env.apiUrl` es inalcanzable desde la
- * red actual del dispositivo, timeout, etc). Se distingue de `ApiError` para
- * no mostrarle al usuario un mensaje que sugiera un error del backend cuando
- * en realidad el celular no pudo ni conectarse al gateway.
- */
 export class NetworkError extends Error {
   constructor(cause?: unknown) {
     super("No se pudo conectar con el servidor.");
@@ -31,10 +21,59 @@ export class NetworkError extends Error {
   }
 }
 
-/** Cliente HTTP unico hacia el backend (via el API Gateway) */
+interface RefreshResponseBody {
+  user: unknown;
+  token: string;
+}
+
+type AuthEventHandlers = {
+  onTokenRefreshed?: (token: string, user: unknown) => void;
+  onSessionExpired?: () => void;
+};
+
+let authEventHandlers: AuthEventHandlers = {};
+
+export function setAuthEventHandlers(handlers: AuthEventHandlers): void {
+  authEventHandlers = handlers;
+}
+let refreshPromise: Promise<string | null> | null = null;
+
+export function refreshAccessToken(): Promise<string | null> {
+  if (!refreshPromise) {
+    refreshPromise = doRefresh().finally(() => {
+      refreshPromise = null;
+    });
+  }
+  return refreshPromise;
+}
+
+async function doRefresh(): Promise<string | null> {
+  try {
+    const res = await fetch(`${env.apiUrl}/v1/refresh`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    if (!res.ok) {
+      authEventHandlers.onSessionExpired?.();
+      return null;
+    }
+
+    const data = (await res.json()) as RefreshResponseBody;
+    await updateToken(data.token);
+    authEventHandlers.onTokenRefreshed?.(data.token, data.user);
+    return data.token;
+  } catch {
+    return null;
+  }
+}
+
+/** Cliente HTTP unico hacia el backend (via el API Gateway). */
 export async function apiFetch<T = unknown>(
   path: string,
   options: RequestInit = {},
+  isRetry = false,
 ): Promise<T> {
   const token = await getToken();
 
@@ -42,6 +81,7 @@ export async function apiFetch<T = unknown>(
   try {
     res = await fetch(`${env.apiUrl}${path}`, {
       ...options,
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -49,10 +89,18 @@ export async function apiFetch<T = unknown>(
       },
     });
   } catch (err) {
-    // `fetch` rechaza (TypeError: Network request failed) cuando no hay
-    // conexion o el host no es alcanzable, sin llegar a devolver un
-    // Response. No es un error de la API: es que nunca hubo respuesta.
     throw new NetworkError(err);
+  }
+
+  // El access token dura 15 min: cualquier request se tope
+  // con uno vencido. En vez de mostrarle un error al usuario, se intenta
+  // renovar una sola vez (con el refresh token de la cookie) y se reintenta
+  // la request original antes de rendirse.
+  if (res.status === 401 && !isRetry && path !== "/v1/login") {
+    const newToken = await refreshAccessToken();
+    if (newToken) {
+      return apiFetch<T>(path, options, true);
+    }
   }
 
   let body: unknown = null;
