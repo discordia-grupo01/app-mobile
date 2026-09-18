@@ -151,7 +151,6 @@ export function HomeScreen() {
           servers={servers}
           authToken={token}
           userName={user?.name}
-          currentUserId={user ? String(user.id) : null}
           isOwner={user != null && String(user.id) === selectedServer.owner_id}
           onSelectChannel={setSelectedChannelId}
           onSelectHome={handleSelectHome}

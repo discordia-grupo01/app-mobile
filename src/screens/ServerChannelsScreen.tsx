@@ -19,7 +19,6 @@ import { EditChannelModal } from "../features/servers/components/channel/EditCha
 import { InviteLinkModal } from "../features/servers/components/server/InviteLinkModal";
 import { LeaveServerModal } from "../features/servers/components/server/LeaveServerModal";
 import { ServerRail } from "../features/servers/components/rail/ServerRail";
-import { TransferOwnershipModal } from "../features/servers/components/server/TransferOwnershipModal";
 import { UserProfileBar } from "../features/servers/components/account/UserProfileBar";
 import type {
   Category,
@@ -40,8 +39,7 @@ interface ServerChannelsScreenProps {
   servers: ServerListItem[];
   authToken: string | null;
   userName?: string | null;
-  currentUserId?: string | null;
-  /** Si el usuario actual es el dueño del servidor (solo el dueño puede transferirlo, y crear/editar/eliminar canales y categorías). */
+  /** Si el usuario actual es el dueño del servidor (solo el dueño puede crear/editar/eliminar canales y categorías). */
   isOwner?: boolean;
   onSelectChannel: (channelId: string) => void;
   onSelectHome: () => void;
@@ -100,7 +98,6 @@ export function ServerChannelsScreen({
   servers,
   authToken,
   userName,
-  currentUserId,
   isOwner = false,
   onSelectChannel,
   onSelectHome,
@@ -113,7 +110,6 @@ export function ServerChannelsScreen({
   const [isServerMenuOpen, setIsServerMenuOpen] = useState(false);
   const [isLeaveModalVisible, setIsLeaveModalVisible] = useState(false);
   const [isInviteModalVisible, setIsInviteModalVisible] = useState(false);
-  const [isTransferModalVisible, setIsTransferModalVisible] = useState(false);
   const [isCreateChannelVisible, setIsCreateChannelVisible] = useState(false);
   const [createChannelDefaultCategoryId, setCreateChannelDefaultCategoryId] =
     useState<string | null>(null);
@@ -182,14 +178,6 @@ export function ServerChannelsScreen({
     onServerUpdated({ ...server, channels: remaining });
   }
 
-  /**
-   * Reordena canales dentro de un mismo balde (una categoría, o `null` para
-   * "sin categoría"), arrastrando -- igual que `handleDragEnd` en
-   * `server-view.tsx` de web-client, pero limitado a same-bucket reorder
-   * (esta historia de usuario no incluye mover canales entre categorías).
-   * Actualiza la UI de forma optimista y revierte si el back rechaza el
-   * cambio.
-   */
   async function handleChannelsReordered(
     categoryId: string | null,
     orderedIds: string[],
@@ -274,24 +262,41 @@ export function ServerChannelsScreen({
               >
                 <Feather name="user-plus" size={16} color={colors.info} />
                 <Text style={styles.serverMenuItemTextNeutral}>
-                  Invitar gente
+                  Invitar miembros
                 </Text>
               </TouchableOpacity>
 
               {isOwner ? (
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  style={styles.serverMenuItem}
-                  onPress={() => {
-                    setIsServerMenuOpen(false);
-                    setIsTransferModalVisible(true);
-                  }}
-                >
-                  <Feather name="shield" size={16} color={colors.info} />
-                  <Text style={styles.serverMenuItemTextNeutral}>
-                    Transferir propiedad
-                  </Text>
-                </TouchableOpacity>
+                <>
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    style={styles.serverMenuItem}
+                    onPress={() => {
+                      setIsServerMenuOpen(false);
+                      setCreateChannelDefaultCategoryId(null);
+                      setIsCreateChannelVisible(true);
+                    }}
+                  >
+                    <Feather name="plus" size={16} color={colors.info} />
+                    <Text style={styles.serverMenuItemTextNeutral}>
+                      Crear canal
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    style={styles.serverMenuItem}
+                    onPress={() => {
+                      setIsServerMenuOpen(false);
+                      setIsCreateCategoryVisible(true);
+                    }}
+                  >
+                    <Feather name="folder-plus" size={16} color={colors.info} />
+                    <Text style={styles.serverMenuItemTextNeutral}>
+                      Crear categoría
+                    </Text>
+                  </TouchableOpacity>
+                </>
               ) : null}
 
               <View style={styles.serverMenuDivider} />
@@ -312,36 +317,6 @@ export function ServerChannelsScreen({
             </View>
           </>
         ) : null}
-
-        {isOwner ? (
-          <View style={styles.toolbarRow}>
-            <TouchableOpacity
-              activeOpacity={0.7}
-              style={styles.toolbarButton}
-              onPress={() => {
-                setCreateChannelDefaultCategoryId(null);
-                setIsCreateChannelVisible(true);
-              }}
-            >
-              <Feather name="plus" size={14} color={colors.textSubtle} />
-              <Text style={styles.toolbarButtonText}>Crear canal</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              activeOpacity={0.7}
-              style={styles.toolbarIconButton}
-              onPress={() => setIsCreateCategoryVisible(true)}
-              accessibilityLabel="Crear categoría"
-              accessibilityRole="button"
-            >
-              <Feather name="folder-plus" size={15} color={colors.textSubtle} />
-            </TouchableOpacity>
-          </View>
-        ) : null}
-
-        <View style={styles.searchBar}>
-          <Feather name="search" size={15} color={colors.textSubtle} />
-          <Text style={styles.searchBarText}>Buscar</Text>
-        </View>
 
         {dragError ? (
           <View style={styles.dragErrorBanner}>
@@ -504,15 +479,6 @@ export function ServerChannelsScreen({
         onClose={() => setIsInviteModalVisible(false)}
       />
       {isOwner ? (
-        <TransferOwnershipModal
-          visible={isTransferModalVisible}
-          serverId={server.id}
-          serverName={server.name}
-          currentUserId={currentUserId}
-          onClose={() => setIsTransferModalVisible(false)}
-        />
-      ) : null}
-      {isOwner ? (
         <CreateChannelModal
           visible={isCreateChannelVisible}
           serverId={server.id}
@@ -633,49 +599,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.border,
     marginVertical: 4,
     marginHorizontal: 8,
-  },
-  toolbarRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingTop: 8,
-  },
-  toolbarButton: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 7,
-  },
-  toolbarButtonText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: colors.textSubtle,
-  },
-  toolbarIconButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  searchBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginHorizontal: 12,
-    marginTop: 10,
-    borderRadius: 8,
-    backgroundColor: colors.bgInput,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-  },
-  searchBarText: {
-    fontSize: 13,
-    color: colors.textSubtle,
   },
   dragErrorBanner: {
     flexDirection: "row",
