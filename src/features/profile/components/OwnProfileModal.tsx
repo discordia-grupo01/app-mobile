@@ -273,39 +273,6 @@ export function OwnProfileModal({ visible, onClose }: OwnProfileModalProps) {
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            <View style={styles.avatarWrap}>
-              <TouchableOpacity
-                activeOpacity={0.85}
-                onPress={pickAvatar}
-                style={styles.avatarBox}
-                accessibilityLabel="Cambiar foto de perfil"
-              >
-                <View style={styles.avatarRingBg} />
-                <View style={styles.avatarInner}>
-                  <ServerAvatar
-                    name={user.name}
-                    uri={avatarSrc}
-                    size={72}
-                    borderRadius={36}
-                  />
-                  {isUploadingAvatar ? (
-                    <View style={styles.avatarUploadOverlay}>
-                      <ActivityIndicator size="small" color="#ffffff" />
-                    </View>
-                  ) : null}
-                </View>
-                <View
-                  style={[
-                    styles.avatarBadge,
-                    { backgroundColor: ACTIVITY_STATUS_COLOR[activityMode] },
-                  ]}
-                />
-              </TouchableOpacity>
-              {imageError ? (
-                <Text style={styles.imageErrorText}>{imageError}</Text>
-              ) : null}
-            </View>
-
             {globalError ? (
               <View style={styles.errorBanner}>
                 <Feather name="alert-circle" size={16} color={colors.danger} />
@@ -450,6 +417,39 @@ export function OwnProfileModal({ visible, onClose }: OwnProfileModalProps) {
 
             <MemberSince isoDate={user.created_at} />
           </ScrollView>
+
+          <View style={styles.avatarWrap}>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={pickAvatar}
+              style={styles.avatarBox}
+              accessibilityLabel="Cambiar foto de perfil"
+            >
+              <View style={styles.avatarRingBg} />
+              <View style={styles.avatarInner}>
+                <ServerAvatar
+                  name={user.name}
+                  uri={avatarSrc}
+                  size={72}
+                  borderRadius={36}
+                />
+                {isUploadingAvatar ? (
+                  <View style={styles.avatarUploadOverlay}>
+                    <ActivityIndicator size="small" color="#ffffff" />
+                  </View>
+                ) : null}
+              </View>
+              <View
+                style={[
+                  styles.avatarBadge,
+                  { backgroundColor: ACTIVITY_STATUS_COLOR[activityMode] },
+                ]}
+              />
+            </TouchableOpacity>
+            {imageError ? (
+              <Text style={styles.imageErrorText}>{imageError}</Text>
+            ) : null}
+          </View>
         </View>
       </KeyboardAvoidingView>
     </Modal>
@@ -476,12 +476,14 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 22,
+    paddingTop: 68,
     paddingBottom: 26,
   },
   avatarWrap: {
-    marginTop: -28,
-    marginBottom: 14,
-    alignSelf: "flex-start",
+    position: "absolute",
+    top: 72,
+    left: 22,
+    zIndex: 10,
   },
   avatarBox: {
     width: 80,
