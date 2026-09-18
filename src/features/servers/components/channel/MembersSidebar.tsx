@@ -34,6 +34,7 @@ interface MembersSidebarProps {
   serverId: string;
   currentUserId?: string | null;
   authToken?: string | null;
+  isOwner?: boolean;
   onClose: () => void;
 }
 
@@ -42,6 +43,7 @@ export function MembersSidebar({
   serverId,
   currentUserId,
   authToken,
+  isOwner = false,
   onClose,
 }: MembersSidebarProps) {
   const [members, setMembers] = useState<ResolvedMember[]>([]);
@@ -250,6 +252,7 @@ export function MembersSidebar({
 
       <OwnProfileModal
         visible={isOwnProfileVisible}
+        serverId={serverId}
         onClose={() => setIsOwnProfileVisible(false)}
       />
 
@@ -257,6 +260,8 @@ export function MembersSidebar({
         visible={viewingUserId !== null}
         userId={viewingUserId}
         authToken={authToken ?? null}
+        serverId={serverId}
+        canManageRoles={isOwner}
         onClose={() => setViewingUserId(null)}
       />
     </>

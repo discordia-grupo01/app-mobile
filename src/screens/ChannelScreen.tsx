@@ -12,6 +12,7 @@ interface ChannelScreenProps {
   serverId: string;
   authToken?: string | null;
   currentUserId?: string | null;
+  isOwner?: boolean;
   onBack: () => void;
 }
 
@@ -20,6 +21,7 @@ export function ChannelScreen({
   serverId,
   authToken,
   currentUserId,
+  isOwner = false,
   onBack,
 }: ChannelScreenProps) {
   const isText = channel.kind === "text";
@@ -59,6 +61,7 @@ export function ChannelScreen({
         serverId={serverId}
         currentUserId={currentUserId}
         authToken={authToken}
+        isOwner={isOwner}
         onClose={() => setIsMembersVisible(false)}
       />
 

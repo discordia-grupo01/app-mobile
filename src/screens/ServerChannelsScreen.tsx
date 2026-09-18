@@ -476,7 +476,11 @@ export function ServerChannelsScreen({
           ) : null}
         </ScrollView>
 
-        <UserProfileBar userName={userName} onLogout={onLogout} />
+        <UserProfileBar
+          userName={userName}
+          serverId={server.id}
+          onLogout={onLogout}
+        />
       </View>
 
       <LeaveServerModal

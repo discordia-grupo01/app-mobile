@@ -24,10 +24,16 @@ import { AppearanceSheet } from "./AppearanceSheet";
 
 interface UserProfileBarProps {
   userName?: string | null;
+  /** Servidor activo, para mostrar mis roles ahí en el perfil propio. */
+  serverId?: string | null;
   onLogout: () => void;
 }
 
-export function UserProfileBar({ userName, onLogout }: UserProfileBarProps) {
+export function UserProfileBar({
+  userName,
+  serverId,
+  onLogout,
+}: UserProfileBarProps) {
   const { user } = useAuth();
   const [isConfirmVisible, setIsConfirmVisible] = useState(false);
   const [isAppearanceVisible, setIsAppearanceVisible] = useState(false);
@@ -135,6 +141,7 @@ export function UserProfileBar({ userName, onLogout }: UserProfileBarProps) {
 
       <OwnProfileModal
         visible={isProfileVisible}
+        serverId={serverId}
         onClose={() => setIsProfileVisible(false)}
       />
 

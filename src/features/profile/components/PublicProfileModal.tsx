@@ -13,6 +13,7 @@ import {
 import { colors } from "../../../theme/colors";
 import { env } from "../../../lib/env";
 import { ServerAvatar } from "../../servers/components/ServerAvatar";
+import { MemberRoleBadges } from "../../roles/components/MemberRoleBadges";
 import { getPublicProfile } from "../service";
 import type { PublicUser } from "../../auth/types";
 import { MutualServersList } from "./MutualServersList";
@@ -22,6 +23,8 @@ interface PublicProfileModalProps {
   visible: boolean;
   userId: string | null;
   authToken: string | null;
+  serverId: string;
+  canManageRoles: boolean;
   onClose: () => void;
 }
 
@@ -29,6 +32,8 @@ export function PublicProfileModal({
   visible,
   userId,
   authToken,
+  serverId,
+  canManageRoles,
   onClose,
 }: PublicProfileModalProps) {
   const [profile, setProfile] = useState<PublicUser | null>(null);
@@ -106,6 +111,7 @@ export function PublicProfileModal({
               <ScrollView
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
               >
                 <View style={styles.section}>
                   <Text style={styles.name} numberOfLines={1}>
@@ -134,6 +140,14 @@ export function PublicProfileModal({
                   serverIds={profile.mutual_server_ids}
                   authToken={authToken}
                 />
+
+                <View style={styles.section}>
+                  <MemberRoleBadges
+                    serverId={serverId}
+                    userId={profile.id}
+                    canManage={canManageRoles}
+                  />
+                </View>
               </ScrollView>
 
               <View style={styles.avatarWrap}>
