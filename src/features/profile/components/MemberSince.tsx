@@ -7,7 +7,7 @@ import { formatMemberSince } from "../format-member-since";
 export function MemberSince({ isoDate }: { isoDate: string }) {
   return (
     <View>
-      <Text style={styles.label}>CUENTA REGISTRADA</Text>
+      <Text style={styles.label}>MIEMBRO DESDE</Text>
       <View style={styles.row}>
         <Feather name="calendar" size={14} color={colors.textSubtle} />
         <Text style={styles.value}>{formatMemberSince(isoDate)}</Text>

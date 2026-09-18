@@ -342,8 +342,6 @@ export function OwnProfileModal({ visible, onClose }: OwnProfileModalProps) {
               />
             </View>
 
-            <View style={styles.divider} />
-
             <View style={styles.section}>
               <CustomStatusEditor
                 statusText={user.status_text}
@@ -352,9 +350,11 @@ export function OwnProfileModal({ visible, onClose }: OwnProfileModalProps) {
               />
             </View>
 
+            <View style={styles.divider} />
+
             <View style={styles.section}>
               <View style={styles.headerRow}>
-                <Text style={styles.label}>DESCRIPCIÓN</Text>
+                <Text style={styles.label}>SOBRE MÍ</Text>
                 {editingField !== "description" ? (
                   <TouchableOpacity
                     onPress={startEditingDescription}

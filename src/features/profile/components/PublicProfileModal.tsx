@@ -102,10 +102,40 @@ export function PublicProfileModal({
               )}
             </View>
           ) : (
-            <ScrollView
-              contentContainerStyle={styles.scrollContent}
-              showsVerticalScrollIndicator={false}
-            >
+            <>
+              <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+              >
+                <View style={styles.section}>
+                  <Text style={styles.name} numberOfLines={1}>
+                    {profile.name}
+                  </Text>
+                  {profile.status_text || profile.status_emoji ? (
+                    <View style={styles.statusBadge}>
+                      <Text style={styles.statusBadgeText} numberOfLines={1}>
+                        {profile.status_emoji ? `${profile.status_emoji} ` : ""}
+                        {profile.status_text}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+
+                <View style={styles.divider} />
+
+                <View style={styles.section}>
+                  <Text style={styles.label}>SOBRE MÍ</Text>
+                  <Text style={styles.description}>
+                    {profile.description || "Sin descripción."}
+                  </Text>
+                </View>
+
+                <MutualServersList
+                  serverIds={profile.mutual_server_ids}
+                  authToken={authToken}
+                />
+              </ScrollView>
+
               <View style={styles.avatarWrap}>
                 <View style={styles.avatarBox}>
                   <View style={styles.avatarRingBg} />
@@ -120,35 +150,7 @@ export function PublicProfileModal({
                   <View style={styles.statusDot} />
                 </View>
               </View>
-
-              <View style={styles.section}>
-                <Text style={styles.name} numberOfLines={1}>
-                  {profile.name}
-                </Text>
-                {profile.status_text || profile.status_emoji ? (
-                  <View style={styles.statusBadge}>
-                    <Text style={styles.statusBadgeText} numberOfLines={1}>
-                      {profile.status_emoji ? `${profile.status_emoji} ` : ""}
-                      {profile.status_text}
-                    </Text>
-                  </View>
-                ) : null}
-              </View>
-
-              <View style={styles.divider} />
-
-              <View style={styles.section}>
-                <Text style={styles.label}>SOBRE MÍ</Text>
-                <Text style={styles.description}>
-                  {profile.description || "Sin descripción."}
-                </Text>
-              </View>
-
-              <MutualServersList
-                serverIds={profile.mutual_server_ids}
-                authToken={authToken}
-              />
-            </ScrollView>
+            </>
           )}
         </View>
       </View>
@@ -187,12 +189,14 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 22,
+    paddingTop: 68,
     paddingBottom: 26,
   },
   avatarWrap: {
-    marginTop: -28,
-    marginBottom: 14,
-    alignSelf: "flex-start",
+    position: "absolute",
+    top: 72,
+    left: 22,
+    zIndex: 10,
   },
   avatarBox: {
     width: 80,
