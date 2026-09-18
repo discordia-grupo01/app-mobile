@@ -1,4 +1,5 @@
 import { Feather } from "@expo/vector-icons";
+import * as ImageManipulator from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
 import { useRef, useState } from "react";
 import {
@@ -36,6 +37,7 @@ const MAX_NAME = 100;
 const MAX_DESCRIPTION = 500;
 const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/gif"];
 const MAX_FILE_MB = 5;
+const MAX_AVATAR_DIMENSION = 1024;
 
 type EditingField = "name" | "description" | null;
 
@@ -201,13 +203,49 @@ export function OwnProfileModal({ visible, onClose }: OwnProfileModalProps) {
       return;
     }
 
-    setImagePreview(asset.uri);
+    let uri = asset.uri;
+    let uploadType = type;
+
+    if (
+      type !== "image/gif" &&
+      Math.max(asset.width, asset.height) > MAX_AVATAR_DIMENSION
+    ) {
+      try {
+        const resized = await ImageManipulator.manipulateAsync(
+          asset.uri,
+          [
+            {
+              resize:
+                asset.width >= asset.height
+                  ? { width: MAX_AVATAR_DIMENSION }
+                  : { height: MAX_AVATAR_DIMENSION },
+            },
+          ],
+          {
+            compress: 0.8,
+            format:
+              type === "image/png"
+                ? ImageManipulator.SaveFormat.PNG
+                : ImageManipulator.SaveFormat.JPEG,
+          },
+        );
+        uri = resized.uri;
+        uploadType = type === "image/png" ? "image/png" : "image/jpeg";
+      } catch {
+        setImageError(
+          "No pudimos procesar la imagen. Probá con otra o recortala primero.",
+        );
+        return;
+      }
+    }
+
+    setImagePreview(uri);
     setIsUploadingAvatar(true);
     await submitProfile({
       image: {
-        uri: asset.uri,
-        type,
-        name: asset.fileName ?? asset.uri.split("/").pop() ?? "avatar.jpg",
+        uri,
+        type: uploadType,
+        name: `avatar.${uploadType === "image/png" ? "png" : uploadType === "image/gif" ? "gif" : "jpg"}`,
       },
     });
     setIsUploadingAvatar(false);
