@@ -136,10 +136,12 @@ export function PublicProfileModal({
                   </Text>
                 </View>
 
-                <MutualServersList
-                  serverIds={profile.mutual_server_ids}
-                  authToken={authToken}
-                />
+                <View style={styles.section}>
+                  <MutualServersList
+                    serverIds={profile.mutual_server_ids}
+                    authToken={authToken}
+                  />
+                </View>
 
                 <View style={styles.section}>
                   <MemberRoleBadges
