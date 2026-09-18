@@ -160,7 +160,9 @@ export function MembersSidebar({
             size={36}
             borderRadius={18}
           />
-          {isSelf ? <View style={styles.presenceDot} /> : null}
+          {/* Estado de actividad mock ("en línea"): todavía no hay presencia
+              real en identify-service */}
+          <View style={styles.presenceDot} />
         </View>
         <View style={styles.memberInfo}>
           <Text style={styles.memberName} numberOfLines={1}>
