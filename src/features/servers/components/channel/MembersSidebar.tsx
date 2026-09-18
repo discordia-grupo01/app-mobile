@@ -49,12 +49,20 @@ export function MembersSidebar({
   const [errorMessage, setErrorMessage] = useState("");
   const [isOwnProfileVisible, setIsOwnProfileVisible] = useState(false);
   const [viewingUserId, setViewingUserId] = useState<string | null>(null);
+  const [wasVisible, setWasVisible] = useState(visible);
   const insets = useSafeAreaInsets();
+
+  if (visible !== wasVisible) {
+    setWasVisible(visible);
+    if (visible) {
+      setMembers([]);
+      setIsLoading(true);
+      setErrorMessage("");
+    }
+  }
 
   const fetchMembers = useCallback(() => {
     let cancelled = false;
-    setIsLoading(true);
-    setErrorMessage("");
 
     listMembers(serverId, { limit: 100 }).then((result) => {
       if (cancelled) return;

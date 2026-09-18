@@ -31,7 +31,6 @@ import { colors } from "../theme/colors";
 
 const HEADER_HEIGHT = 52;
 const MENU_TOP = 58;
-/** Clave usada en `collapsedSectionIds` para el balde "Sin categoría". */
 const UNCATEGORIZED_KEY = "none";
 
 interface ServerChannelsScreenProps {
@@ -39,7 +38,6 @@ interface ServerChannelsScreenProps {
   servers: ServerListItem[];
   authToken: string | null;
   userName?: string | null;
-  /** Si el usuario actual es el dueño del servidor (solo el dueño puede crear/editar/eliminar canales y categorías). */
   isOwner?: boolean;
   onSelectChannel: (channelId: string) => void;
   onSelectHome: () => void;
@@ -47,7 +45,6 @@ interface ServerChannelsScreenProps {
   onAddServer: () => void;
   onLogout: () => void;
   onLeaveServer: (serverId: string) => Promise<LeaveServerActionResult>;
-  /** Notifica al padre (dueño del estado de `servers`) que este server cambió. */
   onServerUpdated: (server: ServerListItem) => void;
 }
 
