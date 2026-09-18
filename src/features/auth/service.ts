@@ -76,13 +76,9 @@ export async function loginService(
   }
 }
 
-export async function logoutService(token?: string | null): Promise<void> {
-  if (!token) return;
+export async function logoutService(): Promise<void> {
   try {
-    await apiFetch("/v1/logout", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    await apiFetch("/v1/logout", { method: "POST" });
   } catch {}
 }
 

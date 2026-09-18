@@ -1,6 +1,11 @@
 import * as FileSystem from "expo-file-system/legacy";
 
-import { ApiError, NetworkError, apiFetch } from "../../../lib/api-client";
+import {
+  ApiError,
+  NetworkError,
+  apiFetch,
+  refreshAccessToken,
+} from "../../../lib/api-client";
 import { env } from "../../../lib/env";
 import { getToken } from "../../../lib/storage";
 import type {
@@ -67,42 +72,58 @@ const CREATE_REASON_MESSAGES: Record<string, string> = {
   icon_unreadable: "No pudimos leer esa imagen. Probá con otra.",
 };
 
-export async function createServer(
+async function uploadServer(
   params: CreateServerParams,
-): Promise<CreateServerActionResult> {
-  const token = await getToken();
+  token: string | null,
+): Promise<{ status: number; rawBody: string }> {
   const authHeaders: Record<string, string> | undefined = token
     ? { Authorization: `Bearer ${token}` }
     : undefined;
 
+  if (params.icon) {
+    const uploadResult = await FileSystem.uploadAsync(
+      `${env.apiUrl}/v1/servers`,
+      params.icon.uri,
+      {
+        httpMethod: "POST",
+        uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+        fieldName: "icon",
+        mimeType: params.icon.type,
+        parameters: { name: params.name },
+        headers: authHeaders,
+      },
+    );
+    return { status: uploadResult.status, rawBody: uploadResult.body };
+  }
+
+  const formData = new FormData();
+  formData.append("name", params.name);
+  const res = await fetch(`${env.apiUrl}/v1/servers`, {
+    method: "POST",
+    headers: authHeaders,
+    body: formData,
+  });
+  return { status: res.status, rawBody: await res.text() };
+}
+
+export async function createServer(
+  params: CreateServerParams,
+): Promise<CreateServerActionResult> {
   let status: number;
   let rawBody: string;
   try {
-    if (params.icon) {
-      const uploadResult = await FileSystem.uploadAsync(
-        `${env.apiUrl}/v1/servers`,
-        params.icon.uri,
-        {
-          httpMethod: "POST",
-          uploadType: FileSystem.FileSystemUploadType.MULTIPART,
-          fieldName: "icon",
-          mimeType: params.icon.type,
-          parameters: { name: params.name },
-          headers: authHeaders,
-        },
-      );
-      status = uploadResult.status;
-      rawBody = uploadResult.body;
-    } else {
-      const formData = new FormData();
-      formData.append("name", params.name);
-      const res = await fetch(`${env.apiUrl}/v1/servers`, {
-        method: "POST",
-        headers: authHeaders,
-        body: formData,
-      });
-      status = res.status;
-      rawBody = await res.text();
+    const token = await getToken();
+    const first = await uploadServer(params, token);
+    status = first.status;
+    rawBody = first.rawBody;
+
+    if (status === 401) {
+      const newToken = await refreshAccessToken();
+      if (newToken) {
+        const retry = await uploadServer(params, newToken);
+        status = retry.status;
+        rawBody = retry.rawBody;
+      }
     }
   } catch (err) {
     if (__DEV__) {

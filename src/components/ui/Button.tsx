@@ -16,6 +16,7 @@ interface ButtonProps extends TouchableOpacityProps {
   variant?: "primary" | "secondary" | "danger";
   iconRight?: keyof typeof Feather.glyphMap;
   iconLeft?: React.ReactNode;
+  fullWidth?: boolean;
 }
 
 export function Button({
@@ -25,6 +26,7 @@ export function Button({
   variant = "primary",
   iconRight,
   iconLeft,
+  fullWidth = true,
   style,
   ...props
 }: ButtonProps) {
@@ -34,6 +36,7 @@ export function Button({
     <TouchableOpacity
       style={[
         styles.button,
+        fullWidth ? styles.buttonFullWidth : null,
         variant === "primary"
           ? styles.buttonPrimary
           : variant === "secondary"
@@ -87,8 +90,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     alignItems: "center",
     justifyContent: "center",
-    width: "100%",
     minHeight: 48,
+  },
+  buttonFullWidth: {
+    width: "100%",
   },
   buttonPrimary: {
     backgroundColor: colors.accent,
