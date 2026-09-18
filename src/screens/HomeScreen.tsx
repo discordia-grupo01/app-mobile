@@ -136,6 +136,7 @@ export function HomeScreen() {
           serverId={selectedServer.id}
           authToken={token}
           currentUserId={user ? String(user.id) : null}
+          isOwner={user != null && String(user.id) === selectedServer.owner_id}
           onBack={() => setSelectedChannelId(null)}
         />
       </View>

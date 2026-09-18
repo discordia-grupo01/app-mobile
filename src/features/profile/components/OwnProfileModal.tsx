@@ -22,6 +22,7 @@ import { colors } from "../../../theme/colors";
 import { env } from "../../../lib/env";
 import { useAuth } from "../../auth/auth-context";
 import { ServerAvatar } from "../../servers/components/ServerAvatar";
+import { MemberRoleBadges } from "../../roles/components/MemberRoleBadges";
 import {
   ACTIVITY_STATUS_COLOR,
   ActivityStatusPicker,
@@ -43,10 +44,15 @@ type EditingField = "name" | "description" | null;
 
 interface OwnProfileModalProps {
   visible: boolean;
+  serverId?: string | null;
   onClose: () => void;
 }
 
-export function OwnProfileModal({ visible, onClose }: OwnProfileModalProps) {
+export function OwnProfileModal({
+  visible,
+  serverId,
+  onClose,
+}: OwnProfileModalProps) {
   const { user, updateUser } = useAuth();
 
   const [wasVisible, setWasVisible] = useState(visible);
@@ -415,7 +421,19 @@ export function OwnProfileModal({ visible, onClose }: OwnProfileModalProps) {
               )}
             </View>
 
-            <MemberSince isoDate={user.created_at} />
+            <View style={styles.section}>
+              <MemberSince isoDate={user.created_at} />
+            </View>
+
+            {serverId ? (
+              <View style={styles.section}>
+                <MemberRoleBadges
+                  serverId={serverId}
+                  userId={user.id}
+                  canManage={false}
+                />
+              </View>
+            ) : null}
           </ScrollView>
 
           <View style={styles.avatarWrap}>

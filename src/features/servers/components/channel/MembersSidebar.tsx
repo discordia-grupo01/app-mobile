@@ -2,7 +2,7 @@ import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Modal,
+  BackHandler,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -34,6 +34,7 @@ interface MembersSidebarProps {
   serverId: string;
   currentUserId?: string | null;
   authToken?: string | null;
+  isOwner?: boolean;
   onClose: () => void;
 }
 
@@ -42,6 +43,7 @@ export function MembersSidebar({
   serverId,
   currentUserId,
   authToken,
+  isOwner = false,
   onClose,
 }: MembersSidebarProps) {
   const [members, setMembers] = useState<ResolvedMember[]>([]);
@@ -113,6 +115,18 @@ export function MembersSidebar({
     return fetchMembers();
   }, [visible, fetchMembers]);
 
+  useEffect(() => {
+    if (!visible) return;
+    const subscription = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        onClose();
+        return true;
+      },
+    );
+    return () => subscription.remove();
+  }, [visible, onClose]);
+
   const owners = members.filter((m) => m.isOwner);
   const others = members.filter((m) => !m.isOwner);
 
@@ -146,7 +160,9 @@ export function MembersSidebar({
             size={36}
             borderRadius={18}
           />
-          {isSelf ? <View style={styles.presenceDot} /> : null}
+          {/* Estado de actividad mock ("en línea"): todavía no hay presencia
+              real en identify-service */}
+          <View style={styles.presenceDot} />
         </View>
         <View style={styles.memberInfo}>
           <Text style={styles.memberName} numberOfLines={1}>
@@ -173,74 +189,72 @@ export function MembersSidebar({
 
   return (
     <>
-      <Modal
-        transparent
-        visible={visible}
-        animationType="fade"
-        onRequestClose={onClose}
-      >
-        <View style={styles.backdrop}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+      {visible ? (
+        <View style={styles.overlayContainer} pointerEvents="box-none">
+          <View style={styles.backdrop}>
+            <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
 
-          <View style={[styles.panel, { paddingTop: insets.top + 14 }]}>
-            <View style={styles.header}>
-              <Text style={styles.headerTitle}>Miembros</Text>
-              <TouchableOpacity
-                onPress={onClose}
-                style={styles.closeButton}
-                accessibilityRole="button"
-                accessibilityLabel="Cerrar lista de miembros"
+            <View style={[styles.panel, { paddingTop: insets.top + 14 }]}>
+              <View style={styles.header}>
+                <Text style={styles.headerTitle}>Miembros</Text>
+                <TouchableOpacity
+                  onPress={onClose}
+                  style={styles.closeButton}
+                  accessibilityRole="button"
+                  accessibilityLabel="Cerrar lista de miembros"
+                >
+                  <Feather name="x" size={16} color={colors.textMuted} />
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
               >
-                <Feather name="x" size={16} color={colors.textMuted} />
-              </TouchableOpacity>
+                {isLoading && members.length === 0 ? (
+                  <ActivityIndicator
+                    size="small"
+                    color={colors.accentBright}
+                    style={styles.loadingIndicator}
+                  />
+                ) : errorMessage ? (
+                  <Text style={styles.errorText}>{errorMessage}</Text>
+                ) : (
+                  <>
+                    {owners.length > 0 ? (
+                      <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>
+                          PROPIETARIO — {owners.length}
+                        </Text>
+                        {owners.map(renderMemberRow)}
+                      </View>
+                    ) : null}
+
+                    {others.length > 0 ? (
+                      <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>
+                          MIEMBRO — {others.length}
+                        </Text>
+                        {others.map(renderMemberRow)}
+                      </View>
+                    ) : null}
+
+                    {owners.length === 0 && others.length === 0 ? (
+                      <Text style={styles.emptyText}>
+                        Todavía no hay miembros para mostrar.
+                      </Text>
+                    ) : null}
+                  </>
+                )}
+              </ScrollView>
             </View>
-
-            <ScrollView
-              contentContainerStyle={styles.scrollContent}
-              showsVerticalScrollIndicator={false}
-            >
-              {isLoading && members.length === 0 ? (
-                <ActivityIndicator
-                  size="small"
-                  color={colors.accentBright}
-                  style={styles.loadingIndicator}
-                />
-              ) : errorMessage ? (
-                <Text style={styles.errorText}>{errorMessage}</Text>
-              ) : (
-                <>
-                  {owners.length > 0 ? (
-                    <View style={styles.section}>
-                      <Text style={styles.sectionTitle}>
-                        PROPIETARIO — {owners.length}
-                      </Text>
-                      {owners.map(renderMemberRow)}
-                    </View>
-                  ) : null}
-
-                  {others.length > 0 ? (
-                    <View style={styles.section}>
-                      <Text style={styles.sectionTitle}>
-                        MIEMBRO — {others.length}
-                      </Text>
-                      {others.map(renderMemberRow)}
-                    </View>
-                  ) : null}
-
-                  {owners.length === 0 && others.length === 0 ? (
-                    <Text style={styles.emptyText}>
-                      Todavía no hay miembros para mostrar.
-                    </Text>
-                  ) : null}
-                </>
-              )}
-            </ScrollView>
           </View>
         </View>
-      </Modal>
+      ) : null}
 
       <OwnProfileModal
         visible={isOwnProfileVisible}
+        serverId={serverId}
         onClose={() => setIsOwnProfileVisible(false)}
       />
 
@@ -248,6 +262,8 @@ export function MembersSidebar({
         visible={viewingUserId !== null}
         userId={viewingUserId}
         authToken={authToken ?? null}
+        serverId={serverId}
+        canManageRoles={isOwner}
         onClose={() => setViewingUserId(null)}
       />
     </>
@@ -255,6 +271,15 @@ export function MembersSidebar({
 }
 
 const styles = StyleSheet.create({
+  overlayContainer: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    zIndex: 50,
+    elevation: 50,
+  },
   backdrop: {
     flex: 1,
     flexDirection: "row",

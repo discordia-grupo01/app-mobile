@@ -18,6 +18,7 @@ import { DraggableChannelList } from "../features/servers/components/channel/Dra
 import { EditChannelModal } from "../features/servers/components/channel/EditChannelModal";
 import { InviteLinkModal } from "../features/servers/components/server/InviteLinkModal";
 import { LeaveServerModal } from "../features/servers/components/server/LeaveServerModal";
+import { RolesModal } from "../features/roles/RolesModal";
 import { ServerRail } from "../features/servers/components/rail/ServerRail";
 import { UserProfileBar } from "../features/servers/components/account/UserProfileBar";
 import type {
@@ -111,6 +112,7 @@ export function ServerChannelsScreen({
   const [createChannelDefaultCategoryId, setCreateChannelDefaultCategoryId] =
     useState<string | null>(null);
   const [isCreateCategoryVisible, setIsCreateCategoryVisible] = useState(false);
+  const [isRolesModalVisible, setIsRolesModalVisible] = useState(false);
   const [collapsedSectionIds, setCollapsedSectionIds] = useState<Set<string>>(
     new Set(),
   );
@@ -293,6 +295,20 @@ export function ServerChannelsScreen({
                       Crear categoría
                     </Text>
                   </TouchableOpacity>
+
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    style={styles.serverMenuItem}
+                    onPress={() => {
+                      setIsServerMenuOpen(false);
+                      setIsRolesModalVisible(true);
+                    }}
+                  >
+                    <Feather name="shield" size={16} color={colors.info} />
+                    <Text style={styles.serverMenuItemTextNeutral}>
+                      Gestionar roles
+                    </Text>
+                  </TouchableOpacity>
                 </>
               ) : null}
 
@@ -460,7 +476,11 @@ export function ServerChannelsScreen({
           ) : null}
         </ScrollView>
 
-        <UserProfileBar userName={userName} onLogout={onLogout} />
+        <UserProfileBar
+          userName={userName}
+          serverId={server.id}
+          onLogout={onLogout}
+        />
       </View>
 
       <LeaveServerModal
@@ -494,6 +514,14 @@ export function ServerChannelsScreen({
           serverId={server.id}
           onClose={() => setIsCreateCategoryVisible(false)}
           onCreated={handleCategoryCreated}
+        />
+      ) : null}
+      {isOwner ? (
+        <RolesModal
+          visible={isRolesModalVisible}
+          serverId={server.id}
+          serverName={server.name}
+          onClose={() => setIsRolesModalVisible(false)}
         />
       ) : null}
       {isOwner ? (
