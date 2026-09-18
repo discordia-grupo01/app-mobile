@@ -118,32 +118,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         setToken(result.token);
         setUser(result.user);
-
-        try {
-          await setSession(result.token, result.user);
-        } catch {
-          // Error escribiendo storage local
-        }
-      }
-
-      return result;
-    },
-    [],
-  );
-
-  const loginWithGoogle = useCallback(
-    async (idToken: string): Promise<LoginActionResult> => {
-      const result = await loginWithGoogleService(idToken);
-
-      if (result.ok) {
-        setToken(result.token);
-        setUser(result.user);
-
-        try {
-          await setSession(result.token, result.user);
-        } catch {
-          // Error escribiendo storage local
-        }
       }
 
       return result;
