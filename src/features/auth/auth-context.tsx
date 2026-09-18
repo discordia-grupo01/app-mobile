@@ -14,7 +14,12 @@ import {
   getToken,
   setSession,
 } from "../../lib/storage";
-import { loginService, logoutService, registerService } from "./service";
+import {
+  loginService,
+  loginWithGoogleService,
+  logoutService,
+  registerService,
+} from "./service";
 import type {
   LoginActionResult,
   LoginValues,
@@ -29,6 +34,7 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (credentials: LoginValues) => Promise<LoginActionResult>;
+  loginWithGoogle: (idToken: string) => Promise<LoginActionResult>;
   register: (values: RegisterValues) => Promise<RegisterActionResult>;
   logout: () => Promise<void>;
 }
@@ -81,6 +87,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const loginWithGoogle = useCallback(
+    async (idToken: string): Promise<LoginActionResult> => {
+      const result = await loginWithGoogleService(idToken);
+
+      if (result.ok) {
+        setToken(result.token);
+        setUser(result.user);
+
+        try {
+          await setSession(result.token, result.user);
+        } catch {
+          // Error escribiendo storage local
+        }
+      }
+
+      return result;
+    },
+    [],
+  );
+
   // POST /v1/users ya NO devuelve token: registrarse no deja la sesion
   // iniciada, igual que en web-client. La vista redirige a login con un
   // aviso de exito y el usuario ingresa con sus credenciales.
@@ -112,10 +138,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: user !== null && token !== null,
       isLoading,
       login,
+      loginWithGoogle,
       register,
       logout,
     }),
-    [user, token, isLoading, login, register, logout],
+    [user, token, isLoading, login, loginWithGoogle, register, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
