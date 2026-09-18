@@ -21,20 +21,9 @@ import type { Role } from "../types";
 interface MemberRoleBadgesProps {
   serverId: string;
   userId: string;
-  /** Solo el propietario puede agregar/quitar roles (regla actual del backend). */
   canManage: boolean;
 }
 
-/**
- * Roles de un miembro dentro de un servidor, como pills. Cuando `canManage`
- * es true (el propietario viendo el perfil público de otro miembro) permite
- * quitar roles con el ícono "x" de cada pill y agregar uno nuevo con
- * "Añadir rol", que abre un buscador -- espejo del `SearchableSelect` de
- * `MemberRoleBadges` en web-client. En mobile se presenta como una hoja que
- * sube desde abajo (mismo patrón que `AddServerSheet`/`ChannelOptionsSheet`)
- * en vez de un dropdown flotante, para no quedar recortado por el modal de
- * perfil que lo contiene.
- */
 export function MemberRoleBadges({
   serverId,
   userId,
@@ -48,13 +37,19 @@ export function MemberRoleBadges({
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [search, setSearch] = useState("");
 
-  useEffect(() => {
-    let cancelled = false;
+  const memberKey = `${serverId}::${userId}::${canManage}`;
+  const [lastMemberKey, setLastMemberKey] = useState(memberKey);
+  if (memberKey !== lastMemberKey) {
+    setLastMemberKey(memberKey);
     setAssignedRoles(null);
     setAvailableRoles([]);
     setErrorMessage("");
     setIsPickerOpen(false);
     setSearch("");
+  }
+
+  useEffect(() => {
+    let cancelled = false;
 
     listMemberRoles(serverId, userId).then((result) => {
       if (cancelled) return;
