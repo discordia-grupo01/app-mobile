@@ -32,6 +32,8 @@ export function UserProfileBar({ userName, onLogout }: UserProfileBarProps) {
   const [isConfirmVisible, setIsConfirmVisible] = useState(false);
   const [isAppearanceVisible, setIsAppearanceVisible] = useState(false);
   const [isProfileVisible, setIsProfileVisible] = useState(false);
+  const [isMicMuted, setIsMicMuted] = useState(false);
+  const [isDeafened, setIsDeafened] = useState(false);
   const [themePreference, setThemePreferenceState] =
     useState<ThemePreference>("dark");
   const displayName = (user?.name ?? userName)?.trim() || "Mi cuenta";
@@ -80,6 +82,36 @@ export function UserProfileBar({ userName, onLogout }: UserProfileBarProps) {
               {statusText || "En línea"}
             </Text>
           </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={() => setIsMicMuted((prev) => !prev)}
+          accessibilityRole="button"
+          accessibilityLabel={
+            isMicMuted ? "Activar micrófono" : "Silenciar micrófono"
+          }
+        >
+          <Feather
+            name={isMicMuted ? "mic-off" : "mic"}
+            size={19}
+            color={isMicMuted ? colors.danger : colors.textSubtle}
+          />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={() => setIsDeafened((prev) => !prev)}
+          accessibilityRole="button"
+          accessibilityLabel={
+            isDeafened ? "Activar audio" : "Silenciar audio (ensordecer)"
+          }
+        >
+          <Feather
+            name="headphones"
+            size={19}
+            color={isDeafened ? colors.danger : colors.textSubtle}
+          />
         </TouchableOpacity>
 
         <TouchableOpacity

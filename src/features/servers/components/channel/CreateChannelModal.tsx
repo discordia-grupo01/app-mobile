@@ -40,6 +40,7 @@ export function CreateChannelModal({
   const [kind, setKind] = useState<"text" | "voice">("text");
   const [name, setName] = useState("");
   const [categoryId, setCategoryId] = useState(defaultCategoryId ?? "");
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
   const [nameError, setNameError] = useState("");
   const [globalError, setGlobalError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -51,6 +52,7 @@ export function CreateChannelModal({
       setKind("text");
       setName("");
       setCategoryId(defaultCategoryId ?? "");
+      setIsCategoryDropdownOpen(false);
       setNameError("");
       setGlobalError("");
       setIsSubmitting(false);
@@ -58,6 +60,14 @@ export function CreateChannelModal({
   }
 
   const trimmed = name.trim();
+  const selectedCategoryName =
+    categories.find((category) => category.id === categoryId)?.name ??
+    "Sin categoría";
+
+  function handleSelectCategory(id: string) {
+    setCategoryId(id);
+    setIsCategoryDropdownOpen(false);
+  }
 
   async function handleSubmit() {
     setNameError("");
@@ -204,47 +214,81 @@ export function CreateChannelModal({
 
             <View style={styles.field}>
               <Text style={styles.fieldLabel}>CATEGORÍA</Text>
-              <View style={styles.categoryList}>
-                <TouchableOpacity
-                  onPress={() => setCategoryId("")}
-                  style={styles.categoryOption}
-                  accessibilityRole="button"
-                >
-                  <View
-                    style={[
-                      styles.radio,
-                      categoryId === "" ? styles.radioActive : null,
-                    ]}
-                  >
-                    {categoryId === "" ? (
-                      <View style={styles.radioDot} />
-                    ) : null}
-                  </View>
-                  <Text style={styles.categoryOptionText}>Sin categoría</Text>
-                </TouchableOpacity>
-                {categories.map((category) => (
+              <TouchableOpacity
+                onPress={() => setIsCategoryDropdownOpen((prev) => !prev)}
+                style={[
+                  styles.categorySelect,
+                  isCategoryDropdownOpen ? styles.categorySelectActive : null,
+                ]}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel="Elegir categoría"
+              >
+                <Text style={styles.categorySelectText} numberOfLines={1}>
+                  {selectedCategoryName}
+                </Text>
+                <Feather
+                  name={isCategoryDropdownOpen ? "chevron-up" : "chevron-down"}
+                  size={16}
+                  color={colors.textSubtle}
+                />
+              </TouchableOpacity>
+
+              {isCategoryDropdownOpen ? (
+                <View style={styles.categoryDropdown}>
                   <TouchableOpacity
-                    key={category.id}
-                    onPress={() => setCategoryId(category.id)}
-                    style={styles.categoryOption}
+                    onPress={() => handleSelectCategory("")}
+                    style={styles.categoryDropdownOption}
                     accessibilityRole="button"
                   >
-                    <View
+                    <Text
                       style={[
-                        styles.radio,
-                        categoryId === category.id ? styles.radioActive : null,
+                        styles.categoryDropdownOptionText,
+                        categoryId === ""
+                          ? styles.categoryDropdownOptionTextActive
+                          : null,
                       ]}
+                      numberOfLines={1}
                     >
-                      {categoryId === category.id ? (
-                        <View style={styles.radioDot} />
-                      ) : null}
-                    </View>
-                    <Text style={styles.categoryOptionText} numberOfLines={1}>
-                      {category.name}
+                      Sin categoría
                     </Text>
+                    {categoryId === "" ? (
+                      <Feather
+                        name="check"
+                        size={16}
+                        color={colors.accentBright}
+                      />
+                    ) : null}
                   </TouchableOpacity>
-                ))}
-              </View>
+                  {categories.map((category) => (
+                    <TouchableOpacity
+                      key={category.id}
+                      onPress={() => handleSelectCategory(category.id)}
+                      style={styles.categoryDropdownOption}
+                      accessibilityRole="button"
+                    >
+                      <Text
+                        style={[
+                          styles.categoryDropdownOptionText,
+                          categoryId === category.id
+                            ? styles.categoryDropdownOptionTextActive
+                            : null,
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {category.name}
+                      </Text>
+                      {categoryId === category.id ? (
+                        <Feather
+                          name="check"
+                          size={16}
+                          color={colors.accentBright}
+                        />
+                      ) : null}
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              ) : null}
             </View>
 
             <View style={styles.footer}>
@@ -411,42 +455,54 @@ const styles = StyleSheet.create({
     color: colors.danger,
     fontSize: 12,
   },
-  categoryList: {
+  categorySelect: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     borderRadius: 12,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.bgInput,
-    paddingVertical: 4,
+    paddingHorizontal: 14,
+    minHeight: 48,
   },
-  categoryOption: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 11,
+  categorySelectActive: {
+    borderColor: colors.accentBright,
   },
-  categoryOptionText: {
+  categorySelectText: {
     flex: 1,
     fontSize: 14,
     color: colors.text,
   },
-  radio: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    borderWidth: 1.5,
+  categoryDropdown: {
+    marginTop: 6,
+    borderRadius: 12,
+    borderWidth: 1,
     borderColor: colors.borderStrong,
+    backgroundColor: colors.bgModal,
+    paddingVertical: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  categoryDropdownOption: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "space-between",
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
   },
-  radioActive: {
-    borderColor: colors.accentBright,
+  categoryDropdownOptionText: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.text,
   },
-  radioDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.accentBright,
+  categoryDropdownOptionTextActive: {
+    color: colors.accentBright,
+    fontWeight: "600",
   },
   footer: {
     flexDirection: "row",
