@@ -11,7 +11,7 @@ import {
 } from "react-native";
 
 import { colors } from "../../../theme/colors";
-import { env } from "../../../lib/env";
+import { resolveImageUri } from "../../../lib/image-url";
 import { ServerAvatar } from "../../servers/components/ServerAvatar";
 import { MemberRoleBadges } from "../../roles/components/MemberRoleBadges";
 import { getPublicProfile } from "../service";
@@ -70,9 +70,7 @@ export function PublicProfileModal({
     };
   }, [visible, userId]);
 
-  const avatarSrc = profile?.avatar_url
-    ? `${env.apiUrl}${profile.avatar_url}`
-    : null;
+  const avatarSrc = resolveImageUri(profile?.avatar_url);
 
   return (
     <Modal

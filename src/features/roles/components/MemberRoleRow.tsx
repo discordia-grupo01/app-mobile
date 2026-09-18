@@ -1,7 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import { Text, TouchableOpacity, View } from "react-native";
 
-import { env } from "../../../lib/env";
+import { resolveImageUri } from "../../../lib/image-url";
 import { colors } from "../../../theme/colors";
 import { ServerAvatar } from "../../servers/components/ServerAvatar";
 import type { MemberInfo } from "../constants";
@@ -20,9 +20,7 @@ export function MemberRoleRow({
   isBusy,
   onToggle,
 }: MemberRoleRowProps) {
-  const avatarUri = member.avatarUrl
-    ? `${env.apiUrl}${member.avatarUrl}`
-    : null;
+  const avatarUri = resolveImageUri(member.avatarUrl);
 
   return (
     <View style={styles.memberRow}>

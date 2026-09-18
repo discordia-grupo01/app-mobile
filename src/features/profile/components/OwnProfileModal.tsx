@@ -19,7 +19,7 @@ import {
 
 import { Button } from "../../../components/ui/Button";
 import { colors } from "../../../theme/colors";
-import { env } from "../../../lib/env";
+import { resolveImageUri } from "../../../lib/image-url";
 import { useAuth } from "../../auth/auth-context";
 import { ServerAvatar } from "../../servers/components/ServerAvatar";
 import { MemberRoleBadges } from "../../roles/components/MemberRoleBadges";
@@ -89,9 +89,7 @@ export function OwnProfileModal({
 
   if (!user) return null;
 
-  const avatarSrc =
-    imagePreview ??
-    (user.avatar_url ? `${env.apiUrl}${user.avatar_url}` : null);
+  const avatarSrc = imagePreview ?? resolveImageUri(user.avatar_url);
 
   async function submitProfile(overrides: {
     name?: string;

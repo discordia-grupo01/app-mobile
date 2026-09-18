@@ -16,6 +16,7 @@ import {
 
 import { getPublicUser } from "../../../../features/auth/service";
 import { initiateOwnershipTransfer, listMembers } from "../../api";
+import { resolveImageUri } from "../../../../lib/image-url";
 import { colors } from "../../../../theme/colors";
 import { Button } from "../../../../components/ui/Button";
 import { ServerAvatar } from "../ServerAvatar";
@@ -322,7 +323,7 @@ export function TransferOwnershipModal({
                           >
                             <ServerAvatar
                               name={item.name ?? item.userId}
-                              uri={item.avatarUrl}
+                              uri={resolveImageUri(item.avatarUrl)}
                               size={36}
                             />
                             <View style={styles.memberTextWrap}>
@@ -373,7 +374,7 @@ export function TransferOwnershipModal({
                   <View style={styles.targetCard}>
                     <ServerAvatar
                       name={selectedDisplayName}
-                      uri={selectedMember?.avatarUrl}
+                      uri={resolveImageUri(selectedMember?.avatarUrl)}
                       size={40}
                     />
                     <View style={styles.targetTextWrap}>

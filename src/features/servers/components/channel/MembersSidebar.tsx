@@ -13,7 +13,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { getPublicUser } from "../../../auth/service";
-import { env } from "../../../../lib/env";
+import { resolveImageUri } from "../../../../lib/image-url";
 import { colors } from "../../../../theme/colors";
 import { OwnProfileModal } from "../../../profile/components/OwnProfileModal";
 import { PublicProfileModal } from "../../../profile/components/PublicProfileModal";
@@ -139,9 +139,7 @@ export function MembersSidebar({
   }
 
   function renderMemberRow(member: ResolvedMember) {
-    const avatarSrc = member.avatarUrl
-      ? `${env.apiUrl}${member.avatarUrl}`
-      : null;
+    const avatarSrc = resolveImageUri(member.avatarUrl);
     const isSelf = member.userId === currentUserId;
 
     return (
