@@ -1,10 +1,11 @@
+import { hasErrors, validateForgotPassword } from "@discordia/client-shared";
+
 import { Feather } from "@expo/vector-icons";
 import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { forgotPasswordService } from "../service";
 import type { ForgotPasswordErrors } from "../types";
-import { hasErrors, validateForgotPassword } from "../validation";
 import { colors } from "../../../theme/colors";
 
 import { Button } from "../../../components/ui/Button";

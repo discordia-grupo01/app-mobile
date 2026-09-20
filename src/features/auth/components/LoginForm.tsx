@@ -1,9 +1,10 @@
+import { hasErrors, validateLogin } from "@discordia/client-shared";
+
 import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { useAuth } from "../auth-context";
 import type { LoginErrors } from "../types";
-import { hasErrors, validateLogin } from "../validation";
 import { colors } from "../../../theme/colors";
 
 import { GoogleIcon } from "../../../components/icons/GoogleIcon";
