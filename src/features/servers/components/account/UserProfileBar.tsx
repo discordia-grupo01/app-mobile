@@ -14,7 +14,7 @@ import {
   setThemePreference,
   type ThemePreference,
 } from "../../../../lib/storage";
-import { env } from "../../../../lib/env";
+import { resolveImageUri } from "../../../../lib/image-url";
 import { colors } from "../../../../theme/colors";
 import { Button } from "../../../../components/ui/Button";
 import { useAuth } from "../../../auth/auth-context";
@@ -43,7 +43,7 @@ export function UserProfileBar({
   const [themePreference, setThemePreferenceState] =
     useState<ThemePreference>("dark");
   const displayName = (user?.name ?? userName)?.trim() || "Mi cuenta";
-  const avatarSrc = user?.avatar_url ? `${env.apiUrl}${user.avatar_url}` : null;
+  const avatarSrc = resolveImageUri(user?.avatar_url);
   const statusText = user?.status_text?.trim();
 
   useEffect(() => {
