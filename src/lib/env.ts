@@ -31,6 +31,22 @@ function resolveApiUrl(): string {
   return "http://localhost:8000";
 }
 
+/**
+ * URL publica de `web-client`, para armar los links de invitacion que se
+ * comparten fuera de la app.
+ *
+ * No se puede auto-detectar como `apiUrl`: el front web no corre en la misma
+ * maquina que el bundler de Metro. Mientras no este seteada, los links quedan
+ * relativos (`/invite/abc123`) y no sirven para compartir.
+ *
+ * TODO: setear `EXPO_PUBLIC_WEB_URL` al dominio de Vercel una vez que el
+ * deploy de `web-client` tenga una URL estable.
+ */
+function resolveWebUrl(): string | null {
+  return process.env.EXPO_PUBLIC_WEB_URL ?? null;
+}
+
 export const env = {
   apiUrl: resolveApiUrl(),
+  webUrl: resolveWebUrl(),
 };

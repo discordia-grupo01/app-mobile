@@ -2,6 +2,7 @@ import {
   ALREADY_MEMBER_SUFFIX,
   INVITE_CODE_REQUIRED,
   JOINED_SERVER_SUFFIX,
+  normalizeInviteCode,
   type ServerSummary,
 } from "@discordia/client-shared";
 
@@ -21,11 +22,7 @@ import {
 } from "react-native";
 
 import { colors } from "../../../../theme/colors";
-import {
-  joinServerByCode,
-  normalizeInviteCode,
-  serverIconUrl,
-} from "../../api";
+import { joinServerByCode, serverIconUrl } from "../../api";
 import { Button } from "../../../../components/ui/Button";
 import { ServerAvatar } from "../ServerAvatar";
 

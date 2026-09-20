@@ -1,8 +1,10 @@
 import {
   type Category,
   type Channel,
+  channelsOfCategory,
   type LeaveServerResult,
   type ServerSummary,
+  sortByPosition,
 } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
@@ -126,12 +128,8 @@ export function ServerChannelsScreen({
   const [isChannelDragActive, setIsChannelDragActive] = useState(false);
   const insets = useSafeAreaInsets();
 
-  const uncategorized = server.channels
-    .filter((channel) => channel.category_id === null)
-    .sort((a, b) => a.position - b.position);
-  const sortedCategories = [...server.categories].sort(
-    (a, b) => a.position - b.position,
-  );
+  const uncategorized = channelsOfCategory(server.channels, null);
+  const sortedCategories = sortByPosition(server.categories);
 
   function toggleCollapsed(id: string) {
     setCollapsedSectionIds((prev) => {
@@ -400,9 +398,7 @@ export function ServerChannelsScreen({
           ) : null}
 
           {sortedCategories.map((category) => {
-            const channels = server.channels
-              .filter((channel) => channel.category_id === category.id)
-              .sort((a, b) => a.position - b.position);
+            const channels = channelsOfCategory(server.channels, category.id);
             const collapsed = collapsedSectionIds.has(category.id);
 
             return (

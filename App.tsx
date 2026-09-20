@@ -5,7 +5,6 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import type { AuthMode } from "./src/features/auth/components/AuthTabs";
 import { AuthProvider, useAuth } from "./src/features/auth/auth-context";
 
-import { sharedSmokeTest } from "./src/lib/shared-smoke-test";
 import { ForgotPasswordScreen } from "./src/screens/ForgotPasswordScreen";
 import { HomeScreen } from "./src/screens/HomeScreen";
 import { LoginScreen } from "./src/screens/LoginScreen";
@@ -30,7 +29,6 @@ function AppContent() {
   }
 
   if (isLoading) {
-    console.log("client-shared:", sharedSmokeTest);
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={colors.accentBright} />

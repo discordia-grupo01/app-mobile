@@ -1,3 +1,5 @@
+import { getInitial } from "@discordia/client-shared";
+
 import * as FileSystem from "expo-file-system/legacy";
 import { useEffect, useState } from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
@@ -115,7 +117,7 @@ export function ServerAvatar({
     );
   }
 
-  const initial = name.trim().charAt(0).toUpperCase() || "?";
+  const initial = getInitial(name) ?? "?";
 
   return (
     <View

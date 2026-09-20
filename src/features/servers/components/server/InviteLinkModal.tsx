@@ -1,5 +1,8 @@
 import {
+  daysUntil,
   type Invitation,
+  inviteStatus,
+  type InviteStatus,
   MAX_USES_LABEL,
   validateMaxUses,
 } from "@discordia/client-shared";
@@ -34,8 +37,6 @@ interface InviteLinkModalProps {
   onClose: () => void;
 }
 
-type InviteStatus = "active" | "revoked" | "expired" | "exhausted";
-
 const STATUS_COPY: Record<
   InviteStatus,
   { label: string; textColor: string; bgColor: string }
@@ -61,19 +62,6 @@ const STATUS_COPY: Record<
     bgColor: colors.bgInput,
   },
 };
-
-function inviteStatus(inv: Invitation): InviteStatus {
-  if (inv.revoked_at) return "revoked";
-  if (inv.expires_at && new Date(inv.expires_at).getTime() <= Date.now())
-    return "expired";
-  if (inv.max_uses !== null && inv.uses >= inv.max_uses) return "exhausted";
-  return "active";
-}
-
-function daysUntil(iso: string): number {
-  const ms = new Date(iso).getTime() - Date.now();
-  return Math.max(0, Math.round(ms / (24 * 60 * 60 * 1000)));
-}
 
 function InvitationRow({
   invitation,
