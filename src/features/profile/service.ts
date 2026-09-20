@@ -1,11 +1,12 @@
 import * as FileSystem from "expo-file-system/legacy";
 
 import {
-  ApiError,
-  NetworkError,
-  apiFetch,
-  refreshAccessToken,
-} from "../../lib/api-client";
+  messageFor,
+  NETWORK_ERROR_MESSAGE,
+  SESSION_EXPIRED_MESSAGE,
+} from "@discordia/client-shared";
+
+import { apiFetch, refreshAccessToken } from "../../lib/api-client";
 import { env } from "../../lib/env";
 import { getToken } from "../../lib/storage";
 import type { ApiErrorBody, PublicUser, User } from "../auth/types";
@@ -17,36 +18,30 @@ import type {
   UpdateStatusActionResult,
 } from "./types";
 
-const NETWORK_ERROR_MESSAGE =
-  "No hay conexión con el servidor. Revisá tu conexión a internet e intentá de nuevo.";
-const SESSION_EXPIRED_MESSAGE = "Tu sesión expiró. Volvé a iniciar sesión.";
-
 export async function getOwnProfile(): Promise<GetOwnProfileActionResult> {
-  try {
-    const user = await apiFetch<User>("/v1/me/profile", { method: "GET" });
-    return { ok: true, user };
-  } catch (err) {
-    if (err instanceof NetworkError) {
-      return { ok: false, message: NETWORK_ERROR_MESSAGE };
-    }
-    return { ok: false, message: "No pudimos cargar tu perfil." };
+  const result = await apiFetch<User>("/v1/me/profile", { method: "GET" });
+  if (!result.ok) {
+    return {
+      ok: false,
+      message: messageFor(result, {}, "No pudimos cargar tu perfil."),
+    };
   }
+  return { ok: true, user: result.data };
 }
 
 export async function getPublicProfile(
   userId: string,
 ): Promise<GetPublicProfileActionResult> {
-  try {
-    const user = await apiFetch<PublicUser>(`/v1/users/${userId}`, {
-      method: "GET",
-    });
-    return { ok: true, user };
-  } catch (err) {
-    if (err instanceof NetworkError) {
-      return { ok: false, message: NETWORK_ERROR_MESSAGE };
-    }
-    return { ok: false, message: "No pudimos cargar el perfil." };
+  const result = await apiFetch<PublicUser>(`/v1/users/${userId}`, {
+    method: "GET",
+  });
+  if (!result.ok) {
+    return {
+      ok: false,
+      message: messageFor(result, {}, "No pudimos cargar el perfil."),
+    };
   }
+  return { ok: true, user: result.data };
 }
 
 async function performProfileUpdate(
@@ -126,7 +121,7 @@ export async function updateOwnProfile(params: {
       ok: false,
       message:
         errBody?.error?.message ??
-        "No pudimos actualizar tu perfil. Intenta de nuevo.",
+        "No pudimos actualizar tu perfil. Intentá de nuevo.",
     };
   }
 
@@ -136,42 +131,43 @@ export async function updateOwnProfile(params: {
 export async function updateStatus(
   statusText: string,
 ): Promise<UpdateStatusActionResult> {
-  try {
-    const user = await apiFetch<User>("/v1/me/status", {
-      method: "PUT",
-      body: JSON.stringify({ status_text: statusText }),
-    });
-    return { ok: true, user };
-  } catch (err) {
-    if (err instanceof NetworkError) {
-      return { ok: false, message: NETWORK_ERROR_MESSAGE };
-    }
-    if (err instanceof ApiError && err.status === 400) {
+  const result = await apiFetch<User>("/v1/me/status", {
+    method: "PUT",
+    body: JSON.stringify({ status_text: statusText }),
+  });
+
+  if (!result.ok) {
+    if (result.status === 400) {
       return { ok: false, message: "Ese estado no es válido." };
     }
     return {
       ok: false,
-      message: "No pudimos actualizar tu estado. Intenta de nuevo.",
+      message: messageFor(
+        result,
+        {},
+        "No pudimos actualizar tu estado. Intentá de nuevo.",
+      ),
     };
   }
+  return { ok: true, user: result.data };
 }
 
 export async function clearStatus(
   currentUser: User,
 ): Promise<UpdateStatusActionResult> {
-  try {
-    await apiFetch<void>("/v1/me/status", { method: "DELETE" });
-    return {
-      ok: true,
-      user: { ...currentUser, status_text: "", status_emoji: "" },
-    };
-  } catch (err) {
-    if (err instanceof NetworkError) {
-      return { ok: false, message: NETWORK_ERROR_MESSAGE };
-    }
+  const result = await apiFetch<void>("/v1/me/status", { method: "DELETE" });
+  if (!result.ok) {
     return {
       ok: false,
-      message: "No pudimos borrar tu estado. Intenta de nuevo.",
+      message: messageFor(
+        result,
+        {},
+        "No pudimos borrar tu estado. Intentá de nuevo.",
+      ),
     };
   }
+  return {
+    ok: true,
+    user: { ...currentUser, status_text: "", status_emoji: "" },
+  };
 }

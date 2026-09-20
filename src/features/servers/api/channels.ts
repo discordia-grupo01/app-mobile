@@ -1,4 +1,12 @@
-import { ApiError, NetworkError, apiFetch } from "../../../lib/api-client";
+import {
+  fieldOf,
+  messageFor,
+  reasonOf,
+  SESSION_EXPIRED_MESSAGE,
+  type ReasonCatalog,
+} from "@discordia/client-shared";
+
+import { apiFetch } from "../../../lib/api-client";
 import type {
   Category,
   Channel,
@@ -8,14 +16,8 @@ import type {
   ReorderChannelsActionResult,
   UpdateChannelActionResult,
 } from "../types";
-import {
-  NETWORK_ERROR_MESSAGE,
-  SESSION_EXPIRED_MESSAGE,
-  fieldOf,
-  reasonOf,
-} from "./shared";
 
-const CREATE_CHANNEL_REASON_MESSAGES: Record<string, string> = {
+const CREATE_CHANNEL_REASONS: ReasonCatalog = {
   name_required: "Ingresá un nombre para el canal.",
   name_too_long: "El nombre es demasiado largo.",
   name_invalid_chars: "El nombre tiene caracteres inválidos.",
@@ -38,63 +40,50 @@ export async function createChannel(
   serverId: string,
   input: CreateChannelInput,
 ): Promise<CreateChannelActionResult> {
-  try {
-    const channel = await apiFetch<Channel>(
-      `/v1/servers/${serverId}/channels`,
-      {
-        method: "POST",
-        body: JSON.stringify({
-          name: input.name,
-          kind: input.kind,
-          ...(input.categoryId ? { category_id: input.categoryId } : {}),
-        }),
-      },
-    );
-    return { ok: true, channel };
-  } catch (err) {
-    if (err instanceof NetworkError) {
-      return { ok: false, message: NETWORK_ERROR_MESSAGE };
-    }
-    if (err instanceof ApiError) {
-      const reason = reasonOf(err);
-      const field = fieldOf(err);
-      const friendly = reason
-        ? CREATE_CHANNEL_REASON_MESSAGES[reason]
-        : undefined;
+  const result = await apiFetch<Channel>(`/v1/servers/${serverId}/channels`, {
+    method: "POST",
+    body: JSON.stringify({
+      name: input.name,
+      kind: input.kind,
+      ...(input.categoryId ? { category_id: input.categoryId } : {}),
+    }),
+  });
 
-      if (field && friendly && (field === "name" || field === "kind")) {
-        return {
-          ok: false,
-          message: friendly,
-          fieldErrors: { [field]: friendly },
-        };
-      }
-      if (err.status === 401) {
-        return { ok: false, message: SESSION_EXPIRED_MESSAGE };
-      }
-      if (err.status === 403) {
-        return {
-          ok: false,
-          message: "Solo el propietario puede crear canales.",
-        };
-      }
-      if (err.status === 404) {
-        return { ok: false, message: "Este servidor ya no existe." };
-      }
+  if (!result.ok) {
+    const reason = reasonOf(result.details);
+    const field = fieldOf(result.details);
+    const friendly = reason ? CREATE_CHANNEL_REASONS[reason] : undefined;
+
+    if (friendly && (field === "name" || field === "kind")) {
       return {
         ok: false,
-        message: friendly ?? "No pudimos crear el canal. Intenta de nuevo.",
+        message: friendly,
+        fieldErrors: { [field]: friendly },
       };
     }
-
+    if (result.status === 401) {
+      return { ok: false, message: SESSION_EXPIRED_MESSAGE };
+    }
+    if (result.status === 403) {
+      return { ok: false, message: "Solo el propietario puede crear canales." };
+    }
+    if (result.status === 404) {
+      return { ok: false, message: "Este servidor ya no existe." };
+    }
     return {
       ok: false,
-      message: "No pudimos crear el canal. Intenta de nuevo.",
+      message: messageFor(
+        result,
+        CREATE_CHANNEL_REASONS,
+        "No pudimos crear el canal. Intentá de nuevo.",
+      ),
     };
   }
+
+  return { ok: true, channel: result.data };
 }
 
-const UPDATE_CHANNEL_REASON_MESSAGES: Record<string, string> = {
+const UPDATE_CHANNEL_REASONS: ReasonCatalog = {
   name_required: "Ingresá un nombre para el canal.",
   name_too_long: "El nombre es demasiado largo.",
   name_invalid_chars: "El nombre tiene caracteres inválidos.",
@@ -109,53 +98,42 @@ export async function updateChannel(
   channelId: string,
   input: { name: string },
 ): Promise<UpdateChannelActionResult> {
-  try {
-    const channel = await apiFetch<Channel>(`/v1/channels/${channelId}`, {
-      method: "PATCH",
-      body: JSON.stringify(input),
-    });
-    return { ok: true, channel };
-  } catch (err) {
-    if (err instanceof NetworkError) {
-      return { ok: false, message: NETWORK_ERROR_MESSAGE };
-    }
-    if (err instanceof ApiError) {
-      const reason = reasonOf(err);
-      const field = fieldOf(err);
-      const friendly = reason
-        ? UPDATE_CHANNEL_REASON_MESSAGES[reason]
-        : undefined;
+  const result = await apiFetch<Channel>(`/v1/channels/${channelId}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
 
-      if (field === "name" && friendly) {
-        return {
-          ok: false,
-          message: friendly,
-          fieldErrors: { name: friendly },
-        };
-      }
-      if (err.status === 401) {
-        return { ok: false, message: SESSION_EXPIRED_MESSAGE };
-      }
-      if (err.status === 403) {
-        return {
-          ok: false,
-          message: "Solo el propietario puede editar canales.",
-        };
-      }
-      if (err.status === 404) {
-        return { ok: false, message: "Este canal ya no existe." };
-      }
+  if (!result.ok) {
+    const reason = reasonOf(result.details);
+    const field = fieldOf(result.details);
+    const friendly = reason ? UPDATE_CHANNEL_REASONS[reason] : undefined;
+
+    if (field === "name" && friendly) {
+      return { ok: false, message: friendly, fieldErrors: { name: friendly } };
+    }
+    if (result.status === 401) {
+      return { ok: false, message: SESSION_EXPIRED_MESSAGE };
+    }
+    if (result.status === 403) {
       return {
         ok: false,
-        message: friendly ?? "No pudimos editar el canal. Intenta de nuevo.",
+        message: "Solo el propietario puede editar canales.",
       };
     }
-
+    if (result.status === 404) {
+      return { ok: false, message: "Este canal ya no existe." };
+    }
     return {
       ok: false,
-      message: "No pudimos editar el canal. Intenta de nuevo.",
+      message: messageFor(
+        result,
+        UPDATE_CHANNEL_REASONS,
+        "No pudimos editar el canal. Intentá de nuevo.",
+      ),
     };
   }
+
+  return { ok: true, channel: result.data };
 }
 
 /**
@@ -166,36 +144,37 @@ export async function updateChannel(
 export async function deleteChannel(
   channelId: string,
 ): Promise<DeleteChannelActionResult> {
-  try {
-    await apiFetch<void>(`/v1/channels/${channelId}`, { method: "DELETE" });
-    return { ok: true };
-  } catch (err) {
-    if (err instanceof NetworkError) {
-      return { ok: false, message: NETWORK_ERROR_MESSAGE };
-    }
-    if (err instanceof ApiError) {
-      if (err.status === 401) {
-        return { ok: false, message: SESSION_EXPIRED_MESSAGE };
-      }
-      if (err.status === 403) {
-        return {
-          ok: false,
-          message: "Solo el propietario puede eliminar canales.",
-        };
-      }
-      if (err.status === 404) {
-        return { ok: false, message: "Este canal ya no existe." };
-      }
-    }
+  const result = await apiFetch<void>(`/v1/channels/${channelId}`, {
+    method: "DELETE",
+  });
 
+  if (!result.ok) {
+    if (result.status === 401) {
+      return { ok: false, message: SESSION_EXPIRED_MESSAGE };
+    }
+    if (result.status === 403) {
+      return {
+        ok: false,
+        message: "Solo el propietario puede eliminar canales.",
+      };
+    }
+    if (result.status === 404) {
+      return { ok: false, message: "Este canal ya no existe." };
+    }
     return {
       ok: false,
-      message: "No pudimos eliminar el canal. Intenta de nuevo.",
+      message: messageFor(
+        result,
+        {},
+        "No pudimos eliminar el canal. Intentá de nuevo.",
+      ),
     };
   }
+
+  return { ok: true };
 }
 
-const REORDER_CHANNELS_REASON_MESSAGES: Record<string, string> = {
+const REORDER_CHANNELS_REASONS: ReasonCatalog = {
   channel_set_mismatch:
     "La lista de canales cambió mientras reordenabas. Recargá e intentá de nuevo.",
   category_server_mismatch: "Esa categoría no pertenece a este servidor.",
@@ -211,52 +190,44 @@ export async function reorderChannels(
   categoryId: string | null,
   channelIds: string[],
 ): Promise<ReorderChannelsActionResult> {
-  try {
-    await apiFetch<void>(`/v1/servers/${serverId}/channels/reorder`, {
+  const result = await apiFetch<void>(
+    `/v1/servers/${serverId}/channels/reorder`,
+    {
       method: "PATCH",
       body: JSON.stringify({
         category_id: categoryId,
         channel_ids: channelIds,
       }),
-    });
-    return { ok: true };
-  } catch (err) {
-    if (err instanceof NetworkError) {
-      return { ok: false, message: NETWORK_ERROR_MESSAGE };
-    }
-    if (err instanceof ApiError) {
-      const reason = reasonOf(err);
-      const friendly = reason
-        ? REORDER_CHANNELS_REASON_MESSAGES[reason]
-        : undefined;
+    },
+  );
 
-      if (err.status === 401) {
-        return { ok: false, message: SESSION_EXPIRED_MESSAGE };
-      }
-      if (err.status === 403) {
-        return {
-          ok: false,
-          message: "Solo el propietario puede reordenar canales.",
-        };
-      }
-      if (err.status === 404) {
-        return { ok: false, message: "Este servidor ya no existe." };
-      }
+  if (!result.ok) {
+    if (result.status === 401) {
+      return { ok: false, message: SESSION_EXPIRED_MESSAGE };
+    }
+    if (result.status === 403) {
       return {
         ok: false,
-        message:
-          friendly ?? "No pudimos reordenar los canales. Intenta de nuevo.",
+        message: "Solo el propietario puede reordenar canales.",
       };
     }
-
+    if (result.status === 404) {
+      return { ok: false, message: "Este servidor ya no existe." };
+    }
     return {
       ok: false,
-      message: "No pudimos reordenar los canales. Intenta de nuevo.",
+      message: messageFor(
+        result,
+        REORDER_CHANNELS_REASONS,
+        "No pudimos reordenar los canales. Intentá de nuevo.",
+      ),
     };
   }
+
+  return { ok: true };
 }
 
-const CREATE_CATEGORY_REASON_MESSAGES: Record<string, string> = {
+const CREATE_CATEGORY_REASONS: ReasonCatalog = {
   name_required: "Ingresá un nombre para la categoría.",
   name_too_long: "El nombre es demasiado largo.",
   name_invalid_chars: "El nombre tiene caracteres inválidos.",
@@ -270,54 +241,40 @@ export async function createCategory(
   serverId: string,
   name: string,
 ): Promise<CreateCategoryActionResult> {
-  try {
-    const category = await apiFetch<Category>(
-      `/v1/servers/${serverId}/categories`,
-      {
-        method: "POST",
-        body: JSON.stringify({ name }),
-      },
-    );
-    return { ok: true, category };
-  } catch (err) {
-    if (err instanceof NetworkError) {
-      return { ok: false, message: NETWORK_ERROR_MESSAGE };
-    }
-    if (err instanceof ApiError) {
-      const reason = reasonOf(err);
-      const field = fieldOf(err);
-      const friendly = reason
-        ? CREATE_CATEGORY_REASON_MESSAGES[reason]
-        : undefined;
+  const result = await apiFetch<Category>(
+    `/v1/servers/${serverId}/categories`,
+    { method: "POST", body: JSON.stringify({ name }) },
+  );
 
-      if (field === "name" && friendly) {
-        return {
-          ok: false,
-          message: friendly,
-          fieldErrors: { name: friendly },
-        };
-      }
-      if (err.status === 401) {
-        return { ok: false, message: SESSION_EXPIRED_MESSAGE };
-      }
-      if (err.status === 403) {
-        return {
-          ok: false,
-          message: "Solo el propietario puede crear categorías.",
-        };
-      }
-      if (err.status === 404) {
-        return { ok: false, message: "Este servidor ya no existe." };
-      }
+  if (!result.ok) {
+    const reason = reasonOf(result.details);
+    const field = fieldOf(result.details);
+    const friendly = reason ? CREATE_CATEGORY_REASONS[reason] : undefined;
+
+    if (field === "name" && friendly) {
+      return { ok: false, message: friendly, fieldErrors: { name: friendly } };
+    }
+    if (result.status === 401) {
+      return { ok: false, message: SESSION_EXPIRED_MESSAGE };
+    }
+    if (result.status === 403) {
       return {
         ok: false,
-        message: friendly ?? "No pudimos crear la categoría. Intenta de nuevo.",
+        message: "Solo el propietario puede crear categorías.",
       };
     }
-
+    if (result.status === 404) {
+      return { ok: false, message: "Este servidor ya no existe." };
+    }
     return {
       ok: false,
-      message: "No pudimos crear la categoría. Intenta de nuevo.",
+      message: messageFor(
+        result,
+        CREATE_CATEGORY_REASONS,
+        "No pudimos crear la categoría. Intentá de nuevo.",
+      ),
     };
   }
+
+  return { ok: true, category: result.data };
 }

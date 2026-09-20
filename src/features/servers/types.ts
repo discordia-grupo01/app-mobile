@@ -24,14 +24,6 @@ export interface ServerSummary {
   categories: Category[];
 }
 
-export interface ServersApiErrorBody {
-  error: {
-    code: string;
-    message: string;
-    details?: Record<string, unknown>;
-  };
-}
-
 export type ServerListItem = ServerSummary;
 
 export interface CreateServerFieldErrors {

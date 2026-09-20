@@ -1,25 +1,11 @@
+import {
+  networkFailure,
+  toApiResult,
+  type ApiResult,
+} from "@discordia/client-shared";
+
 import { getToken, updateToken } from "./storage";
 import { env } from "./env";
-
-export class ApiError extends Error {
-  status: number;
-  body?: unknown;
-
-  constructor(status: number, message: string, body?: unknown) {
-    super(message);
-    this.name = "ApiError";
-    this.status = status;
-    this.body = body;
-  }
-}
-
-export class NetworkError extends Error {
-  constructor(cause?: unknown) {
-    super("No se pudo conectar con el servidor.");
-    this.name = "NetworkError";
-    this.cause = cause;
-  }
-}
 
 interface RefreshResponseBody {
   user: unknown;
@@ -69,12 +55,18 @@ async function doRefresh(): Promise<string | null> {
   }
 }
 
-/** Cliente HTTP unico hacia el backend (via el API Gateway). */
+/**
+ * Cliente HTTP unico hacia el backend (via el API Gateway).
+ *
+ * Nunca tira: devuelve `ApiResult<T>`, igual que `web-client`. Un 409 "ese
+ * nombre ya existe" es un resultado esperado del negocio, no una excepcion, y
+ * la union discriminada obliga a chequear `ok` antes de leer `data`.
+ */
 export async function apiFetch<T = unknown>(
   path: string,
   options: RequestInit = {},
   isRetry = false,
-): Promise<T> {
+): Promise<ApiResult<T>> {
   const token = await getToken();
 
   let res: Response;
@@ -88,8 +80,8 @@ export async function apiFetch<T = unknown>(
         ...options.headers,
       },
     });
-  } catch (err) {
-    throw new NetworkError(err);
+  } catch {
+    return networkFailure();
   }
 
   // El access token dura 15 min: cualquier request se tope
@@ -103,14 +95,12 @@ export async function apiFetch<T = unknown>(
     }
   }
 
+  // Un 204 o un body que no es JSON dejan `body` en null: no es un error.
+  // Axios ya hace este paso solo, por eso en web no existe.
   let body: unknown = null;
   try {
     body = await res.json();
   } catch {}
 
-  if (!res.ok) {
-    throw new ApiError(res.status, `API error: ${res.status}`, body);
-  }
-
-  return body as T;
+  return toApiResult<T>(res.status, body);
 }
