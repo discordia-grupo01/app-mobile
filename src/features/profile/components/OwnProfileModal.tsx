@@ -1,4 +1,5 @@
 import {
+  type ActivityStatus,
   CANCEL_NAME_EDIT_LABEL,
   CHANGE_AVATAR_LABEL,
   DESCRIPTION_PLACEHOLDER,
@@ -36,7 +37,6 @@ import { MemberRoleBadges } from "../../roles/components/MemberRoleBadges";
 import {
   ACTIVITY_STATUS_COLOR,
   ActivityStatusPicker,
-  type ActivityStatusMode,
 } from "./ActivityStatusPicker";
 import { CustomStatusEditor } from "./CustomStatusEditor";
 import { MemberSince } from "./MemberSince";
@@ -75,7 +75,8 @@ export function OwnProfileModal({
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
 
-  const [activityMode, setActivityMode] = useState<ActivityStatusMode>("auto");
+  const [activityStatus, setActivityStatus] =
+    useState<ActivityStatus>("online");
 
   if (visible !== wasVisible) {
     setWasVisible(visible);
@@ -89,7 +90,7 @@ export function OwnProfileModal({
       setIsSubmitting(false);
       setIsUploadingAvatar(false);
       setImagePreview(null);
-      setActivityMode("auto");
+      setActivityStatus("online");
     }
   }
 
@@ -347,8 +348,8 @@ export function OwnProfileModal({
 
             <View style={styles.section}>
               <ActivityStatusPicker
-                mode={activityMode}
-                onChange={setActivityMode}
+                status={activityStatus}
+                onChange={setActivityStatus}
               />
             </View>
 
@@ -464,7 +465,7 @@ export function OwnProfileModal({
               <View
                 style={[
                   styles.avatarBadge,
-                  { backgroundColor: ACTIVITY_STATUS_COLOR[activityMode] },
+                  { backgroundColor: ACTIVITY_STATUS_COLOR[activityStatus] },
                 ]}
               />
             </TouchableOpacity>

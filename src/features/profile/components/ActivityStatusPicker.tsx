@@ -1,51 +1,45 @@
+import {
+  ACTIVITY_STATUS_DESCRIPTION,
+  ACTIVITY_STATUS_LABEL,
+  ACTIVITY_STATUSES,
+  type ActivityStatus,
+} from "@discordia/client-shared";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { colors } from "../../../theme/colors";
 
-export type ActivityStatusMode = "auto" | "dnd" | "invisible";
-
-const OPTIONS: { mode: ActivityStatusMode; label: string; color: string }[] = [
-  { mode: "auto", label: "Automático", color: "#38A169" },
-  { mode: "dnd", label: "No molestar", color: "#e05252" },
-  { mode: "invisible", label: "Invisible", color: "#4F5660" },
-];
-
-export const ACTIVITY_STATUS_COLOR: Record<ActivityStatusMode, string> =
-  Object.fromEntries(OPTIONS.map((o) => [o.mode, o.color])) as Record<
-    ActivityStatusMode,
-    string
-  >;
-
-const PREVIEW_COPY: Record<ActivityStatusMode, string> = {
-  auto: 'Visible como "En línea"',
-  dnd: "Nadie puede enviarte mensajes directos.",
-  invisible: "Aparecés como desconectado para el resto.",
+/** Solo presentacion: el resto del modelo vive en `client-shared`. */
+export const ACTIVITY_STATUS_COLOR: Record<ActivityStatus, string> = {
+  online: "#38A169",
+  dnd: "#e05252",
+  offline: "#4F5660",
 };
 
 interface ActivityStatusPickerProps {
-  mode: ActivityStatusMode;
-  onChange: (mode: ActivityStatusMode) => void;
+  status: ActivityStatus;
+  onChange: (status: ActivityStatus) => void;
 }
 
 export function ActivityStatusPicker({
-  mode,
+  status,
   onChange,
 }: ActivityStatusPickerProps) {
   return (
     <View>
       <Text style={styles.label}>ESTADO DE ACTIVIDAD</Text>
       <View style={styles.row}>
-        {OPTIONS.map((option) => {
-          const active = option.mode === mode;
+        {ACTIVITY_STATUSES.map((option) => {
+          const active = option === status;
+          const color = ACTIVITY_STATUS_COLOR[option];
           return (
             <TouchableOpacity
-              key={option.mode}
-              onPress={() => onChange(option.mode)}
+              key={option}
+              onPress={() => onChange(option)}
               style={[
                 styles.option,
                 active && {
-                  backgroundColor: `${option.color}1A`,
-                  borderColor: `${option.color}55`,
+                  backgroundColor: `${color}1A`,
+                  borderColor: `${color}55`,
                 },
               ]}
               activeOpacity={0.8}
@@ -54,20 +48,18 @@ export function ActivityStatusPicker({
                 style={[
                   styles.dot,
                   {
-                    backgroundColor: active ? option.color : colors.textSubtle,
+                    backgroundColor: active ? color : colors.textSubtle,
                   },
                 ]}
               />
-              <Text
-                style={[styles.optionText, active && { color: option.color }]}
-              >
-                {option.label}
+              <Text style={[styles.optionText, active && { color }]}>
+                {ACTIVITY_STATUS_LABEL[option]}
               </Text>
             </TouchableOpacity>
           );
         })}
       </View>
-      <Text style={styles.preview}>{PREVIEW_COPY[mode]}</Text>
+      <Text style={styles.preview}>{ACTIVITY_STATUS_DESCRIPTION[status]}</Text>
     </View>
   );
 }
