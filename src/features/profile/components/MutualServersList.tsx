@@ -1,9 +1,10 @@
+import { type ServerSummary } from "@discordia/client-shared";
+
 import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { listMyServers, serverIconUrl } from "../../servers/api";
 import { ServerAvatar } from "../../servers/components/ServerAvatar";
-import type { ServerSummary } from "../../servers/types";
 import { colors } from "../../../theme/colors";
 
 interface MutualServersListProps {

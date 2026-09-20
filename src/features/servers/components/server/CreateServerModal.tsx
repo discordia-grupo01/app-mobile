@@ -1,3 +1,5 @@
+import { type ServerSummary } from "@discordia/client-shared";
+
 import { Feather } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
@@ -17,7 +19,6 @@ import {
 
 import { colors } from "../../../../theme/colors";
 import { createServer } from "../../api";
-import type { ServerSummary } from "../../types";
 import { Button } from "../../../../components/ui/Button";
 import { ServerAvatar } from "../ServerAvatar";
 

@@ -1,3 +1,5 @@
+import { type PublicUser } from "@discordia/client-shared";
+
 import { Feather } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import {
@@ -15,7 +17,6 @@ import { resolveImageUri } from "../../../lib/image-url";
 import { ServerAvatar } from "../../servers/components/ServerAvatar";
 import { MemberRoleBadges } from "../../roles/components/MemberRoleBadges";
 import { getPublicProfile } from "../service";
-import type { PublicUser } from "../../auth/types";
 import { MutualServersList } from "./MutualServersList";
 import { ProfileBanner } from "./ProfileBanner";
 

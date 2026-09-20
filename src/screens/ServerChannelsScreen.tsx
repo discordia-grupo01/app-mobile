@@ -1,3 +1,10 @@
+import {
+  type Category,
+  type Channel,
+  type LeaveServerResult,
+  type ServerSummary,
+} from "@discordia/client-shared";
+
 import { Feather } from "@expo/vector-icons";
 import { useState } from "react";
 import {
@@ -21,12 +28,6 @@ import { LeaveServerModal } from "../features/servers/components/server/LeaveSer
 import { RolesModal } from "../features/roles/RolesModal";
 import { ServerRail } from "../features/servers/components/rail/ServerRail";
 import { UserProfileBar } from "../features/servers/components/account/UserProfileBar";
-import type {
-  Category,
-  Channel,
-  LeaveServerActionResult,
-  ServerListItem,
-} from "../features/servers/types";
 import { reorderChannels } from "../features/servers/api";
 import { colors } from "../theme/colors";
 
@@ -35,8 +36,8 @@ const MENU_TOP = 58;
 const UNCATEGORIZED_KEY = "none";
 
 interface ServerChannelsScreenProps {
-  server: ServerListItem;
-  servers: ServerListItem[];
+  server: ServerSummary;
+  servers: ServerSummary[];
   authToken: string | null;
   userName?: string | null;
   isOwner?: boolean;
@@ -45,8 +46,8 @@ interface ServerChannelsScreenProps {
   onSwitchServer: (serverId: string) => void;
   onAddServer: () => void;
   onLogout: () => void;
-  onLeaveServer: (serverId: string) => Promise<LeaveServerActionResult>;
-  onServerUpdated: (server: ServerListItem) => void;
+  onLeaveServer: (serverId: string) => Promise<LeaveServerResult>;
+  onServerUpdated: (server: ServerSummary) => void;
 }
 
 function ChannelRow({

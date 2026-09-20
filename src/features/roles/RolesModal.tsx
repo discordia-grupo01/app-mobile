@@ -1,3 +1,9 @@
+import {
+  type Role,
+  ROLE_PERMISSIONS,
+  type RolePermission,
+} from "@discordia/client-shared";
+
 import { Feather } from "@expo/vector-icons";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -41,7 +47,6 @@ import {
   type Step,
 } from "./constants";
 import { styles } from "./styles";
-import { ROLE_PERMISSIONS, type Role, type RolePermission } from "./types";
 
 interface RolesModalProps {
   visible: boolean;

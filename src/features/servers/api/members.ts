@@ -1,8 +1,12 @@
 import {
+  type InitiateTransferResult,
+  type ListMembersResult,
   MEMBER_REASONS,
+  type MemberListResponse,
   MEMBERS_LOAD_FAILED,
   messageFor,
   OWNER_ONLY_TRANSFER,
+  type OwnershipTransfer,
   reasonOf,
   SERVER_NOT_FOUND,
   SESSION_EXPIRED_MESSAGE,
@@ -11,17 +15,11 @@ import {
 } from "@discordia/client-shared";
 
 import { apiFetch } from "../../../lib/api-client";
-import type {
-  InitiateTransferActionResult,
-  ListMembersActionResult,
-  MemberListResponse,
-  OwnershipTransfer,
-} from "../types";
 
 export async function listMembers(
   serverId: string,
   params?: { limit?: number; offset?: number },
-): Promise<ListMembersActionResult> {
+): Promise<ListMembersResult> {
   const query = new URLSearchParams();
   if (params?.limit != null) query.set("limit", String(params.limit));
   if (params?.offset != null) query.set("offset", String(params.offset));
@@ -54,7 +52,7 @@ export async function listMembers(
 export async function initiateOwnershipTransfer(
   serverId: string,
   toUserId: string,
-): Promise<InitiateTransferActionResult> {
+): Promise<InitiateTransferResult> {
   const result = await apiFetch<OwnershipTransfer>(
     `/v1/servers/${serverId}/ownership-transfers`,
     { method: "POST", body: JSON.stringify({ to_user_id: toUserId }) },
@@ -76,7 +74,7 @@ export async function initiateOwnershipTransfer(
       return {
         ok: false,
         message: fieldMessage,
-        fieldErrors: { toUserId: fieldMessage },
+        fieldErrors: { to_user_id: fieldMessage },
       };
     }
 

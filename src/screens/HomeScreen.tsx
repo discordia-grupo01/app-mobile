@@ -1,4 +1,8 @@
-import { SESSION_EXPIRED_MESSAGE } from "@discordia/client-shared";
+import {
+  type LeaveServerResult,
+  type ServerSummary,
+  SESSION_EXPIRED_MESSAGE,
+} from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
@@ -19,11 +23,6 @@ import { EmptyState } from "../features/servers/components/home/EmptyState";
 import { JoinServerModal } from "../features/servers/components/server/JoinServerModal";
 import { useAuth } from "../features/auth/auth-context";
 import { leaveServer, listMyServers } from "../features/servers/api";
-import type {
-  LeaveServerActionResult,
-  ServerListItem,
-  ServerSummary,
-} from "../features/servers/types";
 import { colors } from "../theme/colors";
 import { ChannelScreen } from "./ChannelScreen";
 import { ServerChannelsScreen } from "./ServerChannelsScreen";
@@ -32,7 +31,7 @@ import { ServerPickerScreen } from "./ServerPickerScreen";
 export function HomeScreen() {
   const { user, token, logout } = useAuth();
   const insets = useSafeAreaInsets();
-  const [servers, setServers] = useState<ServerListItem[]>([]);
+  const [servers, setServers] = useState<ServerSummary[]>([]);
   const [isLoadingServers, setIsLoadingServers] = useState(true);
   const [selectedServerId, setSelectedServerId] = useState<string | null>(null);
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(
@@ -94,7 +93,7 @@ export function HomeScreen() {
   }
 
   const handleLeaveServer = useCallback(
-    async (serverId: string): Promise<LeaveServerActionResult> => {
+    async (serverId: string): Promise<LeaveServerResult> => {
       if (!user) {
         return {
           ok: false,

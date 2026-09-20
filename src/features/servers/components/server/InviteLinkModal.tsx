@@ -1,3 +1,5 @@
+import { type Invitation } from "@discordia/client-shared";
+
 import { Feather } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
 import { useEffect, useState } from "react";
@@ -19,7 +21,6 @@ import {
   listInvitations,
   revokeInvite,
 } from "../../api";
-import type { Invitation } from "../../types";
 import { colors } from "../../../../theme/colors";
 
 interface InviteLinkModalProps {
@@ -259,7 +260,7 @@ export function InviteLinkModal({
     setIsGenerating(false);
 
     if (!result.ok) {
-      setErrorMessage(result.fieldErrors?.maxUses ?? result.message);
+      setErrorMessage(result.fieldErrors?.max_uses ?? result.message);
       return;
     }
 

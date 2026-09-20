@@ -141,9 +141,9 @@ export function TransferOwnershipModal({
         setStep("already-pending");
         return;
       }
-      if (result.fieldErrors?.toUserId) {
+      if (result.fieldErrors?.to_user_id) {
         setStep("form");
-        setGlobalError(result.fieldErrors.toUserId);
+        setGlobalError(result.fieldErrors.to_user_id);
         return;
       }
       setGlobalError(result.message);

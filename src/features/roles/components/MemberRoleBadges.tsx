@@ -1,3 +1,5 @@
+import { type Role } from "@discordia/client-shared";
+
 import { Feather } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import {
@@ -16,7 +18,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../../../theme/colors";
 import { assignRole, listMemberRoles, listRoles, removeRole } from "../api";
 import { hexToRgba } from "../constants";
-import type { Role } from "../types";
 
 interface MemberRoleBadgesProps {
   serverId: string;

@@ -1,12 +1,17 @@
 import {
+  type Category,
   CATEGORY_CREATE_FAILED,
   CATEGORY_REASONS,
+  type Channel,
   CHANNEL_CREATE_FAILED,
   CHANNEL_DELETE_FAILED,
   CHANNEL_NOT_FOUND,
   CHANNEL_REASONS,
   CHANNEL_REORDER_FAILED,
   CHANNEL_UPDATE_FAILED,
+  type CreateCategoryResult,
+  type CreateChannelResult,
+  type DeleteChannelResult,
   fieldOf,
   messageFor,
   OWNER_ONLY_CREATE_CATEGORY,
@@ -15,20 +20,13 @@ import {
   OWNER_ONLY_REORDER_CHANNEL,
   OWNER_ONLY_UPDATE_CHANNEL,
   reasonOf,
+  type ReorderChannelsResult,
   SERVER_NOT_FOUND,
   SESSION_EXPIRED_MESSAGE,
+  type UpdateChannelResult,
 } from "@discordia/client-shared";
 
 import { apiFetch } from "../../../lib/api-client";
-import type {
-  Category,
-  Channel,
-  CreateCategoryActionResult,
-  CreateChannelActionResult,
-  DeleteChannelActionResult,
-  ReorderChannelsActionResult,
-  UpdateChannelActionResult,
-} from "../types";
 
 interface CreateChannelInput {
   name: string;
@@ -43,7 +41,7 @@ interface CreateChannelInput {
 export async function createChannel(
   serverId: string,
   input: CreateChannelInput,
-): Promise<CreateChannelActionResult> {
+): Promise<CreateChannelResult> {
   const result = await apiFetch<Channel>(`/v1/servers/${serverId}/channels`, {
     method: "POST",
     body: JSON.stringify({
@@ -90,7 +88,7 @@ export async function createChannel(
 export async function updateChannel(
   channelId: string,
   input: { name: string },
-): Promise<UpdateChannelActionResult> {
+): Promise<UpdateChannelResult> {
   const result = await apiFetch<Channel>(`/v1/channels/${channelId}`, {
     method: "PATCH",
     body: JSON.stringify(input),
@@ -132,7 +130,7 @@ export async function updateChannel(
  */
 export async function deleteChannel(
   channelId: string,
-): Promise<DeleteChannelActionResult> {
+): Promise<DeleteChannelResult> {
   const result = await apiFetch<void>(`/v1/channels/${channelId}`, {
     method: "DELETE",
   });
@@ -168,7 +166,7 @@ export async function reorderChannels(
   serverId: string,
   categoryId: string | null,
   channelIds: string[],
-): Promise<ReorderChannelsActionResult> {
+): Promise<ReorderChannelsResult> {
   const result = await apiFetch<void>(
     `/v1/servers/${serverId}/channels/reorder`,
     {
@@ -209,7 +207,7 @@ export async function reorderChannels(
 export async function createCategory(
   serverId: string,
   name: string,
-): Promise<CreateCategoryActionResult> {
+): Promise<CreateCategoryResult> {
   const result = await apiFetch<Category>(
     `/v1/servers/${serverId}/categories`,
     { method: "POST", body: JSON.stringify({ name }) },

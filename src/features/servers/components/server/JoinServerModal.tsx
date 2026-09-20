@@ -1,3 +1,5 @@
+import { type ServerSummary } from "@discordia/client-shared";
+
 import { Feather } from "@expo/vector-icons";
 import { useState } from "react";
 import {
@@ -19,7 +21,6 @@ import {
   normalizeInviteCode,
   serverIconUrl,
 } from "../../api";
-import type { ServerSummary } from "../../types";
 import { Button } from "../../../../components/ui/Button";
 import { ServerAvatar } from "../ServerAvatar";
 

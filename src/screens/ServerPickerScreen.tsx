@@ -1,13 +1,14 @@
+import { type ServerSummary } from "@discordia/client-shared";
+
 import { Feather } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 
 import { ServerRail } from "../features/servers/components/rail/ServerRail";
 import { UserProfileBar } from "../features/servers/components/account/UserProfileBar";
-import type { ServerListItem } from "../features/servers/types";
 import { colors } from "../theme/colors";
 
 interface ServerPickerScreenProps {
-  servers: ServerListItem[];
+  servers: ServerSummary[];
   authToken: string | null;
   userName?: string | null;
   onSelectServer: (serverId: string) => void;

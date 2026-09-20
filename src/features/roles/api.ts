@@ -1,7 +1,12 @@
 import {
+  type AssignRoleResult,
+  type CreateRoleResult,
   DEFAULT_ROLE_SET_FAILED,
+  type DeleteRoleResult,
   fieldOf,
   invalidPermissionMessage,
+  type ListMemberRolesResult,
+  type ListRolesResult,
   MEMBER_OR_ROLE_NOT_FOUND,
   MEMBER_ROLE_ASSIGN_FAILED,
   MEMBER_ROLE_NOT_ASSIGNED,
@@ -15,33 +20,24 @@ import {
   OWNER_ONLY_SET_DEFAULT_ROLE,
   OWNER_ONLY_UPDATE_ROLE,
   reasonOf,
+  type RemoveRoleResult,
+  type Role,
   ROLE_CREATE_FAILED,
   ROLE_DELETE_FAILED,
   ROLE_IS_DEFAULT,
   ROLE_NOT_FOUND,
   ROLE_REASONS,
   ROLE_UPDATE_FAILED,
+  type RolePermission,
   ROLES_LOAD_FAILED,
   SESSION_EXPIRED_MESSAGE,
+  type SetDefaultRoleResult,
+  type UpdateRoleResult,
 } from "@discordia/client-shared";
 
 import { apiFetch } from "../../lib/api-client";
-import type {
-  AssignRoleActionResult,
-  CreateRoleActionResult,
-  DeleteRoleActionResult,
-  ListMemberRolesActionResult,
-  ListRolesActionResult,
-  RemoveRoleActionResult,
-  Role,
-  RolePermission,
-  SetDefaultRoleActionResult,
-  UpdateRoleActionResult,
-} from "./types";
 
-export async function listRoles(
-  serverId: string,
-): Promise<ListRolesActionResult> {
+export async function listRoles(serverId: string): Promise<ListRolesResult> {
   const result = await apiFetch<Role[]>(`/v1/servers/${serverId}/roles`, {
     method: "GET",
   });
@@ -62,7 +58,7 @@ export async function listRoles(
 export async function createRole(
   serverId: string,
   input: { name: string; color: string },
-): Promise<CreateRoleActionResult> {
+): Promise<CreateRoleResult> {
   const result = await apiFetch<Role>(`/v1/servers/${serverId}/roles`, {
     method: "POST",
     body: JSON.stringify(input),
@@ -98,7 +94,7 @@ export async function createRole(
 export async function updateRole(
   roleId: string,
   input: { name?: string; color?: string; permissions?: RolePermission[] },
-): Promise<UpdateRoleActionResult> {
+): Promise<UpdateRoleResult> {
   const result = await apiFetch<Role>(`/v1/roles/${roleId}`, {
     method: "PATCH",
     body: JSON.stringify(input),
@@ -138,9 +134,7 @@ export async function updateRole(
   return { ok: true, role: result.data };
 }
 
-export async function deleteRole(
-  roleId: string,
-): Promise<DeleteRoleActionResult> {
+export async function deleteRole(roleId: string): Promise<DeleteRoleResult> {
   const result = await apiFetch<void>(`/v1/roles/${roleId}`, {
     method: "DELETE",
   });
@@ -177,7 +171,7 @@ export async function deleteRole(
 export async function setDefaultRole(
   serverId: string,
   roleId: string,
-): Promise<SetDefaultRoleActionResult> {
+): Promise<SetDefaultRoleResult> {
   const result = await apiFetch<void>(`/v1/servers/${serverId}/default-role`, {
     method: "PUT",
     body: JSON.stringify({ role_id: roleId }),
@@ -208,7 +202,7 @@ export async function setDefaultRole(
 export async function listMemberRoles(
   serverId: string,
   userId: string,
-): Promise<ListMemberRolesActionResult> {
+): Promise<ListMemberRolesResult> {
   const result = await apiFetch<Role[]>(
     `/v1/servers/${serverId}/members/${userId}/roles`,
     { method: "GET" },
@@ -231,7 +225,7 @@ export async function assignRole(
   serverId: string,
   userId: string,
   roleId: string,
-): Promise<AssignRoleActionResult> {
+): Promise<AssignRoleResult> {
   const result = await apiFetch<Role>(
     `/v1/servers/${serverId}/members/${userId}/roles`,
     { method: "POST", body: JSON.stringify({ role_id: roleId }) },
@@ -260,7 +254,7 @@ export async function removeRole(
   serverId: string,
   userId: string,
   roleId: string,
-): Promise<RemoveRoleActionResult> {
+): Promise<RemoveRoleResult> {
   const result = await apiFetch<void>(
     `/v1/servers/${serverId}/members/${userId}/roles/${roleId}`,
     { method: "DELETE" },

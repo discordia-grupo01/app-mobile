@@ -1,3 +1,5 @@
+import { type LeaveServerResult } from "@discordia/client-shared";
+
 import { Feather } from "@expo/vector-icons";
 import { useState } from "react";
 import {
@@ -9,7 +11,6 @@ import {
   View,
 } from "react-native";
 
-import type { LeaveServerActionResult } from "../../types";
 import { colors } from "../../../../theme/colors";
 import { Button } from "../../../../components/ui/Button";
 
@@ -17,7 +18,7 @@ interface LeaveServerModalProps {
   visible: boolean;
   serverName: string;
   onClose: () => void;
-  onConfirm: () => Promise<LeaveServerActionResult>;
+  onConfirm: () => Promise<LeaveServerResult>;
 }
 
 type ModalView = "confirm" | "blocked";

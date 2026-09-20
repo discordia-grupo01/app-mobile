@@ -1,23 +1,21 @@
 import {
+  type CreateInviteResult,
+  type Invitation,
   INVITE_CREATE_FAILED,
   INVITE_NOT_FOUND,
   INVITE_REASONS,
   INVITE_REVOKE_FAILED,
   INVITES_LOAD_FAILED,
+  type ListInvitationsResult,
   messageFor,
   NOT_A_MEMBER,
   reasonOf,
+  type RevokeInviteResult,
   SERVER_NOT_FOUND,
   SESSION_EXPIRED_MESSAGE,
 } from "@discordia/client-shared";
 
 import { apiFetch } from "../../../lib/api-client";
-import type {
-  GenerateInviteActionResult,
-  Invitation,
-  ListInvitationsActionResult,
-  RevokeInviteActionResult,
-} from "../types";
 
 export function normalizeInviteCode(raw: string): string {
   const match = raw.trim().match(/([A-Za-z0-9_-]{4,20})$/);
@@ -31,7 +29,7 @@ export function inviteLinkText(code: string): string {
 export async function generateInvite(
   serverId: string,
   maxUses: number | null,
-): Promise<GenerateInviteActionResult> {
+): Promise<CreateInviteResult> {
   const result = await apiFetch<Invitation>(`/v1/servers/${serverId}/invites`, {
     method: "POST",
     body: JSON.stringify(maxUses != null ? { max_uses: maxUses } : {}),
@@ -43,7 +41,7 @@ export async function generateInvite(
     // Este ademas marca el campo del formulario.
     if (reason === "max_uses_invalid") {
       const message = INVITE_REASONS[reason];
-      return { ok: false, message, fieldErrors: { maxUses: message } };
+      return { ok: false, message, fieldErrors: { max_uses: message } };
     }
 
     if (!reason || !INVITE_REASONS[reason]) {
@@ -64,9 +62,7 @@ export async function generateInvite(
   return { ok: true, invitation: result.data };
 }
 
-export async function revokeInvite(
-  code: string,
-): Promise<RevokeInviteActionResult> {
+export async function revokeInvite(code: string): Promise<RevokeInviteResult> {
   const result = await apiFetch<void>(
     `/v1/invites/${encodeURIComponent(code)}`,
     { method: "DELETE" },
@@ -94,7 +90,7 @@ export async function revokeInvite(
  */
 export async function listInvitations(
   serverId: string,
-): Promise<ListInvitationsActionResult> {
+): Promise<ListInvitationsResult> {
   const result = await apiFetch<Invitation[]>(
     `/v1/servers/${serverId}/invites`,
     { method: "GET" },

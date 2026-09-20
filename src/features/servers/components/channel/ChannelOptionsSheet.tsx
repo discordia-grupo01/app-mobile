@@ -1,3 +1,5 @@
+import { type Channel } from "@discordia/client-shared";
+
 import { Feather } from "@expo/vector-icons";
 import {
   Modal,
@@ -8,7 +10,6 @@ import {
   View,
 } from "react-native";
 
-import type { Channel } from "../../types";
 import { colors } from "../../../../theme/colors";
 
 interface ChannelOptionsSheetProps {

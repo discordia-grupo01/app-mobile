@@ -1,30 +1,28 @@
 import {
+  type AuthResponse,
   EMAIL_ALREADY_REGISTERED,
+  type ForgotPasswordResult,
   GOOGLE_UNAVAILABLE,
   GOOGLE_VERIFY_FAILED,
   INVALID_CREDENTIALS,
   INVALID_DATA_MESSAGE,
   INVALID_EMAIL_MESSAGE,
+  type LoginResultWithToken,
+  type LoginValues,
   messageFor,
+  type PublicUser,
   RATE_LIMITED_MESSAGE,
+  type RegisterResult,
+  type RegisterValues,
   REQUEST_FAILED_MESSAGE,
+  type User,
 } from "@discordia/client-shared";
 
 import { apiFetch } from "../../lib/api-client";
-import type {
-  AuthResponse,
-  ForgotPasswordActionResult,
-  LoginActionResult,
-  LoginValues,
-  PublicUser,
-  RegisterActionResult,
-  RegisterValues,
-  User,
-} from "./types";
 
 export async function registerService(
   values: RegisterValues,
-): Promise<RegisterActionResult> {
+): Promise<RegisterResult> {
   const result = await apiFetch<User>("/v1/users", {
     method: "POST",
     body: JSON.stringify({
@@ -52,7 +50,7 @@ export async function registerService(
 
 export async function loginService(
   credentials: LoginValues,
-): Promise<LoginActionResult> {
+): Promise<LoginResultWithToken> {
   const result = await apiFetch<AuthResponse>("/v1/login", {
     method: "POST",
     body: JSON.stringify({
@@ -76,7 +74,7 @@ export async function loginService(
 
 export async function loginWithGoogleService(
   idToken: string,
-): Promise<LoginActionResult> {
+): Promise<LoginResultWithToken> {
   const result = await apiFetch<AuthResponse>("/v1/oauth/google", {
     method: "POST",
     body: JSON.stringify({ id_token: idToken }),
@@ -113,7 +111,7 @@ export async function getPublicUser(
 
 export async function forgotPasswordService(
   email: string,
-): Promise<ForgotPasswordActionResult> {
+): Promise<ForgotPasswordResult> {
   const result = await apiFetch<{ message: string }>("/v1/password-recovery", {
     method: "POST",
     body: JSON.stringify({ email: email.trim() }),

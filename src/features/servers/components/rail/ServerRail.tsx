@@ -1,16 +1,17 @@
+import { type ServerSummary } from "@discordia/client-shared";
+
 import { Feather } from "@expo/vector-icons";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { serverIconUrl } from "../../api";
-import type { ServerListItem } from "../../types";
 import { colors } from "../../../../theme/colors";
 import { ServerAvatar } from "../ServerAvatar";
 
 export const RAIL_WIDTH = 72;
 
 interface ServerRailProps {
-  servers: ServerListItem[];
+  servers: ServerSummary[];
   activeServerId: string | null;
   authToken: string | null;
   onSelectHome: () => void;
@@ -24,7 +25,7 @@ function ServerRailIcon({
   authToken,
   onPress,
 }: {
-  item: ServerListItem;
+  item: ServerSummary;
   active: boolean;
   authToken: string | null;
   onPress: () => void;

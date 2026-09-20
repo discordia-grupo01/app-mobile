@@ -1,29 +1,29 @@
 import * as FileSystem from "expo-file-system/legacy";
 
 import {
+  type ApiErrorBody,
+  type GetOwnProfileResult,
+  type GetPublicProfileResult,
   messageFor,
   NETWORK_ERROR_MESSAGE,
   OWN_PROFILE_LOAD_FAILED,
   PROFILE_LOAD_FAILED,
   PROFILE_UPDATE_FAILED,
+  type PublicUser,
   SESSION_EXPIRED_MESSAGE,
   STATUS_CLEAR_FAILED,
   STATUS_UPDATE_FAILED,
+  type UpdateCustomStatusResult,
+  type UpdateOwnProfileResult,
+  type User,
 } from "@discordia/client-shared";
 
 import { apiFetch, refreshAccessToken } from "../../lib/api-client";
 import { env } from "../../lib/env";
 import { getToken } from "../../lib/storage";
-import type { ApiErrorBody, PublicUser, User } from "../auth/types";
-import type {
-  GetOwnProfileActionResult,
-  GetPublicProfileActionResult,
-  PickedProfileImage,
-  UpdateOwnProfileActionResult,
-  UpdateStatusActionResult,
-} from "./types";
+import type { PickedProfileImage } from "./types";
 
-export async function getOwnProfile(): Promise<GetOwnProfileActionResult> {
+export async function getOwnProfile(): Promise<GetOwnProfileResult> {
   const result = await apiFetch<User>("/v1/me/profile", { method: "GET" });
   if (!result.ok) {
     return {
@@ -36,7 +36,7 @@ export async function getOwnProfile(): Promise<GetOwnProfileActionResult> {
 
 export async function getPublicProfile(
   userId: string,
-): Promise<GetPublicProfileActionResult> {
+): Promise<GetPublicProfileResult> {
   const result = await apiFetch<PublicUser>(`/v1/users/${userId}`, {
     method: "GET",
   });
@@ -88,7 +88,7 @@ export async function updateOwnProfile(params: {
   name: string;
   description: string;
   image?: PickedProfileImage;
-}): Promise<UpdateOwnProfileActionResult> {
+}): Promise<UpdateOwnProfileResult> {
   let status: number;
   let rawBody: string;
   try {
@@ -133,7 +133,7 @@ export async function updateOwnProfile(params: {
 
 export async function updateStatus(
   statusText: string,
-): Promise<UpdateStatusActionResult> {
+): Promise<UpdateCustomStatusResult> {
   const result = await apiFetch<User>("/v1/me/status", {
     method: "PUT",
     body: JSON.stringify({ status_text: statusText }),
@@ -153,7 +153,7 @@ export async function updateStatus(
 
 export async function clearStatus(
   currentUser: User,
-): Promise<UpdateStatusActionResult> {
+): Promise<UpdateCustomStatusResult> {
   const result = await apiFetch<void>("/v1/me/status", { method: "DELETE" });
   if (!result.ok) {
     return {

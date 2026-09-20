@@ -1,4 +1,4 @@
-import type { RolePermission } from "./types";
+import { type RolePermission } from "@discordia/client-shared";
 
 export const MAX_NAME = 100;
 

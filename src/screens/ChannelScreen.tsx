@@ -1,10 +1,11 @@
+import { type Channel } from "@discordia/client-shared";
+
 import { Feather } from "@expo/vector-icons";
 import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { MembersSidebar } from "../features/servers/components/channel/MembersSidebar";
-import type { Channel } from "../features/servers/types";
 import { colors } from "../theme/colors";
 
 interface ChannelScreenProps {

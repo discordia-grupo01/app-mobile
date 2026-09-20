@@ -1,10 +1,13 @@
-import { hasErrors, validateRegister } from "@discordia/client-shared";
+import {
+  hasErrors,
+  type RegisterErrors,
+  validateRegister,
+} from "@discordia/client-shared";
 
 import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { useAuth } from "../auth-context";
-import type { RegisterErrors } from "../types";
 import { colors } from "../../../theme/colors";
 
 import { GoogleIcon } from "../../../components/icons/GoogleIcon";

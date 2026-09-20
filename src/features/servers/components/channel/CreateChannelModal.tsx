@@ -1,3 +1,5 @@
+import { type Category, type Channel } from "@discordia/client-shared";
+
 import { Feather } from "@expo/vector-icons";
 import { useState } from "react";
 import {
@@ -14,7 +16,6 @@ import {
 } from "react-native";
 
 import { createChannel } from "../../api";
-import type { Category, Channel } from "../../types";
 import { colors } from "../../../../theme/colors";
 import { Button } from "../../../../components/ui/Button";
 

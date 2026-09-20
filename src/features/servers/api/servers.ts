@@ -1,7 +1,12 @@
 import {
+  type CreateServerResult,
   detailsOf,
   fieldOf,
+  type GetServerResult,
   INVITE_REASONS,
+  type JoinServerResult,
+  type LeaveServerResult,
+  type ListServersResult,
   messageFor,
   NETWORK_ERROR_MESSAGE,
   reasonOf,
@@ -10,6 +15,7 @@ import {
   SERVER_LOAD_FAILED,
   SERVER_REASONS,
   SERVERS_LOAD_FAILED,
+  type ServerSummary,
   SESSION_EXPIRED_MESSAGE,
   UNEXPECTED_ERROR_MESSAGE,
 } from "@discordia/client-shared";
@@ -18,21 +24,13 @@ import * as FileSystem from "expo-file-system/legacy";
 import { apiFetch, refreshAccessToken } from "../../../lib/api-client";
 import { env } from "../../../lib/env";
 import { getToken } from "../../../lib/storage";
-import type {
-  CreateServerActionResult,
-  CreateServerParams,
-  GetServerActionResult,
-  JoinServerActionResult,
-  LeaveServerActionResult,
-  ListServersActionResult,
-  ServerSummary,
-} from "../types";
+import type { CreateServerParams } from "../types";
 
 export function serverIconUrl(serverId: string): string {
   return `${env.apiUrl}/v1/servers/${serverId}/icon`;
 }
 
-export async function listMyServers(): Promise<ListServersActionResult> {
+export async function listMyServers(): Promise<ListServersResult> {
   const result = await apiFetch<ServerSummary[]>("/v1/servers", {
     method: "GET",
   });
@@ -45,9 +43,7 @@ export async function listMyServers(): Promise<ListServersActionResult> {
   return { ok: true, servers: result.data };
 }
 
-export async function getServer(
-  serverId: string,
-): Promise<GetServerActionResult> {
+export async function getServer(serverId: string): Promise<GetServerResult> {
   const result = await apiFetch<ServerSummary>(`/v1/servers/${serverId}`, {
     method: "GET",
   });
@@ -96,7 +92,7 @@ async function uploadServer(
 
 export async function createServer(
   params: CreateServerParams,
-): Promise<CreateServerActionResult> {
+): Promise<CreateServerResult> {
   let status: number;
   let rawBody: string;
   try {
@@ -153,7 +149,7 @@ export async function createServer(
 export async function leaveServer(
   serverId: string,
   userId: string,
-): Promise<LeaveServerActionResult> {
+): Promise<LeaveServerResult> {
   const result = await apiFetch<void>(
     `/v1/servers/${serverId}/members/${userId}`,
     { method: "DELETE" },
@@ -189,7 +185,7 @@ export async function leaveServer(
 
 export async function joinServerByCode(
   code: string,
-): Promise<JoinServerActionResult> {
+): Promise<JoinServerResult> {
   const result = await apiFetch<{
     server_id: string;
     already_member: boolean;
