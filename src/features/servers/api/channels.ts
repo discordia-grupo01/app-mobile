@@ -1,9 +1,10 @@
 import {
+  CATEGORY_REASONS,
+  CHANNEL_REASONS,
   fieldOf,
   messageFor,
   reasonOf,
   SESSION_EXPIRED_MESSAGE,
-  type ReasonCatalog,
 } from "@discordia/client-shared";
 
 import { apiFetch } from "../../../lib/api-client";
@@ -16,15 +17,6 @@ import type {
   ReorderChannelsActionResult,
   UpdateChannelActionResult,
 } from "../types";
-
-const CREATE_CHANNEL_REASONS: ReasonCatalog = {
-  name_required: "Ingresá un nombre para el canal.",
-  name_too_long: "El nombre es demasiado largo.",
-  name_invalid_chars: "El nombre tiene caracteres inválidos.",
-  name_taken: "Ya existe un canal con ese nombre en esa categoría.",
-  kind_invalid: "El tipo de canal debe ser texto o voz.",
-  category_server_mismatch: "Esa categoría no pertenece a este servidor.",
-};
 
 interface CreateChannelInput {
   name: string;
@@ -52,7 +44,7 @@ export async function createChannel(
   if (!result.ok) {
     const reason = reasonOf(result.details);
     const field = fieldOf(result.details);
-    const friendly = reason ? CREATE_CHANNEL_REASONS[reason] : undefined;
+    const friendly = reason ? CHANNEL_REASONS[reason] : undefined;
 
     if (friendly && (field === "name" || field === "kind")) {
       return {
@@ -74,7 +66,7 @@ export async function createChannel(
       ok: false,
       message: messageFor(
         result,
-        CREATE_CHANNEL_REASONS,
+        CHANNEL_REASONS,
         "No pudimos crear el canal. Intentá de nuevo.",
       ),
     };
@@ -82,13 +74,6 @@ export async function createChannel(
 
   return { ok: true, channel: result.data };
 }
-
-const UPDATE_CHANNEL_REASONS: ReasonCatalog = {
-  name_required: "Ingresá un nombre para el canal.",
-  name_too_long: "El nombre es demasiado largo.",
-  name_invalid_chars: "El nombre tiene caracteres inválidos.",
-  name_taken: "Ya existe un canal con ese nombre en esa categoría.",
-};
 
 /**
  * `PATCH /v1/channels/:id` contra el gateway. Solo el owner del server puede
@@ -106,7 +91,7 @@ export async function updateChannel(
   if (!result.ok) {
     const reason = reasonOf(result.details);
     const field = fieldOf(result.details);
-    const friendly = reason ? UPDATE_CHANNEL_REASONS[reason] : undefined;
+    const friendly = reason ? CHANNEL_REASONS[reason] : undefined;
 
     if (field === "name" && friendly) {
       return { ok: false, message: friendly, fieldErrors: { name: friendly } };
@@ -127,7 +112,7 @@ export async function updateChannel(
       ok: false,
       message: messageFor(
         result,
-        UPDATE_CHANNEL_REASONS,
+        CHANNEL_REASONS,
         "No pudimos editar el canal. Intentá de nuevo.",
       ),
     };
@@ -174,12 +159,6 @@ export async function deleteChannel(
   return { ok: true };
 }
 
-const REORDER_CHANNELS_REASONS: ReasonCatalog = {
-  channel_set_mismatch:
-    "La lista de canales cambió mientras reordenabas. Recargá e intentá de nuevo.",
-  category_server_mismatch: "Esa categoría no pertenece a este servidor.",
-};
-
 /**
  * `PATCH /v1/servers/:id/channels/reorder` contra el gateway. Solo el owner
  * del server puede reordenar canales. `categoryId` es `null` para reordenar
@@ -218,7 +197,7 @@ export async function reorderChannels(
       ok: false,
       message: messageFor(
         result,
-        REORDER_CHANNELS_REASONS,
+        CHANNEL_REASONS,
         "No pudimos reordenar los canales. Intentá de nuevo.",
       ),
     };
@@ -226,12 +205,6 @@ export async function reorderChannels(
 
   return { ok: true };
 }
-
-const CREATE_CATEGORY_REASONS: ReasonCatalog = {
-  name_required: "Ingresá un nombre para la categoría.",
-  name_too_long: "El nombre es demasiado largo.",
-  name_invalid_chars: "El nombre tiene caracteres inválidos.",
-};
 
 /**
  * `POST /v1/servers/:id/categories` contra el gateway. Solo el owner del
@@ -249,7 +222,7 @@ export async function createCategory(
   if (!result.ok) {
     const reason = reasonOf(result.details);
     const field = fieldOf(result.details);
-    const friendly = reason ? CREATE_CATEGORY_REASONS[reason] : undefined;
+    const friendly = reason ? CATEGORY_REASONS[reason] : undefined;
 
     if (field === "name" && friendly) {
       return { ok: false, message: friendly, fieldErrors: { name: friendly } };
@@ -270,7 +243,7 @@ export async function createCategory(
       ok: false,
       message: messageFor(
         result,
-        CREATE_CATEGORY_REASONS,
+        CATEGORY_REASONS,
         "No pudimos crear la categoría. Intentá de nuevo.",
       ),
     };

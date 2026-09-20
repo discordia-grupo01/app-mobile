@@ -1,13 +1,14 @@
 import {
   detailsOf,
+  INVITE_REASONS,
   fieldOf,
   messageFor,
   NETWORK_ERROR_MESSAGE,
   reasonOf,
   REQUEST_FAILED_MESSAGE,
+  SERVER_REASONS,
   SESSION_EXPIRED_MESSAGE,
   UNEXPECTED_ERROR_MESSAGE,
-  type ReasonCatalog,
 } from "@discordia/client-shared";
 import * as FileSystem from "expo-file-system/legacy";
 
@@ -59,17 +60,6 @@ export async function getServer(
   }
   return { ok: true, server: result.data };
 }
-
-const CREATE_REASONS: ReasonCatalog = {
-  name_required: "Ingresá un nombre para el servidor.",
-  name_too_short: "El nombre debe tener entre 2 y 100 caracteres.",
-  name_too_long: "El nombre debe tener entre 2 y 100 caracteres.",
-  name_invalid_chars: "El nombre contiene caracteres no permitidos.",
-  name_taken: "Ya tenés un servidor con ese nombre.",
-  icon_too_large: "El archivo no puede pesar más de 20 MB.",
-  icon_unsupported_type: "El archivo debe ser PNG, JPG o WEBP.",
-  icon_unreadable: "No pudimos leer esa imagen. Probá con otra.",
-};
 
 async function uploadServer(
   params: CreateServerParams,
@@ -140,7 +130,7 @@ export async function createServer(
     const details = detailsOf(body);
     const reason = reasonOf(details);
     const field = fieldOf(details);
-    const friendly = reason ? CREATE_REASONS[reason] : undefined;
+    const friendly = reason ? SERVER_REASONS[reason] : undefined;
 
     if ((field === "name" || field === "icon") && friendly) {
       return {
@@ -202,11 +192,6 @@ export async function leaveServer(
   return { ok: true };
 }
 
-const JOIN_REASONS: ReasonCatalog = {
-  invitation_invalid: "Este enlace de invitación no es válido o expiró.",
-  user_banned: "No podés unirte a este servidor.",
-};
-
 export async function joinServerByCode(
   code: string,
 ): Promise<JoinServerActionResult> {
@@ -218,7 +203,7 @@ export async function joinServerByCode(
   if (!result.ok) {
     const reason = reasonOf(result.details);
     // Estos ademas marcan el campo del formulario.
-    const friendly = reason ? JOIN_REASONS[reason] : undefined;
+    const friendly = reason ? INVITE_REASONS[reason] : undefined;
     if (friendly) {
       return { ok: false, message: friendly, fieldErrors: { code: friendly } };
     }

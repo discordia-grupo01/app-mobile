@@ -1,8 +1,8 @@
 import {
+  INVITE_REASONS,
   messageFor,
   reasonOf,
   SESSION_EXPIRED_MESSAGE,
-  type ReasonCatalog,
 } from "@discordia/client-shared";
 
 import { apiFetch } from "../../../lib/api-client";
@@ -22,11 +22,6 @@ export function inviteLinkText(code: string): string {
   return `/invite/${code}`;
 }
 
-const GENERATE_INVITE_REASONS: ReasonCatalog = {
-  max_uses_invalid: "Ingresá un número entero mayor a 0.",
-  invite_permission_denied: "No sos miembro de este servidor.",
-};
-
 export async function generateInvite(
   serverId: string,
   maxUses: number | null,
@@ -41,11 +36,11 @@ export async function generateInvite(
 
     // Este ademas marca el campo del formulario.
     if (reason === "max_uses_invalid") {
-      const message = GENERATE_INVITE_REASONS[reason];
+      const message = INVITE_REASONS[reason];
       return { ok: false, message, fieldErrors: { maxUses: message } };
     }
 
-    if (!reason || !GENERATE_INVITE_REASONS[reason]) {
+    if (!reason || !INVITE_REASONS[reason]) {
       if (result.status === 401) {
         return { ok: false, message: SESSION_EXPIRED_MESSAGE };
       }
@@ -58,7 +53,7 @@ export async function generateInvite(
       ok: false,
       message: messageFor(
         result,
-        GENERATE_INVITE_REASONS,
+        INVITE_REASONS,
         "No pudimos generar el enlace. Intentá de nuevo.",
       ),
     };

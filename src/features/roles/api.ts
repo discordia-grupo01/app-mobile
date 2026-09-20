@@ -2,8 +2,8 @@ import {
   fieldOf,
   messageFor,
   reasonOf,
+  ROLE_REASONS,
   SESSION_EXPIRED_MESSAGE,
-  type ReasonCatalog,
 } from "@discordia/client-shared";
 
 import { apiFetch } from "../../lib/api-client";
@@ -19,12 +19,6 @@ import type {
   SetDefaultRoleActionResult,
   UpdateRoleActionResult,
 } from "./types";
-
-const ROLE_REASONS: ReasonCatalog = {
-  name_required: "Ingresá un nombre para el rol.",
-  name_too_long: "El nombre es demasiado largo.",
-  color_invalid_format: "Elegí un color válido para el rol.",
-};
 
 export async function listRoles(
   serverId: string,

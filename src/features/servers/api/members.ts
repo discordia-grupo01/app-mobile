@@ -1,8 +1,9 @@
 import {
+  MEMBER_REASONS,
   messageFor,
   reasonOf,
   SESSION_EXPIRED_MESSAGE,
-  type ReasonCatalog,
+  TRANSFER_REASONS,
 } from "@discordia/client-shared";
 
 import { apiFetch } from "../../../lib/api-client";
@@ -12,10 +13,6 @@ import type {
   MemberListResponse,
   OwnershipTransfer,
 } from "../types";
-
-const LIST_MEMBERS_REASONS: ReasonCatalog = {
-  forbidden_not_member: "Ya no sos miembro de este servidor.",
-};
 
 export async function listMembers(
   serverId: string,
@@ -33,7 +30,7 @@ export async function listMembers(
 
   if (!result.ok) {
     const reason = reasonOf(result.details);
-    if (!reason || !LIST_MEMBERS_REASONS[reason]) {
+    if (!reason || !MEMBER_REASONS[reason]) {
       if (result.status === 401) {
         return { ok: false, message: SESSION_EXPIRED_MESSAGE };
       }
@@ -45,7 +42,7 @@ export async function listMembers(
       ok: false,
       message: messageFor(
         result,
-        LIST_MEMBERS_REASONS,
+        MEMBER_REASONS,
         "No pudimos cargar los miembros del servidor.",
       ),
     };
@@ -53,13 +50,6 @@ export async function listMembers(
 
   return { ok: true, members: result.data.members, total: result.data.total };
 }
-
-const INITIATE_TRANSFER_REASONS: ReasonCatalog = {
-  required:
-    "Ingresá el ID del miembro al que le vas a transferir la propiedad.",
-  not_a_member: "Ese usuario no es miembro de este servidor.",
-  already_owner: "Esa persona ya es la propietaria del servidor.",
-};
 
 export async function initiateOwnershipTransfer(
   serverId: string,
@@ -81,7 +71,7 @@ export async function initiateOwnershipTransfer(
       };
     }
 
-    const fieldMessage = reason ? INITIATE_TRANSFER_REASONS[reason] : undefined;
+    const fieldMessage = reason ? TRANSFER_REASONS[reason] : undefined;
     if (fieldMessage) {
       return {
         ok: false,
