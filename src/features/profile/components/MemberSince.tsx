@@ -1,8 +1,9 @@
+import { formatMemberSince } from "@discordia/client-shared";
+
 import { Feather } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 
 import { colors } from "../../../theme/colors";
-import { formatMemberSince } from "../format-member-since";
 
 export function MemberSince({ isoDate }: { isoDate: string }) {
   return (
