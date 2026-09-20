@@ -1,3 +1,12 @@
+import {
+  CREATE_FIRST_SERVER_DESCRIPTION,
+  CREATE_FIRST_SERVER_TITLE,
+  EMPTY_HOME_TITLE,
+  JOIN_WITH_LINK_DESCRIPTION,
+  JOIN_WITH_LINK_TITLE,
+  UNLIMITED_INVITES_FEATURE,
+} from "@discordia/client-shared";
+
 import { Feather } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import {
@@ -35,7 +44,7 @@ const FEATURE_PILLS: {
   { icon: "hash", label: "Canales de texto" },
   { icon: "volume-2", label: "Canales de voz" },
   { icon: "zap", label: "Roles y permisos" },
-  { icon: "users", label: "Invitaciones sin límite de usos" },
+  { icon: "users", label: UNLIMITED_INVITES_FEATURE },
 ];
 
 function FloatingBadge({
@@ -177,7 +186,7 @@ export function EmptyState({
         <Text style={styles.title}>
           {userName
             ? `Hola, ${userName}. Tu espacio está esperándote`
-            : "Tu espacio está esperándote"}
+            : EMPTY_HOME_TITLE}
         </Text>
         <Text style={styles.subtitle}>
           Todavía no pertenecés a ningún servidor. Creá el tuyo en segundos o
@@ -189,15 +198,15 @@ export function EmptyState({
         <ActionCard
           accent
           icon="plus"
-          title="Crear mi primer servidor"
-          description="Elegí un nombre e ícono. El resto lo hacemos nosotros: dos canales listos para usar desde el principio."
+          title={CREATE_FIRST_SERVER_TITLE}
+          description={CREATE_FIRST_SERVER_DESCRIPTION}
           cta="Empezar ahora"
           onPress={onCreatePress}
         />
         <ActionCard
           icon="link-2"
-          title="Unirme con un enlace"
-          description="¿Tenés un código de invitación? Pegalo acá y entrás al instante."
+          title={JOIN_WITH_LINK_TITLE}
+          description={JOIN_WITH_LINK_DESCRIPTION}
           cta="Ingresar código"
           onPress={onJoinPress}
         />

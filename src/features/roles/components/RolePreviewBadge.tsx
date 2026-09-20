@@ -1,6 +1,7 @@
+import { hexToRgba, isValidHex } from "@discordia/client-shared";
+
 import { Text, View } from "react-native";
 
-import { hexToRgba, isValidHex } from "../constants";
 import { styles } from "../styles";
 
 export function RolePreviewBadge({

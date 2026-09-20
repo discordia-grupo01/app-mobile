@@ -1,4 +1,8 @@
-import { type Invitation } from "@discordia/client-shared";
+import {
+  type Invitation,
+  MAX_USES_LABEL,
+  validateMaxUses,
+} from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
@@ -242,17 +246,14 @@ export function InviteLinkModal({
 
   async function handleGenerate() {
     const trimmed = maxUsesInput.trim();
-    let maxUses: number | null = null;
-    if (trimmed) {
-      const n = Number.parseInt(trimmed, 10);
-      if (!Number.isInteger(n) || n < 1) {
-        setErrorMessage(
-          "El límite de usos debe ser un número entero mayor a 0.",
-        );
-        return;
-      }
-      maxUses = n;
+    const maxUsesError = validateMaxUses(trimmed);
+    if (maxUsesError) {
+      setErrorMessage(maxUsesError);
+      return;
     }
+    // Antes usaba `parseInt`, que acepta "5abc" como 5. `validateMaxUses` usa
+    // `Number`, igual que `web-client`.
+    const maxUses = trimmed ? Number(trimmed) : null;
 
     setIsGenerating(true);
     setErrorMessage("");
@@ -323,7 +324,7 @@ export function InviteLinkModal({
                     setMaxUsesInput(text.replace(/[^0-9]/g, ""));
                     setErrorMessage("");
                   }}
-                  placeholder="Límite de usos (opcional)"
+                  placeholder={MAX_USES_LABEL}
                   placeholderTextColor={colors.textSubtle}
                   keyboardType="number-pad"
                   style={styles.generateInputText}

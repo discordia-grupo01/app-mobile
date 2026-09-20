@@ -1,4 +1,8 @@
-import { type Category } from "@discordia/client-shared";
+import {
+  type Category,
+  MAX_NAME,
+  validateCategoryName,
+} from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
 import { useState } from "react";
@@ -18,8 +22,6 @@ import {
 import { createCategory } from "../../api";
 import { colors } from "../../../../theme/colors";
 import { Button } from "../../../../components/ui/Button";
-
-const MAX_NAME = 100;
 
 interface CreateCategoryModalProps {
   visible: boolean;
@@ -56,8 +58,9 @@ export function CreateCategoryModal({
     setNameError("");
     setGlobalError("");
 
-    if (!trimmed) {
-      setNameError("Ingresá un nombre para la categoría.");
+    const nameError = validateCategoryName(trimmed);
+    if (nameError) {
+      setNameError(nameError);
       return;
     }
 

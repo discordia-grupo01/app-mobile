@@ -1,4 +1,8 @@
-import { type Channel } from "@discordia/client-shared";
+import {
+  type Channel,
+  MAX_NAME,
+  validateChannelName,
+} from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
 import { useState } from "react";
@@ -18,8 +22,6 @@ import {
 import { updateChannel } from "../../api";
 import { colors } from "../../../../theme/colors";
 import { Button } from "../../../../components/ui/Button";
-
-const MAX_NAME = 100;
 
 interface EditChannelModalProps {
   channel: Channel;
@@ -43,8 +45,9 @@ export function EditChannelModal({
     setNameError("");
     setGlobalError("");
 
-    if (!trimmed) {
-      setNameError("Ingresá un nombre para el canal.");
+    const nameError = validateChannelName(trimmed);
+    if (nameError) {
+      setNameError(nameError);
       return;
     }
 

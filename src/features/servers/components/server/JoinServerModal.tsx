@@ -1,4 +1,9 @@
-import { type ServerSummary } from "@discordia/client-shared";
+import {
+  ALREADY_MEMBER_SUFFIX,
+  INVITE_CODE_REQUIRED,
+  JOINED_SERVER_SUFFIX,
+  type ServerSummary,
+} from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
 import { useState } from "react";
@@ -64,7 +69,7 @@ export function JoinServerModal({
 
     const trimmed = code.trim();
     if (!trimmed) {
-      setFieldError("Pegá un enlace o código de invitación.");
+      setFieldError(INVITE_CODE_REQUIRED);
       return;
     }
 
@@ -133,8 +138,8 @@ export function JoinServerModal({
                       {joined.server.name}
                     </Text>
                     {joined.alreadyMember
-                      ? " ya te tenía como miembro."
-                      : " te está esperando en la barra lateral."}
+                      ? ALREADY_MEMBER_SUFFIX
+                      : JOINED_SERVER_SUFFIX}
                   </Text>
                 </View>
 

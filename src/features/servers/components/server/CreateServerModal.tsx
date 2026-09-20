@@ -1,4 +1,9 @@
-import { type ServerSummary } from "@discordia/client-shared";
+import {
+  MAX_NAME,
+  type ServerSummary,
+  validateServerIcon,
+  validateServerName,
+} from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
@@ -21,10 +26,6 @@ import { colors } from "../../../../theme/colors";
 import { createServer } from "../../api";
 import { Button } from "../../../../components/ui/Button";
 import { ServerAvatar } from "../ServerAvatar";
-
-const MAX_NAME = 100;
-const MAX_FILE_MB = 20;
-const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
 
 interface PickedIcon {
   uri: string;
@@ -93,13 +94,18 @@ export function CreateServerModal({
     if (result.canceled || !result.assets?.[0]) return;
 
     const asset = result.assets[0];
-    const type = asset.mimeType ?? "image/jpeg";
-    if (!ALLOWED_TYPES.includes(type)) {
-      setIconError("El archivo debe ser PNG, JPG o WEBP.");
-      return;
-    }
-    if (asset.fileSize && asset.fileSize > MAX_FILE_MB * 1024 * 1024) {
-      setIconError(`El archivo no puede pesar más de ${MAX_FILE_MB} MB.`);
+    // `image/jpg` no es un MIME real, pero expo-image-picker lo devuelve en
+    // algunos dispositivos. Antes la lista local de esta pantalla lo aceptaba
+    // como caso aparte; ahora se normaliza aca, que es donde aparece la
+    // rareza. El backend ni lo ve: sniffea los bytes con DetectContentType.
+    const raw = asset.mimeType ?? "image/jpeg";
+    const type = raw === "image/jpg" ? "image/jpeg" : raw;
+    const iconError = validateServerIcon({
+      mimeType: type,
+      sizeBytes: asset.fileSize ?? 0,
+    });
+    if (iconError) {
+      setIconError(iconError);
       return;
     }
 
@@ -120,12 +126,9 @@ export function CreateServerModal({
     setGlobalError("");
 
     const trimmed = name.trim();
-    if (!trimmed) {
-      setNameError("Ingresá un nombre para el servidor.");
-      return;
-    }
-    if (trimmed.length < 2 || trimmed.length > MAX_NAME) {
-      setNameError("El nombre debe tener entre 2 y 100 caracteres.");
+    const nameError = validateServerName(trimmed);
+    if (nameError) {
+      setNameError(nameError);
       return;
     }
 

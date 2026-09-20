@@ -1,10 +1,11 @@
+import { type MemberInfo } from "@discordia/client-shared";
+
 import { Feather } from "@expo/vector-icons";
 import { Text, TouchableOpacity, View } from "react-native";
 
 import { resolveImageUri } from "../../../lib/image-url";
 import { colors } from "../../../theme/colors";
 import { ServerAvatar } from "../../servers/components/ServerAvatar";
-import type { MemberInfo } from "../constants";
 import { styles } from "../styles";
 
 interface MemberRoleRowProps {

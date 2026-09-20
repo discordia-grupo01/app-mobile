@@ -1,9 +1,10 @@
+import { COLOR_PALETTE, isValidHex } from "@discordia/client-shared";
+
 import { Feather } from "@expo/vector-icons";
 import { useState } from "react";
 import { TextInput, TouchableOpacity, View } from "react-native";
 
 import { colors } from "../../../theme/colors";
-import { COLOR_PALETTE, isValidHex } from "../constants";
 import { styles } from "../styles";
 
 interface ColorGridProps {

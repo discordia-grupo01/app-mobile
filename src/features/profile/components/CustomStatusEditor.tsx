@@ -1,3 +1,9 @@
+import {
+  CLEAR_CUSTOM_STATUS_LABEL,
+  CUSTOM_STATUS_PLACEHOLDER,
+  MAX_CUSTOM_STATUS,
+} from "@discordia/client-shared";
+
 import { Feather } from "@expo/vector-icons";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -10,8 +16,6 @@ import {
 
 import { Button } from "../../../components/ui/Button";
 import { colors } from "../../../theme/colors";
-
-const MAX_CUSTOM_STATUS = 64;
 
 interface CustomStatusEditorProps {
   statusText: string;
@@ -66,7 +70,7 @@ export function CustomStatusEditor({
             onPress={handleClear}
             disabled={isSubmitting}
             accessibilityRole="button"
-            accessibilityLabel="Quitar estado personalizado"
+            accessibilityLabel={CLEAR_CUSTOM_STATUS_LABEL}
             style={styles.clearButton}
           >
             <Feather name="x" size={10} color={colors.textSubtle} />
@@ -87,7 +91,7 @@ export function CustomStatusEditor({
             value={draft}
             onChangeText={(text) => setDraft(text.slice(0, MAX_CUSTOM_STATUS))}
             onSubmitEditing={handleSave}
-            placeholder="¿Qué estás haciendo?"
+            placeholder={CUSTOM_STATUS_PLACEHOLDER}
             placeholderTextColor={colors.textSubtle}
             editable={!isSubmitting}
             style={styles.input}

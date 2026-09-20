@@ -1,4 +1,8 @@
-import { type Channel } from "@discordia/client-shared";
+import {
+  type Channel,
+  CHANNEL_START_NOTICE,
+  VOICE_NOT_IMPLEMENTED,
+} from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
 import { useState } from "react";
@@ -80,9 +84,7 @@ export function ChannelScreen({
             : `Canal de voz: ${channel.name}`}
         </Text>
         <Text style={styles.subtitle}>
-          {isText
-            ? "Este es el comienzo del canal. El chat todavía no está conectado en esta versión."
-            : "La conexión de voz todavía no está implementada en esta versión."}
+          {isText ? CHANNEL_START_NOTICE : VOICE_NOT_IMPLEMENTED}
         </Text>
       </View>
 

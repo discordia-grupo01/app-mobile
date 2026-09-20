@@ -1,7 +1,12 @@
 import {
+  COLOR_PALETTE,
+  MAX_NAME,
+  MEMBER_PAGE_LIMIT,
+  type MemberInfo,
   type Role,
   ROLE_PERMISSIONS,
   type RolePermission,
+  validateRole,
 } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
@@ -39,13 +44,7 @@ import {
   setDefaultRole,
   updateRole,
 } from "./api";
-import {
-  COLOR_PALETTE,
-  isValidHex,
-  MAX_NAME,
-  type MemberInfo,
-  type Step,
-} from "./constants";
+import { type Step } from "./constants";
 import { styles } from "./styles";
 
 interface RolesModalProps {
@@ -180,7 +179,7 @@ export function RolesModal({
   function loadMembers() {
     if (membersInfo !== null || membersError) return;
     setMembersError("");
-    listMembers(serverId, { limit: 100 }).then((result) => {
+    listMembers(serverId, { limit: MEMBER_PAGE_LIMIT }).then((result) => {
       if (!result.ok) {
         setMembersError(result.message);
         setMembersInfo([]);
@@ -266,24 +265,13 @@ export function RolesModal({
     setNameError("");
     setColorError("");
     const trimmed = editName.trim();
-    if (!trimmed) {
-      setNameError("El nombre del rol no puede estar vacío.");
-      return;
-    }
-    if (trimmed.length > MAX_NAME) {
-      setNameError("El nombre no puede superar los 100 caracteres.");
-      return;
-    }
-    if (!isValidHex(editColor)) {
-      setColorError("Seleccioná un color válido.");
-      return;
-    }
-    const dup = (roles ?? []).find(
-      (r) =>
-        r.id !== selectedId && r.name.toLowerCase() === trimmed.toLowerCase(),
+    const errors = validateRole(
+      { name: trimmed, color: editColor },
+      { existingRoles: roles ?? [], currentRoleId: selectedId },
     );
-    if (dup) {
-      setNameError("Ya existe un rol con ese nombre.");
+    if (errors.name || errors.color) {
+      setNameError(errors.name ?? "");
+      setColorError(errors.color ?? "");
       return;
     }
 
@@ -348,23 +336,13 @@ export function RolesModal({
     setNewNameError("");
     setNewColorError("");
     const trimmed = newName.trim();
-    if (!trimmed) {
-      setNewNameError("El nombre del rol no puede estar vacío.");
-      return;
-    }
-    if (trimmed.length > MAX_NAME) {
-      setNewNameError("El nombre no puede superar los 100 caracteres.");
-      return;
-    }
-    if (!isValidHex(newColor)) {
-      setNewColorError("Seleccioná un color válido.");
-      return;
-    }
-    const dup = (roles ?? []).find(
-      (r) => r.name.toLowerCase() === trimmed.toLowerCase(),
+    const errors = validateRole(
+      { name: trimmed, color: newColor },
+      { existingRoles: roles ?? [] },
     );
-    if (dup) {
-      setNewNameError("Ya existe un rol con ese nombre.");
+    if (errors.name || errors.color) {
+      setNewNameError(errors.name ?? "");
+      setNewColorError(errors.color ?? "");
       return;
     }
 

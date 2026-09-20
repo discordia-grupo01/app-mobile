@@ -1,3 +1,5 @@
+import { MEMBER_PAGE_LIMIT } from "@discordia/client-shared";
+
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -66,7 +68,7 @@ export function MembersSidebar({
   const fetchMembers = useCallback(() => {
     let cancelled = false;
 
-    listMembers(serverId, { limit: 100 }).then((result) => {
+    listMembers(serverId, { limit: MEMBER_PAGE_LIMIT }).then((result) => {
       if (cancelled) return;
       setIsLoading(false);
       if (!result.ok) {

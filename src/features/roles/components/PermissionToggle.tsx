@@ -1,8 +1,7 @@
-import { type RolePermission } from "@discordia/client-shared";
+import { PERMISSION_COPY, type RolePermission } from "@discordia/client-shared";
 
 import { Text, TouchableOpacity, View } from "react-native";
 
-import { PERMISSION_COPY } from "../constants";
 import { styles } from "../styles";
 
 interface PermissionToggleProps {
