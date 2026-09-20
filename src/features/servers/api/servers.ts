@@ -1,12 +1,15 @@
 import {
   detailsOf,
-  INVITE_REASONS,
   fieldOf,
+  INVITE_REASONS,
   messageFor,
   NETWORK_ERROR_MESSAGE,
   reasonOf,
   REQUEST_FAILED_MESSAGE,
+  SERVER_LEAVE_FAILED,
+  SERVER_LOAD_FAILED,
   SERVER_REASONS,
+  SERVERS_LOAD_FAILED,
   SESSION_EXPIRED_MESSAGE,
   UNEXPECTED_ERROR_MESSAGE,
 } from "@discordia/client-shared";
@@ -36,11 +39,7 @@ export async function listMyServers(): Promise<ListServersActionResult> {
   if (!result.ok) {
     return {
       ok: false,
-      message: messageFor(
-        result,
-        {},
-        "No pudimos cargar tus servidores. Intentá de nuevo.",
-      ),
+      message: messageFor(result, {}, SERVERS_LOAD_FAILED),
     };
   }
   return { ok: true, servers: result.data };
@@ -55,7 +54,7 @@ export async function getServer(
   if (!result.ok) {
     return {
       ok: false,
-      message: messageFor(result, {}, "No pudimos cargar el servidor."),
+      message: messageFor(result, {}, SERVER_LOAD_FAILED),
     };
   }
   return { ok: true, server: result.data };
@@ -181,11 +180,7 @@ export async function leaveServer(
     }
     return {
       ok: false,
-      message: messageFor(
-        result,
-        {},
-        "No pudimos abandonar el servidor. Intentá de nuevo.",
-      ),
+      message: messageFor(result, {}, SERVER_LEAVE_FAILED),
     };
   }
 

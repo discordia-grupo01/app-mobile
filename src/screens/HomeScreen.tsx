@@ -1,3 +1,5 @@
+import { SESSION_EXPIRED_MESSAGE } from "@discordia/client-shared";
+
 import { Feather } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useState } from "react";
@@ -96,7 +98,7 @@ export function HomeScreen() {
       if (!user) {
         return {
           ok: false,
-          message: "Tu sesión expiró. Volvé a iniciar sesión.",
+          message: SESSION_EXPIRED_MESSAGE,
         };
       }
 

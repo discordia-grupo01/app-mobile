@@ -1,6 +1,12 @@
 import {
+  EMAIL_ALREADY_REGISTERED,
+  GOOGLE_UNAVAILABLE,
+  GOOGLE_VERIFY_FAILED,
+  INVALID_CREDENTIALS,
   INVALID_DATA_MESSAGE,
+  INVALID_EMAIL_MESSAGE,
   messageFor,
+  RATE_LIMITED_MESSAGE,
   REQUEST_FAILED_MESSAGE,
 } from "@discordia/client-shared";
 
@@ -30,7 +36,7 @@ export async function registerService(
 
   if (!result.ok) {
     if (result.status === 409) {
-      return { ok: false, message: "Ese correo ya está registrado." };
+      return { ok: false, message: EMAIL_ALREADY_REGISTERED };
     }
     if (result.status === 400) {
       return { ok: false, message: INVALID_DATA_MESSAGE };
@@ -57,7 +63,7 @@ export async function loginService(
 
   if (!result.ok) {
     if (result.status === 401 || result.status === 400) {
-      return { ok: false, message: "Email o contraseña incorrectos." };
+      return { ok: false, message: INVALID_CREDENTIALS };
     }
     return {
       ok: false,
@@ -80,17 +86,12 @@ export async function loginWithGoogleService(
     if (result.status === 503) {
       return {
         ok: false,
-        message:
-          "Google no está disponible en este momento. Iniciá sesión con tu correo y contraseña.",
+        message: GOOGLE_UNAVAILABLE,
       };
     }
     return {
       ok: false,
-      message: messageFor(
-        result,
-        {},
-        "No pudimos verificar tu cuenta de Google. Iniciá sesión con tu correo y contraseña.",
-      ),
+      message: messageFor(result, {}, GOOGLE_VERIFY_FAILED),
     };
   }
 
@@ -122,12 +123,11 @@ export async function forgotPasswordService(
     if (result.status === 429) {
       return {
         ok: false,
-        message:
-          "Alcanzaste el límite de solicitudes. Intentá de nuevo más tarde.",
+        message: RATE_LIMITED_MESSAGE,
       };
     }
     if (result.status === 400) {
-      return { ok: false, message: "Ingresá un correo electrónico válido." };
+      return { ok: false, message: INVALID_EMAIL_MESSAGE };
     }
     return {
       ok: false,

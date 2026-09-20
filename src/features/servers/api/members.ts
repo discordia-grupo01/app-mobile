@@ -1,9 +1,13 @@
 import {
   MEMBER_REASONS,
+  MEMBERS_LOAD_FAILED,
   messageFor,
+  OWNER_ONLY_TRANSFER,
   reasonOf,
+  SERVER_NOT_FOUND,
   SESSION_EXPIRED_MESSAGE,
   TRANSFER_REASONS,
+  TRANSFER_START_FAILED,
 } from "@discordia/client-shared";
 
 import { apiFetch } from "../../../lib/api-client";
@@ -35,16 +39,12 @@ export async function listMembers(
         return { ok: false, message: SESSION_EXPIRED_MESSAGE };
       }
       if (result.status === 404) {
-        return { ok: false, message: "Este servidor ya no existe." };
+        return { ok: false, message: SERVER_NOT_FOUND };
       }
     }
     return {
       ok: false,
-      message: messageFor(
-        result,
-        MEMBER_REASONS,
-        "No pudimos cargar los miembros del servidor.",
-      ),
+      message: messageFor(result, MEMBER_REASONS, MEMBERS_LOAD_FAILED),
     };
   }
 
@@ -83,23 +83,19 @@ export async function initiateOwnershipTransfer(
     if (result.status === 403) {
       return {
         ok: false,
-        message: "Solo el propietario puede transferir este servidor.",
+        message: OWNER_ONLY_TRANSFER,
       };
     }
     if (result.status === 401) {
       return { ok: false, message: SESSION_EXPIRED_MESSAGE };
     }
     if (result.status === 404) {
-      return { ok: false, message: "Este servidor ya no existe." };
+      return { ok: false, message: SERVER_NOT_FOUND };
     }
 
     return {
       ok: false,
-      message: messageFor(
-        result,
-        {},
-        "No pudimos enviar la transferencia. Intentá de nuevo.",
-      ),
+      message: messageFor(result, {}, TRANSFER_START_FAILED),
     };
   }
 

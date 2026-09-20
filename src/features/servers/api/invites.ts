@@ -1,7 +1,13 @@
 import {
+  INVITE_CREATE_FAILED,
+  INVITE_NOT_FOUND,
   INVITE_REASONS,
+  INVITE_REVOKE_FAILED,
+  INVITES_LOAD_FAILED,
   messageFor,
+  NOT_A_MEMBER,
   reasonOf,
+  SERVER_NOT_FOUND,
   SESSION_EXPIRED_MESSAGE,
 } from "@discordia/client-shared";
 
@@ -45,17 +51,13 @@ export async function generateInvite(
         return { ok: false, message: SESSION_EXPIRED_MESSAGE };
       }
       if (result.status === 404) {
-        return { ok: false, message: "Este servidor ya no existe." };
+        return { ok: false, message: SERVER_NOT_FOUND };
       }
     }
 
     return {
       ok: false,
-      message: messageFor(
-        result,
-        INVITE_REASONS,
-        "No pudimos generar el enlace. Intentá de nuevo.",
-      ),
+      message: messageFor(result, INVITE_REASONS, INVITE_CREATE_FAILED),
     };
   }
 
@@ -75,15 +77,11 @@ export async function revokeInvite(
       return { ok: false, message: SESSION_EXPIRED_MESSAGE };
     }
     if (result.status === 404) {
-      return { ok: false, message: "Este enlace ya no existe." };
+      return { ok: false, message: INVITE_NOT_FOUND };
     }
     return {
       ok: false,
-      message: messageFor(
-        result,
-        {},
-        "No pudimos revocar el enlace. Intentá de nuevo.",
-      ),
+      message: messageFor(result, {}, INVITE_REVOKE_FAILED),
     };
   }
 
@@ -107,18 +105,14 @@ export async function listInvitations(
       return { ok: false, message: SESSION_EXPIRED_MESSAGE };
     }
     if (result.status === 403) {
-      return { ok: false, message: "No sos miembro de este servidor." };
+      return { ok: false, message: NOT_A_MEMBER };
     }
     if (result.status === 404) {
-      return { ok: false, message: "Este servidor ya no existe." };
+      return { ok: false, message: SERVER_NOT_FOUND };
     }
     return {
       ok: false,
-      message: messageFor(
-        result,
-        {},
-        "No pudimos cargar las invitaciones. Intentá de nuevo.",
-      ),
+      message: messageFor(result, {}, INVITES_LOAD_FAILED),
     };
   }
 

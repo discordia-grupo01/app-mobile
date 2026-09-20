@@ -1,9 +1,21 @@
 import {
+  CATEGORY_CREATE_FAILED,
   CATEGORY_REASONS,
+  CHANNEL_CREATE_FAILED,
+  CHANNEL_DELETE_FAILED,
+  CHANNEL_NOT_FOUND,
   CHANNEL_REASONS,
+  CHANNEL_REORDER_FAILED,
+  CHANNEL_UPDATE_FAILED,
   fieldOf,
   messageFor,
+  OWNER_ONLY_CREATE_CATEGORY,
+  OWNER_ONLY_CREATE_CHANNEL,
+  OWNER_ONLY_DELETE_CHANNEL,
+  OWNER_ONLY_REORDER_CHANNEL,
+  OWNER_ONLY_UPDATE_CHANNEL,
   reasonOf,
+  SERVER_NOT_FOUND,
   SESSION_EXPIRED_MESSAGE,
 } from "@discordia/client-shared";
 
@@ -57,18 +69,14 @@ export async function createChannel(
       return { ok: false, message: SESSION_EXPIRED_MESSAGE };
     }
     if (result.status === 403) {
-      return { ok: false, message: "Solo el propietario puede crear canales." };
+      return { ok: false, message: OWNER_ONLY_CREATE_CHANNEL };
     }
     if (result.status === 404) {
-      return { ok: false, message: "Este servidor ya no existe." };
+      return { ok: false, message: SERVER_NOT_FOUND };
     }
     return {
       ok: false,
-      message: messageFor(
-        result,
-        CHANNEL_REASONS,
-        "No pudimos crear el canal. Intentá de nuevo.",
-      ),
+      message: messageFor(result, CHANNEL_REASONS, CHANNEL_CREATE_FAILED),
     };
   }
 
@@ -102,19 +110,15 @@ export async function updateChannel(
     if (result.status === 403) {
       return {
         ok: false,
-        message: "Solo el propietario puede editar canales.",
+        message: OWNER_ONLY_UPDATE_CHANNEL,
       };
     }
     if (result.status === 404) {
-      return { ok: false, message: "Este canal ya no existe." };
+      return { ok: false, message: CHANNEL_NOT_FOUND };
     }
     return {
       ok: false,
-      message: messageFor(
-        result,
-        CHANNEL_REASONS,
-        "No pudimos editar el canal. Intentá de nuevo.",
-      ),
+      message: messageFor(result, CHANNEL_REASONS, CHANNEL_UPDATE_FAILED),
     };
   }
 
@@ -140,19 +144,15 @@ export async function deleteChannel(
     if (result.status === 403) {
       return {
         ok: false,
-        message: "Solo el propietario puede eliminar canales.",
+        message: OWNER_ONLY_DELETE_CHANNEL,
       };
     }
     if (result.status === 404) {
-      return { ok: false, message: "Este canal ya no existe." };
+      return { ok: false, message: CHANNEL_NOT_FOUND };
     }
     return {
       ok: false,
-      message: messageFor(
-        result,
-        {},
-        "No pudimos eliminar el canal. Intentá de nuevo.",
-      ),
+      message: messageFor(result, {}, CHANNEL_DELETE_FAILED),
     };
   }
 
@@ -187,19 +187,15 @@ export async function reorderChannels(
     if (result.status === 403) {
       return {
         ok: false,
-        message: "Solo el propietario puede reordenar canales.",
+        message: OWNER_ONLY_REORDER_CHANNEL,
       };
     }
     if (result.status === 404) {
-      return { ok: false, message: "Este servidor ya no existe." };
+      return { ok: false, message: SERVER_NOT_FOUND };
     }
     return {
       ok: false,
-      message: messageFor(
-        result,
-        CHANNEL_REASONS,
-        "No pudimos reordenar los canales. Intentá de nuevo.",
-      ),
+      message: messageFor(result, CHANNEL_REASONS, CHANNEL_REORDER_FAILED),
     };
   }
 
@@ -233,19 +229,15 @@ export async function createCategory(
     if (result.status === 403) {
       return {
         ok: false,
-        message: "Solo el propietario puede crear categorías.",
+        message: OWNER_ONLY_CREATE_CATEGORY,
       };
     }
     if (result.status === 404) {
-      return { ok: false, message: "Este servidor ya no existe." };
+      return { ok: false, message: SERVER_NOT_FOUND };
     }
     return {
       ok: false,
-      message: messageFor(
-        result,
-        CATEGORY_REASONS,
-        "No pudimos crear la categoría. Intentá de nuevo.",
-      ),
+      message: messageFor(result, CATEGORY_REASONS, CATEGORY_CREATE_FAILED),
     };
   }
 

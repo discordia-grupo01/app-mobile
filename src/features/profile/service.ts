@@ -3,7 +3,12 @@ import * as FileSystem from "expo-file-system/legacy";
 import {
   messageFor,
   NETWORK_ERROR_MESSAGE,
+  OWN_PROFILE_LOAD_FAILED,
+  PROFILE_LOAD_FAILED,
+  PROFILE_UPDATE_FAILED,
   SESSION_EXPIRED_MESSAGE,
+  STATUS_CLEAR_FAILED,
+  STATUS_UPDATE_FAILED,
 } from "@discordia/client-shared";
 
 import { apiFetch, refreshAccessToken } from "../../lib/api-client";
@@ -23,7 +28,7 @@ export async function getOwnProfile(): Promise<GetOwnProfileActionResult> {
   if (!result.ok) {
     return {
       ok: false,
-      message: messageFor(result, {}, "No pudimos cargar tu perfil."),
+      message: messageFor(result, {}, OWN_PROFILE_LOAD_FAILED),
     };
   }
   return { ok: true, user: result.data };
@@ -38,7 +43,7 @@ export async function getPublicProfile(
   if (!result.ok) {
     return {
       ok: false,
-      message: messageFor(result, {}, "No pudimos cargar el perfil."),
+      message: messageFor(result, {}, PROFILE_LOAD_FAILED),
     };
   }
   return { ok: true, user: result.data };
@@ -119,9 +124,7 @@ export async function updateOwnProfile(params: {
     const errBody = body as ApiErrorBody | undefined;
     return {
       ok: false,
-      message:
-        errBody?.error?.message ??
-        "No pudimos actualizar tu perfil. Intentá de nuevo.",
+      message: errBody?.error?.message ?? PROFILE_UPDATE_FAILED,
     };
   }
 
@@ -142,11 +145,7 @@ export async function updateStatus(
     }
     return {
       ok: false,
-      message: messageFor(
-        result,
-        {},
-        "No pudimos actualizar tu estado. Intentá de nuevo.",
-      ),
+      message: messageFor(result, {}, STATUS_UPDATE_FAILED),
     };
   }
   return { ok: true, user: result.data };
@@ -159,11 +158,7 @@ export async function clearStatus(
   if (!result.ok) {
     return {
       ok: false,
-      message: messageFor(
-        result,
-        {},
-        "No pudimos borrar tu estado. Intentá de nuevo.",
-      ),
+      message: messageFor(result, {}, STATUS_CLEAR_FAILED),
     };
   }
   return {

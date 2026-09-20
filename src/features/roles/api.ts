@@ -1,8 +1,27 @@
 import {
+  DEFAULT_ROLE_SET_FAILED,
   fieldOf,
+  invalidPermissionMessage,
+  MEMBER_OR_ROLE_NOT_FOUND,
+  MEMBER_ROLE_ASSIGN_FAILED,
+  MEMBER_ROLE_NOT_ASSIGNED,
+  MEMBER_ROLE_REMOVE_FAILED,
+  MEMBER_ROLES_LOAD_FAILED,
   messageFor,
+  OWNER_ONLY_ASSIGN_ROLE,
+  OWNER_ONLY_CREATE_ROLE,
+  OWNER_ONLY_DELETE_ROLE,
+  OWNER_ONLY_REMOVE_ROLE,
+  OWNER_ONLY_SET_DEFAULT_ROLE,
+  OWNER_ONLY_UPDATE_ROLE,
   reasonOf,
+  ROLE_CREATE_FAILED,
+  ROLE_DELETE_FAILED,
+  ROLE_IS_DEFAULT,
+  ROLE_NOT_FOUND,
   ROLE_REASONS,
+  ROLE_UPDATE_FAILED,
+  ROLES_LOAD_FAILED,
   SESSION_EXPIRED_MESSAGE,
 } from "@discordia/client-shared";
 
@@ -33,11 +52,7 @@ export async function listRoles(
     }
     return {
       ok: false,
-      message: messageFor(
-        result,
-        {},
-        "No pudimos cargar los roles. Intentá de nuevo.",
-      ),
+      message: messageFor(result, {}, ROLES_LOAD_FAILED),
     };
   }
 
@@ -69,15 +84,11 @@ export async function createRole(
       return { ok: false, message: SESSION_EXPIRED_MESSAGE };
     }
     if (result.status === 403) {
-      return { ok: false, message: "Solo el propietario puede crear roles." };
+      return { ok: false, message: OWNER_ONLY_CREATE_ROLE };
     }
     return {
       ok: false,
-      message: messageFor(
-        result,
-        ROLE_REASONS,
-        "No pudimos crear el rol. Intentá de nuevo.",
-      ),
+      message: messageFor(result, ROLE_REASONS, ROLE_CREATE_FAILED),
     };
   }
 
@@ -106,25 +117,21 @@ export async function updateRole(
       };
     }
     if (field === "permissions") {
-      const message = "Uno de los permisos enviados no es válido.";
+      const message = invalidPermissionMessage(result.details?.invalid_value);
       return { ok: false, message, fieldErrors: { permissions: message } };
     }
     if (result.status === 401) {
       return { ok: false, message: SESSION_EXPIRED_MESSAGE };
     }
     if (result.status === 403) {
-      return { ok: false, message: "Solo el propietario puede editar roles." };
+      return { ok: false, message: OWNER_ONLY_UPDATE_ROLE };
     }
     if (result.status === 404) {
-      return { ok: false, message: "No encontramos ese rol." };
+      return { ok: false, message: ROLE_NOT_FOUND };
     }
     return {
       ok: false,
-      message: messageFor(
-        result,
-        ROLE_REASONS,
-        "No pudimos editar el rol. Intentá de nuevo.",
-      ),
+      message: messageFor(result, ROLE_REASONS, ROLE_UPDATE_FAILED),
     };
   }
 
@@ -143,8 +150,7 @@ export async function deleteRole(
       return {
         ok: false,
         isDefaultRole: true,
-        message:
-          "Este es el rol por defecto. Primero asigná otro rol como predeterminado.",
+        message: ROLE_IS_DEFAULT,
       };
     }
     if (result.status === 401) {
@@ -153,19 +159,15 @@ export async function deleteRole(
     if (result.status === 403) {
       return {
         ok: false,
-        message: "Solo el propietario puede eliminar roles.",
+        message: OWNER_ONLY_DELETE_ROLE,
       };
     }
     if (result.status === 404) {
-      return { ok: false, message: "No encontramos ese rol." };
+      return { ok: false, message: ROLE_NOT_FOUND };
     }
     return {
       ok: false,
-      message: messageFor(
-        result,
-        {},
-        "No pudimos eliminar el rol. Intentá de nuevo.",
-      ),
+      message: messageFor(result, {}, ROLE_DELETE_FAILED),
     };
   }
 
@@ -188,19 +190,15 @@ export async function setDefaultRole(
     if (result.status === 403) {
       return {
         ok: false,
-        message: "Solo el propietario puede definir el rol por defecto.",
+        message: OWNER_ONLY_SET_DEFAULT_ROLE,
       };
     }
     if (result.status === 404) {
-      return { ok: false, message: "No encontramos ese rol." };
+      return { ok: false, message: ROLE_NOT_FOUND };
     }
     return {
       ok: false,
-      message: messageFor(
-        result,
-        {},
-        "No pudimos definir el rol por defecto. Intentá de nuevo.",
-      ),
+      message: messageFor(result, {}, DEFAULT_ROLE_SET_FAILED),
     };
   }
 
@@ -222,11 +220,7 @@ export async function listMemberRoles(
     }
     return {
       ok: false,
-      message: messageFor(
-        result,
-        {},
-        "No pudimos cargar los roles del miembro.",
-      ),
+      message: messageFor(result, {}, MEMBER_ROLES_LOAD_FAILED),
     };
   }
 
@@ -248,18 +242,14 @@ export async function assignRole(
       return { ok: false, message: SESSION_EXPIRED_MESSAGE };
     }
     if (result.status === 403) {
-      return { ok: false, message: "Solo el propietario puede asignar roles." };
+      return { ok: false, message: OWNER_ONLY_ASSIGN_ROLE };
     }
     if (result.status === 404) {
-      return { ok: false, message: "Ese miembro o ese rol ya no existen." };
+      return { ok: false, message: MEMBER_OR_ROLE_NOT_FOUND };
     }
     return {
       ok: false,
-      message: messageFor(
-        result,
-        {},
-        "No pudimos asignar el rol. Intentá de nuevo.",
-      ),
+      message: messageFor(result, {}, MEMBER_ROLE_ASSIGN_FAILED),
     };
   }
 
@@ -281,18 +271,14 @@ export async function removeRole(
       return { ok: false, message: SESSION_EXPIRED_MESSAGE };
     }
     if (result.status === 403) {
-      return { ok: false, message: "Solo el propietario puede quitar roles." };
+      return { ok: false, message: OWNER_ONLY_REMOVE_ROLE };
     }
     if (result.status === 404) {
-      return { ok: false, message: "Ese miembro no tenía este rol." };
+      return { ok: false, message: MEMBER_ROLE_NOT_ASSIGNED };
     }
     return {
       ok: false,
-      message: messageFor(
-        result,
-        {},
-        "No pudimos quitar el rol. Intentá de nuevo.",
-      ),
+      message: messageFor(result, {}, MEMBER_ROLE_REMOVE_FAILED),
     };
   }
 
