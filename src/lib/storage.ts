@@ -11,6 +11,7 @@ import { Platform } from "react-native";
 const TOKEN_KEY = "discordia_auth_token";
 const USER_KEY = "discordia_auth_user";
 const THEME_KEY = "discordia_theme_preference";
+const PIN_ENABLED_KEY = "discordia_pin_enabled";
 
 const secureStorage = {
   getItem(key: string): Promise<string | null> {
@@ -73,4 +74,13 @@ export async function getThemePreference(): Promise<ThemeName> {
 
 export async function setThemePreference(preference: ThemeName): Promise<void> {
   await AsyncStorage.setItem(THEME_KEY, preference);
+}
+
+export async function getPinEnabled(): Promise<boolean> {
+  const raw = await AsyncStorage.getItem(PIN_ENABLED_KEY);
+  return raw === "true";
+}
+
+export async function setPinEnabled(enabled: boolean): Promise<void> {
+  await AsyncStorage.setItem(PIN_ENABLED_KEY, enabled ? "true" : "false");
 }
