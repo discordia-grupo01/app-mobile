@@ -1,3 +1,4 @@
+import * as AuthSession from "expo-auth-session";
 import * as Google from "expo-auth-session/providers/google";
 import * as WebBrowser from "expo-web-browser";
 import type { AuthSessionResult } from "expo-auth-session";
@@ -37,16 +38,33 @@ const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
  * (que requiere client secret, algo que nunca debe vivir en el cliente).
  * Los scopes minimos (`openid`, `.../userinfo.email`, `.../userinfo.profile`)
  * ya los agrega el provider de Google automaticamente.
+ *
+ * `redirectUri`: Google rechaza (Error 400: invalid_request) cualquier
+ * redirect_uri que no sea https:// (o http://localhost) para un Client ID
+ * tipo "Web application" -- y el default que arma expo-auth-session en Expo
+ * Go es un esquema exp://<host>:8081/--/redirect, que Google ni siquiera
+ * intenta procesar. Por eso pasamos una pagina "de rebote" HTTPS propia
+ * (servida por identify-service, ver /oauth/mobile-callback) como
+ * redirectUri: Google vuelve ahi, y esa pagina -- ya del lado del navegador
+ * del celular, no de Google -- rearma el salto final al exp://... real. El
+ * exp:// real se calcula en runtime con `makeRedirectUri`, asi que sigue
+ * funcionando aunque cambie la IP publica de la VM de mobile mas adelante.
  */
 export function useGoogleAuthRequest(): [
   ReturnType<typeof Google.useAuthRequest>[0],
   AuthSessionResult | null,
   () => Promise<AuthSessionResult>,
 ] {
+  const expoRedirect = AuthSession.makeRedirectUri({ path: "redirect" });
+  const redirectUri =
+    "https://discordia-g1.duckdns.org/oauth/mobile-callback?app_redirect=" +
+    encodeURIComponent(expoRedirect);
+
   return Google.useAuthRequest({
     webClientId: GOOGLE_WEB_CLIENT_ID,
     clientId: GOOGLE_WEB_CLIENT_ID,
     responseType: "id_token",
+    redirectUri,
   });
 }
 
