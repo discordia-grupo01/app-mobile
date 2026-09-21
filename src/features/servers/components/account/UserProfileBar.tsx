@@ -16,6 +16,8 @@ import { useAuth } from "../../../auth/auth-context";
 import { OwnProfileModal } from "../../../profile/components/OwnProfileModal";
 import { ServerAvatar } from "../ServerAvatar";
 import { AppearanceSheet } from "./AppearanceSheet";
+import { PinSetupSheet } from "./PinSetupSheet";
+import { SettingsSheet } from "./SettingsSheet";
 
 interface UserProfileBarProps {
   userName?: string | null;
@@ -32,7 +34,9 @@ export function UserProfileBar({
   const colors = useThemeColors();
   const { user } = useAuth();
   const [isConfirmVisible, setIsConfirmVisible] = useState(false);
+  const [isSettingsVisible, setIsSettingsVisible] = useState(false);
   const [isAppearanceVisible, setIsAppearanceVisible] = useState(false);
+  const [isPinSetupVisible, setIsPinSetupVisible] = useState(false);
   const [isProfileVisible, setIsProfileVisible] = useState(false);
   const [isMicMuted, setIsMicMuted] = useState(false);
   const [isDeafened, setIsDeafened] = useState(false);
@@ -44,6 +48,16 @@ export function UserProfileBar({
   function handleConfirmLogout() {
     setIsConfirmVisible(false);
     onLogout();
+  }
+
+  function handleOpenAppearance() {
+    setIsSettingsVisible(false);
+    setIsAppearanceVisible(true);
+  }
+
+  function handleOpenPinSetup() {
+    setIsSettingsVisible(false);
+    setIsPinSetupVisible(true);
   }
 
   return (
@@ -105,9 +119,9 @@ export function UserProfileBar({
 
         <TouchableOpacity
           className="w-10 h-10 rounded-[10px] items-center justify-center"
-          onPress={() => setIsAppearanceVisible(true)}
+          onPress={() => setIsSettingsVisible(true)}
           accessibilityRole="button"
-          accessibilityLabel="Apariencia"
+          accessibilityLabel="Configuración"
         >
           <Feather name="settings" size={21} color={colors.textSubtle} />
         </TouchableOpacity>
@@ -128,11 +142,23 @@ export function UserProfileBar({
         onClose={() => setIsProfileVisible(false)}
       />
 
+      <SettingsSheet
+        visible={isSettingsVisible}
+        onClose={() => setIsSettingsVisible(false)}
+        onOpenAppearance={handleOpenAppearance}
+        onOpenPinSetup={handleOpenPinSetup}
+      />
+
       <AppearanceSheet
         visible={isAppearanceVisible}
         selected={theme}
         onSelect={setTheme}
         onClose={() => setIsAppearanceVisible(false)}
+      />
+
+      <PinSetupSheet
+        visible={isPinSetupVisible}
+        onClose={() => setIsPinSetupVisible(false)}
       />
 
       <Modal

@@ -10,6 +10,7 @@ import {
   type LoginResultWithToken,
   type LoginValues,
   messageFor,
+  PIN_LOGIN_FAILED,
   type PublicUser,
   RATE_LIMITED_MESSAGE,
   type RegisterResult,
@@ -19,6 +20,8 @@ import {
 } from "@discordia/client-shared";
 
 import { apiFetch } from "../../lib/api-client";
+import { getOrCreateDeviceId } from "../../lib/device-id";
+import { setPinEnabled } from "../../lib/storage";
 
 export async function registerService(
   values: RegisterValues,
@@ -134,4 +137,56 @@ export async function forgotPasswordService(
   }
 
   return { ok: true };
+}
+
+/**
+ * Activa el PIN de acceso rápido en este dispositivo (historia "Registro
+ * con PIN"). Requiere sesión activa
+ */
+export async function configurePinService(
+  pin: string,
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  const deviceId = await getOrCreateDeviceId();
+
+  const result = await apiFetch("/v1/pin", {
+    method: "POST",
+    body: JSON.stringify({ pin, device_id: deviceId }),
+  });
+
+  if (!result.ok) {
+    return {
+      ok: false,
+      message: messageFor(result, {}, REQUEST_FAILED_MESSAGE),
+    };
+  }
+
+  await setPinEnabled(true);
+  return { ok: true };
+}
+
+/**
+ * Login rápido con PIN (historia "Registro con PIN"), sin pedir email
+ * (CA2). Solo funciona si este dispositivo ya activó un PIN antes
+ */
+export async function loginWithPinService(
+  pin: string,
+): Promise<LoginResultWithToken> {
+  const deviceId = await getOrCreateDeviceId();
+
+  const result = await apiFetch<AuthResponse>("/v1/pin/login", {
+    method: "POST",
+    body: JSON.stringify({ pin, device_id: deviceId }),
+  });
+
+  if (!result.ok) {
+    if (result.status === 401) {
+      return { ok: false, message: PIN_LOGIN_FAILED };
+    }
+    return {
+      ok: false,
+      message: messageFor(result, {}, REQUEST_FAILED_MESSAGE),
+    };
+  }
+
+  return { ok: true, user: result.data.user, token: result.data.token };
 }
