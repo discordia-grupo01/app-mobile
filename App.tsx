@@ -1,15 +1,17 @@
 import "./global.css";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import type { AuthMode } from "./src/features/auth/components/AuthTabs";
 import { AuthProvider, useAuth } from "./src/features/auth/auth-context";
 
+import { getPinEnabled } from "./src/lib/storage";
 import { ForgotPasswordScreen } from "./src/screens/ForgotPasswordScreen";
 import { HomeScreen } from "./src/screens/HomeScreen";
 import { LoginScreen } from "./src/screens/LoginScreen";
+import { PinEntryScreen } from "./src/screens/PinEntryScreen";
 import { RegisterScreen } from "./src/screens/RegisterScreen";
 import { ThemeProvider, useThemeColors } from "./src/theme/theme-context";
 
@@ -21,6 +23,25 @@ function AppContent() {
   const [authScreen, setAuthScreen] = useState<AuthScreen>("login");
   const [justRegistered, setJustRegistered] = useState(false);
 
+  const [isPinEnabled, setIsPinEnabled] = useState(false);
+  const [isPinCheckLoading, setIsPinCheckLoading] = useState(true);
+  const [skipPinEntry, setSkipPinEntry] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    getPinEnabled()
+      .then((enabled) => {
+        if (!cancelled) setIsPinEnabled(enabled);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setIsPinCheckLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   function handleSwitchMode(mode: AuthScreen) {
     setAuthScreen(mode);
     setJustRegistered(false);
@@ -31,7 +52,7 @@ function AppContent() {
     setAuthScreen("login");
   }
 
-  if (isLoading) {
+  if (isLoading || isPinCheckLoading) {
     return (
       <View className="flex-1 bg-surface-servers justify-center items-center">
         <ActivityIndicator size="large" color={colors.accentBright} />
@@ -41,6 +62,10 @@ function AppContent() {
 
   if (isAuthenticated) {
     return <HomeScreen />;
+  }
+
+  if (isPinEnabled && !skipPinEntry) {
+    return <PinEntryScreen onUseAnotherAccount={() => setSkipPinEntry(true)} />;
   }
 
   if (authScreen === "forgot-password") {
