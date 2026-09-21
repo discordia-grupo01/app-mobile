@@ -4,9 +4,9 @@ import {
   ACTIVITY_STATUSES,
   type ActivityStatus,
 } from "@discordia/client-shared";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 
-import { colors } from "../../../theme/colors";
+import { useThemeColors } from "../../../theme/theme-context";
 
 /** Solo presentacion: el resto del modelo vive en `client-shared`. */
 export const ACTIVITY_STATUS_COLOR: Record<ActivityStatus, string> = {
@@ -24,10 +24,13 @@ export function ActivityStatusPicker({
   status,
   onChange,
 }: ActivityStatusPickerProps) {
+  const colors = useThemeColors();
   return (
     <View>
-      <Text style={styles.label}>ESTADO DE ACTIVIDAD</Text>
-      <View style={styles.row}>
+      <Text className="text-[11px] font-bold tracking-[1.2px] text-content-subtle mb-1.5">
+        ESTADO DE ACTIVIDAD
+      </Text>
+      <View className="flex-row gap-1.5">
         {ACTIVITY_STATUSES.map((option) => {
           const active = option === status;
           const color = ACTIVITY_STATUS_COLOR[option];
@@ -35,73 +38,34 @@ export function ActivityStatusPicker({
             <TouchableOpacity
               key={option}
               onPress={() => onChange(option)}
-              style={[
-                styles.option,
+              className="flex-1 flex-row items-center justify-center gap-1.5 rounded-[10px] border border-line bg-surface-input py-[9px] px-1"
+              style={
                 active && {
                   backgroundColor: `${color}1A`,
                   borderColor: `${color}55`,
-                },
-              ]}
+                }
+              }
               activeOpacity={0.8}
             >
               <View
-                style={[
-                  styles.dot,
-                  {
-                    backgroundColor: active ? color : colors.textSubtle,
-                  },
-                ]}
+                className="w-2 h-2 rounded-sm"
+                style={{
+                  backgroundColor: active ? color : colors.textSubtle,
+                }}
               />
-              <Text style={[styles.optionText, active && { color }]}>
+              <Text
+                className="text-[11px] font-semibold text-content-subtle"
+                style={active && { color }}
+              >
                 {ACTIVITY_STATUS_LABEL[option]}
               </Text>
             </TouchableOpacity>
           );
         })}
       </View>
-      <Text style={styles.preview}>{ACTIVITY_STATUS_DESCRIPTION[status]}</Text>
+      <Text className="text-[11px] text-content-subtle mt-2">
+        {ACTIVITY_STATUS_DESCRIPTION[status]}
+      </Text>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  label: {
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 1.2,
-    color: colors.textSubtle,
-    marginBottom: 6,
-  },
-  row: {
-    flexDirection: "row",
-    gap: 6,
-  },
-  option: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.bgInput,
-    paddingVertical: 9,
-    paddingHorizontal: 4,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  optionText: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: colors.textSubtle,
-  },
-  preview: {
-    fontSize: 11,
-    color: colors.textSubtle,
-    marginTop: 8,
-  },
-});

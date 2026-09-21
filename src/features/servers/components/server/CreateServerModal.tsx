@@ -22,7 +22,8 @@ import {
   View,
 } from "react-native";
 
-import { colors } from "../../../../theme/colors";
+import { cn } from "../../../../lib/cn";
+import { useThemeColors } from "../../../../theme/theme-context";
 import { createServer } from "../../api";
 import { Button } from "../../../../components/ui/Button";
 import { ServerAvatar } from "../ServerAvatar";
@@ -44,6 +45,7 @@ export function CreateServerModal({
   onClose,
   onCreated,
 }: CreateServerModalProps) {
+  const colors = useThemeColors();
   const [step, setStep] = useState<"form" | "success">("form");
   const [created, setCreated] = useState<ServerSummary | null>(null);
   const [name, setName] = useState("");
@@ -158,15 +160,15 @@ export function CreateServerModal({
       onRequestClose={onClose}
     >
       <KeyboardAvoidingView
-        style={styles.backdrop}
+        className="flex-1 bg-[rgba(0,0,0,0.65)] items-center justify-center p-4"
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
 
-        <View style={styles.card}>
+        <View className="w-full max-w-115 max-h-[90%] rounded-[20px] border border-line-strong bg-surface-modal overflow-hidden">
           <TouchableOpacity
             onPress={onClose}
-            style={styles.closeButton}
+            className="absolute top-4 right-4 z-10 w-8 h-8 rounded-2xl items-center justify-center bg-surface-input border border-line"
             accessibilityRole="button"
             accessibilityLabel="Cerrar"
           >
@@ -174,33 +176,39 @@ export function CreateServerModal({
           </TouchableOpacity>
 
           <ScrollView
-            contentContainerStyle={styles.scrollContent}
+            contentContainerClassName="p-7 pt-8"
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
             {step === "success" && created ? (
-              <View style={styles.successWrap}>
-                <View style={styles.previewCard}>
-                  <View style={styles.previewHeader}>
+              <View className="items-center gap-6">
+                <View className="w-full rounded-2xl border border-line-strong bg-surface-raised overflow-hidden">
+                  <View className="flex-row items-center gap-2.5 px-4 py-3 border-b border-b-line">
                     <ServerAvatar
                       name={created.name}
                       uri={icon?.uri}
                       size={36}
                       borderRadius={18}
                     />
-                    <Text style={styles.previewName} numberOfLines={1}>
+                    <Text
+                      className="flex-1 text-[14px] font-bold text-content"
+                      numberOfLines={1}
+                    >
                       {created.name}
                     </Text>
                   </View>
-                  <View style={styles.previewChannels}>
+                  <View className="px-3 py-2.5 gap-1">
                     {created.channels.map((channel) => (
-                      <View key={channel.id} style={styles.previewChannelRow}>
+                      <View
+                        key={channel.id}
+                        className="flex-row items-center gap-2 rounded-lg bg-surface-input px-2 py-[7px]"
+                      >
                         <Feather
                           name={channel.kind === "text" ? "hash" : "volume-2"}
                           size={15}
                           color={colors.textSubtle}
                         />
-                        <Text style={styles.previewChannelName}>
+                        <Text className="text-[13px] text-content-muted">
                           {channel.name}
                         </Text>
                       </View>
@@ -208,13 +216,15 @@ export function CreateServerModal({
                   </View>
                 </View>
 
-                <View style={styles.successCopy}>
-                  <View style={styles.successCheck}>
+                <View className="items-center gap-1.5">
+                  <View className="w-12 h-12 rounded-2xl items-center justify-center bg-[rgba(56,161,105,0.15)] mb-1">
                     <Feather name="check" size={26} color={colors.success} />
                   </View>
-                  <Text style={styles.successTitle}>¡Servidor creado!</Text>
-                  <Text style={styles.successDescription}>
-                    <Text style={styles.successDescriptionStrong}>
+                  <Text className="text-[16px] font-bold text-content">
+                    ¡Servidor creado!
+                  </Text>
+                  <Text className="text-[13px] leading-[19px] text-content-muted text-center max-w-65">
+                    <Text className="text-content font-bold">
                       {created.name}
                     </Text>{" "}
                     ya está listo. Encontrás tus canales en la barra lateral.
@@ -228,33 +238,37 @@ export function CreateServerModal({
               </View>
             ) : (
               <View>
-                <View style={styles.header}>
-                  <Text style={styles.headerTitle}>Crear un servidor</Text>
-                  <Text style={styles.headerSubtitle}>
+                <View className="items-center mb-5">
+                  <Text className="text-[20px] font-bold text-content mb-1">
+                    Crear un servidor
+                  </Text>
+                  <Text className="text-[13px] leading-[19px] text-content-muted text-center">
                     Personalizá tu servidor con un nombre e ícono.{"\n"}Siempre
                     podés cambiarlo después.
                   </Text>
                 </View>
 
                 {globalError ? (
-                  <View style={styles.errorBanner}>
+                  <View className="flex-row items-start gap-2.5 rounded-xl border border-[rgba(224,82,82,0.3)] bg-[rgba(224,82,82,0.1)] px-3.5 py-3 mb-5">
                     <Feather
                       name="alert-circle"
                       size={16}
                       color={colors.danger}
                     />
-                    <Text style={styles.errorBannerText}>{globalError}</Text>
+                    <Text className="flex-1 text-danger text-[13px]">
+                      {globalError}
+                    </Text>
                   </View>
                 ) : null}
 
-                <View style={styles.iconPickerWrap}>
+                <View className="items-center gap-2.5 mb-6">
                   <TouchableOpacity activeOpacity={0.85} onPress={pickIcon}>
                     <ServerAvatar name={name} uri={icon?.uri} size={96} />
                   </TouchableOpacity>
 
-                  <View style={styles.iconButtonsRow}>
+                  <View className="flex-row items-center gap-2.5">
                     <TouchableOpacity
-                      style={styles.iconPillButton}
+                      className="flex-row items-center gap-1.5 rounded-lg border border-line bg-surface-input px-3 py-[7px]"
                       onPress={pickIcon}
                     >
                       <Feather
@@ -262,50 +276,57 @@ export function CreateServerModal({
                         size={11}
                         color={colors.textMuted}
                       />
-                      <Text style={styles.iconPillButtonText}>
+                      <Text className="text-[12px] font-semibold text-content-muted">
                         {icon ? "Cambiar imagen" : "Subir imagen"}
                       </Text>
                     </TouchableOpacity>
                     {icon ? (
                       <TouchableOpacity onPress={removeIcon}>
-                        <Text style={styles.removeIconText}>Quitar</Text>
+                        <Text className="text-[12px] font-semibold text-danger">
+                          Quitar
+                        </Text>
                       </TouchableOpacity>
                     ) : null}
                   </View>
 
                   {iconError ? (
-                    <View style={styles.fieldErrorRow}>
+                    <View className="flex-row items-center gap-1.5 mt-1.5">
                       <Feather
                         name="alert-circle"
                         size={13}
                         color={colors.danger}
                       />
-                      <Text style={styles.fieldErrorText}>{iconError}</Text>
+                      <Text className="text-danger text-[12px]">
+                        {iconError}
+                      </Text>
                     </View>
                   ) : null}
 
-                  <Text style={styles.iconHint}>
+                  <Text className="text-[11px] text-content-subtle text-center">
                     PNG, JPG o WEBP · Máx. 20 MB
                   </Text>
                 </View>
 
-                <View style={styles.field}>
-                  <View style={styles.fieldLabelRow}>
-                    <Text style={styles.fieldLabel}>
+                <View className="mb-1">
+                  <View className="flex-row items-center justify-between mb-1.5">
+                    <Text className="text-[11px] font-bold tracking-[1.1px] text-content-subtle">
                       NOMBRE DEL SERVIDOR{" "}
                       <Text style={{ color: colors.danger }}>*</Text>
                     </Text>
                     <Text
-                      style={[
-                        styles.fieldCounter,
-                        nameLength > MAX_NAME ? { color: colors.danger } : null,
-                      ]}
+                      className="text-[11px] text-content-subtle"
+                      style={
+                        nameLength > MAX_NAME ? { color: colors.danger } : null
+                      }
                     >
                       {nameLength}/{MAX_NAME}
                     </Text>
                   </View>
                   <View
-                    style={[styles.input, nameError ? styles.inputError : null]}
+                    className={cn(
+                      "rounded-xl border bg-surface-input px-3.5 min-h-12 justify-center",
+                      nameError ? "border-danger" : "border-line",
+                    )}
                   >
                     <TextInput
                       value={name}
@@ -318,22 +339,24 @@ export function CreateServerModal({
                       placeholderTextColor={colors.textSubtle}
                       maxLength={110}
                       autoFocus
-                      style={styles.inputText}
+                      className="text-content text-[14px]"
                     />
                   </View>
                   {nameError ? (
-                    <View style={styles.fieldErrorRow}>
+                    <View className="flex-row items-center gap-1.5 mt-1.5">
                       <Feather
                         name="alert-circle"
                         size={13}
                         color={colors.danger}
                       />
-                      <Text style={styles.fieldErrorText}>{nameError}</Text>
+                      <Text className="text-danger text-[12px]">
+                        {nameError}
+                      </Text>
                     </View>
                   ) : null}
                 </View>
 
-                <View style={styles.footer}>
+                <View className="flex-row gap-3 mt-6 pt-5 border-t border-t-line">
                   <Button
                     title="Cancelar"
                     variant="secondary"
@@ -356,237 +379,3 @@ export function CreateServerModal({
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.65)",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 16,
-  },
-  card: {
-    width: "100%",
-    maxWidth: 460,
-    maxHeight: "90%",
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-    backgroundColor: colors.bgModal,
-    overflow: "hidden",
-  },
-  closeButton: {
-    position: "absolute",
-    top: 16,
-    right: 16,
-    zIndex: 10,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.bgInput,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  scrollContent: {
-    padding: 28,
-    paddingTop: 32,
-  },
-  header: {
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: colors.text,
-    marginBottom: 4,
-  },
-  headerSubtitle: {
-    fontSize: 13,
-    lineHeight: 19,
-    color: colors.textMuted,
-    textAlign: "center",
-  },
-  errorBanner: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "rgba(224,82,82,0.3)",
-    backgroundColor: "rgba(224,82,82,0.1)",
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 20,
-  },
-  errorBannerText: {
-    flex: 1,
-    color: colors.danger,
-    fontSize: 13,
-  },
-  iconPickerWrap: {
-    alignItems: "center",
-    gap: 10,
-    marginBottom: 24,
-  },
-  iconButtonsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  iconPillButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.bgInput,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-  },
-  iconPillButtonText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: colors.textMuted,
-  },
-  removeIconText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: colors.danger,
-  },
-  iconHint: {
-    fontSize: 11,
-    color: colors.textSubtle,
-    textAlign: "center",
-  },
-  field: {
-    marginBottom: 4,
-  },
-  fieldLabelRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 6,
-  },
-  fieldLabel: {
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 1.1,
-    color: colors.textSubtle,
-  },
-  fieldCounter: {
-    fontSize: 11,
-    color: colors.textSubtle,
-  },
-  input: {
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.bgInput,
-    paddingHorizontal: 14,
-    minHeight: 48,
-    justifyContent: "center",
-  },
-  inputError: {
-    borderColor: colors.danger,
-  },
-  inputText: {
-    color: colors.text,
-    fontSize: 14,
-  },
-  fieldErrorRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginTop: 6,
-  },
-  fieldErrorText: {
-    color: colors.danger,
-    fontSize: 12,
-  },
-  footer: {
-    flexDirection: "row",
-    gap: 12,
-    marginTop: 24,
-    paddingTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  successWrap: {
-    alignItems: "center",
-    gap: 24,
-  },
-  previewCard: {
-    width: "100%",
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-    backgroundColor: colors.bgCard,
-    overflow: "hidden",
-  },
-  previewHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  previewName: {
-    flex: 1,
-    fontSize: 14,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  previewChannels: {
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    gap: 4,
-  },
-  previewChannelRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    borderRadius: 8,
-    backgroundColor: colors.bgInput,
-    paddingHorizontal: 8,
-    paddingVertical: 7,
-  },
-  previewChannelName: {
-    fontSize: 13,
-    color: colors.textMuted,
-  },
-  successCopy: {
-    alignItems: "center",
-    gap: 6,
-  },
-  successCheck: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(56,161,105,0.15)",
-    marginBottom: 4,
-  },
-  successTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  successDescription: {
-    fontSize: 13,
-    lineHeight: 19,
-    color: colors.textMuted,
-    textAlign: "center",
-    maxWidth: 260,
-  },
-  successDescriptionStrong: {
-    color: colors.text,
-    fontWeight: "700",
-  },
-});

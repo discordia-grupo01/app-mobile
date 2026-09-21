@@ -3,41 +3,6 @@
 @import "tailwindcss/utilities.css";
 @import "nativewind/theme";
 
-/* ────────────────────────────────────────────────────────────
-   Puente hacia Tailwind, con los mismos nombres que web-client
-   (`bg-surface-raised`, `text-content-muted`, `border-line`...).
-   Mantener en sync con web-client/src/app/globals.css.
-
-   Los valores de `--accent`, `--bg-chat`, etc. no estan aca: vienen de
-   @discordia/client-shared y los inyecta ThemeProvider en runtime, asi el
-   cambio de tema no necesita recompilar.
-   ──────────────────────────────────────────────────────────── */
-@theme inline {
-  --color-accent: var(--accent);
-  --color-accent-strong: var(--accent-bright);
-  --color-highlight: var(--highlight);
-  --color-sky: var(--sky);
-  --color-info: var(--info);
-  --color-success: var(--success);
-  --color-danger: var(--danger);
-
-  --color-surface: var(--bg-chat);
-  --color-surface-raised: var(--bg-card);
-  --color-surface-sunken: var(--bg-channels);
-  --color-surface-input: var(--bg-input);
-  --color-surface-hover: var(--bg-hover);
-
-  --color-content: var(--text);
-  --color-content-muted: var(--text-2);
-  --color-content-subtle: var(--text-3);
-
-  --color-line: var(--border);
-  --color-line-strong: var(--border-strong);
-
-  /* Solo mobile: web los usa como var() directo. */
-  --color-surface-servers: var(--bg-servers);
-  --color-surface-panel: var(--bg-user-panel);
-  --color-surface-modal: var(--bg-modal);
-  --color-danger-strong: var(--danger-bright);
-  --color-on-accent: var(--on-accent);
-}
+/* Puente hacia Tailwind (`bg-surface`, `text-content-muted`, `border-line`...),
+   compartido con web-client. Los valores los inyecta ThemeProvider en runtime. */
+@import "@discordia/client-shared/theme.css";

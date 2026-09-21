@@ -8,16 +8,16 @@ module.exports = defineConfig([
     ignores: ["dist/*"],
   },
   {
-    // Migracion a NativeWind: cada warning es un archivo pendiente.
-    // Pasar a "error" (y borrar theme/colors.ts) cuando no quede ninguno.
+    // Los colores salen del tema (NativeWind o useThemeColors), nunca de un
+    // objeto estatico: eso rompe el cambio de tema.
     files: ["**/*.{ts,tsx}"],
     rules: {
       "no-restricted-imports": [
-        "warn",
+        "error",
         {
           patterns: [
             {
-              group: ["**/theme/colors"],
+              group: ["**/theme/colors", "./src/theme/colors"],
               message:
                 "Usar clases de NativeWind (bg-surface, text-content...) o useThemeColors().",
             },

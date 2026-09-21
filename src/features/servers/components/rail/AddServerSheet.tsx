@@ -8,7 +8,7 @@ import {
   View,
 } from "react-native";
 
-import { colors } from "../../../../theme/colors";
+import { useThemeColors } from "../../../../theme/theme-context";
 
 interface AddServerSheetProps {
   visible: boolean;
@@ -23,6 +23,7 @@ export function AddServerSheet({
   onCreatePress,
   onJoinPress,
 }: AddServerSheetProps) {
+  const colors = useThemeColors();
   return (
     <Modal
       transparent
@@ -30,24 +31,28 @@ export function AddServerSheet({
       animationType="fade"
       onRequestClose={onClose}
     >
-      <View style={styles.backdrop}>
+      <View className="flex-1 justify-end bg-[rgba(0,0,0,0.6)]">
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
 
-        <View style={styles.sheet}>
-          <View style={styles.handle} />
-          <Text style={styles.title}>Agregar servidor</Text>
+        <View className="bg-surface-modal rounded-tl-[22px] rounded-tr-[22px] border-t border-line-strong px-4.5 pt-2.5 pb-7">
+          <View className="self-center w-9 h-1 rounded-xs bg-line-strong mb-4" />
+          <Text className="text-[17px] font-bold text-content mb-3.5">
+            Agregar servidor
+          </Text>
 
           <TouchableOpacity
             activeOpacity={0.75}
-            style={styles.option}
+            className="flex-row items-center gap-3.5 rounded-[14px] py-3 px-2"
             onPress={onCreatePress}
           >
-            <View style={[styles.optionIcon, styles.optionIconAccent]}>
+            <View className="w-10.5 h-10.5 rounded-xl items-center justify-center bg-[rgba(36,92,107,0.3)]">
               <Feather name="plus" size={19} color={colors.sky} />
             </View>
-            <View style={styles.optionTextWrap}>
-              <Text style={styles.optionTitle}>Crear servidor</Text>
-              <Text style={styles.optionDescription}>
+            <View className="flex-1">
+              <Text className="text-[15px] font-bold text-content mb-0.5">
+                Crear servidor
+              </Text>
+              <Text className="text-[12px] leading-[17px] text-content-muted">
                 Elegí un nombre e ícono para tu propio servidor.
               </Text>
             </View>
@@ -56,15 +61,17 @@ export function AddServerSheet({
 
           <TouchableOpacity
             activeOpacity={0.75}
-            style={styles.option}
+            className="flex-row items-center gap-3.5 rounded-[14px] py-3 px-2"
             onPress={onJoinPress}
           >
-            <View style={styles.optionIcon}>
+            <View className="w-10.5 h-10.5 rounded-xl items-center justify-center bg-[rgba(107,149,189,0.15)]">
               <Feather name="link-2" size={19} color={colors.info} />
             </View>
-            <View style={styles.optionTextWrap}>
-              <Text style={styles.optionTitle}>Unirme con enlace</Text>
-              <Text style={styles.optionDescription}>
+            <View className="flex-1">
+              <Text className="text-[15px] font-bold text-content mb-0.5">
+                Unirme con enlace
+              </Text>
+              <Text className="text-[12px] leading-[17px] text-content-muted">
                 Pegá un código o link de invitación.
               </Text>
             </View>
@@ -73,90 +80,15 @@ export function AddServerSheet({
 
           <TouchableOpacity
             activeOpacity={0.75}
-            style={styles.cancelButton}
+            className="mt-2 items-center py-3.5 rounded-xl bg-surface-input"
             onPress={onClose}
           >
-            <Text style={styles.cancelText}>Cancelar</Text>
+            <Text className="text-[14px] font-bold text-content-muted">
+              Cancelar
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    justifyContent: "flex-end",
-    backgroundColor: "rgba(0,0,0,0.6)",
-  },
-  sheet: {
-    backgroundColor: colors.bgModal,
-    borderTopLeftRadius: 22,
-    borderTopRightRadius: 22,
-    borderTopWidth: 1,
-    borderColor: colors.borderStrong,
-    paddingHorizontal: 18,
-    paddingTop: 10,
-    paddingBottom: 28,
-  },
-  handle: {
-    alignSelf: "center",
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.borderStrong,
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 17,
-    fontWeight: "700",
-    color: colors.text,
-    marginBottom: 14,
-  },
-  option: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-    borderRadius: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-  },
-  optionIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(107,149,189,0.15)",
-  },
-  optionIconAccent: {
-    backgroundColor: "rgba(36,92,107,0.3)",
-  },
-  optionTextWrap: {
-    flex: 1,
-  },
-  optionTitle: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: colors.text,
-    marginBottom: 2,
-  },
-  optionDescription: {
-    fontSize: 12,
-    lineHeight: 17,
-    color: colors.textMuted,
-  },
-  cancelButton: {
-    marginTop: 8,
-    alignItems: "center",
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: colors.bgInput,
-  },
-  cancelText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: colors.textMuted,
-  },
-});

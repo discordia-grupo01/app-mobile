@@ -31,7 +31,7 @@ import { RolesModal } from "../features/roles/RolesModal";
 import { ServerRail } from "../features/servers/components/rail/ServerRail";
 import { UserProfileBar } from "../features/servers/components/account/UserProfileBar";
 import { reorderChannels } from "../features/servers/api";
-import { colors } from "../theme/colors";
+import { useThemeColors } from "../theme/theme-context";
 
 const HEADER_HEIGHT = 52;
 const MENU_TOP = 58;
@@ -63,26 +63,30 @@ function ChannelRow({
   onPress: () => void;
   onOptions: () => void;
 }) {
+  const colors = useThemeColors();
   return (
-    <View style={styles.channelRowWrap}>
+    <View className="flex-row items-center">
       <TouchableOpacity
         activeOpacity={0.7}
         onPress={onPress}
-        style={styles.channelRow}
+        className="flex-1 flex-row items-center gap-2.5 rounded-lg px-2.5 py-[11px]"
       >
         <Feather
           name={channel.kind === "text" ? "hash" : "volume-2"}
           size={20}
           color={colors.textMuted}
         />
-        <Text style={styles.channelName} numberOfLines={1}>
+        <Text
+          className="flex-1 text-[16px] font-medium text-content-muted"
+          numberOfLines={1}
+        >
           {channel.name}
         </Text>
       </TouchableOpacity>
       {isOwner ? (
         <TouchableOpacity
           onPress={onOptions}
-          style={styles.channelOptionsButton}
+          className="px-2 py-2"
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           accessibilityLabel="Opciones del canal"
           accessibilityRole="button"
@@ -108,6 +112,7 @@ export function ServerChannelsScreen({
   onLeaveServer,
   onServerUpdated,
 }: ServerChannelsScreenProps) {
+  const colors = useThemeColors();
   const [isServerMenuOpen, setIsServerMenuOpen] = useState(false);
   const [isLeaveModalVisible, setIsLeaveModalVisible] = useState(false);
   const [isInviteModalVisible, setIsInviteModalVisible] = useState(false);
@@ -212,7 +217,7 @@ export function ServerChannelsScreen({
   }
 
   return (
-    <View style={styles.container}>
+    <View className="flex-1 flex-row bg-surface-sunken">
       <ServerRail
         servers={servers}
         activeServerId={server.id}
@@ -222,18 +227,19 @@ export function ServerChannelsScreen({
         onAddServer={onAddServer}
       />
 
-      <View style={styles.main}>
+      <View className="flex-1">
         <TouchableOpacity
           activeOpacity={0.7}
-          style={[
-            styles.header,
-            { height: HEADER_HEIGHT + insets.top, paddingTop: insets.top },
-          ]}
+          className="flex-row items-center gap-1.5 h-13 px-3.5 border-b border-b-line"
+          style={{ height: HEADER_HEIGHT + insets.top, paddingTop: insets.top }}
           onPress={() => setIsServerMenuOpen((prev) => !prev)}
           accessibilityRole="button"
           accessibilityLabel="Opciones del servidor"
         >
-          <Text style={styles.headerTitle} numberOfLines={1}>
+          <Text
+            className="shrink text-[17px] font-bold text-content"
+            numberOfLines={1}
+          >
             {server.name}
           </Text>
           <Feather
@@ -249,17 +255,20 @@ export function ServerChannelsScreen({
               style={StyleSheet.absoluteFill}
               onPress={() => setIsServerMenuOpen(false)}
             />
-            <View style={[styles.serverMenu, { top: MENU_TOP + insets.top }]}>
+            <View
+              className="absolute top-[58px] left-2.5 right-2.5 z-20 rounded-xl border border-line-strong bg-surface-modal py-1.5"
+              style={[styles.serverMenu, { top: MENU_TOP + insets.top }]}
+            >
               <TouchableOpacity
                 activeOpacity={0.7}
-                style={styles.serverMenuItem}
+                className="flex-row items-center gap-2.5 rounded-lg mx-1 px-2.5 py-3"
                 onPress={() => {
                   setIsServerMenuOpen(false);
                   setIsInviteModalVisible(true);
                 }}
               >
                 <Feather name="user-plus" size={16} color={colors.info} />
-                <Text style={styles.serverMenuItemTextNeutral}>
+                <Text className="text-[14px] font-semibold text-content">
                   Invitar miembros
                 </Text>
               </TouchableOpacity>
@@ -268,7 +277,7 @@ export function ServerChannelsScreen({
                 <>
                   <TouchableOpacity
                     activeOpacity={0.7}
-                    style={styles.serverMenuItem}
+                    className="flex-row items-center gap-2.5 rounded-lg mx-1 px-2.5 py-3"
                     onPress={() => {
                       setIsServerMenuOpen(false);
                       setCreateChannelDefaultCategoryId(null);
@@ -276,53 +285,53 @@ export function ServerChannelsScreen({
                     }}
                   >
                     <Feather name="plus" size={16} color={colors.info} />
-                    <Text style={styles.serverMenuItemTextNeutral}>
+                    <Text className="text-[14px] font-semibold text-content">
                       Crear canal
                     </Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
                     activeOpacity={0.7}
-                    style={styles.serverMenuItem}
+                    className="flex-row items-center gap-2.5 rounded-lg mx-1 px-2.5 py-3"
                     onPress={() => {
                       setIsServerMenuOpen(false);
                       setIsCreateCategoryVisible(true);
                     }}
                   >
                     <Feather name="folder-plus" size={16} color={colors.info} />
-                    <Text style={styles.serverMenuItemTextNeutral}>
+                    <Text className="text-[14px] font-semibold text-content">
                       Crear categoría
                     </Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
                     activeOpacity={0.7}
-                    style={styles.serverMenuItem}
+                    className="flex-row items-center gap-2.5 rounded-lg mx-1 px-2.5 py-3"
                     onPress={() => {
                       setIsServerMenuOpen(false);
                       setIsRolesModalVisible(true);
                     }}
                   >
                     <Feather name="shield" size={16} color={colors.info} />
-                    <Text style={styles.serverMenuItemTextNeutral}>
+                    <Text className="text-[14px] font-semibold text-content">
                       Gestionar roles
                     </Text>
                   </TouchableOpacity>
                 </>
               ) : null}
 
-              <View style={styles.serverMenuDivider} />
+              <View className="h-px bg-line my-1 mx-2" />
 
               <TouchableOpacity
                 activeOpacity={0.7}
-                style={styles.serverMenuItem}
+                className="flex-row items-center gap-2.5 rounded-lg mx-1 px-2.5 py-3"
                 onPress={() => {
                   setIsServerMenuOpen(false);
                   setIsLeaveModalVisible(true);
                 }}
               >
                 <Feather name="log-out" size={16} color={colors.danger} />
-                <Text style={styles.serverMenuItemText}>
+                <Text className="text-[14px] font-semibold text-danger">
                   Abandonar servidor
                 </Text>
               </TouchableOpacity>
@@ -331,9 +340,9 @@ export function ServerChannelsScreen({
         ) : null}
 
         {dragError ? (
-          <View style={styles.dragErrorBanner}>
+          <View className="flex-row items-center gap-2 mx-3 mt-2.5 rounded-lg border border-[rgba(224,82,82,0.3)] bg-[rgba(224,82,82,0.1)] px-3 py-[9px]">
             <Feather name="alert-circle" size={14} color={colors.danger} />
-            <Text style={styles.dragErrorText} numberOfLines={2}>
+            <Text className="flex-1 text-[12px] text-danger" numberOfLines={2}>
               {dragError}
             </Text>
             <TouchableOpacity
@@ -348,15 +357,15 @@ export function ServerChannelsScreen({
         ) : null}
 
         <ScrollView
-          style={styles.channelsScroll}
-          contentContainerStyle={styles.channelsContent}
+          className="flex-1"
+          contentContainerClassName="px-2.5 pt-3.5 pb-3 gap-4.5"
           scrollEnabled={!isChannelDragActive}
         >
           {uncategorized.length > 0 ? (
-            <View style={styles.section}>
+            <View className="gap-0.5">
               <TouchableOpacity
                 activeOpacity={0.7}
-                style={styles.sectionTitleRow}
+                className="flex-row items-center gap-1 px-2 mb-1"
                 onPress={() => toggleCollapsed(UNCATEGORIZED_KEY)}
                 accessibilityRole="button"
               >
@@ -369,7 +378,9 @@ export function ServerChannelsScreen({
                   size={12}
                   color={colors.textSubtle}
                 />
-                <Text style={styles.sectionTitle}>Sin categoría</Text>
+                <Text className="flex-1 text-[13px] font-bold tracking-[0.6px] text-content-subtle">
+                  Sin categoría
+                </Text>
               </TouchableOpacity>
               {!collapsedSectionIds.has(UNCATEGORIZED_KEY) ? (
                 isOwner && uncategorized.length > 1 ? (
@@ -389,7 +400,7 @@ export function ServerChannelsScreen({
                     )}
                   />
                 ) : (
-                  <View style={styles.sectionList}>
+                  <View className="gap-[1px]">
                     {renderChannelList(uncategorized)}
                   </View>
                 )
@@ -402,11 +413,11 @@ export function ServerChannelsScreen({
             const collapsed = collapsedSectionIds.has(category.id);
 
             return (
-              <View key={category.id} style={styles.section}>
-                <View style={styles.sectionTitleRow}>
+              <View key={category.id} className="gap-0.5">
+                <View className="flex-row items-center gap-1 px-2 mb-1">
                   <TouchableOpacity
                     activeOpacity={0.7}
-                    style={styles.sectionTitleToggle}
+                    className="flex-1 flex-row items-center gap-[5px] py-0.5"
                     onPress={() => toggleCollapsed(category.id)}
                     accessibilityRole="button"
                   >
@@ -415,7 +426,10 @@ export function ServerChannelsScreen({
                       size={12}
                       color={colors.textSubtle}
                     />
-                    <Text style={styles.sectionTitle} numberOfLines={1}>
+                    <Text
+                      className="flex-1 text-[13px] font-bold tracking-[0.6px] text-content-subtle"
+                      numberOfLines={1}
+                    >
                       {category.name}
                     </Text>
                   </TouchableOpacity>
@@ -455,7 +469,7 @@ export function ServerChannelsScreen({
                       )}
                     />
                   ) : (
-                    <View style={styles.sectionList}>
+                    <View className="gap-[1px]">
                       {renderChannelList(channels)}
                     </View>
                   )
@@ -465,7 +479,7 @@ export function ServerChannelsScreen({
           })}
 
           {uncategorized.length === 0 && sortedCategories.length === 0 ? (
-            <Text style={styles.emptyChannelsText}>
+            <Text className="px-2 pt-2 text-[13px] text-content-subtle">
               {isOwner
                 ? "Todavía no hay canales. Creá el primero."
                 : "Todavía no hay canales en este servidor."}
@@ -557,152 +571,11 @@ export function ServerChannelsScreen({
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    flexDirection: "row",
-    backgroundColor: colors.bgChannels,
-  },
-  main: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    height: 52,
-    paddingHorizontal: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  headerTitle: {
-    flexShrink: 1,
-    fontSize: 17,
-    fontWeight: "700",
-    color: colors.text,
-  },
   serverMenu: {
-    position: "absolute",
-    top: 58,
-    left: 10,
-    right: 10,
-    zIndex: 20,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-    backgroundColor: colors.bgModal,
-    paddingVertical: 6,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
-  },
-  serverMenuItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    borderRadius: 8,
-    marginHorizontal: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 12,
-  },
-  serverMenuItemText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: colors.danger,
-  },
-  serverMenuItemTextNeutral: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: colors.text,
-  },
-  serverMenuDivider: {
-    height: 1,
-    backgroundColor: colors.border,
-    marginVertical: 4,
-    marginHorizontal: 8,
-  },
-  dragErrorBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginHorizontal: 12,
-    marginTop: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "rgba(224,82,82,0.3)",
-    backgroundColor: "rgba(224,82,82,0.1)",
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-  },
-  dragErrorText: {
-    flex: 1,
-    fontSize: 12,
-    color: colors.danger,
-  },
-  channelsScroll: {
-    flex: 1,
-  },
-  channelsContent: {
-    paddingHorizontal: 10,
-    paddingTop: 14,
-    paddingBottom: 12,
-    gap: 18,
-  },
-  section: {
-    gap: 2,
-  },
-  sectionTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 8,
-    marginBottom: 4,
-  },
-  sectionTitleToggle: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    paddingVertical: 2,
-  },
-  sectionTitle: {
-    flex: 1,
-    fontSize: 13,
-    fontWeight: "700",
-    letterSpacing: 0.6,
-    color: colors.textSubtle,
-  },
-  sectionList: {
-    gap: 1,
-  },
-  channelRowWrap: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  channelRow: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 11,
-  },
-  channelOptionsButton: {
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-  },
-  channelName: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: "500",
-    color: colors.textMuted,
-  },
-  emptyChannelsText: {
-    paddingHorizontal: 8,
-    paddingTop: 8,
-    fontSize: 13,
-    color: colors.textSubtle,
   },
 });

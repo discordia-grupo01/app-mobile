@@ -11,7 +11,7 @@ import {
   View,
 } from "react-native";
 
-import { colors } from "../../../../theme/colors";
+import { useThemeColors } from "../../../../theme/theme-context";
 import { Button } from "../../../../components/ui/Button";
 
 interface LeaveServerModalProps {
@@ -42,6 +42,7 @@ export function LeaveServerModal({
   onClose,
   onConfirm,
 }: LeaveServerModalProps) {
+  const colors = useThemeColors();
   const [view, setView] = useState<ModalView>("confirm");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -85,12 +86,12 @@ export function LeaveServerModal({
       animationType="fade"
       onRequestClose={onClose}
     >
-      <View style={styles.backdrop}>
+      <View className="flex-1 bg-[rgba(0,0,0,0.65)] items-center justify-center p-4">
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
 
-        <View style={styles.card}>
+        <View className="w-full max-w-80 rounded-[20px] border border-line-strong bg-surface-modal p-7 pt-6 items-center">
           <TouchableOpacity
-            style={styles.cardCloseButton}
+            className="absolute top-3 right-3 w-8 h-8 rounded-2xl items-center justify-center bg-[rgba(255,255,255,0.06)]"
             onPress={onClose}
             accessibilityRole="button"
             accessibilityLabel="Cerrar"
@@ -100,20 +101,20 @@ export function LeaveServerModal({
 
           {view === "blocked" ? (
             <>
-              <View style={styles.cardIconInfo}>
+              <View className="w-16 h-16 rounded-[18px] items-center justify-center bg-[rgba(107,149,189,0.15)] mt-2 mb-5">
                 <Feather name="shield" size={26} color={colors.info} />
               </View>
-              <Text style={styles.cardTitle}>
+              <Text className="text-[19px] font-bold text-content text-center">
                 No podés abandonar tu servidor
               </Text>
-              <Text style={styles.cardSubtitle}>
+              <Text className="text-[14px] leading-5 text-content-muted text-center mt-2.5 mb-2">
                 Sos el propietario de{" "}
-                <Text style={styles.cardSubtitleStrong}>{serverName}</Text>.
+                <Text className="text-content font-bold">{serverName}</Text>.
                 Para salir, primero tenés que transferir la propiedad a otro
                 miembro del servidor.
               </Text>
 
-              <View style={styles.footer}>
+              <View className="flex-col gap-2.5 w-full mt-5">
                 <Button
                   title="Entendido"
                   variant="secondary"
@@ -123,27 +124,31 @@ export function LeaveServerModal({
             </>
           ) : (
             <>
-              <View style={styles.cardIconDanger}>
+              <View className="w-16 h-16 rounded-[18px] items-center justify-center bg-[rgba(224,82,82,0.14)] mt-2 mb-5">
                 <Feather name="log-out" size={26} color={colors.danger} />
               </View>
-              <Text style={styles.cardTitle}>¿Abandonar {serverName}?</Text>
-              <Text style={styles.cardSubtitle}>
+              <Text className="text-[19px] font-bold text-content text-center">
+                ¿Abandonar {serverName}?
+              </Text>
+              <Text className="text-[14px] leading-5 text-content-muted text-center mt-2.5 mb-2">
                 Vas a perder acceso a todos sus canales de texto y voz. Para
                 volver a entrar vas a necesitar una nueva invitación.
               </Text>
 
               {error ? (
-                <View style={styles.errorBanner}>
+                <View className="flex-row items-start gap-2 w-full rounded-xl border border-[rgba(224,82,82,0.3)] bg-[rgba(224,82,82,0.1)] px-3 py-2.5 mt-2.5">
                   <Feather
                     name="alert-circle"
                     size={15}
                     color={colors.danger}
                   />
-                  <Text style={styles.errorBannerText}>{error}</Text>
+                  <Text className="flex-1 text-danger text-[12px] leading-[17px]">
+                    {error}
+                  </Text>
                 </View>
               ) : null}
 
-              <View style={styles.footer}>
+              <View className="flex-col gap-2.5 w-full mt-5">
                 <Button
                   title="Cancelar"
                   variant="secondary"
@@ -163,98 +168,3 @@ export function LeaveServerModal({
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.65)",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 16,
-  },
-  card: {
-    width: "100%",
-    maxWidth: 320,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-    backgroundColor: colors.bgModal,
-    padding: 28,
-    paddingTop: 24,
-    alignItems: "center",
-  },
-  cardCloseButton: {
-    position: "absolute",
-    top: 12,
-    right: 12,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.06)",
-  },
-  cardIconDanger: {
-    width: 64,
-    height: 64,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(224,82,82,0.14)",
-    marginTop: 8,
-    marginBottom: 20,
-  },
-  cardIconInfo: {
-    width: 64,
-    height: 64,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(107,149,189,0.15)",
-    marginTop: 8,
-    marginBottom: 20,
-  },
-  cardTitle: {
-    fontSize: 19,
-    fontWeight: "700",
-    color: colors.text,
-    textAlign: "center",
-  },
-  cardSubtitle: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: colors.textMuted,
-    textAlign: "center",
-    marginTop: 10,
-    marginBottom: 8,
-  },
-  cardSubtitleStrong: {
-    color: colors.text,
-    fontWeight: "700",
-  },
-  errorBanner: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 8,
-    width: "100%",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "rgba(224,82,82,0.3)",
-    backgroundColor: "rgba(224,82,82,0.1)",
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginTop: 10,
-  },
-  errorBannerText: {
-    flex: 1,
-    color: colors.danger,
-    fontSize: 12,
-    lineHeight: 17,
-  },
-  footer: {
-    flexDirection: "column",
-    gap: 10,
-    width: "100%",
-    marginTop: 20,
-  },
-});

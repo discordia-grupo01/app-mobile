@@ -1,8 +1,7 @@
 import { PERMISSION_COPY, type RolePermission } from "@discordia/client-shared";
 
 import { Text, TouchableOpacity, View } from "react-native";
-
-import { styles } from "../styles";
+import { cn } from "../../../lib/cn";
 
 interface PermissionToggleProps {
   perm: RolePermission;
@@ -20,14 +19,28 @@ export function PermissionToggle({
     <TouchableOpacity
       activeOpacity={0.75}
       onPress={() => onChange(!enabled)}
-      style={[styles.permRow, enabled ? styles.permRowEnabled : null]}
+      className={cn(
+        "flex-row items-center justify-between gap-3 rounded-xl border px-3.5 py-3",
+        enabled
+          ? "border-[rgba(36,92,107,0.4)] bg-[rgba(36,92,107,0.12)]"
+          : "border-line bg-surface-input",
+      )}
     >
-      <View style={styles.permTextWrap}>
-        <Text style={styles.permLabel}>{copy.label}</Text>
-        <Text style={styles.permDesc}>{copy.desc}</Text>
+      <View className="flex-1">
+        <Text className="text-[14px] font-semibold text-content">
+          {copy.label}
+        </Text>
+        <Text className="text-[12px] text-content-subtle mt-0.5">
+          {copy.desc}
+        </Text>
       </View>
-      <View style={[styles.permSwitch, enabled ? styles.permSwitchOn : null]}>
-        <View style={[styles.permKnob, enabled ? styles.permKnobOn : null]} />
+      <View
+        className={cn(
+          "w-10 h-6 rounded-xl p-0.5 justify-center",
+          enabled ? "bg-accent items-end" : "bg-line-strong items-start",
+        )}
+      >
+        <View className="w-5 h-5 rounded-[10px] bg-white" />
       </View>
     </TouchableOpacity>
   );

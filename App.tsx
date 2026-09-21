@@ -1,7 +1,7 @@
 import "./global.css";
 
 import { useState } from "react";
-import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { ActivityIndicator, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import type { AuthMode } from "./src/features/auth/components/AuthTabs";
@@ -11,12 +11,12 @@ import { ForgotPasswordScreen } from "./src/screens/ForgotPasswordScreen";
 import { HomeScreen } from "./src/screens/HomeScreen";
 import { LoginScreen } from "./src/screens/LoginScreen";
 import { RegisterScreen } from "./src/screens/RegisterScreen";
-import { colors } from "./src/theme/colors";
-import { ThemeProvider } from "./src/theme/theme-context";
+import { ThemeProvider, useThemeColors } from "./src/theme/theme-context";
 
 type AuthScreen = AuthMode | "forgot-password";
 
 function AppContent() {
+  const colors = useThemeColors();
   const { isAuthenticated, isLoading } = useAuth();
   const [authScreen, setAuthScreen] = useState<AuthScreen>("login");
   const [justRegistered, setJustRegistered] = useState(false);
@@ -33,7 +33,7 @@ function AppContent() {
 
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
+      <View className="flex-1 bg-surface-servers justify-center items-center">
         <ActivityIndicator size="large" color={colors.accentBright} />
       </View>
     );
@@ -72,12 +72,3 @@ export default function App() {
     </SafeAreaProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    backgroundColor: colors.bgServers,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-});

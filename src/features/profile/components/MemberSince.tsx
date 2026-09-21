@@ -1,37 +1,23 @@
 import { formatMemberSince } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
-import { StyleSheet, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
-import { colors } from "../../../theme/colors";
+import { useThemeColors } from "../../../theme/theme-context";
 
 export function MemberSince({ isoDate }: { isoDate: string }) {
+  const colors = useThemeColors();
   return (
     <View>
-      <Text style={styles.label}>MIEMBRO DESDE</Text>
-      <View style={styles.row}>
+      <Text className="text-[11px] font-bold tracking-[1.2px] text-content-subtle mb-1.5">
+        MIEMBRO DESDE
+      </Text>
+      <View className="flex-row items-center gap-2">
         <Feather name="calendar" size={14} color={colors.textSubtle} />
-        <Text style={styles.value}>{formatMemberSince(isoDate)}</Text>
+        <Text className="text-[13px] text-content-muted">
+          {formatMemberSince(isoDate)}
+        </Text>
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  label: {
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 1.2,
-    color: colors.textSubtle,
-    marginBottom: 6,
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  value: {
-    fontSize: 13,
-    color: colors.textMuted,
-  },
-});

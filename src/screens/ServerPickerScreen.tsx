@@ -1,11 +1,11 @@
 import { type ServerSummary } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
-import { StyleSheet, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
 import { ServerRail } from "../features/servers/components/rail/ServerRail";
 import { UserProfileBar } from "../features/servers/components/account/UserProfileBar";
-import { colors } from "../theme/colors";
+import { useThemeColors } from "../theme/theme-context";
 
 interface ServerPickerScreenProps {
   servers: ServerSummary[];
@@ -24,8 +24,9 @@ export function ServerPickerScreen({
   onAddServer,
   onLogout,
 }: ServerPickerScreenProps) {
+  const colors = useThemeColors();
   return (
-    <View style={styles.container}>
+    <View className="flex-1 flex-row bg-surface-sunken">
       <ServerRail
         servers={servers}
         activeServerId={null}
@@ -35,16 +36,18 @@ export function ServerPickerScreen({
         onAddServer={onAddServer}
       />
 
-      <View style={styles.main}>
-        <View style={styles.content}>
-          <View style={styles.iconCircle}>
+      <View className="flex-1 justify-between">
+        <View className="flex-1 items-center justify-center px-7">
+          <View className="w-16 h-16 rounded-[32px] items-center justify-center bg-surface-input mb-4.5">
             <Feather name="compass" size={28} color={colors.textSubtle} />
           </View>
-          <Text style={styles.eyebrow}>TUS SERVIDORES</Text>
-          <Text style={styles.title}>
+          <Text className="text-[12px] font-bold tracking-[1.5px] text-content-subtle mb-2.5">
+            TUS SERVIDORES
+          </Text>
+          <Text className="text-[19px] font-bold text-content text-center mb-2">
             Elegí un servidor de la barra lateral
           </Text>
-          <Text style={styles.subtitle}>
+          <Text className="text-[14px] text-content-muted text-center">
             O sumá uno nuevo con el botón de abajo.
           </Text>
         </View>
@@ -54,49 +57,3 @@ export function ServerPickerScreen({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    flexDirection: "row",
-    backgroundColor: colors.bgChannels,
-  },
-  main: {
-    flex: 1,
-    justifyContent: "space-between",
-  },
-  content: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 28,
-  },
-  iconCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.bgInput,
-    marginBottom: 18,
-  },
-  eyebrow: {
-    fontSize: 12,
-    fontWeight: "700",
-    letterSpacing: 1.5,
-    color: colors.textSubtle,
-    marginBottom: 10,
-  },
-  title: {
-    fontSize: 19,
-    fontWeight: "700",
-    color: colors.text,
-    textAlign: "center",
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: colors.textMuted,
-    textAlign: "center",
-  },
-});

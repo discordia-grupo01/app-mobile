@@ -10,8 +10,7 @@ import {
 } from "react-native";
 
 import { resolveImageUri } from "../../../../lib/image-url";
-import { colors } from "../../../../theme/colors";
-import { useTheme } from "../../../../theme/theme-context";
+import { useThemeColors, useTheme } from "../../../../theme/theme-context";
 import { Button } from "../../../../components/ui/Button";
 import { useAuth } from "../../../auth/auth-context";
 import { OwnProfileModal } from "../../../profile/components/OwnProfileModal";
@@ -30,6 +29,7 @@ export function UserProfileBar({
   serverId,
   onLogout,
 }: UserProfileBarProps) {
+  const colors = useThemeColors();
   const { user } = useAuth();
   const [isConfirmVisible, setIsConfirmVisible] = useState(false);
   const [isAppearanceVisible, setIsAppearanceVisible] = useState(false);
@@ -48,30 +48,33 @@ export function UserProfileBar({
 
   return (
     <>
-      <View style={styles.profileBar}>
+      <View className="flex-row items-center gap-2 px-3.5 py-3.5 border-t border-t-line bg-surface-panel">
         <TouchableOpacity
-          style={styles.identityWrap}
+          className="flex-1 flex-row items-center gap-2 min-w-0"
           onPress={() => setIsProfileVisible(true)}
           activeOpacity={0.75}
           accessibilityRole="button"
           accessibilityLabel="Ver mi perfil"
         >
-          <View style={styles.avatarWrap}>
+          <View className="relative">
             <ServerAvatar name={displayName} uri={avatarSrc} size={44} />
-            <View style={styles.statusDot} />
+            <View className="absolute -right-[1px] -bottom-[1px] w-[13px] h-[13px] rounded-[7px] bg-success border-2 border-surface-panel" />
           </View>
-          <View style={styles.textWrap}>
-            <Text style={styles.name} numberOfLines={1}>
+          <View className="flex-1 mr-1">
+            <Text
+              className="text-[16px] font-bold text-content"
+              numberOfLines={1}
+            >
               {displayName}
             </Text>
-            <Text style={styles.status} numberOfLines={1}>
+            <Text className="text-[13px] text-content-subtle" numberOfLines={1}>
               {statusText || "En línea"}
             </Text>
           </View>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.iconButton}
+          className="w-10 h-10 rounded-[10px] items-center justify-center"
           onPress={() => setIsMicMuted((prev) => !prev)}
           accessibilityRole="button"
           accessibilityLabel={
@@ -86,7 +89,7 @@ export function UserProfileBar({
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.iconButton}
+          className="w-10 h-10 rounded-[10px] items-center justify-center"
           onPress={() => setIsDeafened((prev) => !prev)}
           accessibilityRole="button"
           accessibilityLabel={
@@ -101,7 +104,7 @@ export function UserProfileBar({
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.iconButton}
+          className="w-10 h-10 rounded-[10px] items-center justify-center"
           onPress={() => setIsAppearanceVisible(true)}
           accessibilityRole="button"
           accessibilityLabel="Apariencia"
@@ -110,7 +113,7 @@ export function UserProfileBar({
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.iconButton}
+          className="w-10 h-10 rounded-[10px] items-center justify-center"
           onPress={() => setIsConfirmVisible(true)}
           accessibilityRole="button"
           accessibilityLabel="Cerrar sesión"
@@ -138,15 +141,15 @@ export function UserProfileBar({
         animationType="fade"
         onRequestClose={() => setIsConfirmVisible(false)}
       >
-        <View style={styles.backdrop}>
+        <View className="flex-1 bg-[rgba(0,0,0,0.65)] items-center justify-center p-4">
           <Pressable
             style={StyleSheet.absoluteFill}
             onPress={() => setIsConfirmVisible(false)}
           />
 
-          <View style={styles.card}>
+          <View className="w-full max-w-80 rounded-[20px] border border-line-strong bg-surface-modal p-7 pt-6 items-center">
             <TouchableOpacity
-              style={styles.cardCloseButton}
+              className="absolute top-3 right-3 w-8 h-8 rounded-2xl items-center justify-center bg-[rgba(255,255,255,0.06)]"
               onPress={() => setIsConfirmVisible(false)}
               accessibilityRole="button"
               accessibilityLabel="Cerrar"
@@ -154,16 +157,18 @@ export function UserProfileBar({
               <Feather name="x" size={16} color={colors.textMuted} />
             </TouchableOpacity>
 
-            <View style={styles.cardIcon}>
+            <View className="w-16 h-16 rounded-[18px] items-center justify-center bg-[rgba(224,82,82,0.14)] mt-2 mb-5">
               <Feather name="log-out" size={26} color={colors.danger} />
             </View>
-            <Text style={styles.cardTitle}>¿Cerrar sesión?</Text>
-            <Text style={styles.cardSubtitle}>
+            <Text className="text-[19px] font-bold text-content">
+              ¿Cerrar sesión?
+            </Text>
+            <Text className="text-[14px] leading-5 text-content-muted text-center mt-2.5 mb-6.5">
               Vas a salir de tu cuenta. Podés volver a iniciar sesión cuando
               quieras.
             </Text>
 
-            <View style={styles.footer}>
+            <View className="flex-col gap-2.5 w-full">
               <Button
                 title="Cerrar sesión"
                 variant="danger"
@@ -181,114 +186,3 @@ export function UserProfileBar({
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  profileBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    backgroundColor: colors.bgUserPanel,
-  },
-  identityWrap: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    minWidth: 0,
-  },
-  avatarWrap: {
-    position: "relative",
-  },
-  statusDot: {
-    position: "absolute",
-    right: -1,
-    bottom: -1,
-    width: 13,
-    height: 13,
-    borderRadius: 7,
-    backgroundColor: colors.success,
-    borderWidth: 2,
-    borderColor: colors.bgUserPanel,
-  },
-  textWrap: {
-    flex: 1,
-    marginRight: 4,
-  },
-  name: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  status: {
-    fontSize: 13,
-    color: colors.textSubtle,
-  },
-  iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  backdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.65)",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 16,
-  },
-  card: {
-    width: "100%",
-    maxWidth: 320,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-    backgroundColor: colors.bgModal,
-    padding: 28,
-    paddingTop: 24,
-    alignItems: "center",
-  },
-  cardCloseButton: {
-    position: "absolute",
-    top: 12,
-    right: 12,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.06)",
-  },
-  cardIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(224,82,82,0.14)",
-    marginTop: 8,
-    marginBottom: 20,
-  },
-  cardTitle: {
-    fontSize: 19,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  cardSubtitle: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: colors.textMuted,
-    textAlign: "center",
-    marginTop: 10,
-    marginBottom: 26,
-  },
-  footer: {
-    flexDirection: "column",
-    gap: 10,
-    width: "100%",
-  },
-});

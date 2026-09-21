@@ -12,7 +12,7 @@ import {
   View,
 } from "react-native";
 
-import { colors } from "../../../theme/colors";
+import { useThemeColors } from "../../../theme/theme-context";
 import { resolveImageUri } from "../../../lib/image-url";
 import { ServerAvatar } from "../../servers/components/ServerAvatar";
 import { MemberRoleBadges } from "../../roles/components/MemberRoleBadges";
@@ -37,6 +37,7 @@ export function PublicProfileModal({
   canManageRoles,
   onClose,
 }: PublicProfileModalProps) {
+  const colors = useThemeColors();
   const [profile, setProfile] = useState<PublicUser | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -80,27 +81,31 @@ export function PublicProfileModal({
       animationType="fade"
       onRequestClose={onClose}
     >
-      <View style={styles.backdrop}>
+      <View className="flex-1 bg-[rgba(0,0,0,0.65)] items-center justify-center p-4">
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
 
-        <View style={styles.card}>
+        <View className="w-full max-w-100 max-h-[90%] rounded-[20px] border border-line-strong bg-surface-modal overflow-hidden">
           <ProfileBanner onClose={onClose} dimmed={profile?.is_suspended} />
 
           {profile?.is_suspended ? (
-            <View style={styles.suspendedWrap}>
-              <View style={styles.suspendedIcon}>
+            <View className="items-center gap-2.5 px-6 py-8">
+              <View className="w-14 h-14 rounded-[28px] items-center justify-center bg-[rgba(224,82,82,0.1)] border border-[rgba(224,82,82,0.3)] mb-1">
                 <Feather name="alert-circle" size={26} color={colors.danger} />
               </View>
-              <Text style={styles.suspendedTitle}>Perfil no disponible</Text>
-              <Text style={styles.suspendedSubtitle}>
+              <Text className="text-[16px] font-bold text-content">
+                Perfil no disponible
+              </Text>
+              <Text className="text-[13px] leading-[19px] text-content-subtle text-center max-w-60">
                 Este usuario fue suspendido por el equipo de moderación y su
                 perfil no es accesible.
               </Text>
             </View>
           ) : isLoading || !profile ? (
-            <View style={styles.centerWrap}>
+            <View className="py-10 items-center justify-center">
               {errorMessage ? (
-                <Text style={styles.errorText}>{errorMessage}</Text>
+                <Text className="text-danger text-[13px] text-center px-6">
+                  {errorMessage}
+                </Text>
               ) : (
                 <ActivityIndicator size="small" color={colors.accentBright} />
               )}
@@ -108,17 +113,23 @@ export function PublicProfileModal({
           ) : (
             <>
               <ScrollView
-                contentContainerStyle={styles.scrollContent}
+                contentContainerClassName="px-5.5 pt-17 pb-6.5"
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
               >
-                <View style={styles.section}>
-                  <Text style={styles.name} numberOfLines={1}>
+                <View className="mb-4">
+                  <Text
+                    className="text-[18px] font-bold text-content"
+                    numberOfLines={1}
+                  >
                     {profile.name}
                   </Text>
                   {profile.status_text || profile.status_emoji ? (
-                    <View style={styles.statusBadge}>
-                      <Text style={styles.statusBadgeText} numberOfLines={1}>
+                    <View className="self-start rounded-full bg-surface-input px-3 py-[5px] mt-2">
+                      <Text
+                        className="text-[12px] text-content-muted"
+                        numberOfLines={1}
+                      >
                         {profile.status_emoji ? `${profile.status_emoji} ` : ""}
                         {profile.status_text}
                       </Text>
@@ -126,23 +137,25 @@ export function PublicProfileModal({
                   ) : null}
                 </View>
 
-                <View style={styles.divider} />
+                <View className="h-px bg-line mb-4" />
 
-                <View style={styles.section}>
-                  <Text style={styles.label}>SOBRE MÍ</Text>
-                  <Text style={styles.description}>
+                <View className="mb-4">
+                  <Text className="text-[11px] font-bold tracking-[1.2px] text-content-subtle mb-1.5">
+                    SOBRE MÍ
+                  </Text>
+                  <Text className="text-[13px] leading-[19px] text-content-muted">
                     {profile.description || "Sin descripción."}
                   </Text>
                 </View>
 
-                <View style={styles.section}>
+                <View className="mb-4">
                   <MutualServersList
                     serverIds={profile.mutual_server_ids}
                     authToken={authToken}
                   />
                 </View>
 
-                <View style={styles.section}>
+                <View className="mb-4">
                   <MemberRoleBadges
                     serverId={serverId}
                     userId={profile.id}
@@ -151,10 +164,10 @@ export function PublicProfileModal({
                 </View>
               </ScrollView>
 
-              <View style={styles.avatarWrap}>
-                <View style={styles.avatarBox}>
-                  <View style={styles.avatarRingBg} />
-                  <View style={styles.avatarInner}>
+              <View className="absolute top-18 left-5.5 z-10">
+                <View className="w-20 h-20">
+                  <View className="absolute top-0 left-0 w-20 h-20 rounded-[40px] bg-surface-modal" />
+                  <View className="absolute top-1 left-1 w-18 h-18">
                     <ServerAvatar
                       name={profile.name}
                       uri={avatarSrc}
@@ -162,7 +175,7 @@ export function PublicProfileModal({
                       borderRadius={36}
                     />
                   </View>
-                  <View style={styles.statusDot} />
+                  <View className="absolute right-0 bottom-0 w-4.5 h-4.5 rounded-[9px] bg-success border-[3px] border-surface-modal" />
                 </View>
               </View>
             </>
@@ -172,142 +185,3 @@ export function PublicProfileModal({
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.65)",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 16,
-  },
-  card: {
-    width: "100%",
-    maxWidth: 400,
-    maxHeight: "90%",
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-    backgroundColor: colors.bgModal,
-    overflow: "hidden",
-  },
-  centerWrap: {
-    paddingVertical: 40,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  errorText: {
-    color: colors.danger,
-    fontSize: 13,
-    textAlign: "center",
-    paddingHorizontal: 24,
-  },
-  scrollContent: {
-    paddingHorizontal: 22,
-    paddingTop: 68,
-    paddingBottom: 26,
-  },
-  avatarWrap: {
-    position: "absolute",
-    top: 72,
-    left: 22,
-    zIndex: 10,
-  },
-  avatarBox: {
-    width: 80,
-    height: 80,
-  },
-  avatarRingBg: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: colors.bgModal,
-  },
-  avatarInner: {
-    position: "absolute",
-    top: 4,
-    left: 4,
-    width: 72,
-    height: 72,
-  },
-  statusDot: {
-    position: "absolute",
-    right: 0,
-    bottom: 0,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: colors.success,
-    borderWidth: 3,
-    borderColor: colors.bgModal,
-  },
-  section: {
-    marginBottom: 16,
-  },
-  name: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  statusBadge: {
-    alignSelf: "flex-start",
-    borderRadius: 999,
-    backgroundColor: colors.bgInput,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    marginTop: 8,
-  },
-  statusBadgeText: {
-    fontSize: 12,
-    color: colors.textMuted,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.border,
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 1.2,
-    color: colors.textSubtle,
-    marginBottom: 6,
-  },
-  description: {
-    fontSize: 13,
-    lineHeight: 19,
-    color: colors.textMuted,
-  },
-  suspendedWrap: {
-    alignItems: "center",
-    gap: 10,
-    paddingHorizontal: 24,
-    paddingVertical: 32,
-  },
-  suspendedIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(224,82,82,0.1)",
-    borderWidth: 1,
-    borderColor: "rgba(224,82,82,0.3)",
-    marginBottom: 4,
-  },
-  suspendedTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  suspendedSubtitle: {
-    fontSize: 13,
-    lineHeight: 19,
-    color: colors.textSubtle,
-    textAlign: "center",
-    maxWidth: 240,
-  },
-});

@@ -19,7 +19,8 @@ import {
 import { getPublicUser } from "../../../../features/auth/service";
 import { initiateOwnershipTransfer, listMembers } from "../../api";
 import { resolveImageUri } from "../../../../lib/image-url";
-import { colors } from "../../../../theme/colors";
+import { cn } from "../../../../lib/cn";
+import { useThemeColors } from "../../../../theme/theme-context";
 import { Button } from "../../../../components/ui/Button";
 import { ServerAvatar } from "../ServerAvatar";
 
@@ -52,6 +53,7 @@ export function TransferOwnershipModal({
   currentUserId,
   onClose,
 }: TransferOwnershipModalProps) {
+  const colors = useThemeColors();
   const [step, setStep] = useState<Step>("loading-members");
   const [members, setMembers] = useState<PickerMember[]>([]);
   const [membersError, setMembersError] = useState("");
@@ -167,15 +169,15 @@ export function TransferOwnershipModal({
       onRequestClose={onClose}
     >
       <KeyboardAvoidingView
-        style={styles.backdrop}
+        className="flex-1 bg-[rgba(0,0,0,0.65)] items-center justify-center p-4"
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
 
-        <View style={styles.card}>
+        <View className="w-full max-w-110 max-h-[90%] min-h-80 rounded-[20px] border border-line-strong bg-surface-modal overflow-hidden">
           <TouchableOpacity
             onPress={onClose}
-            style={styles.closeButton}
+            className="absolute top-4 right-4 z-10 w-8 h-8 rounded-2xl items-center justify-center bg-surface-input border border-line"
             accessibilityRole="button"
             accessibilityLabel="Cerrar"
           >
@@ -184,23 +186,23 @@ export function TransferOwnershipModal({
 
           {step === "already-pending" ? (
             <ScrollView
-              contentContainerStyle={styles.scrollContent}
+              contentContainerClassName="p-7 pt-8"
               showsVerticalScrollIndicator={false}
             >
-              <View style={styles.centerWrap}>
-                <View style={styles.iconCircleHighlight}>
+              <View className="items-center justify-center gap-3.5">
+                <View className="w-15 h-15 rounded-[18px] items-center justify-center bg-[rgba(252,227,164,0.12)] mb-1">
                   <Feather name="clock" size={26} color={colors.highlight} />
                 </View>
-                <Text style={styles.centerTitle}>
+                <Text className="text-[18px] font-bold text-content text-center">
                   Ya hay una transferencia pendiente
                 </Text>
-                <Text style={styles.centerSubtitle}>
+                <Text className="text-[13px] leading-[19px] text-content-muted text-center">
                   Ya enviaste una solicitud de transferencia para{" "}
-                  <Text style={styles.centerSubtitleStrong}>{serverName}</Text>.
+                  <Text className="text-content font-bold">{serverName}</Text>.
                   Solo podés tener una activa a la vez, y no se puede cancelar
                   una vez enviada.
                 </Text>
-                <Text style={styles.centerSubtitle}>
+                <Text className="text-[13px] leading-[19px] text-content-muted text-center">
                   Esperá a que el miembro acepte o rechace la oferta.
                 </Text>
                 <Button
@@ -212,24 +214,26 @@ export function TransferOwnershipModal({
             </ScrollView>
           ) : step === "sent" ? (
             <ScrollView
-              contentContainerStyle={styles.scrollContent}
+              contentContainerClassName="p-7 pt-8"
               showsVerticalScrollIndicator={false}
             >
-              <View style={styles.centerWrap}>
-                <View style={styles.iconCircleHighlight}>
+              <View className="items-center justify-center gap-3.5">
+                <View className="w-15 h-15 rounded-[18px] items-center justify-center bg-[rgba(252,227,164,0.12)] mb-1">
                   <Feather name="clock" size={26} color={colors.highlight} />
                 </View>
-                <Text style={styles.centerTitle}>Solicitud enviada</Text>
-                <Text style={styles.centerSubtitle}>
+                <Text className="text-[18px] font-bold text-content text-center">
+                  Solicitud enviada
+                </Text>
+                <Text className="text-[13px] leading-[19px] text-content-muted text-center">
                   Le enviamos la oferta a{" "}
-                  <Text style={styles.centerSubtitleStrong}>
+                  <Text className="text-content font-bold">
                     {selectedDisplayName}
                   </Text>
                   . La propiedad de{" "}
-                  <Text style={styles.centerSubtitleStrong}>{serverName}</Text>{" "}
+                  <Text className="text-content font-bold">{serverName}</Text>{" "}
                   no va a cambiar hasta que la acepte.
                 </Text>
-                <Text style={styles.centerSubtitle}>
+                <Text className="text-[13px] leading-[19px] text-content-muted text-center">
                   Si la rechaza, vas a seguir siendo el propietario. No podés
                   cancelar esta solicitud una vez enviada.
                 </Text>
@@ -237,70 +241,93 @@ export function TransferOwnershipModal({
               </View>
             </ScrollView>
           ) : step === "loading-members" ? (
-            <View style={[styles.scrollContent, styles.centerWrap]}>
+            <View
+              className={cn("p-7 pt-8", "items-center justify-center gap-3.5")}
+            >
               <ActivityIndicator size="small" color={colors.textSubtle} />
-              <Text style={styles.centerSubtitle}>Cargando miembros...</Text>
+              <Text className="text-[13px] leading-[19px] text-content-muted text-center">
+                Cargando miembros...
+              </Text>
             </View>
           ) : step === "members-error" ? (
-            <View style={styles.scrollContent}>
-              <View style={styles.header}>
-                <View style={styles.headerIcon}>
+            <View className="p-7 pt-8">
+              <View className="flex-row items-center gap-3 mb-5 pr-6">
+                <View className="w-9 h-9 rounded-xl items-center justify-center bg-[rgba(107,149,189,0.15)]">
                   <Feather name="shield" size={17} color={colors.info} />
                 </View>
-                <View style={styles.headerTextWrap}>
-                  <Text style={styles.headerTitle}>Transferir propiedad</Text>
-                  <Text style={styles.headerSubtitle} numberOfLines={1}>
+                <View className="flex-1">
+                  <Text className="text-[17px] font-bold text-content">
+                    Transferir propiedad
+                  </Text>
+                  <Text
+                    className="text-[12px] text-content-subtle mt-0.5"
+                    numberOfLines={1}
+                  >
                     {serverName}
                   </Text>
                 </View>
               </View>
-              <View style={styles.errorBanner}>
+              <View className="flex-row items-start gap-2.5 rounded-xl border border-[rgba(224,82,82,0.3)] bg-[rgba(224,82,82,0.1)] px-3.5 py-3 mb-4">
                 <Feather name="alert-circle" size={15} color={colors.danger} />
-                <Text style={styles.errorBannerText}>{membersError}</Text>
+                <Text className="flex-1 text-danger text-[13px] leading-[18px]">
+                  {membersError}
+                </Text>
               </View>
               <Button title="Reintentar" onPress={handleRetryMembers} />
             </View>
           ) : (
-            <View style={styles.flexOne}>
-              <View style={[styles.scrollContent, styles.headerBlock]}>
-                <View style={styles.header}>
-                  <View style={styles.headerIcon}>
+            <View className="flex-1">
+              <View className={cn("p-7 pt-8", "pb-0")}>
+                <View className="flex-row items-center gap-3 mb-5 pr-6">
+                  <View className="w-9 h-9 rounded-xl items-center justify-center bg-[rgba(107,149,189,0.15)]">
                     <Feather name="shield" size={17} color={colors.info} />
                   </View>
-                  <View style={styles.headerTextWrap}>
-                    <Text style={styles.headerTitle}>Transferir propiedad</Text>
-                    <Text style={styles.headerSubtitle} numberOfLines={1}>
+                  <View className="flex-1">
+                    <Text className="text-[17px] font-bold text-content">
+                      Transferir propiedad
+                    </Text>
+                    <Text
+                      className="text-[12px] text-content-subtle mt-0.5"
+                      numberOfLines={1}
+                    >
                       {serverName}
                     </Text>
                   </View>
                 </View>
 
                 {globalError ? (
-                  <View style={styles.errorBanner}>
+                  <View className="flex-row items-start gap-2.5 rounded-xl border border-[rgba(224,82,82,0.3)] bg-[rgba(224,82,82,0.1)] px-3.5 py-3 mb-4">
                     <Feather
                       name="alert-circle"
                       size={15}
                       color={colors.danger}
                     />
-                    <Text style={styles.errorBannerText}>{globalError}</Text>
+                    <Text className="flex-1 text-danger text-[13px] leading-[18px]">
+                      {globalError}
+                    </Text>
                   </View>
                 ) : null}
               </View>
 
               {step === "form" ? (
                 <>
-                  <Text style={[styles.sectionLabel, styles.listLabel]}>
+                  <Text
+                    className={cn(
+                      "text-[11px] font-bold tracking-[1.1px] text-content-subtle uppercase",
+                      "px-7 mb-2",
+                    )}
+                  >
                     Elegí a quién transferirle el servidor
                   </Text>
 
                   {members.length === 0 ? (
-                    <View style={styles.emptyMembers}>
+                    <View className="items-center gap-2.5 px-7 py-6">
                       <Feather
                         name="users"
                         size={22}
                         color={colors.textSubtle}
                       />
-                      <Text style={styles.emptyMembersText}>
+                      <Text className="text-[13px] leading-[18px] text-content-subtle text-center">
                         Todavía no hay otros miembros en este servidor. Invitá
                         gente antes de transferir la propiedad.
                       </Text>
@@ -318,32 +345,41 @@ export function TransferOwnershipModal({
                           <TouchableOpacity
                             activeOpacity={0.7}
                             onPress={() => setSelectedUserId(item.userId)}
-                            style={[
-                              styles.memberRow,
-                              selected ? styles.memberRowSelected : null,
-                            ]}
+                            className={cn(
+                              "flex-row items-center gap-3 rounded-xl border px-2 py-2",
+                              selected
+                                ? "border-[rgba(107,149,189,0.4)] bg-[rgba(107,149,189,0.1)]"
+                                : "border-transparent",
+                            )}
                           >
                             <ServerAvatar
                               name={item.name ?? item.userId}
                               uri={resolveImageUri(item.avatarUrl)}
                               size={36}
                             />
-                            <View style={styles.memberTextWrap}>
-                              <Text style={styles.memberName} numberOfLines={1}>
+                            <View className="flex-1">
+                              <Text
+                                className="text-[14px] font-semibold text-content"
+                                numberOfLines={1}
+                              >
                                 {item.name ?? "Cargando..."}
                               </Text>
-                              <Text style={styles.memberId} numberOfLines={1}>
+                              <Text
+                                className="text-[11px] text-content-subtle mt-[1px]"
+                                style={styles.memberId}
+                                numberOfLines={1}
+                              >
                                 {item.userId}
                               </Text>
                             </View>
                             <View
-                              style={[
-                                styles.radio,
-                                selected ? styles.radioSelected : null,
-                              ]}
+                              className={cn(
+                                "w-5 h-5 rounded-[10px] border-2 items-center justify-center",
+                                selected ? "border-info" : "border-line",
+                              )}
                             >
                               {selected ? (
-                                <View style={styles.radioDot} />
+                                <View className="w-2.5 h-2.5 rounded-[5px] bg-info" />
                               ) : null}
                             </View>
                           </TouchableOpacity>
@@ -352,7 +388,7 @@ export function TransferOwnershipModal({
                     />
                   )}
 
-                  <View style={[styles.footer, styles.scrollContent]}>
+                  <View className="flex-row gap-3 mt-4 pt-8 border-t border-t-line p-7">
                     <Button
                       title="Cancelar"
                       variant="secondary"
@@ -370,36 +406,43 @@ export function TransferOwnershipModal({
                 </>
               ) : (
                 <ScrollView
-                  contentContainerStyle={styles.scrollContent}
+                  contentContainerClassName="p-7 pt-8"
                   showsVerticalScrollIndicator={false}
                 >
-                  <View style={styles.targetCard}>
+                  <View className="flex-row items-center gap-3 rounded-2xl border border-line-strong bg-surface-raised p-3.5 mb-4">
                     <ServerAvatar
                       name={selectedDisplayName}
                       uri={resolveImageUri(selectedMember?.avatarUrl)}
                       size={40}
                     />
-                    <View style={styles.targetTextWrap}>
-                      <Text style={styles.targetLabel}>
+                    <View className="flex-1">
+                      <Text className="text-[11px] font-bold tracking-[0.6px] text-content-subtle uppercase mb-0.5">
                         Miembro seleccionado
                       </Text>
-                      <Text style={styles.targetId} numberOfLines={1}>
+                      <Text
+                        className="text-[14px] font-semibold text-content"
+                        numberOfLines={1}
+                      >
                         {selectedDisplayName}
                       </Text>
                     </View>
                   </View>
 
-                  <View style={styles.warningBox}>
-                    <Text style={styles.warningTitle}>Antes de continuar</Text>
-                    <Text style={styles.warningText}>
+                  <View className="rounded-xl border border-[rgba(252,227,164,0.3)] bg-[rgba(252,227,164,0.08)] px-3.5 py-3 gap-1">
+                    <Text className="text-[13px] font-bold text-highlight">
+                      Antes de continuar
+                    </Text>
+                    <Text className="text-[12px] leading-[17px] text-[rgba(252,227,164,0.8)]">
                       La propiedad de{" "}
-                      <Text style={styles.warningTextStrong}>{serverName}</Text>{" "}
+                      <Text className="font-bold text-highlight">
+                        {serverName}
+                      </Text>{" "}
                       no cambia hasta que la otra persona acepte la oferta. Una
                       vez que la envíes, no vas a poder cancelarla.
                     </Text>
                   </View>
 
-                  <View style={styles.footer}>
+                  <View className="flex-row gap-3 mt-4 pt-5 border-t border-t-line">
                     <Button
                       title="Volver"
                       variant="secondary"
@@ -428,110 +471,6 @@ export function TransferOwnershipModal({
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.65)",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 16,
-  },
-  card: {
-    width: "100%",
-    maxWidth: 440,
-    maxHeight: "90%",
-    minHeight: 320,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-    backgroundColor: colors.bgModal,
-    overflow: "hidden",
-  },
-  flexOne: {
-    flex: 1,
-  },
-  closeButton: {
-    position: "absolute",
-    top: 16,
-    right: 16,
-    zIndex: 10,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.bgInput,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  scrollContent: {
-    padding: 28,
-    paddingTop: 32,
-  },
-  centerWrap: {
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 14,
-  },
-  headerBlock: {
-    paddingBottom: 0,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    marginBottom: 20,
-    paddingRight: 24,
-  },
-  headerIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(107,149,189,0.15)",
-  },
-  headerTextWrap: {
-    flex: 1,
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    color: colors.textSubtle,
-    marginTop: 2,
-  },
-  errorBanner: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "rgba(224,82,82,0.3)",
-    backgroundColor: "rgba(224,82,82,0.1)",
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 16,
-  },
-  errorBannerText: {
-    flex: 1,
-    color: colors.danger,
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  sectionLabel: {
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 1.1,
-    color: colors.textSubtle,
-    textTransform: "uppercase",
-  },
-  listLabel: {
-    paddingHorizontal: 28,
-    marginBottom: 8,
-  },
   list: {
     flexGrow: 0,
     maxHeight: 280,
@@ -541,145 +480,7 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
     gap: 4,
   },
-  emptyMembers: {
-    alignItems: "center",
-    gap: 10,
-    paddingHorizontal: 28,
-    paddingVertical: 24,
-  },
-  emptyMembersText: {
-    fontSize: 13,
-    lineHeight: 18,
-    color: colors.textSubtle,
-    textAlign: "center",
-  },
-  memberRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "transparent",
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-  },
-  memberRowSelected: {
-    borderColor: "rgba(107,149,189,0.4)",
-    backgroundColor: "rgba(107,149,189,0.1)",
-  },
-  memberTextWrap: {
-    flex: 1,
-  },
-  memberName: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: colors.text,
-  },
   memberId: {
-    fontSize: 11,
     fontFamily: "monospace",
-    color: colors.textSubtle,
-    marginTop: 1,
-  },
-  radio: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: colors.border,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  radioSelected: {
-    borderColor: colors.info,
-  },
-  radioDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: colors.info,
-  },
-  footer: {
-    flexDirection: "row",
-    gap: 12,
-    marginTop: 16,
-    paddingTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  targetCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-    backgroundColor: colors.bgCard,
-    padding: 14,
-    marginBottom: 16,
-  },
-  targetTextWrap: {
-    flex: 1,
-  },
-  targetLabel: {
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 0.6,
-    color: colors.textSubtle,
-    textTransform: "uppercase",
-    marginBottom: 2,
-  },
-  targetId: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: colors.text,
-  },
-  warningBox: {
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "rgba(252,227,164,0.3)",
-    backgroundColor: "rgba(252,227,164,0.08)",
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    gap: 4,
-  },
-  warningTitle: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: colors.highlight,
-  },
-  warningText: {
-    fontSize: 12,
-    lineHeight: 17,
-    color: "rgba(252,227,164,0.8)",
-  },
-  warningTextStrong: {
-    fontWeight: "700",
-    color: colors.highlight,
-  },
-  iconCircleHighlight: {
-    width: 60,
-    height: 60,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(252,227,164,0.12)",
-    marginBottom: 4,
-  },
-  centerTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: colors.text,
-    textAlign: "center",
-  },
-  centerSubtitle: {
-    fontSize: 13,
-    lineHeight: 19,
-    color: colors.textMuted,
-    textAlign: "center",
-  },
-  centerSubtitleStrong: {
-    color: colors.text,
-    fontWeight: "700",
   },
 });

@@ -21,7 +21,8 @@ import {
   View,
 } from "react-native";
 
-import { colors } from "../../../../theme/colors";
+import { cn } from "../../../../lib/cn";
+import { useThemeColors } from "../../../../theme/theme-context";
 import { joinServerByCode, serverIconUrl } from "../../api";
 import { Button } from "../../../../components/ui/Button";
 import { ServerAvatar } from "../ServerAvatar";
@@ -39,6 +40,7 @@ export function JoinServerModal({
   onJoined,
   authToken,
 }: JoinServerModalProps) {
+  const colors = useThemeColors();
   const [code, setCode] = useState("");
   const [fieldError, setFieldError] = useState("");
   const [globalError, setGlobalError] = useState("");
@@ -91,15 +93,15 @@ export function JoinServerModal({
       onRequestClose={onClose}
     >
       <KeyboardAvoidingView
-        style={styles.backdrop}
+        className="flex-1 bg-[rgba(0,0,0,0.65)] items-center justify-center p-4"
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
 
-        <View style={styles.card}>
+        <View className="w-full max-w-110 max-h-[90%] rounded-[20px] border border-line-strong bg-surface-modal overflow-hidden">
           <TouchableOpacity
             onPress={onClose}
-            style={styles.closeButton}
+            className="absolute top-4 right-4 z-10 w-8 h-8 rounded-2xl items-center justify-center bg-surface-input border border-line"
             accessibilityRole="button"
             accessibilityLabel="Cerrar"
           >
@@ -107,12 +109,12 @@ export function JoinServerModal({
           </TouchableOpacity>
 
           <ScrollView
-            contentContainerStyle={styles.scrollContent}
+            contentContainerClassName="p-7 pt-8"
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
             {joined ? (
-              <View style={styles.successWrap}>
+              <View className="items-center gap-5">
                 <ServerAvatar
                   name={joined.server.name}
                   uri={serverIconUrl(joined.server.id)}
@@ -121,17 +123,17 @@ export function JoinServerModal({
                   borderRadius={20}
                 />
 
-                <View style={styles.successCopy}>
-                  <View style={styles.successCheck}>
+                <View className="items-center gap-1.5">
+                  <View className="w-12 h-12 rounded-2xl items-center justify-center bg-[rgba(56,161,105,0.15)] mb-1">
                     <Feather name="check" size={26} color={colors.success} />
                   </View>
-                  <Text style={styles.successTitle}>
+                  <Text className="text-[16px] font-bold text-content">
                     {joined.alreadyMember
                       ? "Ya sos miembro"
                       : "¡Listo, te uniste!"}
                   </Text>
-                  <Text style={styles.successDescription}>
-                    <Text style={styles.successDescriptionStrong}>
+                  <Text className="text-[13px] leading-[19px] text-content-muted text-center max-w-65">
+                    <Text className="text-content font-bold">
                       {joined.server.name}
                     </Text>
                     {joined.alreadyMember
@@ -147,38 +149,42 @@ export function JoinServerModal({
               </View>
             ) : (
               <View>
-                <View style={styles.header}>
-                  <View style={styles.headerIcon}>
+                <View className="flex-row items-center gap-3 mb-5 pr-6">
+                  <View className="w-9 h-9 rounded-xl items-center justify-center bg-[rgba(107,149,189,0.15)]">
                     <Feather name="link-2" size={17} color={colors.info} />
                   </View>
-                  <View style={styles.headerTextWrap}>
-                    <Text style={styles.headerTitle}>Unirme con enlace</Text>
-                    <Text style={styles.headerSubtitle}>
+                  <View className="flex-1">
+                    <Text className="text-[17px] font-bold text-content">
+                      Unirme con enlace
+                    </Text>
+                    <Text className="text-[12px] text-content-subtle mt-0.5">
                       Pegá el enlace o código de invitación
                     </Text>
                   </View>
                 </View>
 
                 {globalError ? (
-                  <View style={styles.errorBanner}>
+                  <View className="flex-row items-start gap-2.5 rounded-xl border border-[rgba(224,82,82,0.3)] bg-[rgba(224,82,82,0.1)] px-3.5 py-3 mb-4">
                     <Feather
                       name="alert-circle"
                       size={16}
                       color={colors.danger}
                     />
-                    <Text style={styles.errorBannerText}>{globalError}</Text>
+                    <Text className="flex-1 text-danger text-[13px]">
+                      {globalError}
+                    </Text>
                   </View>
                 ) : null}
 
-                <View style={styles.field}>
-                  <Text style={styles.fieldLabel}>
+                <View className="mb-3">
+                  <Text className="text-[11px] font-bold tracking-[1.1px] text-content-subtle mb-1.5">
                     ENLACE O CÓDIGO DE INVITACIÓN
                   </Text>
                   <View
-                    style={[
-                      styles.input,
-                      fieldError ? styles.inputError : null,
-                    ]}
+                    className={cn(
+                      "flex-row items-center gap-2 rounded-xl border bg-surface-input px-3.5 min-h-12",
+                      fieldError ? "border-danger" : "border-line",
+                    )}
                   >
                     <Feather
                       name="link-2"
@@ -196,27 +202,29 @@ export function JoinServerModal({
                       placeholderTextColor={colors.textSubtle}
                       autoFocus
                       autoCapitalize="none"
-                      style={styles.inputText}
+                      className="flex-1 text-content text-[14px]"
                     />
                   </View>
                   {fieldError ? (
-                    <View style={styles.fieldErrorRow}>
+                    <View className="flex-row items-center gap-1.5 mt-1.5">
                       <Feather
                         name="alert-circle"
                         size={13}
                         color={colors.danger}
                       />
-                      <Text style={styles.fieldErrorText}>{fieldError}</Text>
+                      <Text className="text-danger text-[12px]">
+                        {fieldError}
+                      </Text>
                     </View>
                   ) : null}
                 </View>
 
-                <Text style={styles.helperText}>
+                <Text className="text-[12px] text-content-subtle leading-[17px]">
                   Los enlaces de invitación tienen este formato:{" "}
-                  <Text style={styles.helperTextMono}>/invite/xY7z2Q</Text>
+                  <Text className="text-content-muted">/invite/xY7z2Q</Text>
                 </Text>
 
-                <View style={styles.footer}>
+                <View className="flex-row gap-3 mt-6 pt-5 border-t border-t-line">
                   <Button
                     title="Cancelar"
                     variant="secondary"
@@ -240,174 +248,3 @@ export function JoinServerModal({
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.65)",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 16,
-  },
-  card: {
-    width: "100%",
-    maxWidth: 440,
-    maxHeight: "90%",
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-    backgroundColor: colors.bgModal,
-    overflow: "hidden",
-  },
-  closeButton: {
-    position: "absolute",
-    top: 16,
-    right: 16,
-    zIndex: 10,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.bgInput,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  scrollContent: {
-    padding: 28,
-    paddingTop: 32,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    marginBottom: 20,
-    paddingRight: 24,
-  },
-  headerIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(107,149,189,0.15)",
-  },
-  headerTextWrap: {
-    flex: 1,
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    color: colors.textSubtle,
-    marginTop: 2,
-  },
-  errorBanner: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "rgba(224,82,82,0.3)",
-    backgroundColor: "rgba(224,82,82,0.1)",
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 16,
-  },
-  errorBannerText: {
-    flex: 1,
-    color: colors.danger,
-    fontSize: 13,
-  },
-  field: {
-    marginBottom: 12,
-  },
-  fieldLabel: {
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 1.1,
-    color: colors.textSubtle,
-    marginBottom: 6,
-  },
-  input: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.bgInput,
-    paddingHorizontal: 14,
-    minHeight: 48,
-  },
-  inputError: {
-    borderColor: colors.danger,
-  },
-  inputText: {
-    flex: 1,
-    color: colors.text,
-    fontSize: 14,
-  },
-  fieldErrorRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginTop: 6,
-  },
-  fieldErrorText: {
-    color: colors.danger,
-    fontSize: 12,
-  },
-  helperText: {
-    fontSize: 12,
-    color: colors.textSubtle,
-    lineHeight: 17,
-  },
-  helperTextMono: {
-    color: colors.textMuted,
-  },
-  footer: {
-    flexDirection: "row",
-    gap: 12,
-    marginTop: 24,
-    paddingTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  successWrap: {
-    alignItems: "center",
-    gap: 20,
-  },
-  successCopy: {
-    alignItems: "center",
-    gap: 6,
-  },
-  successCheck: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(56,161,105,0.15)",
-    marginBottom: 4,
-  },
-  successTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  successDescription: {
-    fontSize: 13,
-    lineHeight: 19,
-    color: colors.textMuted,
-    textAlign: "center",
-    maxWidth: 260,
-  },
-  successDescriptionStrong: {
-    color: colors.text,
-    fontWeight: "700",
-  },
-});

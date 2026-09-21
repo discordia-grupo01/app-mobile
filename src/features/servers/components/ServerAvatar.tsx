@@ -2,9 +2,7 @@ import { getInitial } from "@discordia/client-shared";
 
 import * as FileSystem from "expo-file-system/legacy";
 import { useEffect, useState } from "react";
-import { Image, StyleSheet, Text, View } from "react-native";
-
-import { colors } from "../../../theme/colors";
+import { Image, Text, View } from "react-native";
 
 interface ServerAvatarProps {
   name: string;
@@ -109,10 +107,8 @@ export function ServerAvatar({
       <Image
         source={{ uri: resolvedUri }}
         onError={markFailed}
-        style={[
-          styles.image,
-          { width: size, height: size, borderRadius: radius },
-        ]}
+        className="bg-surface-raised"
+        style={{ width: size, height: size, borderRadius: radius }}
       />
     );
   }
@@ -121,27 +117,12 @@ export function ServerAvatar({
 
   return (
     <View
-      style={[
-        styles.fallback,
-        { width: size, height: size, borderRadius: radius },
-      ]}
+      className="items-center justify-center bg-accent"
+      style={{ width: size, height: size, borderRadius: radius }}
     >
-      <Text style={[styles.initial, { fontSize: size * 0.42 }]}>{initial}</Text>
+      <Text className="text-white font-bold" style={{ fontSize: size * 0.42 }}>
+        {initial}
+      </Text>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  image: {
-    backgroundColor: colors.bgCard,
-  },
-  fallback: {
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.accent,
-  },
-  initial: {
-    color: "#ffffff",
-    fontWeight: "700",
-  },
-});

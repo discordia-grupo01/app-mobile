@@ -20,7 +20,8 @@ import {
 } from "react-native";
 
 import { updateChannel } from "../../api";
-import { colors } from "../../../../theme/colors";
+import { cn } from "../../../../lib/cn";
+import { useThemeColors } from "../../../../theme/theme-context";
 import { Button } from "../../../../components/ui/Button";
 
 interface EditChannelModalProps {
@@ -34,6 +35,7 @@ export function EditChannelModal({
   onClose,
   onUpdated,
 }: EditChannelModalProps) {
+  const colors = useThemeColors();
   const [name, setName] = useState(channel.name);
   const [nameError, setNameError] = useState("");
   const [globalError, setGlobalError] = useState("");
@@ -67,15 +69,15 @@ export function EditChannelModal({
   return (
     <Modal transparent visible animationType="fade" onRequestClose={onClose}>
       <KeyboardAvoidingView
-        style={styles.backdrop}
+        className="flex-1 bg-[rgba(0,0,0,0.65)] items-center justify-center p-4"
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
 
-        <View style={styles.card}>
+        <View className="w-full max-w-110 max-h-[90%] rounded-[20px] border border-line-strong bg-surface-modal overflow-hidden">
           <TouchableOpacity
             onPress={onClose}
-            style={styles.closeButton}
+            className="absolute top-4 right-4 z-10 w-8 h-8 rounded-2xl items-center justify-center bg-surface-input border border-line"
             accessibilityRole="button"
             accessibilityLabel="Cerrar"
           >
@@ -83,37 +85,49 @@ export function EditChannelModal({
           </TouchableOpacity>
 
           <ScrollView
-            contentContainerStyle={styles.scrollContent}
+            contentContainerClassName="p-7 pt-8"
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            <View style={styles.header}>
+            <View className="flex-row items-center gap-2.5 mb-5 pr-6">
               <Feather
                 name={channel.kind === "text" ? "hash" : "volume-2"}
                 size={18}
                 color={colors.textSubtle}
               />
-              <View style={styles.headerTextWrap}>
-                <Text style={styles.headerTitle}>Editar Canal</Text>
-                <Text style={styles.headerSubtitle} numberOfLines={1}>
+              <View className="flex-1">
+                <Text className="text-[17px] font-bold text-content">
+                  Editar Canal
+                </Text>
+                <Text
+                  className="text-[12px] text-content-subtle mt-0.5"
+                  numberOfLines={1}
+                >
                   #{channel.name}
                 </Text>
               </View>
             </View>
 
             {globalError ? (
-              <View style={styles.errorBanner}>
+              <View className="flex-row items-start gap-2.5 rounded-xl border border-[rgba(224,82,82,0.3)] bg-[rgba(224,82,82,0.1)] px-3.5 py-3 mb-4">
                 <Feather name="alert-circle" size={16} color={colors.danger} />
-                <Text style={styles.errorBannerText}>{globalError}</Text>
+                <Text className="flex-1 text-danger text-[13px]">
+                  {globalError}
+                </Text>
               </View>
             ) : null}
 
-            <View style={styles.field}>
-              <Text style={styles.fieldLabel}>NOMBRE DEL CANAL</Text>
+            <View className="mb-3">
+              <Text className="text-[11px] font-bold tracking-[1.1px] text-content-subtle mb-2">
+                NOMBRE DEL CANAL
+              </Text>
               <View
-                style={[styles.input, nameError ? styles.inputError : null]}
+                className={cn(
+                  "flex-row items-center gap-2 rounded-xl border bg-surface-input px-3.5 min-h-12",
+                  nameError ? "border-danger" : "border-line",
+                )}
               >
-                <Text style={styles.inputHash}>#</Text>
+                <Text className="text-content-subtle text-[14px]">#</Text>
                 <TextInput
                   value={name}
                   onChangeText={(text) => {
@@ -124,22 +138,22 @@ export function EditChannelModal({
                   maxLength={MAX_NAME + 10}
                   autoFocus
                   autoCapitalize="none"
-                  style={styles.inputText}
+                  className="flex-1 text-content text-[14px]"
                 />
               </View>
               {nameError ? (
-                <View style={styles.fieldErrorRow}>
+                <View className="flex-row items-center gap-1.5 mt-1.5">
                   <Feather
                     name="alert-circle"
                     size={13}
                     color={colors.danger}
                   />
-                  <Text style={styles.fieldErrorText}>{nameError}</Text>
+                  <Text className="text-danger text-[12px]">{nameError}</Text>
                 </View>
               ) : null}
             </View>
 
-            <View style={styles.footer}>
+            <View className="flex-row gap-3 mt-2 pt-5 border-t border-t-line">
               <Button
                 title="Cancelar"
                 variant="secondary"
@@ -160,129 +174,3 @@ export function EditChannelModal({
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.65)",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 16,
-  },
-  card: {
-    width: "100%",
-    maxWidth: 440,
-    maxHeight: "90%",
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-    backgroundColor: colors.bgModal,
-    overflow: "hidden",
-  },
-  closeButton: {
-    position: "absolute",
-    top: 16,
-    right: 16,
-    zIndex: 10,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.bgInput,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  scrollContent: {
-    padding: 28,
-    paddingTop: 32,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    marginBottom: 20,
-    paddingRight: 24,
-  },
-  headerTextWrap: {
-    flex: 1,
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    color: colors.textSubtle,
-    marginTop: 2,
-  },
-  errorBanner: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "rgba(224,82,82,0.3)",
-    backgroundColor: "rgba(224,82,82,0.1)",
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 16,
-  },
-  errorBannerText: {
-    flex: 1,
-    color: colors.danger,
-    fontSize: 13,
-  },
-  field: {
-    marginBottom: 12,
-  },
-  fieldLabel: {
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 1.1,
-    color: colors.textSubtle,
-    marginBottom: 8,
-  },
-  input: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.bgInput,
-    paddingHorizontal: 14,
-    minHeight: 48,
-  },
-  inputError: {
-    borderColor: colors.danger,
-  },
-  inputHash: {
-    color: colors.textSubtle,
-    fontSize: 14,
-  },
-  inputText: {
-    flex: 1,
-    color: colors.text,
-    fontSize: 14,
-  },
-  fieldErrorRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginTop: 6,
-  },
-  fieldErrorText: {
-    color: colors.danger,
-    fontSize: 12,
-  },
-  footer: {
-    flexDirection: "row",
-    gap: 12,
-    marginTop: 8,
-    paddingTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-});
