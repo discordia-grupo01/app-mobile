@@ -4,14 +4,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  StyleSheet,
   Text,
   View,
 } from "react-native";
 
 import { AuthTabs, type AuthMode } from "../features/auth/components/AuthTabs";
 import { RegisterForm } from "../features/auth/components/RegisterForm";
-import { colors } from "../theme/colors";
 
 interface RegisterScreenProps {
   onSwitchMode: (mode: AuthMode) => void;
@@ -24,28 +22,32 @@ export function RegisterScreen({
 }: RegisterScreenProps) {
   return (
     <KeyboardAvoidingView
-      style={styles.keyboardView}
+      className="flex-1 bg-surface-servers"
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <StatusBar style="light" />
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerClassName="grow items-center justify-center p-5"
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.container}>
+        <View className="w-full max-w-[420px] px-7">
           {/* Logo Discordia (Light Version for Dark Background) */}
-          <View style={styles.logoWrapper}>
+          <View className="mb-5 items-center">
             <Image
               source={require("../../assets/logo-light.png")}
-              style={styles.logoImage}
+              className="h-[52px] w-[200px]"
               resizeMode="contain"
             />
           </View>
 
           <AuthTabs active="register" onChange={onSwitchMode} />
 
-          <Text style={styles.title}>Crea tu cuenta</Text>
-          <Text style={styles.subtitle}>Es gratis y siempre lo será.</Text>
+          <Text className="mb-1.5 text-[24px] font-bold text-content">
+            Crea tu cuenta
+          </Text>
+          <Text className="mb-[26px] text-[14px] text-content-muted">
+            Es gratis y siempre lo será.
+          </Text>
 
           {/* Register Form */}
           <RegisterForm
@@ -57,40 +59,3 @@ export function RegisterScreen({
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  keyboardView: {
-    flex: 1,
-    backgroundColor: colors.bgServers,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-  },
-  container: {
-    width: "100%",
-    maxWidth: 420,
-    paddingHorizontal: 28,
-  },
-  logoWrapper: {
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  logoImage: {
-    width: 200,
-    height: 52,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: colors.text,
-    marginBottom: 6,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: colors.textMuted,
-    marginBottom: 26,
-  },
-});

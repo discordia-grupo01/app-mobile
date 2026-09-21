@@ -6,10 +6,10 @@ import {
 
 import { Feather } from "@expo/vector-icons";
 import { useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 
 import { forgotPasswordService } from "../service";
-import { colors } from "../../../theme/colors";
+import { useThemeColors } from "../../../theme/theme-context";
 
 import { Button } from "../../../components/ui/Button";
 import { TextField } from "../../../components/ui/TextField";
@@ -19,6 +19,7 @@ interface ForgotPasswordFormProps {
 }
 
 export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
+  const colors = useThemeColors();
   const [email, setEmail] = useState("");
   const [errors, setErrors] = useState<ForgotPasswordErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
@@ -46,41 +47,49 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
 
   if (sent) {
     return (
-      <View style={styles.sentContainer}>
-        <View style={styles.sentIconWrapper}>
+      <View className="w-full items-center">
+        <View className="mb-5 h-16 w-16 items-center justify-center rounded-[20px] bg-success/15">
           <Feather name="check-circle" size={32} color={colors.success} />
         </View>
 
-        <Text style={styles.sentTitle}>Revisa tu correo</Text>
-        <Text style={styles.sentText}>
-          Si <Text style={styles.sentEmail}>{email.trim()}</Text> está
+        <Text className="mb-2.5 text-center text-[24px] font-bold text-content">
+          Revisa tu correo
+        </Text>
+        <Text className="mb-2 text-center text-[14px] leading-5 text-content-muted">
+          Si <Text className="font-bold text-content">{email.trim()}</Text> está
           registrado en Discordia, recibirás un enlace para restablecer tu
           contraseña en los próximos minutos.
         </Text>
-        <Text style={styles.sentHint}>
+        <Text className="mb-8 text-center text-[12px] text-content-subtle">
           Recordá revisar tu carpeta de spam por si acaso.
         </Text>
 
         <TouchableOpacity activeOpacity={0.7} onPress={onBack}>
-          <Text style={styles.backLink}>Volver al inicio de sesión</Text>
+          <Text className="text-[13px] text-content-subtle">
+            Volver al inicio de sesión
+          </Text>
         </TouchableOpacity>
       </View>
     );
   }
 
   return (
-    <View style={styles.formContainer}>
+    <View className="w-full">
       <TouchableOpacity
-        style={styles.backRow}
+        className="mb-6 flex-row items-center"
         activeOpacity={0.7}
         onPress={onBack}
       >
         <Feather name="arrow-left" size={14} color={colors.textSubtle} />
-        <Text style={styles.backText}>Volver al inicio de sesión</Text>
+        <Text className="ml-1.5 text-[13px] text-content-subtle">
+          Volver al inicio de sesión
+        </Text>
       </TouchableOpacity>
 
-      <Text style={styles.title}>Recuperar contraseña</Text>
-      <Text style={styles.subtitle}>
+      <Text className="mb-1.5 text-[24px] font-bold text-content">
+        Recuperar contraseña
+      </Text>
+      <Text className="mb-[26px] text-[14px] leading-5 text-content-muted">
         Ingresa tu correo y te enviaremos un enlace para restablecer tu
         contraseña.
       </Text>
@@ -98,8 +107,13 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
       />
 
       {formError ? (
-        <View style={styles.errorBanner} accessibilityRole="alert">
-          <Text style={styles.errorBannerText}>{formError}</Text>
+        <View
+          className="mb-[18px] rounded-lg border border-danger/30 bg-danger/12 p-3"
+          accessibilityRole="alert"
+        >
+          <Text className="text-center text-[13px] text-danger">
+            {formError}
+          </Text>
         </View>
       ) : null}
 
@@ -112,85 +126,3 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  formContainer: {
-    width: "100%",
-  },
-  backRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 24,
-  },
-  backText: {
-    color: colors.textSubtle,
-    fontSize: 13,
-    marginLeft: 6,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: colors.text,
-    marginBottom: 6,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: colors.textMuted,
-    marginBottom: 26,
-    lineHeight: 20,
-  },
-  errorBanner: {
-    backgroundColor: "rgba(224, 82, 82, 0.12)",
-    borderColor: "rgba(224, 82, 82, 0.3)",
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 18,
-  },
-  errorBannerText: {
-    color: colors.danger,
-    fontSize: 13,
-    textAlign: "center",
-  },
-  sentContainer: {
-    width: "100%",
-    alignItems: "center",
-  },
-  sentIconWrapper: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
-    backgroundColor: "rgba(56, 161, 105, 0.15)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 20,
-  },
-  sentTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: colors.text,
-    marginBottom: 10,
-    textAlign: "center",
-  },
-  sentText: {
-    fontSize: 14,
-    color: colors.textMuted,
-    textAlign: "center",
-    lineHeight: 20,
-    marginBottom: 8,
-  },
-  sentEmail: {
-    color: colors.text,
-    fontWeight: "700",
-  },
-  sentHint: {
-    fontSize: 12,
-    color: colors.textSubtle,
-    textAlign: "center",
-    marginBottom: 32,
-  },
-  backLink: {
-    color: colors.textSubtle,
-    fontSize: 13,
-  },
-});

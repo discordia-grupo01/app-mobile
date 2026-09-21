@@ -5,10 +5,9 @@ import {
 } from "@discordia/client-shared";
 
 import { useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 
 import { useAuth } from "../auth-context";
-import { colors } from "../../../theme/colors";
 
 import { GoogleIcon } from "../../../components/icons/GoogleIcon";
 import { Button } from "../../../components/ui/Button";
@@ -56,7 +55,7 @@ export function RegisterForm({
   }
 
   return (
-    <View style={styles.formContainer}>
+    <View className="w-full">
       <TextField
         label="NOMBRE DE USUARIO"
         placeholder="tucoolusername"
@@ -91,8 +90,13 @@ export function RegisterForm({
       />
 
       {formError ? (
-        <View style={styles.errorBanner} accessibilityRole="alert">
-          <Text style={styles.errorBannerText}>{formError}</Text>
+        <View
+          className="mb-[18px] rounded-lg border border-danger/30 bg-danger/12 p-3"
+          accessibilityRole="alert"
+        >
+          <Text className="text-center text-[13px] text-danger">
+            {formError}
+          </Text>
         </View>
       ) : null}
 
@@ -102,14 +106,16 @@ export function RegisterForm({
         onPress={handleSubmit}
         isLoading={isSubmitting}
         iconRight="arrow-right"
-        style={styles.submitButton}
+        className="mb-6 mt-1.5"
       />
 
       {/* Divider */}
-      <View style={styles.dividerRow}>
-        <View style={styles.dividerLine} />
-        <Text style={styles.dividerText}>o continúa con</Text>
-        <View style={styles.dividerLine} />
+      <View className="mb-5 flex-row items-center">
+        <View className="h-px flex-1 bg-line" />
+        <Text className="mx-3 text-[12px] font-medium text-content-subtle">
+          o continúa con
+        </Text>
+        <View className="h-px flex-1 bg-line" />
       </View>
 
       {/* Google Button */}
@@ -118,85 +124,26 @@ export function RegisterForm({
         variant="secondary"
         disabled
         iconLeft={<GoogleIcon size={18} />}
-        style={styles.googleButton}
+        className="mb-6"
       />
 
       {/* Footer link */}
-      <View style={styles.footerRow}>
-        <Text style={styles.footerText}>¿Ya tienes cuenta? </Text>
+      <View className="flex-row items-center justify-center">
+        <Text className="text-[13px] text-content-subtle">
+          ¿Ya tienes cuenta?{" "}
+        </Text>
         <TouchableOpacity activeOpacity={0.7} onPress={onSwitchToLogin}>
-          <Text style={styles.loginLink}>Inicia sesión</Text>
+          <Text className="text-[13px] font-bold text-content-muted">
+            Inicia sesión
+          </Text>
         </TouchableOpacity>
       </View>
 
       {/* Terms / privacy — sin pantallas propias todavia, texto informativo */}
-      <Text style={styles.termsText}>
+      <Text className="mt-4 text-center text-[11px] leading-4 text-content-subtle">
         Al registrarte aceptas nuestros Términos de Servicio y Política de
         Privacidad.
       </Text>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  formContainer: {
-    width: "100%",
-  },
-  errorBanner: {
-    backgroundColor: "rgba(224, 82, 82, 0.12)",
-    borderColor: "rgba(224, 82, 82, 0.3)",
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 18,
-  },
-  errorBannerText: {
-    color: colors.danger,
-    fontSize: 13,
-    textAlign: "center",
-  },
-  submitButton: {
-    marginTop: 6,
-    marginBottom: 24,
-  },
-  dividerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: colors.border,
-  },
-  dividerText: {
-    color: colors.textSubtle,
-    fontSize: 12,
-    fontWeight: "500",
-    marginHorizontal: 12,
-  },
-  googleButton: {
-    marginBottom: 24,
-  },
-  footerRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  footerText: {
-    color: colors.textSubtle,
-    fontSize: 13,
-  },
-  loginLink: {
-    color: colors.textMuted,
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  termsText: {
-    color: colors.textSubtle,
-    fontSize: 11,
-    textAlign: "center",
-    marginTop: 16,
-    lineHeight: 16,
-  },
-});

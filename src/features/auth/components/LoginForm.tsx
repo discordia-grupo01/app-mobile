@@ -5,10 +5,9 @@ import {
 } from "@discordia/client-shared";
 
 import { useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 
 import { useAuth } from "../auth-context";
-import { colors } from "../../../theme/colors";
 
 import { GoogleIcon } from "../../../components/icons/GoogleIcon";
 import { Button } from "../../../components/ui/Button";
@@ -50,10 +49,10 @@ export function LoginForm({
   }
 
   return (
-    <View style={styles.formContainer}>
+    <View className="w-full">
       {justRegistered ? (
-        <View style={styles.successBanner}>
-          <Text style={styles.successBannerText}>
+        <View className="mb-[18px] rounded-lg border border-success/30 bg-success/12 p-3">
+          <Text className="text-center text-[13px] text-success">
             ¡Cuenta creada con éxito! Ingresa tus datos para continuar.
           </Text>
         </View>
@@ -82,17 +81,22 @@ export function LoginForm({
       />
 
       {/* Forgot Password link */}
-      <View style={styles.forgotPasswordContainer}>
+      <View className="-mt-1.5 mb-5 items-end">
         <TouchableOpacity activeOpacity={0.7} onPress={onForgotPassword}>
-          <Text style={styles.forgotPasswordText}>
+          <Text className="text-[12px] font-medium text-info">
             ¿Olvidaste tu contraseña?
           </Text>
         </TouchableOpacity>
       </View>
 
       {formError ? (
-        <View style={styles.errorBanner} accessibilityRole="alert">
-          <Text style={styles.errorBannerText}>{formError}</Text>
+        <View
+          className="mb-[18px] rounded-lg border border-danger/30 bg-danger/12 p-3"
+          accessibilityRole="alert"
+        >
+          <Text className="text-center text-[13px] text-danger">
+            {formError}
+          </Text>
         </View>
       ) : null}
 
@@ -102,14 +106,16 @@ export function LoginForm({
         onPress={handleSubmit}
         isLoading={isSubmitting}
         iconRight="arrow-right"
-        style={styles.submitButton}
+        className="mb-6"
       />
 
       {/* Divider */}
-      <View style={styles.dividerRow}>
-        <View style={styles.dividerLine} />
-        <Text style={styles.dividerText}>o continúa con</Text>
-        <View style={styles.dividerLine} />
+      <View className="mb-5 flex-row items-center">
+        <View className="h-px flex-1 bg-line" />
+        <Text className="mx-3 text-[12px] font-medium text-content-subtle">
+          o continúa con
+        </Text>
+        <View className="h-px flex-1 bg-line" />
       </View>
 
       {/* Google Button */}
@@ -118,94 +124,20 @@ export function LoginForm({
         variant="secondary"
         disabled
         iconLeft={<GoogleIcon size={18} />}
-        style={styles.googleButton}
+        className="mb-6"
       />
 
       {/* Footer link */}
-      <View style={styles.footerRow}>
-        <Text style={styles.footerText}>¿No tienes cuenta? </Text>
+      <View className="flex-row items-center justify-center">
+        <Text className="text-[13px] text-content-subtle">
+          ¿No tienes cuenta?{" "}
+        </Text>
         <TouchableOpacity activeOpacity={0.7} onPress={onSwitchToRegister}>
-          <Text style={styles.registerLink}>Regístrate gratis</Text>
+          <Text className="text-[13px] font-bold text-content-muted">
+            Regístrate gratis
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  formContainer: {
-    width: "100%",
-  },
-  forgotPasswordContainer: {
-    alignItems: "flex-end",
-    marginTop: -6,
-    marginBottom: 20,
-  },
-  forgotPasswordText: {
-    color: colors.info,
-    fontSize: 12,
-    fontWeight: "500",
-  },
-  errorBanner: {
-    backgroundColor: "rgba(224, 82, 82, 0.12)",
-    borderColor: "rgba(224, 82, 82, 0.3)",
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 18,
-  },
-  errorBannerText: {
-    color: colors.danger,
-    fontSize: 13,
-    textAlign: "center",
-  },
-  successBanner: {
-    backgroundColor: "rgba(56, 161, 105, 0.12)",
-    borderColor: "rgba(56, 161, 105, 0.3)",
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 18,
-  },
-  successBannerText: {
-    color: colors.success,
-    fontSize: 13,
-    textAlign: "center",
-  },
-  submitButton: {
-    marginBottom: 24,
-  },
-  dividerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: colors.border,
-  },
-  dividerText: {
-    color: colors.textSubtle,
-    fontSize: 12,
-    fontWeight: "500",
-    marginHorizontal: 12,
-  },
-  googleButton: {
-    marginBottom: 24,
-  },
-  footerRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  footerText: {
-    color: colors.textSubtle,
-    fontSize: 13,
-  },
-  registerLink: {
-    color: colors.textMuted,
-    fontSize: 13,
-    fontWeight: "700",
-  },
-});
