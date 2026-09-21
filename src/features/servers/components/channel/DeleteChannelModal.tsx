@@ -1,3 +1,5 @@
+import { type Channel } from "@discordia/client-shared";
+
 import { Feather } from "@expo/vector-icons";
 import { useState } from "react";
 import {
@@ -10,8 +12,7 @@ import {
 } from "react-native";
 
 import { deleteChannel } from "../../api";
-import type { Channel } from "../../types";
-import { colors } from "../../../../theme/colors";
+import { useThemeColors } from "../../../../theme/theme-context";
 import { Button } from "../../../../components/ui/Button";
 
 interface DeleteChannelModalProps {
@@ -26,6 +27,7 @@ export function DeleteChannelModal({
   onClose,
   onDeleted,
 }: DeleteChannelModalProps) {
+  const colors = useThemeColors();
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -45,16 +47,16 @@ export function DeleteChannelModal({
 
   return (
     <Modal transparent visible animationType="fade" onRequestClose={onClose}>
-      <View style={styles.backdrop}>
+      <View className="flex-1 bg-[rgba(0,0,0,0.65)] items-center justify-center p-4">
         {!isLoading ? (
           <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
         ) : null}
 
-        <View style={styles.card}>
+        <View className="w-full max-w-105 rounded-[20px] border border-line-strong bg-surface-modal overflow-hidden">
           {!isLoading ? (
             <TouchableOpacity
               onPress={onClose}
-              style={styles.closeButton}
+              className="absolute top-4 right-4 z-10 w-8 h-8 rounded-2xl items-center justify-center bg-surface-input border border-line"
               accessibilityRole="button"
               accessibilityLabel="Cerrar"
             >
@@ -62,25 +64,29 @@ export function DeleteChannelModal({
             </TouchableOpacity>
           ) : null}
 
-          <View style={styles.content}>
+          <View className="items-center gap-4 px-7 py-8">
             {errorMessage ? (
-              <View style={styles.errorBanner}>
+              <View className="flex-row items-start gap-2.5 w-full rounded-xl border border-[rgba(224,82,82,0.3)] bg-[rgba(224,82,82,0.1)] px-3.5 py-3">
                 <Feather name="alert-circle" size={15} color={colors.danger} />
-                <Text style={styles.errorBannerText}>{errorMessage}</Text>
+                <Text className="flex-1 text-danger text-[13px]">
+                  {errorMessage}
+                </Text>
               </View>
             ) : null}
 
-            <View style={styles.iconCircle}>
+            <View className="w-16 h-16 rounded-[20px] items-center justify-center bg-[rgba(224,82,82,0.15)]">
               <Feather name="trash-2" size={28} color={colors.danger} />
             </View>
 
-            <Text style={styles.title}>¿Eliminar #{channel.name}?</Text>
-            <Text style={styles.description}>
+            <Text className="text-[18px] font-bold text-content text-center">
+              ¿Eliminar #{channel.name}?
+            </Text>
+            <Text className="text-[13px] leading-[19px] text-content-muted text-center -mt-2">
               Esta acción no se puede deshacer. Se va a eliminar el canal y su
               historial de mensajes de forma permanente.
             </Text>
 
-            <View style={styles.buttonsRow}>
+            <View className="flex-row gap-3 w-full mt-1">
               <Button
                 title="Cancelar"
                 variant="secondary"
@@ -102,86 +108,3 @@ export function DeleteChannelModal({
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.65)",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 16,
-  },
-  card: {
-    width: "100%",
-    maxWidth: 420,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-    backgroundColor: colors.bgModal,
-    overflow: "hidden",
-  },
-  closeButton: {
-    position: "absolute",
-    top: 16,
-    right: 16,
-    zIndex: 10,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.bgInput,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  content: {
-    alignItems: "center",
-    gap: 16,
-    paddingHorizontal: 28,
-    paddingVertical: 32,
-  },
-  errorBanner: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 10,
-    width: "100%",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "rgba(224,82,82,0.3)",
-    backgroundColor: "rgba(224,82,82,0.1)",
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  errorBannerText: {
-    flex: 1,
-    color: colors.danger,
-    fontSize: 13,
-  },
-  iconCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(224,82,82,0.15)",
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: colors.text,
-    textAlign: "center",
-  },
-  description: {
-    fontSize: 13,
-    lineHeight: 19,
-    color: colors.textMuted,
-    textAlign: "center",
-    marginTop: -8,
-  },
-  buttonsRow: {
-    flexDirection: "row",
-    gap: 12,
-    width: "100%",
-    marginTop: 4,
-  },
-});

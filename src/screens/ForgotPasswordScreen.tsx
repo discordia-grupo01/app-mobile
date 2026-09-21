@@ -4,12 +4,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  StyleSheet,
   View,
 } from "react-native";
 
 import { ForgotPasswordForm } from "../features/auth/components/ForgotPasswordForm";
-import { colors } from "../theme/colors";
 
 interface ForgotPasswordScreenProps {
   onBack: () => void;
@@ -18,19 +16,19 @@ interface ForgotPasswordScreenProps {
 export function ForgotPasswordScreen({ onBack }: ForgotPasswordScreenProps) {
   return (
     <KeyboardAvoidingView
-      style={styles.keyboardView}
+      className="flex-1 bg-surface-servers"
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <StatusBar style="light" />
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerClassName="grow items-center justify-center p-5"
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.container}>
-          <View style={styles.logoWrapper}>
+        <View className="w-full max-w-[420px] px-7">
+          <View className="mb-5 items-center">
             <Image
               source={require("../../assets/logo-light.png")}
-              style={styles.logoImage}
+              className="h-[52px] w-[200px]"
               resizeMode="contain"
             />
           </View>
@@ -41,29 +39,3 @@ export function ForgotPasswordScreen({ onBack }: ForgotPasswordScreenProps) {
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  keyboardView: {
-    flex: 1,
-    backgroundColor: colors.bgServers,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-  },
-  container: {
-    width: "100%",
-    maxWidth: 420,
-    paddingHorizontal: 28,
-  },
-  logoWrapper: {
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  logoImage: {
-    width: 200,
-    height: 52,
-  },
-});

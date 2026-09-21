@@ -1,157 +1,137 @@
-import { ApiError, NetworkError, apiFetch } from "../../lib/api-client";
-import type {
-  AuthResponse,
-  ForgotPasswordActionResult,
-  LoginActionResult,
-  LoginValues,
-  PublicUser,
-  RegisterActionResult,
-  RegisterValues,
-  User,
-} from "./types";
+import {
+  type AuthResponse,
+  EMAIL_ALREADY_REGISTERED,
+  type ForgotPasswordResult,
+  GOOGLE_UNAVAILABLE,
+  GOOGLE_VERIFY_FAILED,
+  INVALID_CREDENTIALS,
+  INVALID_DATA_MESSAGE,
+  INVALID_EMAIL_MESSAGE,
+  type LoginResultWithToken,
+  type LoginValues,
+  messageFor,
+  type PublicUser,
+  RATE_LIMITED_MESSAGE,
+  type RegisterResult,
+  type RegisterValues,
+  REQUEST_FAILED_MESSAGE,
+  type User,
+} from "@discordia/client-shared";
 
-const NETWORK_ERROR_MESSAGE =
-  "No hay conexión con el servidor. Revisá tu conexión a internet e intentá de nuevo.";
+import { apiFetch } from "../../lib/api-client";
 
 export async function registerService(
   values: RegisterValues,
-): Promise<RegisterActionResult> {
-  try {
-    await apiFetch<User>("/v1/users", {
-      method: "POST",
-      body: JSON.stringify({
-        name: values.name.trim(),
-        email: values.email.trim(),
-        password: values.password,
-      }),
-    });
+): Promise<RegisterResult> {
+  const result = await apiFetch<User>("/v1/users", {
+    method: "POST",
+    body: JSON.stringify({
+      name: values.name.trim(),
+      email: values.email.trim(),
+      password: values.password,
+    }),
+  });
 
-    return { ok: true };
-  } catch (err) {
-    if (err instanceof NetworkError) {
-      return { ok: false, message: NETWORK_ERROR_MESSAGE };
+  if (!result.ok) {
+    if (result.status === 409) {
+      return { ok: false, message: EMAIL_ALREADY_REGISTERED };
     }
-    if (err instanceof ApiError && err.status === 409) {
-      return { ok: false, message: "Ese correo ya esta registrado." };
+    if (result.status === 400) {
+      return { ok: false, message: INVALID_DATA_MESSAGE };
     }
-    if (err instanceof ApiError && err.status === 400) {
-      return { ok: false, message: "Revisa los datos ingresados." };
-    }
-
     return {
       ok: false,
-      message: "No pudimos procesar la solicitud. Intenta de nuevo.",
+      message: messageFor(result, {}, REQUEST_FAILED_MESSAGE),
     };
   }
+
+  return { ok: true };
 }
 
 export async function loginService(
   credentials: LoginValues,
-): Promise<LoginActionResult> {
-  try {
-    const data = await apiFetch<AuthResponse>("/v1/login", {
-      method: "POST",
-      body: JSON.stringify({
-        email: credentials.email.trim(),
-        password: credentials.password,
-      }),
-    });
+): Promise<LoginResultWithToken> {
+  const result = await apiFetch<AuthResponse>("/v1/login", {
+    method: "POST",
+    body: JSON.stringify({
+      email: credentials.email.trim(),
+      password: credentials.password,
+    }),
+  });
 
-    return { ok: true, user: data.user, token: data.token };
-  } catch (err) {
-    if (err instanceof NetworkError) {
-      return { ok: false, message: NETWORK_ERROR_MESSAGE };
+  if (!result.ok) {
+    if (result.status === 401 || result.status === 400) {
+      return { ok: false, message: INVALID_CREDENTIALS };
     }
-    if (err instanceof ApiError && (err.status === 401 || err.status === 400)) {
-      return {
-        ok: false,
-        message: "Email o contrasena incorrectos.",
-      };
-    }
-
     return {
       ok: false,
-      message: "No pudimos procesar la solicitud. Intenta de nuevo.",
+      message: messageFor(result, {}, REQUEST_FAILED_MESSAGE),
     };
   }
+
+  return { ok: true, user: result.data.user, token: result.data.token };
 }
 
 export async function loginWithGoogleService(
   idToken: string,
-): Promise<LoginActionResult> {
-  try {
-    const data = await apiFetch<AuthResponse>("/v1/oauth/google", {
-      method: "POST",
-      body: JSON.stringify({ id_token: idToken }),
-    });
+): Promise<LoginResultWithToken> {
+  const result = await apiFetch<AuthResponse>("/v1/oauth/google", {
+    method: "POST",
+    body: JSON.stringify({ id_token: idToken }),
+  });
 
-    return { ok: true, user: data.user, token: data.token };
-  } catch (err) {
-    if (err instanceof NetworkError) {
-      return { ok: false, message: NETWORK_ERROR_MESSAGE };
-    }
-    if (err instanceof ApiError && err.status === 503) {
+  if (!result.ok) {
+    if (result.status === 503) {
       return {
         ok: false,
-        message:
-          "Google no está disponible en este momento. Iniciá sesión con tu correo y contraseña.",
+        message: GOOGLE_UNAVAILABLE,
       };
     }
-
     return {
       ok: false,
-      message:
-        "No pudimos verificar tu cuenta de Google. Iniciá sesión con tu correo y contraseña.",
+      message: messageFor(result, {}, GOOGLE_VERIFY_FAILED),
     };
   }
+
+  return { ok: true, user: result.data.user, token: result.data.token };
 }
 
 export async function logoutService(): Promise<void> {
-  try {
-    await apiFetch("/v1/logout", { method: "POST" });
-  } catch {}
+  await apiFetch("/v1/logout", { method: "POST" });
 }
 
 export async function getPublicUser(
   userId: string,
 ): Promise<PublicUser | null> {
-  try {
-    return await apiFetch<PublicUser>(`/v1/users/${userId}`, {
-      method: "GET",
-    });
-  } catch {
-    return null;
-  }
+  const result = await apiFetch<PublicUser>(`/v1/users/${userId}`, {
+    method: "GET",
+  });
+  return result.ok ? result.data : null;
 }
 
 export async function forgotPasswordService(
   email: string,
-): Promise<ForgotPasswordActionResult> {
-  try {
-    await apiFetch<{ message: string }>("/v1/password-recovery", {
-      method: "POST",
-      body: JSON.stringify({ email: email.trim() }),
-    });
+): Promise<ForgotPasswordResult> {
+  const result = await apiFetch<{ message: string }>("/v1/password-recovery", {
+    method: "POST",
+    body: JSON.stringify({ email: email.trim() }),
+  });
 
-    return { ok: true };
-  } catch (err) {
-    if (err instanceof NetworkError) {
-      return { ok: false, message: NETWORK_ERROR_MESSAGE };
-    }
-    if (err instanceof ApiError && err.status === 429) {
+  if (!result.ok) {
+    if (result.status === 429) {
       return {
         ok: false,
-        message:
-          "Alcanzaste el limite de solicitudes. Intenta de nuevo mas tarde.",
+        message: RATE_LIMITED_MESSAGE,
       };
     }
-    if (err instanceof ApiError && err.status === 400) {
-      return { ok: false, message: "Ingresa un correo electronico valido." };
+    if (result.status === 400) {
+      return { ok: false, message: INVALID_EMAIL_MESSAGE };
     }
-
     return {
       ok: false,
-      message: "No pudimos procesar la solicitud. Intenta de nuevo mas tarde.",
+      message: messageFor(result, {}, REQUEST_FAILED_MESSAGE),
     };
   }
+
+  return { ok: true };
 }

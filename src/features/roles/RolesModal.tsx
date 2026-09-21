@@ -1,3 +1,14 @@
+import {
+  COLOR_PALETTE,
+  MAX_NAME,
+  MEMBER_PAGE_LIMIT,
+  type MemberInfo,
+  type Role,
+  ROLE_PERMISSIONS,
+  type RolePermission,
+  validateRole,
+} from "@discordia/client-shared";
+
 import { Feather } from "@expo/vector-icons";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -15,7 +26,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { getPublicUser } from "../auth/service";
 import { Button } from "../../components/ui/Button";
-import { colors } from "../../theme/colors";
+import { useThemeColors } from "../../theme/theme-context";
 import { listMembers } from "../servers/api";
 
 import { ColorGrid } from "./components/ColorGrid";
@@ -33,15 +44,8 @@ import {
   setDefaultRole,
   updateRole,
 } from "./api";
-import {
-  COLOR_PALETTE,
-  isValidHex,
-  MAX_NAME,
-  type MemberInfo,
-  type Step,
-} from "./constants";
-import { styles } from "./styles";
-import { ROLE_PERMISSIONS, type Role, type RolePermission } from "./types";
+import { type Step } from "./constants";
+import { cn } from "../../lib/cn";
 
 interface RolesModalProps {
   visible: boolean;
@@ -56,6 +60,7 @@ export function RolesModal({
   serverName,
   onClose,
 }: RolesModalProps) {
+  const colors = useThemeColors();
   const insets = useSafeAreaInsets();
   const [wasVisible, setWasVisible] = useState(visible);
   const [step, setStep] = useState<Step>("list");
@@ -175,7 +180,7 @@ export function RolesModal({
   function loadMembers() {
     if (membersInfo !== null || membersError) return;
     setMembersError("");
-    listMembers(serverId, { limit: 100 }).then((result) => {
+    listMembers(serverId, { limit: MEMBER_PAGE_LIMIT }).then((result) => {
       if (!result.ok) {
         setMembersError(result.message);
         setMembersInfo([]);
@@ -261,24 +266,13 @@ export function RolesModal({
     setNameError("");
     setColorError("");
     const trimmed = editName.trim();
-    if (!trimmed) {
-      setNameError("El nombre del rol no puede estar vacío.");
-      return;
-    }
-    if (trimmed.length > MAX_NAME) {
-      setNameError("El nombre no puede superar los 100 caracteres.");
-      return;
-    }
-    if (!isValidHex(editColor)) {
-      setColorError("Seleccioná un color válido.");
-      return;
-    }
-    const dup = (roles ?? []).find(
-      (r) =>
-        r.id !== selectedId && r.name.toLowerCase() === trimmed.toLowerCase(),
+    const errors = validateRole(
+      { name: trimmed, color: editColor },
+      { existingRoles: roles ?? [], currentRoleId: selectedId },
     );
-    if (dup) {
-      setNameError("Ya existe un rol con ese nombre.");
+    if (errors.name || errors.color) {
+      setNameError(errors.name ?? "");
+      setColorError(errors.color ?? "");
       return;
     }
 
@@ -343,23 +337,13 @@ export function RolesModal({
     setNewNameError("");
     setNewColorError("");
     const trimmed = newName.trim();
-    if (!trimmed) {
-      setNewNameError("El nombre del rol no puede estar vacío.");
-      return;
-    }
-    if (trimmed.length > MAX_NAME) {
-      setNewNameError("El nombre no puede superar los 100 caracteres.");
-      return;
-    }
-    if (!isValidHex(newColor)) {
-      setNewColorError("Seleccioná un color válido.");
-      return;
-    }
-    const dup = (roles ?? []).find(
-      (r) => r.name.toLowerCase() === trimmed.toLowerCase(),
+    const errors = validateRole(
+      { name: trimmed, color: newColor },
+      { existingRoles: roles ?? [] },
     );
-    if (dup) {
-      setNewNameError("Ya existe un rol con ese nombre.");
+    if (errors.name || errors.color) {
+      setNewNameError(errors.name ?? "");
+      setNewColorError(errors.color ?? "");
       return;
     }
 
@@ -391,20 +375,21 @@ export function RolesModal({
       animationType="fade"
       onRequestClose={onClose}
     >
-      <View style={styles.backdrop}>
+      <View className="flex-1 bg-[rgba(0,0,0,0.65)] items-center justify-center px-4">
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
 
         <View
-          style={[
-            styles.card,
-            { marginTop: insets.top + 12, marginBottom: insets.bottom + 12 },
-          ]}
+          className="w-full max-w-120 flex-1 rounded-[20px] border border-line-strong bg-surface-modal overflow-hidden"
+          style={{
+            marginTop: insets.top + 12,
+            marginBottom: insets.bottom + 12,
+          }}
         >
-          <View style={styles.topBar}>
+          <View className="flex-row items-center gap-2 px-3 py-3 border-b border-b-line">
             {step !== "list" ? (
               <TouchableOpacity
                 onPress={() => setStep("list")}
-                style={styles.navButton}
+                className="w-8 h-8 rounded-2xl items-center justify-center"
                 accessibilityRole="button"
                 accessibilityLabel="Volver a la lista de roles"
               >
@@ -415,11 +400,14 @@ export function RolesModal({
                 />
               </TouchableOpacity>
             ) : (
-              <View style={styles.navButton}>
+              <View className="w-8 h-8 rounded-2xl items-center justify-center">
                 <Feather name="shield" size={16} color={colors.text} />
               </View>
             )}
-            <Text style={styles.topBarTitle} numberOfLines={1}>
+            <Text
+              className="flex-1 text-center text-[15px] font-bold text-content"
+              numberOfLines={1}
+            >
               {step === "list"
                 ? "Roles"
                 : step === "create"
@@ -428,7 +416,7 @@ export function RolesModal({
             </Text>
             <TouchableOpacity
               onPress={onClose}
-              style={styles.navButton}
+              className="w-8 h-8 rounded-2xl items-center justify-center"
               accessibilityRole="button"
               accessibilityLabel="Cerrar"
             >
@@ -437,37 +425,39 @@ export function RolesModal({
           </View>
 
           {(step === "edit" || step === "members") && selectedRole ? (
-            <View style={styles.tabsRow}>
+            <View className="flex-row gap-1 px-4 border-b border-b-line">
               <TouchableOpacity
                 onPress={() => goToTab("edit")}
-                style={styles.tabButton}
+                className="py-2.5 px-1 mr-4"
                 accessibilityRole="button"
               >
                 <Text
-                  style={[
-                    styles.tabText,
-                    step === "edit" && styles.tabTextActive,
-                  ]}
+                  className={cn(
+                    "text-[13px] font-semibold",
+                    step === "edit" ? "text-content" : "text-content-subtle",
+                  )}
                 >
                   Editar rol
                 </Text>
-                {step === "edit" ? <View style={styles.tabIndicator} /> : null}
+                {step === "edit" ? (
+                  <View className="mt-2 h-0.5 rounded-[1px] bg-accent-strong" />
+                ) : null}
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => goToTab("members")}
-                style={styles.tabButton}
+                className="py-2.5 px-1 mr-4"
                 accessibilityRole="button"
               >
                 <Text
-                  style={[
-                    styles.tabText,
-                    step === "members" && styles.tabTextActive,
-                  ]}
+                  className={cn(
+                    "text-[13px] font-semibold",
+                    step === "members" ? "text-content" : "text-content-subtle",
+                  )}
                 >
                   Miembros
                 </Text>
                 {step === "members" ? (
-                  <View style={styles.tabIndicator} />
+                  <View className="mt-2 h-0.5 rounded-[1px] bg-accent-strong" />
                 ) : null}
               </TouchableOpacity>
             </View>
@@ -475,9 +465,12 @@ export function RolesModal({
 
           {/* ── LISTA DE ROLES ─────────────────────────── */}
           {step === "list" ? (
-            <View style={styles.flexOne}>
-              <View style={styles.listHeader}>
-                <Text style={styles.listHeaderSubtitle} numberOfLines={1}>
+            <View className="flex-1">
+              <View className="gap-2.5 px-4 pt-3.5 pb-1">
+                <Text
+                  className="text-[12px] text-content-subtle"
+                  numberOfLines={1}
+                >
                   {serverName}
                 </Text>
                 <Button
@@ -487,35 +480,40 @@ export function RolesModal({
                 />
               </View>
               <ScrollView
-                style={styles.flexOne}
-                contentContainerStyle={styles.listContent}
+                className="flex-1"
+                contentContainerClassName="px-3 pt-2.5 pb-5 gap-1"
                 showsVerticalScrollIndicator={false}
               >
                 {isLoadingRoles ? (
                   <ActivityIndicator
                     size="small"
                     color={colors.accentBright}
-                    style={styles.loadingIndicator}
+                    className="mt-6"
                   />
                 ) : loadError ? (
-                  <Text style={styles.errorText}>{loadError}</Text>
+                  <Text className="text-danger text-[13px] text-center mt-4">
+                    {loadError}
+                  </Text>
                 ) : (roles ?? []).length === 0 ? (
-                  <Text style={styles.emptyText}>Todavía no hay roles.</Text>
+                  <Text className="text-content-subtle text-[13px] mt-2">
+                    Todavía no hay roles.
+                  </Text>
                 ) : (
                   (roles ?? []).map((role) => (
                     <TouchableOpacity
                       key={role.id}
                       activeOpacity={0.75}
-                      style={styles.roleRow}
+                      className="flex-row items-center gap-2.5 rounded-xl px-2.5 py-3"
                       onPress={() => openRoleForEdit(role)}
                     >
                       <View
-                        style={[
-                          styles.roleDot,
-                          { backgroundColor: role.color },
-                        ]}
+                        className="w-3 h-3 rounded-md"
+                        style={{ backgroundColor: role.color }}
                       />
-                      <Text style={styles.roleName} numberOfLines={1}>
+                      <Text
+                        className="flex-1 text-[14px] font-semibold text-content"
+                        numberOfLines={1}
+                      >
                         {role.name}
                       </Text>
                       {role.id === defaultRoleId ? (
@@ -523,7 +521,7 @@ export function RolesModal({
                           name="star"
                           size={12}
                           color={colors.highlight}
-                          style={styles.roleDefaultIcon}
+                          style={{ marginRight: 2 }}
                         />
                       ) : null}
                       <Feather
@@ -540,32 +538,32 @@ export function RolesModal({
 
           {/* ── CREAR ROL ──────────────────────────────── */}
           {step === "create" ? (
-            <View style={styles.flexOne}>
+            <View className="flex-1">
               <ScrollView
-                style={styles.flexOne}
-                contentContainerStyle={styles.formContent}
+                className="flex-1"
+                contentContainerClassName="p-5 gap-5.5"
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
               >
-                <Text style={styles.formHint}>
+                <Text className="text-[12px] text-content-subtle leading-[17px] -mt-1.5">
                   El nuevo rol se crea sin permisos. Podés configurarlos
                   después.
                 </Text>
 
-                <View style={styles.field}>
-                  <View style={styles.fieldLabelRow}>
-                    <Text style={styles.fieldLabel}>
-                      Nombre <Text style={styles.required}>*</Text>
+                <View className="gap-0">
+                  <View className="flex-row items-center justify-between mb-2">
+                    <Text className="text-[11px] font-bold tracking-[1px] uppercase text-content-subtle">
+                      Nombre <Text className="text-danger">*</Text>
                     </Text>
-                    <Text style={styles.charCount}>
+                    <Text className="text-[11px] text-content-subtle">
                       {newName.length}/{MAX_NAME}
                     </Text>
                   </View>
                   <View
-                    style={[
-                      styles.input,
-                      newNameError ? styles.inputError : null,
-                    ]}
+                    className={cn(
+                      "flex-row items-center rounded-xl border bg-surface-input px-3.5 min-h-12",
+                      newNameError ? "border-danger" : "border-line",
+                    )}
                   >
                     <TextInput
                       value={newName}
@@ -577,16 +575,21 @@ export function RolesModal({
                       placeholderTextColor={colors.textSubtle}
                       autoFocus
                       maxLength={MAX_NAME + 10}
-                      style={styles.inputText}
+                      className="flex-1 text-content text-[14px]"
                     />
                     <RolePreviewBadge name={newName} color={newColor} />
                   </View>
                   <FieldError message={newNameError} />
                 </View>
 
-                <View style={styles.field}>
-                  <Text style={[styles.fieldLabel, styles.fieldLabelBlock]}>
-                    Color <Text style={styles.required}>*</Text>
+                <View className="gap-0">
+                  <Text
+                    className={cn(
+                      "text-[11px] font-bold tracking-[1px] uppercase text-content-subtle",
+                      "mb-2.5",
+                    )}
+                  >
+                    Color <Text className="text-danger">*</Text>
                   </Text>
                   <ColorGrid
                     value={newColor}
@@ -599,7 +602,7 @@ export function RolesModal({
                 </View>
               </ScrollView>
 
-              <View style={styles.footer}>
+              <View className="flex-row gap-3 p-4 border-t border-t-line">
                 <Button
                   title="Cancelar"
                   variant="secondary"
@@ -618,76 +621,87 @@ export function RolesModal({
 
           {/* ── EDITAR ROL ─────────────────────────────── */}
           {step === "edit" && selectedRole ? (
-            <View style={styles.flexOne}>
+            <View className="flex-1">
               <ScrollView
-                style={styles.flexOne}
-                contentContainerStyle={styles.formContent}
+                className="flex-1"
+                contentContainerClassName="p-5 gap-5.5"
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
               >
-                <View style={styles.roleSummary}>
+                <View className="flex-row items-center gap-3 -mt-1.5">
                   <View
-                    style={[
-                      styles.roleSummaryDot,
-                      { backgroundColor: selectedRole.color },
-                    ]}
+                    className="w-8.5 h-8.5 rounded-[17px]"
+                    style={{ backgroundColor: selectedRole.color }}
                   />
-                  <View style={styles.flexOne}>
+                  <View className="flex-1">
                     {selectedRole.id === defaultRoleId ? (
-                      <View style={styles.defaultBadgeRow}>
+                      <View className="flex-row items-center gap-1 mb-0.5">
                         <Feather
                           name="star"
                           size={10}
                           color={colors.highlight}
                         />
-                        <Text style={styles.defaultBadgeText}>
+                        <Text className="text-[10px] font-bold tracking-[0.6px] uppercase text-highlight">
                           Rol por defecto
                         </Text>
                       </View>
                     ) : null}
-                    <Text style={styles.roleSummaryMeta}>
+                    <Text className="text-[12px] text-content-subtle">
                       {membersWithRole.length}{" "}
                       {membersWithRole.length === 1 ? "miembro" : "miembros"}
                     </Text>
                   </View>
                 </View>
 
-                <View style={styles.field}>
-                  <View style={styles.fieldLabelRow}>
-                    <Text style={styles.fieldLabel}>
-                      Nombre <Text style={styles.required}>*</Text>
+                <View className="gap-0">
+                  <View className="flex-row items-center justify-between mb-2">
+                    <Text className="text-[11px] font-bold tracking-[1px] uppercase text-content-subtle">
+                      Nombre <Text className="text-danger">*</Text>
                     </Text>
-                    <Text style={styles.charCount}>
+                    <Text className="text-[11px] text-content-subtle">
                       {editName.length}/{MAX_NAME}
                     </Text>
                   </View>
                   <View
-                    style={[styles.input, nameError ? styles.inputError : null]}
+                    className={cn(
+                      "flex-row items-center rounded-xl border bg-surface-input px-3.5 min-h-12",
+                      nameError ? "border-danger" : "border-line",
+                    )}
                   >
                     <TextInput
                       value={editName}
                       onChangeText={handleEditName}
                       maxLength={MAX_NAME + 10}
-                      style={styles.inputText}
+                      className="flex-1 text-content text-[14px]"
                     />
                     <RolePreviewBadge name={editName} color={editColor} />
                   </View>
                   <FieldError message={nameError} />
                 </View>
 
-                <View style={styles.field}>
-                  <Text style={[styles.fieldLabel, styles.fieldLabelBlock]}>
-                    Color <Text style={styles.required}>*</Text>
+                <View className="gap-0">
+                  <Text
+                    className={cn(
+                      "text-[11px] font-bold tracking-[1px] uppercase text-content-subtle",
+                      "mb-2.5",
+                    )}
+                  >
+                    Color <Text className="text-danger">*</Text>
                   </Text>
                   <ColorGrid value={editColor} onChange={handleEditColor} />
                   <FieldError message={colorError} />
                 </View>
 
-                <View style={styles.field}>
-                  <Text style={[styles.fieldLabel, styles.fieldLabelBlock]}>
+                <View className="gap-0">
+                  <Text
+                    className={cn(
+                      "text-[11px] font-bold tracking-[1px] uppercase text-content-subtle",
+                      "mb-2.5",
+                    )}
+                  >
                     Permisos
                   </Text>
-                  <View style={styles.permList}>
+                  <View className="gap-2">
                     {ROLE_PERMISSIONS.map((perm) => (
                       <PermissionToggle
                         key={perm}
@@ -699,42 +713,44 @@ export function RolesModal({
                   </View>
                 </View>
 
-                <View style={styles.dangerZone}>
-                  <Text style={styles.dangerZoneTitle}>Zona peligrosa</Text>
+                <View className="rounded-[14px] border border-[rgba(224,82,82,0.2)] bg-[rgba(224,82,82,0.06)] p-3.5 gap-3">
+                  <Text className="text-[10px] font-bold tracking-[1px] uppercase text-danger">
+                    Zona peligrosa
+                  </Text>
 
                   {selectedRole.id !== defaultRoleId ? (
-                    <View style={styles.dangerRow}>
-                      <View style={styles.flexOne}>
-                        <Text style={styles.dangerRowTitle}>
+                    <View className="flex-row items-center gap-2.5">
+                      <View className="flex-1">
+                        <Text className="text-[13px] font-semibold text-content">
                           Definir como rol por defecto
                         </Text>
-                        <Text style={styles.dangerRowDesc}>
+                        <Text className="text-[12px] text-content-subtle mt-[1px]">
                           Se asigna automáticamente a los nuevos miembros.
                         </Text>
                       </View>
                       <TouchableOpacity
                         onPress={handleSetDefault}
                         disabled={settingDefault}
-                        style={styles.defaultButton}
+                        className="flex-row items-center gap-1.5 rounded-[10px] border border-[rgba(252,227,164,0.3)] bg-[rgba(252,227,164,0.12)] px-3 py-[9px]"
                       >
                         <Feather
                           name="star"
                           size={11}
                           color={colors.highlight}
                         />
-                        <Text style={styles.defaultButtonText}>
+                        <Text className="text-[12px] font-bold text-highlight">
                           {settingDefault ? "Definiendo..." : "Definir"}
                         </Text>
                       </TouchableOpacity>
                     </View>
                   ) : (
-                    <View style={styles.defaultNote}>
+                    <View className="flex-row items-start gap-2">
                       <Feather
                         name="star"
                         size={11}
                         color={colors.textSubtle}
                       />
-                      <Text style={styles.defaultNoteText}>
+                      <Text className="flex-1 text-[12px] leading-[17px] text-content-subtle">
                         Este es el rol por defecto. Para eliminarlo, primero
                         definí otro rol como predeterminado.
                       </Text>
@@ -747,30 +763,32 @@ export function RolesModal({
                         setDeleteError("");
                         setDeleteConfirm(true);
                       }}
-                      style={styles.deleteButton}
+                      className="flex-row items-center justify-center gap-1.5 self-start rounded-[10px] border border-[rgba(224,82,82,0.25)] bg-[rgba(224,82,82,0.1)] px-3 py-[9px]"
                     >
                       <Feather name="trash-2" size={12} color={colors.danger} />
-                      <Text style={styles.deleteButtonText}>Eliminar rol</Text>
+                      <Text className="text-[12px] font-bold text-danger">
+                        Eliminar rol
+                      </Text>
                     </TouchableOpacity>
                   ) : (
-                    <View style={styles.deleteConfirmWrap}>
-                      <Text style={styles.deleteConfirmText}>
+                    <View className="gap-2">
+                      <Text className="text-[13px] font-semibold text-danger">
                         ¿Confirmar eliminación de &quot;{selectedRole.name}
                         &quot;?
                       </Text>
                       {deleteError ? (
-                        <View style={styles.errorBanner}>
+                        <View className="flex-row items-start gap-2 rounded-[10px] border border-[rgba(224,82,82,0.2)] bg-[rgba(224,82,82,0.1)] px-2.5 py-2">
                           <Feather
                             name="alert-circle"
                             size={13}
                             color={colors.danger}
                           />
-                          <Text style={styles.errorBannerText}>
+                          <Text className="flex-1 text-[12px] text-danger">
                             {deleteError}
                           </Text>
                         </View>
                       ) : null}
-                      <View style={styles.deleteConfirmButtons}>
+                      <View className="flex-row gap-2.5">
                         <Button
                           title="Cancelar"
                           variant="secondary"
@@ -793,16 +811,16 @@ export function RolesModal({
                 </View>
 
                 {savedOk ? (
-                  <View style={styles.savedBanner}>
+                  <View className="flex-row items-center gap-2 rounded-xl border border-[rgba(56,161,105,0.3)] bg-[rgba(56,161,105,0.12)] px-3.5 py-[11px]">
                     <Feather name="check" size={14} color={colors.success} />
-                    <Text style={styles.savedBannerText}>
+                    <Text className="text-[13px] text-success">
                       Cambios guardados.
                     </Text>
                   </View>
                 ) : null}
               </ScrollView>
 
-              <View style={styles.footer}>
+              <View className="flex-row gap-3 p-4 border-t border-t-line">
                 <Button
                   title="Descartar"
                   variant="secondary"
@@ -824,30 +842,37 @@ export function RolesModal({
           {/* ── MIEMBROS DEL ROL ───────────────────────── */}
           {step === "members" && selectedRole ? (
             <ScrollView
-              style={styles.flexOne}
-              contentContainerStyle={styles.formContent}
+              className="flex-1"
+              contentContainerClassName="p-5 gap-5.5"
               showsVerticalScrollIndicator={false}
             >
               {membersError ? (
-                <Text style={styles.errorText}>{membersError}</Text>
+                <Text className="text-danger text-[13px] text-center mt-4">
+                  {membersError}
+                </Text>
               ) : membersInfo === null ? (
                 <ActivityIndicator
                   size="small"
                   color={colors.accentBright}
-                  style={styles.loadingIndicator}
+                  className="mt-6"
                 />
               ) : (
                 <>
-                  <View style={styles.field}>
-                    <Text style={[styles.fieldLabel, styles.fieldLabelBlock]}>
+                  <View className="gap-0">
+                    <Text
+                      className={cn(
+                        "text-[11px] font-bold tracking-[1px] uppercase text-content-subtle",
+                        "mb-2.5",
+                      )}
+                    >
                       Con este rol ({membersWithRole.length})
                     </Text>
                     {membersWithRole.length === 0 ? (
-                      <Text style={styles.emptyText}>
+                      <Text className="text-content-subtle text-[13px] mt-2">
                         Ningún miembro tiene este rol.
                       </Text>
                     ) : null}
-                    <View style={styles.memberList}>
+                    <View className="gap-1.5 mt-1">
                       {membersWithRole.map((member) => (
                         <MemberRoleRow
                           key={member.userId}
@@ -861,11 +886,16 @@ export function RolesModal({
                   </View>
 
                   {membersWithoutRole.length > 0 ? (
-                    <View style={styles.field}>
-                      <Text style={[styles.fieldLabel, styles.fieldLabelBlock]}>
+                    <View className="gap-0">
+                      <Text
+                        className={cn(
+                          "text-[11px] font-bold tracking-[1px] uppercase text-content-subtle",
+                          "mb-2.5",
+                        )}
+                      >
                         Sin este rol ({membersWithoutRole.length})
                       </Text>
-                      <View style={styles.memberList}>
+                      <View className="gap-1.5 mt-1">
                         {membersWithoutRole.map((member) => (
                           <MemberRoleRow
                             key={member.userId}
@@ -885,9 +915,15 @@ export function RolesModal({
         </View>
 
         {toast ? (
-          <View style={[styles.toast, { bottom: insets.bottom + 24 }]}>
-            <View style={styles.toastDot} />
-            <Text style={styles.toastText} numberOfLines={2}>
+          <View
+            className="absolute left-6 right-6 flex-row items-center gap-2.5 self-center max-w-105 rounded-[14px] border border-line-strong bg-surface-raised px-4 py-3"
+            style={{ bottom: insets.bottom + 24 }}
+          >
+            <View className="w-2 h-2 rounded-sm bg-accent-strong" />
+            <Text
+              className="flex-1 text-[13px] font-semibold text-content"
+              numberOfLines={2}
+            >
               {toast}
             </Text>
           </View>

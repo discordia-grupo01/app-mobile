@@ -1,3 +1,5 @@
+import { hexToRgba, type Role } from "@discordia/client-shared";
+
 import { Feather } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import {
@@ -13,10 +15,9 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { colors } from "../../../theme/colors";
+import { cn } from "../../../lib/cn";
+import { useThemeColors } from "../../../theme/theme-context";
 import { assignRole, listMemberRoles, listRoles, removeRole } from "../api";
-import { hexToRgba } from "../constants";
-import type { Role } from "../types";
 
 interface MemberRoleBadgesProps {
   serverId: string;
@@ -29,6 +30,7 @@ export function MemberRoleBadges({
   userId,
   canManage,
 }: MemberRoleBadgesProps) {
+  const colors = useThemeColors();
   const insets = useSafeAreaInsets();
   const [assignedRoles, setAssignedRoles] = useState<Role[] | null>(null);
   const [availableRoles, setAvailableRoles] = useState<Role[]>([]);
@@ -110,11 +112,13 @@ export function MemberRoleBadges({
   if (assignedRoles === null) {
     return (
       <View>
-        <Text style={styles.label}>ROLES</Text>
+        <Text className="text-[11px] font-bold tracking-[1.2px] text-content-subtle mb-1.5">
+          ROLES
+        </Text>
         <ActivityIndicator
           size="small"
           color={colors.accentBright}
-          style={styles.loadingIndicator}
+          className="self-start mt-0.5"
         />
       </View>
     );
@@ -128,26 +132,30 @@ export function MemberRoleBadges({
 
   return (
     <View>
-      <Text style={styles.label}>ROLES</Text>
+      <Text className="text-[11px] font-bold tracking-[1.2px] text-content-subtle mb-1.5">
+        ROLES
+      </Text>
       {errorMessage ? (
-        <Text style={styles.errorText}>{errorMessage}</Text>
+        <Text className="text-danger text-[12px] mb-1.5">{errorMessage}</Text>
       ) : null}
 
-      <View style={styles.badgeRow}>
+      <View className="flex-row flex-wrap items-center gap-1.5">
         {assignedRoles.map((role) => (
           <View
             key={role.id}
-            style={[
-              styles.badge,
-              {
-                borderColor: hexToRgba(role.color, 0.4),
-                backgroundColor: hexToRgba(role.color, 0.12),
-              },
-            ]}
+            className="flex-row items-center gap-1.5 rounded-full border px-2.5 py-1.5 max-w-45"
+            style={{
+              borderColor: hexToRgba(role.color, 0.4),
+              backgroundColor: hexToRgba(role.color, 0.12),
+            }}
           >
-            <View style={[styles.badgeDot, { backgroundColor: role.color }]} />
+            <View
+              className="w-2 h-2 rounded-sm"
+              style={{ backgroundColor: role.color }}
+            />
             <Text
-              style={[styles.badgeText, { color: role.color }]}
+              className="text-[12px] font-bold shrink"
+              style={{ color: role.color }}
               numberOfLines={1}
             >
               {role.name}
@@ -159,7 +167,7 @@ export function MemberRoleBadges({
                 accessibilityRole="button"
                 accessibilityLabel={`Quitar rol ${role.name}`}
                 hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-                style={styles.badgeRemove}
+                className="ml-0.5"
               >
                 <Feather name="x" size={10} color={role.color} />
               </TouchableOpacity>
@@ -168,18 +176,20 @@ export function MemberRoleBadges({
         ))}
 
         {assignedRoles.length === 0 ? (
-          <Text style={styles.emptyText}>Sin roles asignados.</Text>
+          <Text className="text-content-subtle text-[12px]">
+            Sin roles asignados.
+          </Text>
         ) : null}
 
         {canManage ? (
           <TouchableOpacity
             onPress={openPicker}
-            style={styles.addButton}
+            className="flex-row items-center gap-[5px] rounded-full border border-line bg-surface-input px-2.5 py-1.5"
             accessibilityRole="button"
             accessibilityLabel="Añadir rol"
           >
             <Feather name="plus" size={11} color={colors.info} />
-            <Text style={styles.addButtonText}>Añadir rol</Text>
+            <Text className="text-[12px] font-bold text-info">Añadir rol</Text>
           </TouchableOpacity>
         ) : null}
       </View>
@@ -191,13 +201,16 @@ export function MemberRoleBadges({
           animationType="fade"
           onRequestClose={closePicker}
         >
-          <View style={styles.backdrop}>
+          <View className="flex-1 justify-end bg-[rgba(0,0,0,0.6)]">
             <Pressable style={StyleSheet.absoluteFill} onPress={closePicker} />
 
-            <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
-              <View style={styles.handle} />
+            <View
+              className="max-h-[70%] bg-surface-modal rounded-tl-[22px] rounded-tr-[22px] border-t border-line-strong px-4 pt-2.5"
+              style={{ paddingBottom: insets.bottom + 16 }}
+            >
+              <View className="self-center w-9 h-1 rounded-xs bg-line-strong mb-3.5" />
 
-              <View style={styles.searchRow}>
+              <View className="flex-row items-center gap-2 rounded-xl border border-line bg-surface-input px-3 min-h-11 mb-3">
                 <Feather name="search" size={15} color={colors.textSubtle} />
                 <TextInput
                   value={search}
@@ -205,7 +218,7 @@ export function MemberRoleBadges({
                   placeholder="Buscar rol..."
                   placeholderTextColor={colors.textSubtle}
                   autoFocus
-                  style={styles.searchInput}
+                  className="flex-1 text-[14px] text-content py-0.5"
                 />
                 {search ? (
                   <TouchableOpacity
@@ -220,12 +233,12 @@ export function MemberRoleBadges({
               </View>
 
               {addableRoles.length === 0 ? (
-                <Text style={styles.pickerEmptyText}>
+                <Text className="text-content-subtle text-[13px] text-center py-6">
                   No hay más roles para añadir
                 </Text>
               ) : (
                 <ScrollView
-                  style={styles.pickerList}
+                  className="mb-1"
                   keyboardShouldPersistTaps="handled"
                   showsVerticalScrollIndicator={false}
                 >
@@ -234,20 +247,21 @@ export function MemberRoleBadges({
                       key={role.id}
                       onPress={() => handleAdd(role)}
                       disabled={pendingRoleId === role.id}
-                      style={[
-                        styles.pickerRow,
+                      className={cn(
+                        "flex-row items-center gap-2.5 px-1.5 py-3 border-b-line",
                         index === addableRoles.length - 1
-                          ? styles.pickerRowLast
-                          : null,
-                      ]}
+                          ? "border-b-0"
+                          : "border-b",
+                      )}
                     >
                       <View
-                        style={[
-                          styles.badgeDot,
-                          { backgroundColor: role.color },
-                        ]}
+                        className="w-2 h-2 rounded-sm"
+                        style={{ backgroundColor: role.color }}
                       />
-                      <Text style={styles.pickerRowText} numberOfLines={1}>
+                      <Text
+                        className="flex-1 text-[14px] text-content"
+                        numberOfLines={1}
+                      >
                         {role.name}
                       </Text>
                       {pendingRoleId === role.id ? (
@@ -267,138 +281,3 @@ export function MemberRoleBadges({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  label: {
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 1.2,
-    color: colors.textSubtle,
-    marginBottom: 6,
-  },
-  loadingIndicator: {
-    alignSelf: "flex-start",
-    marginTop: 2,
-  },
-  errorText: {
-    color: colors.danger,
-    fontSize: 12,
-    marginBottom: 6,
-  },
-  badgeRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    alignItems: "center",
-    gap: 6,
-  },
-  badge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    borderRadius: 999,
-    borderWidth: 1,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    maxWidth: 180,
-  },
-  badgeDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  badgeText: {
-    fontSize: 12,
-    fontWeight: "700",
-    flexShrink: 1,
-  },
-  badgeRemove: {
-    marginLeft: 2,
-  },
-  emptyText: {
-    color: colors.textSubtle,
-    fontSize: 12,
-  },
-  addButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.bgInput,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  addButtonText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: colors.info,
-  },
-  backdrop: {
-    flex: 1,
-    justifyContent: "flex-end",
-    backgroundColor: "rgba(0,0,0,0.6)",
-  },
-  sheet: {
-    maxHeight: "70%",
-    backgroundColor: colors.bgModal,
-    borderTopLeftRadius: 22,
-    borderTopRightRadius: 22,
-    borderTopWidth: 1,
-    borderColor: colors.borderStrong,
-    paddingHorizontal: 16,
-    paddingTop: 10,
-  },
-  handle: {
-    alignSelf: "center",
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.borderStrong,
-    marginBottom: 14,
-  },
-  searchRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.bgInput,
-    paddingHorizontal: 12,
-    minHeight: 44,
-    marginBottom: 12,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
-    color: colors.text,
-    paddingVertical: 2,
-  },
-  pickerList: {
-    marginBottom: 4,
-  },
-  pickerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    paddingHorizontal: 6,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  pickerRowLast: {
-    borderBottomWidth: 0,
-  },
-  pickerRowText: {
-    flex: 1,
-    fontSize: 14,
-    color: colors.text,
-  },
-  pickerEmptyText: {
-    color: colors.textSubtle,
-    fontSize: 13,
-    textAlign: "center",
-    paddingVertical: 24,
-  },
-});

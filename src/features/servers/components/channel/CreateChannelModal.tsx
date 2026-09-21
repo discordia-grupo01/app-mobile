@@ -1,3 +1,10 @@
+import {
+  type Category,
+  type Channel,
+  MAX_NAME,
+  validateChannelName,
+} from "@discordia/client-shared";
+
 import { Feather } from "@expo/vector-icons";
 import { useState } from "react";
 import {
@@ -14,11 +21,9 @@ import {
 } from "react-native";
 
 import { createChannel } from "../../api";
-import type { Category, Channel } from "../../types";
-import { colors } from "../../../../theme/colors";
+import { cn } from "../../../../lib/cn";
+import { useThemeColors } from "../../../../theme/theme-context";
 import { Button } from "../../../../components/ui/Button";
-
-const MAX_NAME = 100;
 
 interface CreateChannelModalProps {
   visible: boolean;
@@ -37,6 +42,7 @@ export function CreateChannelModal({
   onClose,
   onCreated,
 }: CreateChannelModalProps) {
+  const colors = useThemeColors();
   const [kind, setKind] = useState<"text" | "voice">("text");
   const [name, setName] = useState("");
   const [categoryId, setCategoryId] = useState(defaultCategoryId ?? "");
@@ -73,8 +79,9 @@ export function CreateChannelModal({
     setNameError("");
     setGlobalError("");
 
-    if (!trimmed) {
-      setNameError("Ingresá un nombre para el canal.");
+    const nameError = validateChannelName(trimmed);
+    if (nameError) {
+      setNameError(nameError);
       return;
     }
 
@@ -103,15 +110,15 @@ export function CreateChannelModal({
       onRequestClose={onClose}
     >
       <KeyboardAvoidingView
-        style={styles.backdrop}
+        className="flex-1 bg-[rgba(0,0,0,0.65)] items-center justify-center p-4"
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
 
-        <View style={styles.card}>
+        <View className="w-full max-w-110 max-h-[90%] rounded-[20px] border border-line-strong bg-surface-modal overflow-hidden">
           <TouchableOpacity
             onPress={onClose}
-            style={styles.closeButton}
+            className="absolute top-4 right-4 z-10 w-8 h-8 rounded-2xl items-center justify-center bg-surface-input border border-line"
             accessibilityRole="button"
             accessibilityLabel="Cerrar"
           >
@@ -119,72 +126,91 @@ export function CreateChannelModal({
           </TouchableOpacity>
 
           <ScrollView
-            contentContainerStyle={styles.scrollContent}
+            contentContainerClassName="p-7 pt-8"
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            <View style={styles.header}>
-              <Text style={styles.headerTitle}>Crear Canal</Text>
-              <Text style={styles.headerSubtitle}>
+            <View className="mb-5 pr-6">
+              <Text className="text-[17px] font-bold text-content">
+                Crear Canal
+              </Text>
+              <Text className="text-[12px] text-content-subtle mt-1 leading-[17px]">
                 Agrega un canal de texto o voz al servidor.
               </Text>
             </View>
 
             {globalError ? (
-              <View style={styles.errorBanner}>
+              <View className="flex-row items-start gap-2.5 rounded-xl border border-[rgba(224,82,82,0.3)] bg-[rgba(224,82,82,0.1)] px-3.5 py-3 mb-4">
                 <Feather name="alert-circle" size={16} color={colors.danger} />
-                <Text style={styles.errorBannerText}>{globalError}</Text>
+                <Text className="flex-1 text-danger text-[13px]">
+                  {globalError}
+                </Text>
               </View>
             ) : null}
 
-            <View style={styles.field}>
-              <Text style={styles.fieldLabel}>TIPO DE CANAL</Text>
-              <View style={styles.kindRow}>
+            <View className="mb-4.5">
+              <Text className="text-[11px] font-bold tracking-[1.1px] text-content-subtle mb-2">
+                TIPO DE CANAL
+              </Text>
+              <View className="flex-row gap-2">
                 <TouchableOpacity
                   onPress={() => setKind("text")}
-                  style={[
-                    styles.kindOption,
-                    kind === "text" ? styles.kindOptionActive : null,
-                  ]}
+                  className={cn(
+                    "flex-1 rounded-xl border px-3 py-3",
+                    kind === "text"
+                      ? "border-accent-strong bg-[rgba(45,122,140,0.12)]"
+                      : "border-line",
+                  )}
                   accessibilityRole="button"
                 >
-                  <View style={styles.kindOptionHeader}>
+                  <View className="flex-row items-center gap-2">
                     <Feather name="hash" size={16} color={colors.textMuted} />
-                    <Text style={styles.kindOptionTitle}>Texto</Text>
+                    <Text className="text-[14px] font-semibold text-content">
+                      Texto
+                    </Text>
                   </View>
-                  <Text style={styles.kindOptionSubtitle}>
+                  <Text className="mt-[3px] text-[11px] text-content-subtle">
                     Para mensajes y links
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => setKind("voice")}
-                  style={[
-                    styles.kindOption,
-                    kind === "voice" ? styles.kindOptionActive : null,
-                  ]}
+                  className={cn(
+                    "flex-1 rounded-xl border px-3 py-3",
+                    kind === "voice"
+                      ? "border-accent-strong bg-[rgba(45,122,140,0.12)]"
+                      : "border-line",
+                  )}
                   accessibilityRole="button"
                 >
-                  <View style={styles.kindOptionHeader}>
+                  <View className="flex-row items-center gap-2">
                     <Feather
                       name="volume-2"
                       size={16}
                       color={colors.textMuted}
                     />
-                    <Text style={styles.kindOptionTitle}>Voz</Text>
+                    <Text className="text-[14px] font-semibold text-content">
+                      Voz
+                    </Text>
                   </View>
-                  <Text style={styles.kindOptionSubtitle}>
+                  <Text className="mt-[3px] text-[11px] text-content-subtle">
                     Para charlar en tiempo real
                   </Text>
                 </TouchableOpacity>
               </View>
             </View>
 
-            <View style={styles.field}>
-              <Text style={styles.fieldLabel}>NOMBRE DEL CANAL</Text>
+            <View className="mb-4.5">
+              <Text className="text-[11px] font-bold tracking-[1.1px] text-content-subtle mb-2">
+                NOMBRE DEL CANAL
+              </Text>
               <View
-                style={[styles.input, nameError ? styles.inputError : null]}
+                className={cn(
+                  "flex-row items-center gap-2 rounded-xl border bg-surface-input px-3.5 min-h-12",
+                  nameError ? "border-danger" : "border-line",
+                )}
               >
-                <Text style={styles.inputHash}>#</Text>
+                <Text className="text-content-subtle text-[14px]">#</Text>
                 <TextInput
                   value={name}
                   onChangeText={(text) => {
@@ -197,34 +223,41 @@ export function CreateChannelModal({
                   maxLength={MAX_NAME + 10}
                   autoFocus
                   autoCapitalize="none"
-                  style={styles.inputText}
+                  className="flex-1 text-content text-[14px]"
                 />
               </View>
               {nameError ? (
-                <View style={styles.fieldErrorRow}>
+                <View className="flex-row items-center gap-1.5 mt-1.5">
                   <Feather
                     name="alert-circle"
                     size={13}
                     color={colors.danger}
                   />
-                  <Text style={styles.fieldErrorText}>{nameError}</Text>
+                  <Text className="text-danger text-[12px]">{nameError}</Text>
                 </View>
               ) : null}
             </View>
 
-            <View style={styles.field}>
-              <Text style={styles.fieldLabel}>CATEGORÍA</Text>
+            <View className="mb-4.5">
+              <Text className="text-[11px] font-bold tracking-[1.1px] text-content-subtle mb-2">
+                CATEGORÍA
+              </Text>
               <TouchableOpacity
                 onPress={() => setIsCategoryDropdownOpen((prev) => !prev)}
-                style={[
-                  styles.categorySelect,
-                  isCategoryDropdownOpen ? styles.categorySelectActive : null,
-                ]}
+                className={cn(
+                  "flex-row items-center justify-between rounded-xl border bg-surface-input px-3.5 min-h-12",
+                  isCategoryDropdownOpen
+                    ? "border-accent-strong"
+                    : "border-line",
+                )}
                 activeOpacity={0.8}
                 accessibilityRole="button"
                 accessibilityLabel="Elegir categoría"
               >
-                <Text style={styles.categorySelectText} numberOfLines={1}>
+                <Text
+                  className="flex-1 text-[14px] text-content"
+                  numberOfLines={1}
+                >
                   {selectedCategoryName}
                 </Text>
                 <Feather
@@ -235,19 +268,22 @@ export function CreateChannelModal({
               </TouchableOpacity>
 
               {isCategoryDropdownOpen ? (
-                <View style={styles.categoryDropdown}>
+                <View
+                  className="mt-1.5 rounded-xl border border-line-strong bg-surface-modal py-1"
+                  style={styles.categoryDropdown}
+                >
                   <TouchableOpacity
                     onPress={() => handleSelectCategory("")}
-                    style={styles.categoryDropdownOption}
+                    className="flex-row items-center justify-between gap-2.5 px-3.5 py-3"
                     accessibilityRole="button"
                   >
                     <Text
-                      style={[
-                        styles.categoryDropdownOptionText,
+                      className={cn(
+                        "flex-1 text-[14px]",
                         categoryId === ""
-                          ? styles.categoryDropdownOptionTextActive
-                          : null,
-                      ]}
+                          ? "text-accent-strong font-semibold"
+                          : "text-content",
+                      )}
                       numberOfLines={1}
                     >
                       Sin categoría
@@ -264,16 +300,16 @@ export function CreateChannelModal({
                     <TouchableOpacity
                       key={category.id}
                       onPress={() => handleSelectCategory(category.id)}
-                      style={styles.categoryDropdownOption}
+                      className="flex-row items-center justify-between gap-2.5 px-3.5 py-3"
                       accessibilityRole="button"
                     >
                       <Text
-                        style={[
-                          styles.categoryDropdownOptionText,
+                        className={cn(
+                          "flex-1 text-[14px]",
                           categoryId === category.id
-                            ? styles.categoryDropdownOptionTextActive
-                            : null,
-                        ]}
+                            ? "text-accent-strong font-semibold"
+                            : "text-content",
+                        )}
                         numberOfLines={1}
                       >
                         {category.name}
@@ -291,7 +327,7 @@ export function CreateChannelModal({
               ) : null}
             </View>
 
-            <View style={styles.footer}>
+            <View className="flex-row gap-3 mt-2 pt-5 border-t border-t-line">
               <Button
                 title="Cancelar"
                 variant="secondary"
@@ -314,202 +350,11 @@ export function CreateChannelModal({
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.65)",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 16,
-  },
-  card: {
-    width: "100%",
-    maxWidth: 440,
-    maxHeight: "90%",
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-    backgroundColor: colors.bgModal,
-    overflow: "hidden",
-  },
-  closeButton: {
-    position: "absolute",
-    top: 16,
-    right: 16,
-    zIndex: 10,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.bgInput,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  scrollContent: {
-    padding: 28,
-    paddingTop: 32,
-  },
-  header: {
-    marginBottom: 20,
-    paddingRight: 24,
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    color: colors.textSubtle,
-    marginTop: 4,
-    lineHeight: 17,
-  },
-  errorBanner: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "rgba(224,82,82,0.3)",
-    backgroundColor: "rgba(224,82,82,0.1)",
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 16,
-  },
-  errorBannerText: {
-    flex: 1,
-    color: colors.danger,
-    fontSize: 13,
-  },
-  field: {
-    marginBottom: 18,
-  },
-  fieldLabel: {
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 1.1,
-    color: colors.textSubtle,
-    marginBottom: 8,
-  },
-  kindRow: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  kindOption: {
-    flex: 1,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-  },
-  kindOptionActive: {
-    borderColor: colors.accentBright,
-    backgroundColor: "rgba(45,122,140,0.12)",
-  },
-  kindOptionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  kindOptionTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: colors.text,
-  },
-  kindOptionSubtitle: {
-    marginTop: 3,
-    fontSize: 11,
-    color: colors.textSubtle,
-  },
-  input: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.bgInput,
-    paddingHorizontal: 14,
-    minHeight: 48,
-  },
-  inputError: {
-    borderColor: colors.danger,
-  },
-  inputHash: {
-    color: colors.textSubtle,
-    fontSize: 14,
-  },
-  inputText: {
-    flex: 1,
-    color: colors.text,
-    fontSize: 14,
-  },
-  fieldErrorRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginTop: 6,
-  },
-  fieldErrorText: {
-    color: colors.danger,
-    fontSize: 12,
-  },
-  categorySelect: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.bgInput,
-    paddingHorizontal: 14,
-    minHeight: 48,
-  },
-  categorySelectActive: {
-    borderColor: colors.accentBright,
-  },
-  categorySelectText: {
-    flex: 1,
-    fontSize: 14,
-    color: colors.text,
-  },
   categoryDropdown: {
-    marginTop: 6,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-    backgroundColor: colors.bgModal,
-    paddingVertical: 4,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
-  },
-  categoryDropdownOption: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  categoryDropdownOptionText: {
-    flex: 1,
-    fontSize: 14,
-    color: colors.text,
-  },
-  categoryDropdownOptionTextActive: {
-    color: colors.accentBright,
-    fontWeight: "600",
-  },
-  footer: {
-    flexDirection: "row",
-    gap: 12,
-    marginTop: 8,
-    paddingTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
   },
 });

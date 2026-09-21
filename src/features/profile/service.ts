@@ -1,52 +1,52 @@
 import * as FileSystem from "expo-file-system/legacy";
 
 import {
-  ApiError,
-  NetworkError,
-  apiFetch,
-  refreshAccessToken,
-} from "../../lib/api-client";
+  type ApiErrorBody,
+  type GetOwnProfileResult,
+  type GetPublicProfileResult,
+  messageFor,
+  NETWORK_ERROR_MESSAGE,
+  OWN_PROFILE_LOAD_FAILED,
+  PROFILE_LOAD_FAILED,
+  PROFILE_UPDATE_FAILED,
+  type PublicUser,
+  SESSION_EXPIRED_MESSAGE,
+  STATUS_CLEAR_FAILED,
+  STATUS_UPDATE_FAILED,
+  type UpdateCustomStatusResult,
+  type UpdateOwnProfileResult,
+  type User,
+} from "@discordia/client-shared";
+
+import { apiFetch, refreshAccessToken } from "../../lib/api-client";
 import { env } from "../../lib/env";
 import { getToken } from "../../lib/storage";
-import type { ApiErrorBody, PublicUser, User } from "../auth/types";
-import type {
-  GetOwnProfileActionResult,
-  GetPublicProfileActionResult,
-  PickedProfileImage,
-  UpdateOwnProfileActionResult,
-  UpdateStatusActionResult,
-} from "./types";
+import type { PickedProfileImage } from "./types";
 
-const NETWORK_ERROR_MESSAGE =
-  "No hay conexión con el servidor. Revisá tu conexión a internet e intentá de nuevo.";
-const SESSION_EXPIRED_MESSAGE = "Tu sesión expiró. Volvé a iniciar sesión.";
-
-export async function getOwnProfile(): Promise<GetOwnProfileActionResult> {
-  try {
-    const user = await apiFetch<User>("/v1/me/profile", { method: "GET" });
-    return { ok: true, user };
-  } catch (err) {
-    if (err instanceof NetworkError) {
-      return { ok: false, message: NETWORK_ERROR_MESSAGE };
-    }
-    return { ok: false, message: "No pudimos cargar tu perfil." };
+export async function getOwnProfile(): Promise<GetOwnProfileResult> {
+  const result = await apiFetch<User>("/v1/me/profile", { method: "GET" });
+  if (!result.ok) {
+    return {
+      ok: false,
+      message: messageFor(result, {}, OWN_PROFILE_LOAD_FAILED),
+    };
   }
+  return { ok: true, user: result.data };
 }
 
 export async function getPublicProfile(
   userId: string,
-): Promise<GetPublicProfileActionResult> {
-  try {
-    const user = await apiFetch<PublicUser>(`/v1/users/${userId}`, {
-      method: "GET",
-    });
-    return { ok: true, user };
-  } catch (err) {
-    if (err instanceof NetworkError) {
-      return { ok: false, message: NETWORK_ERROR_MESSAGE };
-    }
-    return { ok: false, message: "No pudimos cargar el perfil." };
+): Promise<GetPublicProfileResult> {
+  const result = await apiFetch<PublicUser>(`/v1/users/${userId}`, {
+    method: "GET",
+  });
+  if (!result.ok) {
+    return {
+      ok: false,
+      message: messageFor(result, {}, PROFILE_LOAD_FAILED),
+    };
   }
+  return { ok: true, user: result.data };
 }
 
 async function performProfileUpdate(
@@ -88,7 +88,7 @@ export async function updateOwnProfile(params: {
   name: string;
   description: string;
   image?: PickedProfileImage;
-}): Promise<UpdateOwnProfileActionResult> {
+}): Promise<UpdateOwnProfileResult> {
   let status: number;
   let rawBody: string;
   try {
@@ -124,9 +124,7 @@ export async function updateOwnProfile(params: {
     const errBody = body as ApiErrorBody | undefined;
     return {
       ok: false,
-      message:
-        errBody?.error?.message ??
-        "No pudimos actualizar tu perfil. Intenta de nuevo.",
+      message: errBody?.error?.message ?? PROFILE_UPDATE_FAILED,
     };
   }
 
@@ -135,43 +133,36 @@ export async function updateOwnProfile(params: {
 
 export async function updateStatus(
   statusText: string,
-): Promise<UpdateStatusActionResult> {
-  try {
-    const user = await apiFetch<User>("/v1/me/status", {
-      method: "PUT",
-      body: JSON.stringify({ status_text: statusText }),
-    });
-    return { ok: true, user };
-  } catch (err) {
-    if (err instanceof NetworkError) {
-      return { ok: false, message: NETWORK_ERROR_MESSAGE };
-    }
-    if (err instanceof ApiError && err.status === 400) {
+): Promise<UpdateCustomStatusResult> {
+  const result = await apiFetch<User>("/v1/me/status", {
+    method: "PUT",
+    body: JSON.stringify({ status_text: statusText }),
+  });
+
+  if (!result.ok) {
+    if (result.status === 400) {
       return { ok: false, message: "Ese estado no es válido." };
     }
     return {
       ok: false,
-      message: "No pudimos actualizar tu estado. Intenta de nuevo.",
+      message: messageFor(result, {}, STATUS_UPDATE_FAILED),
     };
   }
+  return { ok: true, user: result.data };
 }
 
 export async function clearStatus(
   currentUser: User,
-): Promise<UpdateStatusActionResult> {
-  try {
-    await apiFetch<void>("/v1/me/status", { method: "DELETE" });
-    return {
-      ok: true,
-      user: { ...currentUser, status_text: "", status_emoji: "" },
-    };
-  } catch (err) {
-    if (err instanceof NetworkError) {
-      return { ok: false, message: NETWORK_ERROR_MESSAGE };
-    }
+): Promise<UpdateCustomStatusResult> {
+  const result = await apiFetch<void>("/v1/me/status", { method: "DELETE" });
+  if (!result.ok) {
     return {
       ok: false,
-      message: "No pudimos borrar tu estado. Intenta de nuevo.",
+      message: messageFor(result, {}, STATUS_CLEAR_FAILED),
     };
   }
+  return {
+    ok: true,
+    user: { ...currentUser, status_text: "", status_emoji: "" },
+  };
 }

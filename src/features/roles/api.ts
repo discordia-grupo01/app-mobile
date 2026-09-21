@@ -1,310 +1,280 @@
-import { ApiError, NetworkError, apiFetch } from "../../lib/api-client";
 import {
-  NETWORK_ERROR_MESSAGE,
-  SESSION_EXPIRED_MESSAGE,
+  type AssignRoleResult,
+  type CreateRoleResult,
+  DEFAULT_ROLE_SET_FAILED,
+  type DeleteRoleResult,
   fieldOf,
+  invalidPermissionMessage,
+  type ListMemberRolesResult,
+  type ListRolesResult,
+  MEMBER_OR_ROLE_NOT_FOUND,
+  MEMBER_ROLE_ASSIGN_FAILED,
+  MEMBER_ROLE_NOT_ASSIGNED,
+  MEMBER_ROLE_REMOVE_FAILED,
+  MEMBER_ROLES_LOAD_FAILED,
+  messageFor,
+  OWNER_ONLY_ASSIGN_ROLE,
+  OWNER_ONLY_CREATE_ROLE,
+  OWNER_ONLY_DELETE_ROLE,
+  OWNER_ONLY_REMOVE_ROLE,
+  OWNER_ONLY_SET_DEFAULT_ROLE,
+  OWNER_ONLY_UPDATE_ROLE,
   reasonOf,
-} from "../servers/api/shared";
-import type {
-  AssignRoleActionResult,
-  CreateRoleActionResult,
-  DeleteRoleActionResult,
-  ListMemberRolesActionResult,
-  ListRolesActionResult,
-  RemoveRoleActionResult,
-  Role,
-  RolePermission,
-  SetDefaultRoleActionResult,
-  UpdateRoleActionResult,
-} from "./types";
+  type RemoveRoleResult,
+  type Role,
+  ROLE_CREATE_FAILED,
+  ROLE_DELETE_FAILED,
+  ROLE_IS_DEFAULT,
+  ROLE_NOT_FOUND,
+  ROLE_REASONS,
+  ROLE_UPDATE_FAILED,
+  type RolePermission,
+  ROLES_LOAD_FAILED,
+  SESSION_EXPIRED_MESSAGE,
+  type SetDefaultRoleResult,
+  type UpdateRoleResult,
+} from "@discordia/client-shared";
 
-const REASON_MESSAGES: Record<string, string> = {
-  name_required: "Ingresá un nombre para el rol.",
-  name_too_long: "El nombre es demasiado largo.",
-  color_invalid_format: "Elegí un color válido para el rol.",
-};
+import { apiFetch } from "../../lib/api-client";
 
-export async function listRoles(
-  serverId: string,
-): Promise<ListRolesActionResult> {
-  try {
-    const roles = await apiFetch<Role[]>(`/v1/servers/${serverId}/roles`, {
-      method: "GET",
-    });
-    return { ok: true, roles };
-  } catch (err) {
-    if (err instanceof NetworkError) {
-      return { ok: false, message: NETWORK_ERROR_MESSAGE };
-    }
-    if (err instanceof ApiError && err.status === 401) {
+export async function listRoles(serverId: string): Promise<ListRolesResult> {
+  const result = await apiFetch<Role[]>(`/v1/servers/${serverId}/roles`, {
+    method: "GET",
+  });
+
+  if (!result.ok) {
+    if (result.status === 401) {
       return { ok: false, message: SESSION_EXPIRED_MESSAGE };
     }
     return {
       ok: false,
-      message: "No pudimos cargar los roles. Intenta de nuevo.",
+      message: messageFor(result, {}, ROLES_LOAD_FAILED),
     };
   }
+
+  return { ok: true, roles: result.data };
 }
 
 export async function createRole(
   serverId: string,
   input: { name: string; color: string },
-): Promise<CreateRoleActionResult> {
-  try {
-    const role = await apiFetch<Role>(`/v1/servers/${serverId}/roles`, {
-      method: "POST",
-      body: JSON.stringify(input),
-    });
-    return { ok: true, role };
-  } catch (err) {
-    if (err instanceof NetworkError) {
-      return { ok: false, message: NETWORK_ERROR_MESSAGE };
+): Promise<CreateRoleResult> {
+  const result = await apiFetch<Role>(`/v1/servers/${serverId}/roles`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+
+  if (!result.ok) {
+    const reason = reasonOf(result.details);
+    const field = fieldOf(result.details);
+    const friendly = reason ? ROLE_REASONS[reason] : undefined;
+
+    if (friendly && (field === "name" || field === "color")) {
+      return {
+        ok: false,
+        message: friendly,
+        fieldErrors: { [field]: friendly },
+      };
     }
-    if (err instanceof ApiError) {
-      const field = fieldOf(err);
-      const reason = reasonOf(err);
-      const friendly = reason ? REASON_MESSAGES[reason] : undefined;
-      if ((field === "name" || field === "color") && friendly) {
-        return {
-          ok: false,
-          message: friendly,
-          fieldErrors: { [field]: friendly },
-        };
-      }
-      if (err.status === 401) {
-        return { ok: false, message: SESSION_EXPIRED_MESSAGE };
-      }
-      if (err.status === 403) {
-        return {
-          ok: false,
-          message: "Solo el propietario puede crear roles.",
-        };
-      }
-      if (friendly) return { ok: false, message: friendly };
+    if (result.status === 401) {
+      return { ok: false, message: SESSION_EXPIRED_MESSAGE };
+    }
+    if (result.status === 403) {
+      return { ok: false, message: OWNER_ONLY_CREATE_ROLE };
     }
     return {
       ok: false,
-      message: "No pudimos crear el rol. Intenta de nuevo.",
+      message: messageFor(result, ROLE_REASONS, ROLE_CREATE_FAILED),
     };
   }
+
+  return { ok: true, role: result.data };
 }
 
 export async function updateRole(
   roleId: string,
   input: { name?: string; color?: string; permissions?: RolePermission[] },
-): Promise<UpdateRoleActionResult> {
-  try {
-    const role = await apiFetch<Role>(`/v1/roles/${roleId}`, {
-      method: "PATCH",
-      body: JSON.stringify(input),
-    });
-    return { ok: true, role };
-  } catch (err) {
-    if (err instanceof NetworkError) {
-      return { ok: false, message: NETWORK_ERROR_MESSAGE };
+): Promise<UpdateRoleResult> {
+  const result = await apiFetch<Role>(`/v1/roles/${roleId}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+
+  if (!result.ok) {
+    const reason = reasonOf(result.details);
+    const field = fieldOf(result.details);
+    const friendly = reason ? ROLE_REASONS[reason] : undefined;
+
+    if (friendly && (field === "name" || field === "color")) {
+      return {
+        ok: false,
+        message: friendly,
+        fieldErrors: { [field]: friendly },
+      };
     }
-    if (err instanceof ApiError) {
-      const field = fieldOf(err);
-      const reason = reasonOf(err);
-      const friendly = reason ? REASON_MESSAGES[reason] : undefined;
-      if ((field === "name" || field === "color") && friendly) {
-        return {
-          ok: false,
-          message: friendly,
-          fieldErrors: { [field]: friendly },
-        };
-      }
-      if (field === "permissions") {
-        const message = "Uno de los permisos enviados no es válido.";
-        return { ok: false, message, fieldErrors: { permissions: message } };
-      }
-      if (err.status === 401) {
-        return { ok: false, message: SESSION_EXPIRED_MESSAGE };
-      }
-      if (err.status === 403) {
-        return {
-          ok: false,
-          message: "Solo el propietario puede editar roles.",
-        };
-      }
-      if (err.status === 404) {
-        return { ok: false, message: "No encontramos ese rol." };
-      }
-      if (friendly) return { ok: false, message: friendly };
+    if (field === "permissions") {
+      const message = invalidPermissionMessage(result.details?.invalid_value);
+      return { ok: false, message, fieldErrors: { permissions: message } };
+    }
+    if (result.status === 401) {
+      return { ok: false, message: SESSION_EXPIRED_MESSAGE };
+    }
+    if (result.status === 403) {
+      return { ok: false, message: OWNER_ONLY_UPDATE_ROLE };
+    }
+    if (result.status === 404) {
+      return { ok: false, message: ROLE_NOT_FOUND };
     }
     return {
       ok: false,
-      message: "No pudimos editar el rol. Intenta de nuevo.",
+      message: messageFor(result, ROLE_REASONS, ROLE_UPDATE_FAILED),
     };
   }
+
+  return { ok: true, role: result.data };
 }
 
-export async function deleteRole(
-  roleId: string,
-): Promise<DeleteRoleActionResult> {
-  try {
-    await apiFetch<void>(`/v1/roles/${roleId}`, { method: "DELETE" });
-    return { ok: true };
-  } catch (err) {
-    if (err instanceof NetworkError) {
-      return { ok: false, message: NETWORK_ERROR_MESSAGE };
+export async function deleteRole(roleId: string): Promise<DeleteRoleResult> {
+  const result = await apiFetch<void>(`/v1/roles/${roleId}`, {
+    method: "DELETE",
+  });
+
+  if (!result.ok) {
+    if (result.status === 409) {
+      return {
+        ok: false,
+        isDefaultRole: true,
+        message: ROLE_IS_DEFAULT,
+      };
     }
-    if (err instanceof ApiError) {
-      if (err.status === 409) {
-        return {
-          ok: false,
-          isDefaultRole: true,
-          message:
-            "Este es el rol por defecto. Primero asigná otro rol como predeterminado.",
-        };
-      }
-      if (err.status === 401) {
-        return { ok: false, message: SESSION_EXPIRED_MESSAGE };
-      }
-      if (err.status === 403) {
-        return {
-          ok: false,
-          message: "Solo el propietario puede eliminar roles.",
-        };
-      }
-      if (err.status === 404) {
-        return { ok: false, message: "No encontramos ese rol." };
-      }
+    if (result.status === 401) {
+      return { ok: false, message: SESSION_EXPIRED_MESSAGE };
+    }
+    if (result.status === 403) {
+      return {
+        ok: false,
+        message: OWNER_ONLY_DELETE_ROLE,
+      };
+    }
+    if (result.status === 404) {
+      return { ok: false, message: ROLE_NOT_FOUND };
     }
     return {
       ok: false,
-      message: "No pudimos eliminar el rol. Intenta de nuevo.",
+      message: messageFor(result, {}, ROLE_DELETE_FAILED),
     };
   }
+
+  return { ok: true };
 }
 
 export async function setDefaultRole(
   serverId: string,
   roleId: string,
-): Promise<SetDefaultRoleActionResult> {
-  try {
-    await apiFetch<void>(`/v1/servers/${serverId}/default-role`, {
-      method: "PUT",
-      body: JSON.stringify({ role_id: roleId }),
-    });
-    return { ok: true };
-  } catch (err) {
-    if (err instanceof NetworkError) {
-      return { ok: false, message: NETWORK_ERROR_MESSAGE };
+): Promise<SetDefaultRoleResult> {
+  const result = await apiFetch<void>(`/v1/servers/${serverId}/default-role`, {
+    method: "PUT",
+    body: JSON.stringify({ role_id: roleId }),
+  });
+
+  if (!result.ok) {
+    if (result.status === 401) {
+      return { ok: false, message: SESSION_EXPIRED_MESSAGE };
     }
-    if (err instanceof ApiError) {
-      if (err.status === 401) {
-        return { ok: false, message: SESSION_EXPIRED_MESSAGE };
-      }
-      if (err.status === 403) {
-        return {
-          ok: false,
-          message: "Solo el propietario puede definir el rol por defecto.",
-        };
-      }
-      if (err.status === 404) {
-        return { ok: false, message: "No encontramos ese rol." };
-      }
+    if (result.status === 403) {
+      return {
+        ok: false,
+        message: OWNER_ONLY_SET_DEFAULT_ROLE,
+      };
+    }
+    if (result.status === 404) {
+      return { ok: false, message: ROLE_NOT_FOUND };
     }
     return {
       ok: false,
-      message: "No pudimos definir el rol por defecto. Intenta de nuevo.",
+      message: messageFor(result, {}, DEFAULT_ROLE_SET_FAILED),
     };
   }
+
+  return { ok: true };
 }
 
 export async function listMemberRoles(
   serverId: string,
   userId: string,
-): Promise<ListMemberRolesActionResult> {
-  try {
-    const roles = await apiFetch<Role[]>(
-      `/v1/servers/${serverId}/members/${userId}/roles`,
-      { method: "GET" },
-    );
-    return { ok: true, roles };
-  } catch (err) {
-    if (err instanceof NetworkError) {
-      return { ok: false, message: NETWORK_ERROR_MESSAGE };
-    }
-    if (err instanceof ApiError && err.status === 401) {
+): Promise<ListMemberRolesResult> {
+  const result = await apiFetch<Role[]>(
+    `/v1/servers/${serverId}/members/${userId}/roles`,
+    { method: "GET" },
+  );
+
+  if (!result.ok) {
+    if (result.status === 401) {
       return { ok: false, message: SESSION_EXPIRED_MESSAGE };
     }
     return {
       ok: false,
-      message: "No pudimos cargar los roles del miembro.",
+      message: messageFor(result, {}, MEMBER_ROLES_LOAD_FAILED),
     };
   }
+
+  return { ok: true, roles: result.data };
 }
 
 export async function assignRole(
   serverId: string,
   userId: string,
   roleId: string,
-): Promise<AssignRoleActionResult> {
-  try {
-    const role = await apiFetch<Role>(
-      `/v1/servers/${serverId}/members/${userId}/roles`,
-      { method: "POST", body: JSON.stringify({ role_id: roleId }) },
-    );
-    return { ok: true, role };
-  } catch (err) {
-    if (err instanceof NetworkError) {
-      return { ok: false, message: NETWORK_ERROR_MESSAGE };
+): Promise<AssignRoleResult> {
+  const result = await apiFetch<Role>(
+    `/v1/servers/${serverId}/members/${userId}/roles`,
+    { method: "POST", body: JSON.stringify({ role_id: roleId }) },
+  );
+
+  if (!result.ok) {
+    if (result.status === 401) {
+      return { ok: false, message: SESSION_EXPIRED_MESSAGE };
     }
-    if (err instanceof ApiError) {
-      if (err.status === 401) {
-        return { ok: false, message: SESSION_EXPIRED_MESSAGE };
-      }
-      if (err.status === 403) {
-        return {
-          ok: false,
-          message: "Solo el propietario puede asignar roles.",
-        };
-      }
-      if (err.status === 404) {
-        return { ok: false, message: "Ese miembro o ese rol ya no existen." };
-      }
+    if (result.status === 403) {
+      return { ok: false, message: OWNER_ONLY_ASSIGN_ROLE };
+    }
+    if (result.status === 404) {
+      return { ok: false, message: MEMBER_OR_ROLE_NOT_FOUND };
     }
     return {
       ok: false,
-      message: "No pudimos asignar el rol. Intenta de nuevo.",
+      message: messageFor(result, {}, MEMBER_ROLE_ASSIGN_FAILED),
     };
   }
+
+  return { ok: true, role: result.data };
 }
 
 export async function removeRole(
   serverId: string,
   userId: string,
   roleId: string,
-): Promise<RemoveRoleActionResult> {
-  try {
-    await apiFetch<void>(
-      `/v1/servers/${serverId}/members/${userId}/roles/${roleId}`,
-      { method: "DELETE" },
-    );
-    return { ok: true };
-  } catch (err) {
-    if (err instanceof NetworkError) {
-      return { ok: false, message: NETWORK_ERROR_MESSAGE };
+): Promise<RemoveRoleResult> {
+  const result = await apiFetch<void>(
+    `/v1/servers/${serverId}/members/${userId}/roles/${roleId}`,
+    { method: "DELETE" },
+  );
+
+  if (!result.ok) {
+    if (result.status === 401) {
+      return { ok: false, message: SESSION_EXPIRED_MESSAGE };
     }
-    if (err instanceof ApiError) {
-      if (err.status === 401) {
-        return { ok: false, message: SESSION_EXPIRED_MESSAGE };
-      }
-      if (err.status === 403) {
-        return {
-          ok: false,
-          message: "Solo el propietario puede quitar roles.",
-        };
-      }
-      if (err.status === 404) {
-        return { ok: false, message: "Ese miembro no tenía este rol." };
-      }
+    if (result.status === 403) {
+      return { ok: false, message: OWNER_ONLY_REMOVE_ROLE };
+    }
+    if (result.status === 404) {
+      return { ok: false, message: MEMBER_ROLE_NOT_ASSIGNED };
     }
     return {
       ok: false,
-      message: "No pudimos quitar el rol. Intenta de nuevo.",
+      message: messageFor(result, {}, MEMBER_ROLE_REMOVE_FAILED),
     };
   }
+
+  return { ok: true };
 }

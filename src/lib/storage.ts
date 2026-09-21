@@ -1,3 +1,9 @@
+import {
+  DEFAULT_THEME,
+  THEME_NAMES,
+  type ThemeName,
+} from "@discordia/client-shared";
+
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
@@ -5,8 +11,6 @@ import { Platform } from "react-native";
 const TOKEN_KEY = "discordia_auth_token";
 const USER_KEY = "discordia_auth_user";
 const THEME_KEY = "discordia_theme_preference";
-
-export type ThemePreference = "dark" | "light";
 
 const secureStorage = {
   getItem(key: string): Promise<string | null> {
@@ -62,13 +66,11 @@ export async function clearSession(): Promise<void> {
   await AsyncStorage.removeItem(USER_KEY);
 }
 
-export async function getThemePreference(): Promise<ThemePreference> {
+export async function getThemePreference(): Promise<ThemeName> {
   const raw = await AsyncStorage.getItem(THEME_KEY);
-  return raw === "light" ? "light" : "dark";
+  return THEME_NAMES.find((name) => name === raw) ?? DEFAULT_THEME;
 }
 
-export async function setThemePreference(
-  preference: ThemePreference,
-): Promise<void> {
+export async function setThemePreference(preference: ThemeName): Promise<void> {
   await AsyncStorage.setItem(THEME_KEY, preference);
 }

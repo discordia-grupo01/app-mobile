@@ -1,3 +1,5 @@
+import { type Channel } from "@discordia/client-shared";
+
 import { Feather } from "@expo/vector-icons";
 import {
   Modal,
@@ -8,8 +10,7 @@ import {
   View,
 } from "react-native";
 
-import type { Channel } from "../../types";
-import { colors } from "../../../../theme/colors";
+import { useThemeColors } from "../../../../theme/theme-context";
 
 interface ChannelOptionsSheetProps {
   visible: boolean;
@@ -27,6 +28,7 @@ export function ChannelOptionsSheet({
   onEdit,
   onDelete,
 }: ChannelOptionsSheetProps) {
+  const colors = useThemeColors();
   return (
     <Modal
       transparent
@@ -34,20 +36,23 @@ export function ChannelOptionsSheet({
       animationType="fade"
       onRequestClose={onClose}
     >
-      <View style={styles.backdrop}>
+      <View className="flex-1 justify-end bg-[rgba(0,0,0,0.6)]">
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
 
-        <View style={styles.sheet}>
-          <View style={styles.handle} />
+        <View className="bg-surface-modal rounded-tl-[22px] rounded-tr-[22px] border-t border-line-strong px-4.5 pt-2.5 pb-7">
+          <View className="self-center w-9 h-1 rounded-xs bg-line-strong mb-4" />
 
           {channel ? (
-            <View style={styles.titleRow}>
+            <View className="flex-row items-center gap-2 mb-2.5 px-2">
               <Feather
                 name={channel.kind === "text" ? "hash" : "volume-2"}
                 size={14}
                 color={colors.textSubtle}
               />
-              <Text style={styles.title} numberOfLines={1}>
+              <Text
+                className="flex-1 text-[14px] font-bold text-content-subtle"
+                numberOfLines={1}
+              >
                 {channel.name}
               </Text>
             </View>
@@ -55,115 +60,41 @@ export function ChannelOptionsSheet({
 
           <TouchableOpacity
             activeOpacity={0.75}
-            style={styles.option}
+            className="flex-row items-center gap-3.5 rounded-[14px] py-3 px-2"
             onPress={onEdit}
           >
-            <View style={styles.optionIcon}>
+            <View className="w-9.5 h-9.5 rounded-[11px] items-center justify-center bg-[rgba(107,149,189,0.15)]">
               <Feather name="edit-2" size={16} color={colors.info} />
             </View>
-            <Text style={styles.optionTitle}>Editar Canal</Text>
+            <Text className="text-[15px] font-bold text-content">
+              Editar Canal
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             activeOpacity={0.75}
-            style={styles.option}
+            className="flex-row items-center gap-3.5 rounded-[14px] py-3 px-2"
             onPress={onDelete}
           >
-            <View style={[styles.optionIcon, styles.optionIconDanger]}>
+            <View className="w-9.5 h-9.5 rounded-[11px] items-center justify-center bg-[rgba(224,82,82,0.12)]">
               <Feather name="trash-2" size={16} color={colors.danger} />
             </View>
-            <Text style={[styles.optionTitle, styles.optionTitleDanger]}>
+            <Text className="text-[15px] font-bold text-danger">
               Eliminar Canal
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             activeOpacity={0.75}
-            style={styles.cancelButton}
+            className="mt-2 items-center py-3.5 rounded-xl bg-surface-input"
             onPress={onClose}
           >
-            <Text style={styles.cancelText}>Cancelar</Text>
+            <Text className="text-[14px] font-bold text-content-muted">
+              Cancelar
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    justifyContent: "flex-end",
-    backgroundColor: "rgba(0,0,0,0.6)",
-  },
-  sheet: {
-    backgroundColor: colors.bgModal,
-    borderTopLeftRadius: 22,
-    borderTopRightRadius: 22,
-    borderTopWidth: 1,
-    borderColor: colors.borderStrong,
-    paddingHorizontal: 18,
-    paddingTop: 10,
-    paddingBottom: 28,
-  },
-  handle: {
-    alignSelf: "center",
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.borderStrong,
-    marginBottom: 16,
-  },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 10,
-    paddingHorizontal: 8,
-  },
-  title: {
-    flex: 1,
-    fontSize: 14,
-    fontWeight: "700",
-    color: colors.textSubtle,
-  },
-  option: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-    borderRadius: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-  },
-  optionIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 11,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(107,149,189,0.15)",
-  },
-  optionIconDanger: {
-    backgroundColor: "rgba(224,82,82,0.12)",
-  },
-  optionTitle: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  optionTitleDanger: {
-    color: colors.danger,
-  },
-  cancelButton: {
-    marginTop: 8,
-    alignItems: "center",
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: colors.bgInput,
-  },
-  cancelText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: colors.textMuted,
-  },
-});

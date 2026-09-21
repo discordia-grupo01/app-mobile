@@ -1,6 +1,6 @@
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 
-import { colors } from "../../../theme/colors";
+import { cn } from "../../../lib/cn";
 
 export type AuthMode = "login" | "register";
 
@@ -12,29 +12,38 @@ interface AuthTabsProps {
 /** Selector "Iniciar Sesion / Crear Cuenta" que se muestra en ambas pantallas de auth. */
 export function AuthTabs({ active, onChange }: AuthTabsProps) {
   return (
-    <View style={styles.container}>
+    <View className="mb-7 flex-row rounded-xl bg-surface-input p-1">
       <TouchableOpacity
-        style={[styles.tab, active === "login" && styles.tabActive]}
+        className={cn(
+          "flex-1 items-center rounded-[9px] py-2.5",
+          active === "login" && "bg-accent",
+        )}
         onPress={() => onChange("login")}
         activeOpacity={0.8}
       >
         <Text
-          style={[styles.tabText, active === "login" && styles.tabTextActive]}
+          className={cn(
+            "text-[13px] font-semibold",
+            active === "login" ? "text-on-accent" : "text-content-subtle",
+          )}
         >
           Iniciar Sesión
         </Text>
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={[styles.tab, active === "register" && styles.tabActive]}
+        className={cn(
+          "flex-1 items-center rounded-[9px] py-2.5",
+          active === "register" && "bg-accent",
+        )}
         onPress={() => onChange("register")}
         activeOpacity={0.8}
       >
         <Text
-          style={[
-            styles.tabText,
-            active === "register" && styles.tabTextActive,
-          ]}
+          className={cn(
+            "text-[13px] font-semibold",
+            active === "register" ? "text-on-accent" : "text-content-subtle",
+          )}
         >
           Crear Cuenta
         </Text>
@@ -42,30 +51,3 @@ export function AuthTabs({ active, onChange }: AuthTabsProps) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: "row",
-    backgroundColor: colors.bgInput,
-    borderRadius: 12,
-    padding: 4,
-    marginBottom: 28,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 9,
-    alignItems: "center",
-  },
-  tabActive: {
-    backgroundColor: colors.accent,
-  },
-  tabText: {
-    color: colors.textSubtle,
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  tabTextActive: {
-    color: "#ffffff",
-  },
-});

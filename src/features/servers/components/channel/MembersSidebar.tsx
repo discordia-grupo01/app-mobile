@@ -1,3 +1,5 @@
+import { MEMBER_PAGE_LIMIT } from "@discordia/client-shared";
+
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -14,7 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { getPublicUser } from "../../../auth/service";
 import { resolveImageUri } from "../../../../lib/image-url";
-import { colors } from "../../../../theme/colors";
+import { useThemeColors } from "../../../../theme/theme-context";
 import { OwnProfileModal } from "../../../profile/components/OwnProfileModal";
 import { PublicProfileModal } from "../../../profile/components/PublicProfileModal";
 import { listMembers } from "../../api";
@@ -46,6 +48,7 @@ export function MembersSidebar({
   isOwner = false,
   onClose,
 }: MembersSidebarProps) {
+  const colors = useThemeColors();
   const [members, setMembers] = useState<ResolvedMember[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -66,7 +69,7 @@ export function MembersSidebar({
   const fetchMembers = useCallback(() => {
     let cancelled = false;
 
-    listMembers(serverId, { limit: 100 }).then((result) => {
+    listMembers(serverId, { limit: MEMBER_PAGE_LIMIT }).then((result) => {
       if (cancelled) return;
       setIsLoading(false);
       if (!result.ok) {
@@ -145,13 +148,13 @@ export function MembersSidebar({
     return (
       <TouchableOpacity
         key={member.userId}
-        style={styles.memberRow}
+        className="flex-row items-center gap-2.5"
         activeOpacity={0.7}
         onPress={() => handleSelectMember(member)}
         accessibilityRole="button"
         accessibilityLabel={`Ver perfil de ${member.name ?? "usuario"}`}
       >
-        <View style={styles.memberAvatarWrap}>
+        <View className="relative">
           <ServerAvatar
             name={member.name ?? "?"}
             uri={avatarSrc}
@@ -160,15 +163,26 @@ export function MembersSidebar({
           />
           {/* Estado de actividad mock ("en línea"): todavía no hay presencia
               real en identify-service */}
-          <View style={styles.presenceDot} />
+          <View className="absolute -right-[1px] -bottom-[1px] w-3 h-3 rounded-md bg-success border-2 border-surface-sunken" />
         </View>
-        <View style={styles.memberInfo}>
-          <Text style={styles.memberName} numberOfLines={1}>
+        <View className="flex-1">
+          <Text
+            className="text-[14px] font-semibold text-content"
+            numberOfLines={1}
+          >
             {member.name ?? "Cargando..."}
-            {isSelf ? <Text style={styles.selfTag}> (vos)</Text> : null}
+            {isSelf ? (
+              <Text className="text-[13px] font-normal text-content-subtle">
+                {" "}
+                (vos)
+              </Text>
+            ) : null}
           </Text>
           {member.statusText ? (
-            <Text style={styles.memberStatus} numberOfLines={1}>
+            <Text
+              className="text-[12px] text-content-subtle mt-[1px]"
+              numberOfLines={1}
+            >
               {member.statusEmoji ? `${member.statusEmoji} ` : ""}
               {member.statusText}
             </Text>
@@ -188,16 +202,25 @@ export function MembersSidebar({
   return (
     <>
       {visible ? (
-        <View style={styles.overlayContainer} pointerEvents="box-none">
-          <View style={styles.backdrop}>
+        <View
+          className="absolute top-0 right-0 bottom-0 left-0 z-50"
+          style={styles.overlayContainer}
+          pointerEvents="box-none"
+        >
+          <View className="flex-1 flex-row bg-[rgba(0,0,0,0.5)]">
             <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
 
-            <View style={[styles.panel, { paddingTop: insets.top + 14 }]}>
-              <View style={styles.header}>
-                <Text style={styles.headerTitle}>Miembros</Text>
+            <View
+              className="ml-auto w-[72%] max-w-70 bg-surface-sunken border-l border-l-line"
+              style={{ paddingTop: insets.top + 14 }}
+            >
+              <View className="flex-row items-center justify-between px-4 pb-3">
+                <Text className="text-[15px] font-bold text-content">
+                  Miembros
+                </Text>
                 <TouchableOpacity
                   onPress={onClose}
-                  style={styles.closeButton}
+                  className="w-7 h-7 items-center justify-center"
                   accessibilityRole="button"
                   accessibilityLabel="Cerrar lista de miembros"
                 >
@@ -206,22 +229,24 @@ export function MembersSidebar({
               </View>
 
               <ScrollView
-                contentContainerStyle={styles.scrollContent}
+                contentContainerClassName="px-4 pb-6 gap-5"
                 showsVerticalScrollIndicator={false}
               >
                 {isLoading && members.length === 0 ? (
                   <ActivityIndicator
                     size="small"
                     color={colors.accentBright}
-                    style={styles.loadingIndicator}
+                    className="mt-6"
                   />
                 ) : errorMessage ? (
-                  <Text style={styles.errorText}>{errorMessage}</Text>
+                  <Text className="text-danger text-[13px] mt-6 text-center">
+                    {errorMessage}
+                  </Text>
                 ) : (
                   <>
                     {owners.length > 0 ? (
-                      <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>
+                      <View className="gap-2.5">
+                        <Text className="text-[11px] font-bold tracking-[1px] text-content-subtle mb-0.5">
                           PROPIETARIO — {owners.length}
                         </Text>
                         {owners.map(renderMemberRow)}
@@ -229,8 +254,8 @@ export function MembersSidebar({
                     ) : null}
 
                     {others.length > 0 ? (
-                      <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>
+                      <View className="gap-2.5">
+                        <Text className="text-[11px] font-bold tracking-[1px] text-content-subtle mb-0.5">
                           MIEMBRO — {others.length}
                         </Text>
                         {others.map(renderMemberRow)}
@@ -238,7 +263,7 @@ export function MembersSidebar({
                     ) : null}
 
                     {owners.length === 0 && others.length === 0 ? (
-                      <Text style={styles.emptyText}>
+                      <Text className="text-content-subtle text-[13px] mt-6 text-center">
                         Todavía no hay miembros para mostrar.
                       </Text>
                     ) : null}
@@ -270,110 +295,6 @@ export function MembersSidebar({
 
 const styles = StyleSheet.create({
   overlayContainer: {
-    position: "absolute",
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-    zIndex: 50,
     elevation: 50,
-  },
-  backdrop: {
-    flex: 1,
-    flexDirection: "row",
-    backgroundColor: "rgba(0,0,0,0.5)",
-  },
-  panel: {
-    marginLeft: "auto",
-    width: "72%",
-    maxWidth: 280,
-    backgroundColor: colors.bgChannels,
-    borderLeftWidth: 1,
-    borderLeftColor: colors.border,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-  },
-  headerTitle: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  closeButton: {
-    width: 28,
-    height: 28,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 24,
-    gap: 20,
-  },
-  loadingIndicator: {
-    marginTop: 24,
-  },
-  errorText: {
-    color: colors.danger,
-    fontSize: 13,
-    marginTop: 24,
-    textAlign: "center",
-  },
-  emptyText: {
-    color: colors.textSubtle,
-    fontSize: 13,
-    marginTop: 24,
-    textAlign: "center",
-  },
-  section: {
-    gap: 10,
-  },
-  sectionTitle: {
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 1,
-    color: colors.textSubtle,
-    marginBottom: 2,
-  },
-  memberRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  memberAvatarWrap: {
-    position: "relative",
-  },
-  presenceDot: {
-    position: "absolute",
-    right: -1,
-    bottom: -1,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: colors.success,
-    borderWidth: 2,
-    borderColor: colors.bgChannels,
-  },
-  memberInfo: {
-    flex: 1,
-  },
-  memberName: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: colors.text,
-  },
-  selfTag: {
-    fontSize: 13,
-    fontWeight: "400",
-    color: colors.textSubtle,
-  },
-  memberStatus: {
-    fontSize: 12,
-    color: colors.textSubtle,
-    marginTop: 1,
   },
 });

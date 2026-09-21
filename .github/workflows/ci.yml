@@ -15,6 +15,12 @@ jobs:
           node-version: "20"
           cache: "npm"
 
+      # @discordia/client-shared vive en un repo privado y se instala por
+      # git+ssh. El runner arranca sin llaves SSH, asi que reescribimos esa
+      # URL a HTTPS con un token de solo lectura sobre ese unico repo.
+      - name: Acceso al repo client-shared (privado)
+        run: git config --global url."https://x-access-token:${{ secrets.SHARED_REPO_TOKEN }}@github.com/".insteadOf "ssh://git@github.com/"
+
       - run: npm ci
       - run: npm run format:check
       - run: npm run lint

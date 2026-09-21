@@ -1,3 +1,14 @@
+import {
+  type ActivityStatus,
+  CANCEL_NAME_EDIT_LABEL,
+  CHANGE_AVATAR_LABEL,
+  DESCRIPTION_PLACEHOLDER,
+  MAX_DESCRIPTION,
+  MAX_NAME,
+  NO_DESCRIPTION_YET,
+  validateAvatar,
+} from "@discordia/client-shared";
+
 import { Feather } from "@expo/vector-icons";
 import * as ImageManipulator from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
@@ -18,7 +29,8 @@ import {
 } from "react-native";
 
 import { Button } from "../../../components/ui/Button";
-import { colors } from "../../../theme/colors";
+import { cn } from "../../../lib/cn";
+import { useThemeColors } from "../../../theme/theme-context";
 import { resolveImageUri } from "../../../lib/image-url";
 import { useAuth } from "../../auth/auth-context";
 import { ServerAvatar } from "../../servers/components/ServerAvatar";
@@ -26,7 +38,6 @@ import { MemberRoleBadges } from "../../roles/components/MemberRoleBadges";
 import {
   ACTIVITY_STATUS_COLOR,
   ActivityStatusPicker,
-  type ActivityStatusMode,
 } from "./ActivityStatusPicker";
 import { CustomStatusEditor } from "./CustomStatusEditor";
 import { MemberSince } from "./MemberSince";
@@ -34,10 +45,6 @@ import { ProfileBanner } from "./ProfileBanner";
 import { clearStatus, updateOwnProfile, updateStatus } from "../service";
 import type { PickedProfileImage } from "../types";
 
-const MAX_NAME = 100;
-const MAX_DESCRIPTION = 500;
-const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/gif"];
-const MAX_FILE_MB = 5;
 const MAX_AVATAR_DIMENSION = 1024;
 
 type EditingField = "name" | "description" | null;
@@ -53,6 +60,7 @@ export function OwnProfileModal({
   serverId,
   onClose,
 }: OwnProfileModalProps) {
+  const colors = useThemeColors();
   const { user, updateUser } = useAuth();
 
   const [wasVisible, setWasVisible] = useState(visible);
@@ -69,7 +77,8 @@ export function OwnProfileModal({
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
 
-  const [activityMode, setActivityMode] = useState<ActivityStatusMode>("auto");
+  const [activityStatus, setActivityStatus] =
+    useState<ActivityStatus>("online");
 
   if (visible !== wasVisible) {
     setWasVisible(visible);
@@ -83,7 +92,7 @@ export function OwnProfileModal({
       setIsSubmitting(false);
       setIsUploadingAvatar(false);
       setImagePreview(null);
-      setActivityMode("auto");
+      setActivityStatus("online");
     }
   }
 
@@ -198,12 +207,12 @@ export function OwnProfileModal({
 
     const asset = result.assets[0];
     const type = asset.mimeType ?? "image/jpeg";
-    if (!ALLOWED_TYPES.includes(type)) {
-      setImageError("La imagen debe ser JPEG, PNG o GIF.");
-      return;
-    }
-    if (asset.fileSize && asset.fileSize > MAX_FILE_MB * 1024 * 1024) {
-      setImageError(`El archivo no puede pesar más de ${MAX_FILE_MB} MB.`);
+    const avatarError = validateAvatar({
+      mimeType: type,
+      sizeBytes: asset.fileSize ?? 0,
+    });
+    if (avatarError) {
+      setImageError(avatarError);
       return;
     }
 
@@ -263,30 +272,32 @@ export function OwnProfileModal({
       onRequestClose={onClose}
     >
       <KeyboardAvoidingView
-        style={styles.backdrop}
+        className="flex-1 bg-[rgba(0,0,0,0.65)] items-center justify-center p-4"
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
 
-        <View style={styles.card}>
+        <View className="w-full max-w-100 max-h-[90%] rounded-[20px] border border-line-strong bg-surface-modal overflow-hidden">
           <ProfileBanner onClose={onClose} />
 
           <ScrollView
             ref={scrollViewRef}
-            contentContainerStyle={styles.scrollContent}
+            contentContainerClassName="px-5.5 pt-17 pb-6.5"
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
             {globalError ? (
-              <View style={styles.errorBanner}>
+              <View className="flex-row items-start gap-2.5 rounded-xl border border-[rgba(224,82,82,0.3)] bg-[rgba(224,82,82,0.1)] px-3.5 py-3 mb-4">
                 <Feather name="alert-circle" size={16} color={colors.danger} />
-                <Text style={styles.errorBannerText}>{globalError}</Text>
+                <Text className="flex-1 text-danger text-[13px]">
+                  {globalError}
+                </Text>
               </View>
             ) : null}
 
-            <View style={styles.section}>
+            <View className="mb-4">
               {editingField === "name" ? (
-                <View style={styles.inlineEditRow}>
+                <View className="flex-row items-center gap-2">
                   <TextInput
                     value={nameDraft}
                     onChangeText={(text) => {
@@ -296,34 +307,43 @@ export function OwnProfileModal({
                     onSubmitEditing={saveName}
                     maxLength={MAX_NAME}
                     autoFocus
-                    style={styles.nameInput}
+                    className="flex-1 rounded-[10px] border border-accent bg-surface-input px-3 py-2 text-[16px] font-bold text-content"
                   />
                   <TouchableOpacity
                     onPress={saveName}
                     disabled={isSubmitting}
                     accessibilityLabel="Guardar nombre"
-                    style={[styles.inlineIconButton, styles.inlineIconSuccess]}
+                    className={cn(
+                      "w-7.5 h-7.5 rounded-[15px] items-center justify-center",
+                      "bg-[rgba(56,161,105,0.15)]",
+                    )}
                   >
                     <Feather name="check" size={14} color={colors.success} />
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={cancelEditing}
                     disabled={isSubmitting}
-                    accessibilityLabel="Cancelar edición del nombre"
-                    style={[styles.inlineIconButton, styles.inlineIconDanger]}
+                    accessibilityLabel={CANCEL_NAME_EDIT_LABEL}
+                    className={cn(
+                      "w-7.5 h-7.5 rounded-[15px] items-center justify-center",
+                      "bg-[rgba(224,82,82,0.15)]",
+                    )}
                   >
                     <Feather name="x" size={14} color={colors.danger} />
                   </TouchableOpacity>
                 </View>
               ) : (
-                <View style={styles.nameRow}>
-                  <Text style={styles.name} numberOfLines={1}>
+                <View className="flex-row items-center gap-1.5">
+                  <Text
+                    className="text-[18px] font-bold text-content shrink"
+                    numberOfLines={1}
+                  >
                     {user.name}
                   </Text>
                   <TouchableOpacity
                     onPress={startEditingName}
                     accessibilityLabel="Editar nombre"
-                    style={styles.pencilButton}
+                    className="w-6 h-6 items-center justify-center"
                   >
                     <Feather
                       name="edit-2"
@@ -334,19 +354,23 @@ export function OwnProfileModal({
                 </View>
               )}
               {editingField === "name" && nameError ? (
-                <Text style={styles.fieldErrorText}>{nameError}</Text>
+                <Text className="text-danger text-[12px] mt-1">
+                  {nameError}
+                </Text>
               ) : null}
-              <Text style={styles.email}>{user.email}</Text>
+              <Text className="text-[12px] text-content-subtle mt-1">
+                {user.email}
+              </Text>
             </View>
 
-            <View style={styles.section}>
+            <View className="mb-4">
               <ActivityStatusPicker
-                mode={activityMode}
-                onChange={setActivityMode}
+                status={activityStatus}
+                onChange={setActivityStatus}
               />
             </View>
 
-            <View style={styles.section}>
+            <View className="mb-4">
               <CustomStatusEditor
                 statusText={user.status_text}
                 onSave={saveCustomStatus}
@@ -354,31 +378,35 @@ export function OwnProfileModal({
               />
             </View>
 
-            <View style={styles.divider} />
+            <View className="h-px bg-line mb-4" />
 
-            <View style={styles.section}>
-              <View style={styles.headerRow}>
-                <Text style={styles.label}>SOBRE MÍ</Text>
+            <View className="mb-4">
+              <View className="flex-row items-center justify-between mb-1.5">
+                <Text className="text-[11px] font-bold tracking-[1.2px] text-content-subtle">
+                  SOBRE MÍ
+                </Text>
                 {editingField !== "description" ? (
                   <TouchableOpacity
                     onPress={startEditingDescription}
                     accessibilityLabel="Editar descripción"
-                    style={styles.editDescriptionButton}
+                    className="flex-row items-center gap-1 rounded-md border border-line bg-surface-input px-[7px] py-[3px]"
                   >
                     <Feather
                       name="edit-2"
                       size={10}
                       color={colors.textSubtle}
                     />
-                    <Text style={styles.editDescriptionButtonText}>Editar</Text>
+                    <Text className="text-[10px] text-content-subtle">
+                      Editar
+                    </Text>
                   </TouchableOpacity>
                 ) : null}
               </View>
 
               {editingField === "description" ? (
-                <View style={styles.editWrap}>
-                  <View style={styles.counterRow}>
-                    <Text style={styles.counter}>
+                <View className="gap-2">
+                  <View className="items-end">
+                    <Text className="text-[11px] text-content-subtle">
                       {descriptionDraft.length}/{MAX_DESCRIPTION}
                     </Text>
                   </View>
@@ -390,41 +418,42 @@ export function OwnProfileModal({
                     multiline
                     numberOfLines={3}
                     autoFocus
-                    placeholder="Contá algo sobre vos..."
+                    placeholder={DESCRIPTION_PLACEHOLDER}
                     placeholderTextColor={colors.textSubtle}
+                    className="rounded-xl border border-accent bg-surface-input px-3.5 py-2.5 h-22.5 text-content text-[13px]"
                     style={styles.textarea}
                   />
-                  <View style={styles.editActions}>
+                  <View className="flex-row gap-3">
                     <Button
                       title="Cancelar"
                       variant="secondary"
                       onPress={cancelEditing}
                       disabled={isSubmitting}
                       fullWidth={false}
-                      style={styles.actionButton}
+                      className="flex-1 min-h-9 py-2 px-3.5"
                     />
                     <Button
                       title="Guardar"
                       onPress={saveDescription}
                       isLoading={isSubmitting}
                       fullWidth={false}
-                      style={styles.actionButton}
+                      className="flex-1 min-h-9 py-2 px-3.5"
                     />
                   </View>
                 </View>
               ) : (
-                <Text style={styles.description}>
-                  {user.description || "Todavía no agregaste una descripción."}
+                <Text className="text-[13px] leading-[19px] text-content-muted">
+                  {user.description || NO_DESCRIPTION_YET}
                 </Text>
               )}
             </View>
 
-            <View style={styles.section}>
+            <View className="mb-4">
               <MemberSince isoDate={user.created_at} />
             </View>
 
             {serverId ? (
-              <View style={styles.section}>
+              <View className="mb-4">
                 <MemberRoleBadges
                   serverId={serverId}
                   userId={user.id}
@@ -434,15 +463,15 @@ export function OwnProfileModal({
             ) : null}
           </ScrollView>
 
-          <View style={styles.avatarWrap}>
+          <View className="absolute top-18 left-5.5 z-10">
             <TouchableOpacity
               activeOpacity={0.85}
               onPress={pickAvatar}
-              style={styles.avatarBox}
-              accessibilityLabel="Cambiar foto de perfil"
+              className="w-20 h-20"
+              accessibilityLabel={CHANGE_AVATAR_LABEL}
             >
-              <View style={styles.avatarRingBg} />
-              <View style={styles.avatarInner}>
+              <View className="absolute top-0 left-0 w-20 h-20 rounded-[40px] bg-surface-modal" />
+              <View className="absolute top-1 left-1 w-18 h-18">
                 <ServerAvatar
                   name={user.name}
                   uri={avatarSrc}
@@ -450,20 +479,25 @@ export function OwnProfileModal({
                   borderRadius={36}
                 />
                 {isUploadingAvatar ? (
-                  <View style={styles.avatarUploadOverlay}>
+                  <View
+                    className="rounded-[36px] items-center justify-center bg-[rgba(0,0,0,0.45)]"
+                    style={styles.avatarUploadOverlay}
+                  >
                     <ActivityIndicator size="small" color="#ffffff" />
                   </View>
                 ) : null}
               </View>
               <View
-                style={[
-                  styles.avatarBadge,
-                  { backgroundColor: ACTIVITY_STATUS_COLOR[activityMode] },
-                ]}
+                className="absolute right-0 bottom-0 w-4.5 h-4.5 rounded-[9px] border-[3px] border-surface-modal"
+                style={{
+                  backgroundColor: ACTIVITY_STATUS_COLOR[activityStatus],
+                }}
               />
             </TouchableOpacity>
             {imageError ? (
-              <Text style={styles.imageErrorText}>{imageError}</Text>
+              <Text className="text-danger text-[12px] mt-1.5">
+                {imageError}
+              </Text>
             ) : null}
           </View>
         </View>
@@ -473,220 +507,10 @@ export function OwnProfileModal({
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.65)",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 16,
-  },
-  card: {
-    width: "100%",
-    maxWidth: 400,
-    maxHeight: "90%",
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-    backgroundColor: colors.bgModal,
-    overflow: "hidden",
-  },
-  scrollContent: {
-    paddingHorizontal: 22,
-    paddingTop: 68,
-    paddingBottom: 26,
-  },
-  avatarWrap: {
-    position: "absolute",
-    top: 72,
-    left: 22,
-    zIndex: 10,
-  },
-  avatarBox: {
-    width: 80,
-    height: 80,
-  },
-  avatarRingBg: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: colors.bgModal,
-  },
-  avatarInner: {
-    position: "absolute",
-    top: 4,
-    left: 4,
-    width: 72,
-    height: 72,
-  },
-  avatarBadge: {
-    position: "absolute",
-    right: 0,
-    bottom: 0,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    borderWidth: 3,
-    borderColor: colors.bgModal,
-  },
   avatarUploadOverlay: {
     ...StyleSheet.absoluteFill,
-    borderRadius: 36,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(0,0,0,0.45)",
-  },
-  imageErrorText: {
-    color: colors.danger,
-    fontSize: 12,
-    marginTop: 6,
-  },
-  errorBanner: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "rgba(224,82,82,0.3)",
-    backgroundColor: "rgba(224,82,82,0.1)",
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 16,
-  },
-  errorBannerText: {
-    flex: 1,
-    color: colors.danger,
-    fontSize: 13,
-  },
-  section: {
-    marginBottom: 16,
-  },
-  nameRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  name: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: colors.text,
-    flexShrink: 1,
-  },
-  pencilButton: {
-    width: 24,
-    height: 24,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  editDescriptionButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.bgInput,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-  },
-  editDescriptionButtonText: {
-    fontSize: 10,
-    color: colors.textSubtle,
-  },
-  inlineEditRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  nameInput: {
-    flex: 1,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.accent,
-    backgroundColor: colors.bgInput,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    fontSize: 16,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  inlineIconButton: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  inlineIconSuccess: {
-    backgroundColor: "rgba(56,161,105,0.15)",
-  },
-  inlineIconDanger: {
-    backgroundColor: "rgba(224,82,82,0.15)",
-  },
-  fieldErrorText: {
-    color: colors.danger,
-    fontSize: 12,
-    marginTop: 4,
-  },
-  email: {
-    fontSize: 12,
-    color: colors.textSubtle,
-    marginTop: 4,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.border,
-    marginBottom: 16,
-  },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 6,
-  },
-  label: {
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 1.2,
-    color: colors.textSubtle,
-  },
-  description: {
-    fontSize: 13,
-    lineHeight: 19,
-    color: colors.textMuted,
-  },
-  editWrap: {
-    gap: 8,
-  },
-  counterRow: {
-    alignItems: "flex-end",
-  },
-  counter: {
-    fontSize: 11,
-    color: colors.textSubtle,
   },
   textarea: {
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.accent,
-    backgroundColor: colors.bgInput,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    height: 90,
-    color: colors.text,
-    fontSize: 13,
     textAlignVertical: "top",
-  },
-  editActions: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  actionButton: {
-    flex: 1,
-    minHeight: 36,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
   },
 });

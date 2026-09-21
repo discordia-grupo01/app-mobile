@@ -1,17 +1,16 @@
+import {
+  CLEAR_CUSTOM_STATUS_LABEL,
+  CUSTOM_STATUS_PLACEHOLDER,
+  MAX_CUSTOM_STATUS,
+} from "@discordia/client-shared";
+
 import { Feather } from "@expo/vector-icons";
 import { useEffect, useRef, useState } from "react";
-import {
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Text, TextInput, TouchableOpacity, View } from "react-native";
 
 import { Button } from "../../../components/ui/Button";
-import { colors } from "../../../theme/colors";
-
-const MAX_CUSTOM_STATUS = 64;
+import { cn } from "../../../lib/cn";
+import { useThemeColors } from "../../../theme/theme-context";
 
 interface CustomStatusEditorProps {
   statusText: string;
@@ -24,6 +23,7 @@ export function CustomStatusEditor({
   onSave,
   onClear,
 }: CustomStatusEditorProps) {
+  const colors = useThemeColors();
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(statusText);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -59,26 +59,28 @@ export function CustomStatusEditor({
 
   return (
     <View>
-      <View style={styles.headerRow}>
-        <Text style={styles.label}>ESTADO PERSONALIZADO</Text>
+      <View className="flex-row items-center justify-between mb-1.5">
+        <Text className="text-[11px] font-bold tracking-[1.2px] text-content-subtle">
+          ESTADO PERSONALIZADO
+        </Text>
         {!isEditing && statusText ? (
           <TouchableOpacity
             onPress={handleClear}
             disabled={isSubmitting}
             accessibilityRole="button"
-            accessibilityLabel="Quitar estado personalizado"
-            style={styles.clearButton}
+            accessibilityLabel={CLEAR_CUSTOM_STATUS_LABEL}
+            className="flex-row items-center gap-1"
           >
             <Feather name="x" size={10} color={colors.textSubtle} />
-            <Text style={styles.clearText}>Quitar</Text>
+            <Text className="text-[10px] text-content-subtle">Quitar</Text>
           </TouchableOpacity>
         ) : null}
       </View>
 
       {isEditing ? (
-        <View style={styles.editWrap}>
-          <View style={styles.counterRow}>
-            <Text style={styles.counter}>
+        <View className="gap-2">
+          <View className="items-end">
+            <Text className="text-[11px] text-content-subtle">
               {draft.length}/{MAX_CUSTOM_STATUS}
             </Text>
           </View>
@@ -87,37 +89,40 @@ export function CustomStatusEditor({
             value={draft}
             onChangeText={(text) => setDraft(text.slice(0, MAX_CUSTOM_STATUS))}
             onSubmitEditing={handleSave}
-            placeholder="¿Qué estás haciendo?"
+            placeholder={CUSTOM_STATUS_PLACEHOLDER}
             placeholderTextColor={colors.textSubtle}
             editable={!isSubmitting}
-            style={styles.input}
+            className="rounded-xl border border-accent bg-surface-input px-3.5 min-h-11 text-content text-[13px]"
           />
-          <View style={styles.editActions}>
+          <View className="flex-row gap-3">
             <Button
               title="Cancelar"
               variant="secondary"
               onPress={() => setIsEditing(false)}
               disabled={isSubmitting}
               fullWidth={false}
-              style={styles.actionButton}
+              className="flex-1 min-h-9 py-2 px-3.5"
             />
             <Button
               title="Guardar"
               onPress={handleSave}
               isLoading={isSubmitting}
               fullWidth={false}
-              style={styles.actionButton}
+              className="flex-1 min-h-9 py-2 px-3.5"
             />
           </View>
         </View>
       ) : (
         <TouchableOpacity
           onPress={startEditing}
-          style={styles.trigger}
+          className="flex-row items-center gap-2 rounded-xl border border-line bg-surface-input px-3.5 min-h-11"
           activeOpacity={0.8}
         >
           <Text
-            style={statusText ? styles.triggerText : styles.triggerPlaceholder}
+            className={cn(
+              "flex-1 text-[13px]",
+              statusText ? "text-content-muted" : "text-content-subtle",
+            )}
             numberOfLines={1}
           >
             {statusText || "Añadir un estado personalizado..."}
@@ -128,78 +133,3 @@ export function CustomStatusEditor({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 6,
-  },
-  label: {
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 1.2,
-    color: colors.textSubtle,
-  },
-  clearButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  clearText: {
-    fontSize: 10,
-    color: colors.textSubtle,
-  },
-  trigger: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.bgInput,
-    paddingHorizontal: 14,
-    minHeight: 44,
-  },
-  triggerText: {
-    flex: 1,
-    fontSize: 13,
-    color: colors.textMuted,
-  },
-  triggerPlaceholder: {
-    flex: 1,
-    fontSize: 13,
-    color: colors.textSubtle,
-  },
-  editWrap: {
-    gap: 8,
-  },
-  input: {
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.accent,
-    backgroundColor: colors.bgInput,
-    paddingHorizontal: 14,
-    minHeight: 44,
-    color: colors.text,
-    fontSize: 13,
-  },
-  counterRow: {
-    alignItems: "flex-end",
-  },
-  counter: {
-    fontSize: 11,
-    color: colors.textSubtle,
-  },
-  editActions: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  actionButton: {
-    flex: 1,
-    minHeight: 36,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-  },
-});

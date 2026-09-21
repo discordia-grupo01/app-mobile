@@ -1,10 +1,10 @@
+import { type ServerSummary } from "@discordia/client-shared";
+
 import { useEffect, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
 import { listMyServers, serverIconUrl } from "../../servers/api";
 import { ServerAvatar } from "../../servers/components/ServerAvatar";
-import type { ServerSummary } from "../../servers/types";
-import { colors } from "../../../theme/colors";
 
 interface MutualServersListProps {
   serverIds: string[];
@@ -33,13 +33,20 @@ export function MutualServersList({
 
   return (
     <View>
-      <Text style={styles.label}>SERVIDORES EN COMÚN</Text>
+      <Text className="text-[11px] font-bold tracking-[1.2px] text-content-subtle mb-1.5">
+        SERVIDORES EN COMÚN
+      </Text>
       {serverIds.length === 0 ? (
-        <Text style={styles.empty}>Sin servidores en común.</Text>
+        <Text className="text-[13px] text-content-subtle">
+          Sin servidores en común.
+        </Text>
       ) : (
-        <View style={styles.list}>
+        <View className="gap-1.5">
           {mutualServers.map((server) => (
-            <View key={server.id} style={styles.row}>
+            <View
+              key={server.id}
+              className="flex-row items-center gap-2.5 py-0.5"
+            >
               <ServerAvatar
                 name={server.name}
                 uri={serverIconUrl(server.id)}
@@ -47,7 +54,10 @@ export function MutualServersList({
                 size={32}
                 borderRadius={12}
               />
-              <Text style={styles.serverName} numberOfLines={1}>
+              <Text
+                className="flex-1 text-[13px] font-semibold text-content-muted"
+                numberOfLines={1}
+              >
                 {server.name}
               </Text>
             </View>
@@ -57,32 +67,3 @@ export function MutualServersList({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  label: {
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 1.2,
-    color: colors.textSubtle,
-    marginBottom: 6,
-  },
-  empty: {
-    fontSize: 13,
-    color: colors.textSubtle,
-  },
-  list: {
-    gap: 6,
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    paddingVertical: 2,
-  },
-  serverName: {
-    flex: 1,
-    fontSize: 13,
-    fontWeight: "600",
-    color: colors.textMuted,
-  },
-});

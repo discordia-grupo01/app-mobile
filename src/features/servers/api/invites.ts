@@ -1,97 +1,93 @@
-import { ApiError, NetworkError, apiFetch } from "../../../lib/api-client";
-import type {
-  GenerateInviteActionResult,
-  Invitation,
-  ListInvitationsActionResult,
-  RevokeInviteActionResult,
-} from "../types";
 import {
-  NETWORK_ERROR_MESSAGE,
-  SESSION_EXPIRED_MESSAGE,
+  buildInviteLink,
+  type CreateInviteResult,
+  type Invitation,
+  INVITE_CREATE_FAILED,
+  INVITE_NOT_FOUND,
+  INVITE_REASONS,
+  INVITE_REVOKE_FAILED,
+  INVITES_LOAD_FAILED,
+  type ListInvitationsResult,
+  messageFor,
+  NOT_A_MEMBER,
   reasonOf,
-} from "./shared";
+  type RevokeInviteResult,
+  SERVER_NOT_FOUND,
+  SESSION_EXPIRED_MESSAGE,
+} from "@discordia/client-shared";
 
-export function normalizeInviteCode(raw: string): string {
-  const match = raw.trim().match(/([A-Za-z0-9_-]{4,20})$/);
-  return match ? match[1] : raw.trim();
-}
+import { apiFetch } from "../../../lib/api-client";
+import { env } from "../../../lib/env";
 
+/**
+ * El link que se copia al portapapeles.
+ *
+ * `env.webUrl` es null mientras no este configurado `EXPO_PUBLIC_WEB_URL`, y
+ * en ese caso `buildInviteLink` devuelve una ruta relativa (`/invite/abc`),
+ * que pegada en WhatsApp no lleva a ningun lado. Es el estado actual, no algo
+ * que este refactor haya introducido: se ve aca porque el parametro es
+ * obligatorio justamente para que no pase desapercibido.
+ */
 export function inviteLinkText(code: string): string {
-  return `/invite/${code}`;
+  return buildInviteLink(code, env.webUrl);
 }
-
-const GENERATE_INVITE_REASON_MESSAGES: Record<string, string> = {
-  max_uses_invalid: "Ingresá un número entero mayor a 0.",
-  invite_permission_denied: "No sos miembro de este servidor.",
-};
 
 export async function generateInvite(
   serverId: string,
   maxUses: number | null,
-): Promise<GenerateInviteActionResult> {
-  try {
-    const invitation = await apiFetch<Invitation>(
-      `/v1/servers/${serverId}/invites`,
-      {
-        method: "POST",
-        body: JSON.stringify(maxUses != null ? { max_uses: maxUses } : {}),
-      },
-    );
-    return { ok: true, invitation };
-  } catch (err) {
-    if (err instanceof NetworkError) {
-      return { ok: false, message: NETWORK_ERROR_MESSAGE };
+): Promise<CreateInviteResult> {
+  const result = await apiFetch<Invitation>(`/v1/servers/${serverId}/invites`, {
+    method: "POST",
+    body: JSON.stringify(maxUses != null ? { max_uses: maxUses } : {}),
+  });
+
+  if (!result.ok) {
+    const reason = reasonOf(result.details);
+
+    // Este ademas marca el campo del formulario.
+    if (reason === "max_uses_invalid") {
+      const message = INVITE_REASONS[reason];
+      return { ok: false, message, fieldErrors: { max_uses: message } };
     }
-    if (err instanceof ApiError) {
-      const reason = reasonOf(err);
-      if (reason === "max_uses_invalid") {
-        const message = GENERATE_INVITE_REASON_MESSAGES[reason];
-        return { ok: false, message, fieldErrors: { maxUses: message } };
-      }
-      if (reason === "invite_permission_denied") {
-        return { ok: false, message: GENERATE_INVITE_REASON_MESSAGES[reason] };
-      }
-      if (err.status === 401) {
+
+    if (!reason || !INVITE_REASONS[reason]) {
+      if (result.status === 401) {
         return { ok: false, message: SESSION_EXPIRED_MESSAGE };
       }
-      if (err.status === 404) {
-        return { ok: false, message: "Este servidor ya no existe." };
+      if (result.status === 404) {
+        return { ok: false, message: SERVER_NOT_FOUND };
       }
     }
 
     return {
       ok: false,
-      message: "No pudimos generar el enlace. Intenta de nuevo.",
+      message: messageFor(result, INVITE_REASONS, INVITE_CREATE_FAILED),
     };
   }
+
+  return { ok: true, invitation: result.data };
 }
 
-export async function revokeInvite(
-  code: string,
-): Promise<RevokeInviteActionResult> {
-  try {
-    await apiFetch<void>(`/v1/invites/${encodeURIComponent(code)}`, {
-      method: "DELETE",
-    });
-    return { ok: true };
-  } catch (err) {
-    if (err instanceof NetworkError) {
-      return { ok: false, message: NETWORK_ERROR_MESSAGE };
-    }
-    if (err instanceof ApiError) {
-      if (err.status === 401) {
-        return { ok: false, message: SESSION_EXPIRED_MESSAGE };
-      }
-      if (err.status === 404) {
-        return { ok: false, message: "Este enlace ya no existe." };
-      }
-    }
+export async function revokeInvite(code: string): Promise<RevokeInviteResult> {
+  const result = await apiFetch<void>(
+    `/v1/invites/${encodeURIComponent(code)}`,
+    { method: "DELETE" },
+  );
 
+  if (!result.ok) {
+    if (result.status === 401) {
+      return { ok: false, message: SESSION_EXPIRED_MESSAGE };
+    }
+    if (result.status === 404) {
+      return { ok: false, message: INVITE_NOT_FOUND };
+    }
     return {
       ok: false,
-      message: "No pudimos revocar el enlace. Intenta de nuevo.",
+      message: messageFor(result, {}, INVITE_REVOKE_FAILED),
     };
   }
+
+  return { ok: true };
 }
 
 /**
@@ -100,32 +96,27 @@ export async function revokeInvite(
  */
 export async function listInvitations(
   serverId: string,
-): Promise<ListInvitationsActionResult> {
-  try {
-    const invitations = await apiFetch<Invitation[]>(
-      `/v1/servers/${serverId}/invites`,
-      { method: "GET" },
-    );
-    return { ok: true, invitations };
-  } catch (err) {
-    if (err instanceof NetworkError) {
-      return { ok: false, message: NETWORK_ERROR_MESSAGE };
-    }
-    if (err instanceof ApiError) {
-      if (err.status === 401) {
-        return { ok: false, message: SESSION_EXPIRED_MESSAGE };
-      }
-      if (err.status === 403) {
-        return { ok: false, message: "No sos miembro de este servidor." };
-      }
-      if (err.status === 404) {
-        return { ok: false, message: "Este servidor ya no existe." };
-      }
-    }
+): Promise<ListInvitationsResult> {
+  const result = await apiFetch<Invitation[]>(
+    `/v1/servers/${serverId}/invites`,
+    { method: "GET" },
+  );
 
+  if (!result.ok) {
+    if (result.status === 401) {
+      return { ok: false, message: SESSION_EXPIRED_MESSAGE };
+    }
+    if (result.status === 403) {
+      return { ok: false, message: NOT_A_MEMBER };
+    }
+    if (result.status === 404) {
+      return { ok: false, message: SERVER_NOT_FOUND };
+    }
     return {
       ok: false,
-      message: "No pudimos cargar las invitaciones. Intenta de nuevo.",
+      message: messageFor(result, {}, INVITES_LOAD_FAILED),
     };
   }
+
+  return { ok: true, invitations: result.data };
 }

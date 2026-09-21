@@ -1,10 +1,15 @@
+import {
+  type LeaveServerResult,
+  type ServerSummary,
+  SESSION_EXPIRED_MESSAGE,
+} from "@discordia/client-shared";
+
 import { Feather } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
-  StyleSheet,
   Text,
   TouchableOpacity,
   View,
@@ -17,20 +22,16 @@ import { EmptyState } from "../features/servers/components/home/EmptyState";
 import { JoinServerModal } from "../features/servers/components/server/JoinServerModal";
 import { useAuth } from "../features/auth/auth-context";
 import { leaveServer, listMyServers } from "../features/servers/api";
-import type {
-  LeaveServerActionResult,
-  ServerListItem,
-  ServerSummary,
-} from "../features/servers/types";
-import { colors } from "../theme/colors";
+import { useThemeColors } from "../theme/theme-context";
 import { ChannelScreen } from "./ChannelScreen";
 import { ServerChannelsScreen } from "./ServerChannelsScreen";
 import { ServerPickerScreen } from "./ServerPickerScreen";
 
 export function HomeScreen() {
+  const colors = useThemeColors();
   const { user, token, logout } = useAuth();
   const insets = useSafeAreaInsets();
-  const [servers, setServers] = useState<ServerListItem[]>([]);
+  const [servers, setServers] = useState<ServerSummary[]>([]);
   const [isLoadingServers, setIsLoadingServers] = useState(true);
   const [selectedServerId, setSelectedServerId] = useState<string | null>(null);
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(
@@ -92,11 +93,11 @@ export function HomeScreen() {
   }
 
   const handleLeaveServer = useCallback(
-    async (serverId: string): Promise<LeaveServerActionResult> => {
+    async (serverId: string): Promise<LeaveServerResult> => {
       if (!user) {
         return {
           ok: false,
-          message: "Tu sesión expiró. Volvé a iniciar sesión.",
+          message: SESSION_EXPIRED_MESSAGE,
         };
       }
 
@@ -120,7 +121,7 @@ export function HomeScreen() {
 
   if (isLoadingServers) {
     return (
-      <View style={styles.loadingContainer}>
+      <View className="flex-1 bg-surface-servers items-center justify-center">
         <StatusBar style="light" />
         <ActivityIndicator size="large" color={colors.accentBright} />
       </View>
@@ -129,7 +130,7 @@ export function HomeScreen() {
 
   if (selectedServer && selectedChannel) {
     return (
-      <View style={styles.container}>
+      <View className="flex-1">
         <StatusBar style="light" />
         <ChannelScreen
           channel={selectedChannel}
@@ -145,7 +146,7 @@ export function HomeScreen() {
 
   if (selectedServer) {
     return (
-      <View style={styles.container}>
+      <View className="flex-1">
         <StatusBar style="light" />
         <ServerChannelsScreen
           server={selectedServer}
@@ -194,7 +195,7 @@ export function HomeScreen() {
 
   if (servers.length > 0) {
     return (
-      <View style={styles.container}>
+      <View className="flex-1">
         <StatusBar style="light" />
         <ServerPickerScreen
           servers={servers}
@@ -236,19 +237,24 @@ export function HomeScreen() {
   }
 
   return (
-    <View style={styles.emptyContainer}>
+    <View className="flex-1 bg-surface-servers">
       <StatusBar style="light" />
-      <View style={[styles.emptyTopBar, { paddingTop: insets.top + 12 }]}>
+      <View
+        className="flex-row justify-end px-5 pt-3"
+        style={{ paddingTop: insets.top + 12 }}
+      >
         <TouchableOpacity
           onPress={logout}
-          style={styles.emptyLogoutButton}
+          className="flex-row items-center gap-1.5 px-2.5 py-1.5"
           accessibilityRole="button"
         >
           <Feather name="log-out" size={13} color={colors.textSubtle} />
-          <Text style={styles.emptyLogoutText}>Salir</Text>
+          <Text className="text-[11px] font-bold tracking-[1px] text-content-subtle uppercase">
+            Salir
+          </Text>
         </TouchableOpacity>
       </View>
-      <ScrollView contentContainerStyle={styles.emptyScrollContent}>
+      <ScrollView contentContainerClassName="grow justify-center p-6 pt-3 pb-10">
         <EmptyState
           userName={user?.name}
           onCreatePress={() => setIsCreateModalVisible(true)}
@@ -270,46 +276,3 @@ export function HomeScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    backgroundColor: colors.bgServers,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  container: {
-    flex: 1,
-  },
-  emptyContainer: {
-    flex: 1,
-    backgroundColor: colors.bgServers,
-  },
-  emptyTopBar: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    paddingHorizontal: 20,
-    paddingTop: 12,
-  },
-  emptyLogoutButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  emptyLogoutText: {
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 1,
-    color: colors.textSubtle,
-    textTransform: "uppercase",
-  },
-  emptyScrollContent: {
-    flexGrow: 1,
-    justifyContent: "center",
-    padding: 24,
-    paddingTop: 12,
-    paddingBottom: 40,
-  },
-});

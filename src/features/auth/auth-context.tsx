@@ -1,4 +1,12 @@
 import {
+  type LoginResultWithToken,
+  type LoginValues,
+  type RegisterResult,
+  type RegisterValues,
+  type User,
+} from "@discordia/client-shared";
+
+import {
   createContext,
   useCallback,
   useContext,
@@ -22,22 +30,15 @@ import {
   logoutService,
   registerService,
 } from "./service";
-import type {
-  LoginActionResult,
-  LoginValues,
-  RegisterActionResult,
-  RegisterValues,
-  User,
-} from "./types";
 
 interface AuthContextValue {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (credentials: LoginValues) => Promise<LoginActionResult>;
-  loginWithGoogle: (idToken: string) => Promise<LoginActionResult>;
-  register: (values: RegisterValues) => Promise<RegisterActionResult>;
+  login: (credentials: LoginValues) => Promise<LoginResultWithToken>;
+  loginWithGoogle: (idToken: string) => Promise<LoginResultWithToken>;
+  register: (values: RegisterValues) => Promise<RegisterResult>;
   logout: () => Promise<void>;
   updateUser: (user: User) => void;
 }
@@ -90,7 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(
-    async (credentials: LoginValues): Promise<LoginActionResult> => {
+    async (credentials: LoginValues): Promise<LoginResultWithToken> => {
       const result = await loginService(credentials);
 
       if (result.ok) {
@@ -108,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const loginWithGoogle = useCallback(
-    async (idToken: string): Promise<LoginActionResult> => {
+    async (idToken: string): Promise<LoginResultWithToken> => {
       const result = await loginWithGoogleService(idToken);
 
       if (result.ok) {
@@ -126,7 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const register = useCallback(
-    async (values: RegisterValues): Promise<RegisterActionResult> => {
+    async (values: RegisterValues): Promise<RegisterResult> => {
       return registerService(values);
     },
     [],

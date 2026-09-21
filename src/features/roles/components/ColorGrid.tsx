@@ -1,10 +1,11 @@
+import { COLOR_PALETTE, isValidHex } from "@discordia/client-shared";
+
 import { Feather } from "@expo/vector-icons";
 import { useState } from "react";
 import { TextInput, TouchableOpacity, View } from "react-native";
 
-import { colors } from "../../../theme/colors";
-import { COLOR_PALETTE, isValidHex } from "../constants";
-import { styles } from "../styles";
+import { useThemeColors } from "../../../theme/theme-context";
+import { cn } from "../../../lib/cn";
 
 interface ColorGridProps {
   value: string;
@@ -12,6 +13,7 @@ interface ColorGridProps {
 }
 
 export function ColorGrid({ value, onChange }: ColorGridProps) {
+  const colors = useThemeColors();
   const [custom, setCustom] = useState(
     COLOR_PALETTE.includes(value) ? "" : value,
   );
@@ -19,7 +21,7 @@ export function ColorGrid({ value, onChange }: ColorGridProps) {
 
   return (
     <View>
-      <View style={styles.colorGrid}>
+      <View className="flex-row flex-wrap gap-2">
         {COLOR_PALETTE.map((swatch) => {
           const selected = value === swatch;
           return (
@@ -30,11 +32,11 @@ export function ColorGrid({ value, onChange }: ColorGridProps) {
                 onChange(swatch);
                 setShowCustom(false);
               }}
-              style={[
-                styles.colorSwatch,
-                { backgroundColor: swatch },
-                selected ? styles.colorSwatchSelected : null,
-              ]}
+              className={cn(
+                "w-9 h-9 rounded-[10px] items-center justify-center",
+                selected ? "border-2 border-white" : null,
+              )}
+              style={{ backgroundColor: swatch }}
               accessibilityRole="button"
               accessibilityLabel={`Color ${swatch}`}
             >
@@ -47,11 +49,11 @@ export function ColorGrid({ value, onChange }: ColorGridProps) {
         <TouchableOpacity
           activeOpacity={0.8}
           onPress={() => setShowCustom((prev) => !prev)}
-          style={[
-            styles.colorSwatch,
-            styles.colorSwatchCustom,
-            isValidHex(custom) ? { backgroundColor: custom } : null,
-          ]}
+          className={cn(
+            "w-9 h-9 rounded-[10px] items-center justify-center",
+            "border-2 border-dashed border-line-strong",
+          )}
+          style={isValidHex(custom) ? { backgroundColor: custom } : null}
           accessibilityRole="button"
           accessibilityLabel="Color personalizado"
         >
@@ -64,16 +66,14 @@ export function ColorGrid({ value, onChange }: ColorGridProps) {
       </View>
 
       {showCustom ? (
-        <View style={styles.customColorRow}>
+        <View className="flex-row items-center gap-2 mt-3">
           <View
-            style={[
-              styles.customColorSwatch,
-              {
-                backgroundColor: isValidHex(custom) ? custom : colors.bgInput,
-              },
-            ]}
+            className="w-8 h-8 rounded-[10px] border border-line"
+            style={{
+              backgroundColor: isValidHex(custom) ? custom : colors.bgInput,
+            }}
           />
-          <View style={styles.customColorInputWrap}>
+          <View className="flex-1 rounded-xl border border-line bg-surface-input px-3">
             <TextInput
               value={custom}
               onChangeText={(text) => {
@@ -85,7 +85,8 @@ export function ColorGrid({ value, onChange }: ColorGridProps) {
               maxLength={7}
               autoCapitalize="none"
               autoCorrect={false}
-              style={styles.customColorInput}
+              className="text-content text-[13px] py-2.5"
+              style={{ fontFamily: "monospace" }}
             />
           </View>
           {isValidHex(custom) ? (

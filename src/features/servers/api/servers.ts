@@ -1,76 +1,60 @@
+import {
+  type CreateServerResult,
+  detailsOf,
+  fieldOf,
+  type GetServerResult,
+  INVITE_REASONS,
+  type JoinServerResult,
+  type LeaveServerResult,
+  type ListServersResult,
+  messageFor,
+  NETWORK_ERROR_MESSAGE,
+  reasonOf,
+  REQUEST_FAILED_MESSAGE,
+  SERVER_LEAVE_FAILED,
+  SERVER_LOAD_FAILED,
+  SERVER_REASONS,
+  SERVERS_LOAD_FAILED,
+  type ServerSummary,
+  SESSION_EXPIRED_MESSAGE,
+  UNEXPECTED_ERROR_MESSAGE,
+} from "@discordia/client-shared";
 import * as FileSystem from "expo-file-system/legacy";
 
-import {
-  ApiError,
-  NetworkError,
-  apiFetch,
-  refreshAccessToken,
-} from "../../../lib/api-client";
+import { apiFetch, refreshAccessToken } from "../../../lib/api-client";
 import { env } from "../../../lib/env";
 import { getToken } from "../../../lib/storage";
-import type {
-  CreateServerActionResult,
-  CreateServerParams,
-  GetServerActionResult,
-  JoinServerActionResult,
-  LeaveServerActionResult,
-  ListServersActionResult,
-  ServersApiErrorBody,
-  ServerSummary,
-} from "../types";
-import {
-  NETWORK_ERROR_MESSAGE,
-  SESSION_EXPIRED_MESSAGE,
-  reasonOf,
-} from "./shared";
+import type { CreateServerParams } from "../types";
 
 export function serverIconUrl(serverId: string): string {
   return `${env.apiUrl}/v1/servers/${serverId}/icon`;
 }
 
-export async function listMyServers(): Promise<ListServersActionResult> {
-  try {
-    const servers = await apiFetch<ServerSummary[]>("/v1/servers", {
-      method: "GET",
-    });
-    return { ok: true, servers };
-  } catch (err) {
-    if (err instanceof NetworkError) {
-      return { ok: false, message: NETWORK_ERROR_MESSAGE };
-    }
+export async function listMyServers(): Promise<ListServersResult> {
+  const result = await apiFetch<ServerSummary[]>("/v1/servers", {
+    method: "GET",
+  });
+  if (!result.ok) {
     return {
       ok: false,
-      message: "No pudimos cargar tus servidores. Intenta de nuevo.",
+      message: messageFor(result, {}, SERVERS_LOAD_FAILED),
     };
   }
+  return { ok: true, servers: result.data };
 }
 
-export async function getServer(
-  serverId: string,
-): Promise<GetServerActionResult> {
-  try {
-    const server = await apiFetch<ServerSummary>(`/v1/servers/${serverId}`, {
-      method: "GET",
-    });
-    return { ok: true, server };
-  } catch (err) {
-    if (err instanceof NetworkError) {
-      return { ok: false, message: NETWORK_ERROR_MESSAGE };
-    }
-    return { ok: false, message: "No pudimos cargar el servidor." };
+export async function getServer(serverId: string): Promise<GetServerResult> {
+  const result = await apiFetch<ServerSummary>(`/v1/servers/${serverId}`, {
+    method: "GET",
+  });
+  if (!result.ok) {
+    return {
+      ok: false,
+      message: messageFor(result, {}, SERVER_LOAD_FAILED),
+    };
   }
+  return { ok: true, server: result.data };
 }
-
-const CREATE_REASON_MESSAGES: Record<string, string> = {
-  name_required: "Ingresá un nombre para el servidor.",
-  name_too_short: "El nombre debe tener entre 2 y 100 caracteres.",
-  name_too_long: "El nombre debe tener entre 2 y 100 caracteres.",
-  name_invalid_chars: "El nombre contiene caracteres no permitidos.",
-  name_taken: "Ya tenés un servidor con ese nombre.",
-  icon_too_large: "El archivo no puede pesar más de 20 MB.",
-  icon_unsupported_type: "El archivo debe ser PNG, JPG o WEBP.",
-  icon_unreadable: "No pudimos leer esa imagen. Probá con otra.",
-};
 
 async function uploadServer(
   params: CreateServerParams,
@@ -108,7 +92,7 @@ async function uploadServer(
 
 export async function createServer(
   params: CreateServerParams,
-): Promise<CreateServerActionResult> {
+): Promise<CreateServerResult> {
   let status: number;
   let rawBody: string;
   try {
@@ -138,16 +122,10 @@ export async function createServer(
   } catch {}
 
   if (status < 200 || status >= 300) {
-    const errBody = body as ServersApiErrorBody | undefined;
-    const reason =
-      typeof errBody?.error?.details?.reason === "string"
-        ? errBody.error.details.reason
-        : undefined;
-    const field =
-      typeof errBody?.error?.details?.field === "string"
-        ? errBody.error.details.field
-        : undefined;
-    const friendly = reason ? CREATE_REASON_MESSAGES[reason] : undefined;
+    const details = detailsOf(body);
+    const reason = reasonOf(details);
+    const field = fieldOf(details);
+    const friendly = reason ? SERVER_REASONS[reason] : undefined;
 
     if ((field === "name" || field === "icon") && friendly) {
       return {
@@ -161,7 +139,7 @@ export async function createServer(
     }
     return {
       ok: false,
-      message: friendly ?? "Algo salió mal. Intenta de nuevo.",
+      message: friendly ?? UNEXPECTED_ERROR_MESSAGE,
     };
   }
 
@@ -171,102 +149,80 @@ export async function createServer(
 export async function leaveServer(
   serverId: string,
   userId: string,
-): Promise<LeaveServerActionResult> {
-  try {
-    await apiFetch<void>(`/v1/servers/${serverId}/members/${userId}`, {
-      method: "DELETE",
-    });
-    return { ok: true };
-  } catch (err) {
-    if (err instanceof NetworkError) {
-      return { ok: false, message: NETWORK_ERROR_MESSAGE };
-    }
-    if (err instanceof ApiError) {
-      const reason = reasonOf(err);
-      if (reason === "owner_must_transfer_or_delete") {
-        return {
-          ok: false,
-          message:
-            "Sos el dueño de este servidor: transferí la propiedad o eliminalo antes de abandonarlo.",
-          reason,
-        };
-      }
-      if (err.status === 401) {
-        return { ok: false, message: SESSION_EXPIRED_MESSAGE };
-      }
-      if (err.status === 404) {
-        return {
-          ok: false,
-          message: "Este servidor ya no existe o ya no sos miembro.",
-        };
-      }
-    }
+): Promise<LeaveServerResult> {
+  const result = await apiFetch<void>(
+    `/v1/servers/${serverId}/members/${userId}`,
+    { method: "DELETE" },
+  );
 
-    return {
-      ok: false,
-      message: "No pudimos abandonar el servidor. Intenta de nuevo.",
-    };
-  }
-}
-
-const JOIN_REASON_MESSAGES: Record<string, string> = {
-  invitation_invalid: "Este enlace de invitación no es válido o expiró.",
-  user_banned: "No podés unirte a este servidor.",
-};
-
-export async function joinServerByCode(
-  code: string,
-): Promise<JoinServerActionResult> {
-  try {
-    const result = await apiFetch<{
-      server_id: string;
-      already_member: boolean;
-    }>(`/v1/invites/${encodeURIComponent(code)}/join`, { method: "POST" });
-
-    const serverResult = await getServer(result.server_id);
-    if (!serverResult.ok) {
+  if (!result.ok) {
+    const reason = reasonOf(result.details);
+    if (reason === "owner_must_transfer_or_delete") {
       return {
         ok: false,
         message:
-          "Te uniste, pero no pudimos cargar el servidor. Reintentá en un momento.",
+          "Sos el dueño de este servidor: transferí la propiedad o eliminalo antes de abandonarlo.",
+        reason,
       };
     }
-
-    return {
-      ok: true,
-      server: serverResult.server,
-      alreadyMember: result.already_member,
-    };
-  } catch (err) {
-    if (err instanceof NetworkError) {
-      return { ok: false, message: NETWORK_ERROR_MESSAGE };
+    if (result.status === 401) {
+      return { ok: false, message: SESSION_EXPIRED_MESSAGE };
     }
-    if (err instanceof ApiError) {
-      const reason = reasonOf(err);
-      const friendly = reason ? JOIN_REASON_MESSAGES[reason] : undefined;
-      if (friendly) {
-        return {
-          ok: false,
-          message: friendly,
-          fieldErrors: { code: friendly },
-        };
-      }
-      if (err.status === 401) {
-        return { ok: false, message: SESSION_EXPIRED_MESSAGE };
-      }
-      if (err.status === 404) {
-        const notFound = "Ese código de invitación no existe.";
-        return {
-          ok: false,
-          message: notFound,
-          fieldErrors: { code: notFound },
-        };
-      }
+    if (result.status === 404) {
+      return {
+        ok: false,
+        message: "Este servidor ya no existe o ya no sos miembro.",
+      };
     }
-
     return {
       ok: false,
-      message: "No pudimos procesar la solicitud. Intenta de nuevo.",
+      message: messageFor(result, {}, SERVER_LEAVE_FAILED),
     };
   }
+
+  return { ok: true };
+}
+
+export async function joinServerByCode(
+  code: string,
+): Promise<JoinServerResult> {
+  const result = await apiFetch<{
+    server_id: string;
+    already_member: boolean;
+  }>(`/v1/invites/${encodeURIComponent(code)}/join`, { method: "POST" });
+
+  if (!result.ok) {
+    const reason = reasonOf(result.details);
+    // Estos ademas marcan el campo del formulario.
+    const friendly = reason ? INVITE_REASONS[reason] : undefined;
+    if (friendly) {
+      return { ok: false, message: friendly, fieldErrors: { code: friendly } };
+    }
+    if (result.status === 401) {
+      return { ok: false, message: SESSION_EXPIRED_MESSAGE };
+    }
+    if (result.status === 404) {
+      const notFound = "Ese código de invitación no existe.";
+      return { ok: false, message: notFound, fieldErrors: { code: notFound } };
+    }
+    return {
+      ok: false,
+      message: messageFor(result, {}, REQUEST_FAILED_MESSAGE),
+    };
+  }
+
+  const serverResult = await getServer(result.data.server_id);
+  if (!serverResult.ok) {
+    return {
+      ok: false,
+      message:
+        "Te uniste, pero no pudimos cargar el servidor. Reintentá en un momento.",
+    };
+  }
+
+  return {
+    ok: true,
+    server: serverResult.server,
+    alreadyMember: result.data.already_member,
+  };
 }

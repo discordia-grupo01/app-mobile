@@ -1,0 +1,8 @@
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/preflight.css" layer(base);
+@import "tailwindcss/utilities.css";
+@import "nativewind/theme";
+
+/* Puente hacia Tailwind (`bg-surface`, `text-content-muted`, `border-line`...),
+   compartido con web-client. Los valores los inyecta ThemeProvider en runtime. */
+@import "@discordia/client-shared/theme.css";

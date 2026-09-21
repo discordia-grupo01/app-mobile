@@ -1,16 +1,18 @@
+import { type ServerSummary } from "@discordia/client-shared";
+
 import { Feather } from "@expo/vector-icons";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { serverIconUrl } from "../../api";
-import type { ServerListItem } from "../../types";
-import { colors } from "../../../../theme/colors";
+import { cn } from "../../../../lib/cn";
+import { useThemeColors } from "../../../../theme/theme-context";
 import { ServerAvatar } from "../ServerAvatar";
 
 export const RAIL_WIDTH = 72;
 
 interface ServerRailProps {
-  servers: ServerListItem[];
+  servers: ServerSummary[];
   activeServerId: string | null;
   authToken: string | null;
   onSelectHome: () => void;
@@ -24,7 +26,7 @@ function ServerRailIcon({
   authToken,
   onPress,
 }: {
-  item: ServerListItem;
+  item: ServerSummary;
   active: boolean;
   authToken: string | null;
   onPress: () => void;
@@ -33,9 +35,12 @@ function ServerRailIcon({
     <TouchableOpacity
       activeOpacity={0.75}
       onPress={onPress}
+      className="items-center justify-center"
       style={styles.iconWrap}
     >
-      {active ? <View style={styles.indicator} /> : null}
+      {active ? (
+        <View className="absolute left-0 top-[50%] -mt-3 w-1 h-6 rounded-xs bg-white" />
+      ) : null}
       <ServerAvatar
         name={item.name}
         uri={serverIconUrl(item.id)}
@@ -55,24 +60,26 @@ export function ServerRail({
   onSelectServer,
   onAddServer,
 }: ServerRailProps) {
+  const colors = useThemeColors();
   const isHomeActive = activeServerId === null;
   const insets = useSafeAreaInsets();
 
   return (
     <ScrollView
+      className="grow-0 bg-surface-servers"
       style={styles.rail}
-      contentContainerStyle={[
-        styles.railContent,
-        { paddingTop: insets.top + 12 },
-      ]}
+      contentContainerClassName="items-center gap-2.5 py-3"
+      contentContainerStyle={{ paddingTop: insets.top + 12 }}
       showsVerticalScrollIndicator={false}
     >
       <TouchableOpacity
         onPress={onSelectHome}
-        style={[
-          styles.homeButton,
-          isHomeActive ? styles.homeButtonActive : null,
-        ]}
+        className={cn(
+          "w-12 h-12 items-center justify-center",
+          isHomeActive
+            ? "bg-accent rounded-2xl"
+            : "bg-surface-input rounded-3xl",
+        )}
         accessibilityLabel="Inicio"
       >
         <Feather
@@ -82,7 +89,7 @@ export function ServerRail({
         />
       </TouchableOpacity>
 
-      <View style={styles.divider} />
+      <View className="w-8 h-px bg-line-strong my-0.5" />
 
       {servers.map((item) => (
         <ServerRailIcon
@@ -96,7 +103,7 @@ export function ServerRail({
 
       <TouchableOpacity
         onPress={onAddServer}
-        style={styles.addButton}
+        className="w-12 h-12 rounded-3xl items-center justify-center bg-surface-input"
         accessibilityLabel="Agregar servidor"
       >
         <Feather name="plus" size={20} color={colors.success} />
@@ -108,53 +115,8 @@ export function ServerRail({
 const styles = StyleSheet.create({
   rail: {
     width: RAIL_WIDTH,
-    flexGrow: 0,
-    backgroundColor: colors.bgServers,
-  },
-  railContent: {
-    alignItems: "center",
-    gap: 10,
-    paddingVertical: 12,
-  },
-  homeButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.bgInput,
-  },
-  homeButtonActive: {
-    backgroundColor: colors.accent,
-    borderRadius: 16,
-  },
-  divider: {
-    width: 32,
-    height: 1,
-    backgroundColor: colors.borderStrong,
-    marginVertical: 2,
   },
   iconWrap: {
     width: RAIL_WIDTH,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  indicator: {
-    position: "absolute",
-    left: 0,
-    top: "50%",
-    marginTop: -12,
-    width: 4,
-    height: 24,
-    borderRadius: 2,
-    backgroundColor: "#ffffff",
-  },
-  addButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.bgInput,
   },
 });

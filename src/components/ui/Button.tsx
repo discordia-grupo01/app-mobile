@@ -1,23 +1,37 @@
 import { Feather } from "@expo/vector-icons";
 import {
   ActivityIndicator,
-  StyleSheet,
   Text,
   TouchableOpacity,
   View,
   type TouchableOpacityProps,
 } from "react-native";
 
-import { colors } from "../../theme/colors";
+import { cn } from "../../lib/cn";
+import { useThemeColors } from "../../theme/theme-context";
+
+type ButtonVariant = "primary" | "secondary" | "danger";
 
 interface ButtonProps extends TouchableOpacityProps {
   title: string;
   isLoading?: boolean;
-  variant?: "primary" | "secondary" | "danger";
+  variant?: ButtonVariant;
   iconRight?: keyof typeof Feather.glyphMap;
   iconLeft?: React.ReactNode;
   fullWidth?: boolean;
 }
+
+const CONTAINER_VARIANT: Record<ButtonVariant, string> = {
+  primary: "bg-accent",
+  secondary: "bg-surface-input border border-line",
+  danger: "bg-danger-strong",
+};
+
+const TEXT_VARIANT: Record<ButtonVariant, string> = {
+  primary: "text-on-accent",
+  secondary: "text-content-muted",
+  danger: "text-on-accent",
+};
 
 export function Button({
   title,
@@ -27,42 +41,35 @@ export function Button({
   iconRight,
   iconLeft,
   fullWidth = true,
-  style,
+  className,
   ...props
 }: ButtonProps) {
+  const colors = useThemeColors();
   const isButtonDisabled = disabled || isLoading;
 
   return (
     <TouchableOpacity
-      style={[
-        styles.button,
-        fullWidth ? styles.buttonFullWidth : null,
-        variant === "primary"
-          ? styles.buttonPrimary
-          : variant === "secondary"
-            ? styles.buttonSecondary
-            : styles.buttonDanger,
-        isButtonDisabled ? styles.buttonDisabled : null,
-        style,
-      ]}
+      className={cn(
+        "min-h-12 items-center justify-center rounded-xl p-3.5",
+        fullWidth && "w-full",
+        CONTAINER_VARIANT[variant],
+        isButtonDisabled && "opacity-50",
+        className,
+      )}
       disabled={isButtonDisabled}
       accessibilityRole="button"
       {...props}
     >
       {isLoading ? (
-        <ActivityIndicator color="#ffffff" size="small" />
+        <ActivityIndicator color={colors.onAccent} size="small" />
       ) : (
-        <View style={styles.contentRow}>
-          {iconLeft ? (
-            <View style={styles.iconLeftWrapper}>{iconLeft}</View>
-          ) : null}
+        <View className="w-full flex-row items-center justify-center">
+          {iconLeft ? <View className="mr-2">{iconLeft}</View> : null}
           <Text
-            style={[
-              styles.text,
-              variant === "secondary"
-                ? styles.textSecondary
-                : styles.textPrimary,
-            ]}
+            className={cn(
+              "shrink text-center text-sm font-bold",
+              TEXT_VARIANT[variant],
+            )}
             numberOfLines={1}
             adjustsFontSizeToFit
             minimumFontScale={0.8}
@@ -73,8 +80,8 @@ export function Button({
             <Feather
               name={iconRight}
               size={16}
-              color="#ffffff"
-              style={styles.iconRight}
+              color={colors.onAccent}
+              style={{ marginLeft: 8 }}
             />
           ) : null}
         </View>
@@ -82,55 +89,3 @@ export function Button({
     </TouchableOpacity>
   );
 }
-
-const styles = StyleSheet.create({
-  button: {
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 48,
-  },
-  buttonFullWidth: {
-    width: "100%",
-  },
-  buttonPrimary: {
-    backgroundColor: colors.accent,
-  },
-  buttonSecondary: {
-    backgroundColor: colors.bgInput,
-    borderColor: colors.border,
-    borderWidth: 1,
-  },
-  buttonDanger: {
-    backgroundColor: colors.dangerBright,
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-  contentRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    width: "100%",
-  },
-  iconLeftWrapper: {
-    marginRight: 8,
-  },
-  iconRight: {
-    marginLeft: 8,
-  },
-  text: {
-    fontSize: 14,
-    fontWeight: "700",
-    textAlign: "center",
-    flexShrink: 1,
-  },
-  textPrimary: {
-    color: "#ffffff",
-  },
-  textSecondary: {
-    color: colors.textMuted,
-  },
-});
