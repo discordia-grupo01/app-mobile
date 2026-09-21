@@ -27,6 +27,7 @@ import {
 import {
   loginService,
   loginWithGoogleService,
+  loginWithPinService,
   logoutService,
   registerService,
 } from "./service";
@@ -38,6 +39,7 @@ interface AuthContextValue {
   isLoading: boolean;
   login: (credentials: LoginValues) => Promise<LoginResultWithToken>;
   loginWithGoogle: (idToken: string) => Promise<LoginResultWithToken>;
+  loginWithPin: (pin: string) => Promise<LoginResultWithToken>;
   register: (values: RegisterValues) => Promise<RegisterResult>;
   logout: () => Promise<void>;
   updateUser: (user: User) => void;
@@ -126,6 +128,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const loginWithPin = useCallback(
+    async (pin: string): Promise<LoginResultWithToken> => {
+      const result = await loginWithPinService(pin);
+
+      if (result.ok) {
+        try {
+          await setSession(result.token, result.user);
+        } catch {}
+
+        setToken(result.token);
+        setUser(result.user);
+      }
+
+      return result;
+    },
+    [],
+  );
+
   const register = useCallback(
     async (values: RegisterValues): Promise<RegisterResult> => {
       return registerService(values);
@@ -157,6 +177,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading,
       login,
       loginWithGoogle,
+      loginWithPin,
       register,
       logout,
       updateUser,
@@ -167,6 +188,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading,
       login,
       loginWithGoogle,
+      loginWithPin,
       register,
       logout,
       updateUser,
