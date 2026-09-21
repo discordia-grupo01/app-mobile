@@ -1,5 +1,5 @@
 import { Feather } from "@expo/vector-icons";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Modal,
   Pressable,
@@ -9,13 +9,9 @@ import {
   View,
 } from "react-native";
 
-import {
-  getThemePreference,
-  setThemePreference,
-  type ThemePreference,
-} from "../../../../lib/storage";
 import { resolveImageUri } from "../../../../lib/image-url";
 import { colors } from "../../../../theme/colors";
+import { useTheme } from "../../../../theme/theme-context";
 import { Button } from "../../../../components/ui/Button";
 import { useAuth } from "../../../auth/auth-context";
 import { OwnProfileModal } from "../../../profile/components/OwnProfileModal";
@@ -40,30 +36,14 @@ export function UserProfileBar({
   const [isProfileVisible, setIsProfileVisible] = useState(false);
   const [isMicMuted, setIsMicMuted] = useState(false);
   const [isDeafened, setIsDeafened] = useState(false);
-  const [themePreference, setThemePreferenceState] =
-    useState<ThemePreference>("dark");
+  const { theme, setTheme } = useTheme();
   const displayName = (user?.name ?? userName)?.trim() || "Mi cuenta";
   const avatarSrc = resolveImageUri(user?.avatar_url);
   const statusText = user?.status_text?.trim();
 
-  useEffect(() => {
-    let cancelled = false;
-    getThemePreference().then((preference) => {
-      if (!cancelled) setThemePreferenceState(preference);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
   function handleConfirmLogout() {
     setIsConfirmVisible(false);
     onLogout();
-  }
-
-  async function handleSelectTheme(preference: ThemePreference) {
-    setThemePreferenceState(preference);
-    await setThemePreference(preference);
   }
 
   return (
@@ -147,8 +127,8 @@ export function UserProfileBar({
 
       <AppearanceSheet
         visible={isAppearanceVisible}
-        selected={themePreference}
-        onSelect={handleSelectTheme}
+        selected={theme}
+        onSelect={setTheme}
         onClose={() => setIsAppearanceVisible(false)}
       />
 

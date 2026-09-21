@@ -1,3 +1,5 @@
+import type { ThemeName } from "@discordia/client-shared";
+
 import { Feather } from "@expo/vector-icons";
 import {
   Modal,
@@ -8,21 +10,23 @@ import {
   View,
 } from "react-native";
 
-import type { ThemePreference } from "../../../../lib/storage";
+import { LIGHT_THEME_ENABLED } from "../../../../lib/constants";
 import { colors } from "../../../../theme/colors";
 
 interface AppearanceSheetProps {
   visible: boolean;
-  selected: ThemePreference;
-  onSelect: (preference: ThemePreference) => void;
+  selected: ThemeName;
+  onSelect: (preference: ThemeName) => void;
   onClose: () => void;
 }
 
-const OPTIONS: {
-  value: ThemePreference;
+interface AppearanceOption {
+  value: ThemeName;
   icon: keyof typeof Feather.glyphMap;
   title: string;
-}[] = [
+}
+
+const ALL_OPTIONS: AppearanceOption[] = [
   {
     value: "dark",
     icon: "moon",
@@ -34,6 +38,10 @@ const OPTIONS: {
     title: "Modo Claro",
   },
 ];
+
+const OPTIONS = ALL_OPTIONS.filter(
+  (option) => option.value !== "light" || LIGHT_THEME_ENABLED,
+);
 
 export function AppearanceSheet({
   visible,
