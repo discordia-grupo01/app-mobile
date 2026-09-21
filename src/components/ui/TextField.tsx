@@ -1,7 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import { useState } from "react";
 import {
-  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
@@ -9,7 +8,8 @@ import {
   type TextInputProps,
 } from "react-native";
 
-import { colors } from "../../theme/colors";
+import { cn } from "../../lib/cn";
+import { useThemeColors } from "../../theme/theme-context";
 
 interface TextFieldProps extends TextInputProps {
   label: string;
@@ -23,33 +23,37 @@ export function TextField({
   error,
   isPassword = false,
   iconName,
-  style,
+  className,
   ...props
 }: TextFieldProps) {
+  const colors = useThemeColors();
   const [showPassword, setShowPassword] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.label}>{label}</Text>
+    <View className="mb-[18px] w-full">
+      <Text className="mb-2 text-[11px] font-bold tracking-[1.2px] text-content-subtle uppercase">
+        {label}
+      </Text>
       <View
-        style={[
-          styles.inputWrapper,
-          isFocused ? styles.inputFocused : null,
-          error ? styles.inputError : null,
-        ]}
+        className={cn(
+          "min-h-12 flex-row items-center rounded-xl border bg-surface-input px-3.5",
+          error ? "border-danger" : isFocused ? "border-accent" : "border-line",
+        )}
       >
         {iconName ? (
           <Feather
             name={iconName}
             size={16}
             color={colors.textSubtle}
-            style={styles.icon}
+            style={{ marginRight: 10 }}
           />
         ) : null}
 
+        {/* text-[14px] y no text-sm: text-sm agrega line-height, que en un
+            TextInput desalinea el texto en iOS. */}
         <TextInput
-          style={[styles.input, style]}
+          className={cn("flex-1 py-3 text-[14px] text-content", className)}
           placeholderTextColor={colors.textSubtle}
           secureTextEntry={isPassword && !showPassword}
           autoCapitalize="none"
@@ -61,7 +65,7 @@ export function TextField({
         {isPassword ? (
           <TouchableOpacity
             onPress={() => setShowPassword(!showPassword)}
-            style={styles.toggleButton}
+            className="ml-1.5 p-1.5"
             accessibilityRole="button"
             accessibilityLabel={
               showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
@@ -75,56 +79,9 @@ export function TextField({
           </TouchableOpacity>
         ) : null}
       </View>
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+      {error ? (
+        <Text className="mt-1.5 text-xs text-danger">{error}</Text>
+      ) : null}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    marginBottom: 18,
-    width: "100%",
-  },
-  label: {
-    color: colors.textSubtle,
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 1.2,
-    textTransform: "uppercase",
-    marginBottom: 8,
-  },
-  inputWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.bgInput,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    minHeight: 48,
-  },
-  inputFocused: {
-    borderColor: colors.accent,
-  },
-  inputError: {
-    borderColor: colors.danger,
-  },
-  icon: {
-    marginRight: 10,
-  },
-  input: {
-    flex: 1,
-    color: colors.text,
-    fontSize: 14,
-    paddingVertical: 12,
-  },
-  toggleButton: {
-    padding: 6,
-    marginLeft: 6,
-  },
-  errorText: {
-    color: colors.danger,
-    fontSize: 12,
-    marginTop: 6,
-  },
-});
