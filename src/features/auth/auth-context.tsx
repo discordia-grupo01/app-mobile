@@ -24,7 +24,12 @@ import {
   setSession,
   updateStoredUser,
 } from "../../lib/storage";
-import { loginService, logoutService, registerService } from "./service";
+import {
+  loginService,
+  loginWithGoogleService,
+  logoutService,
+  registerService,
+} from "./service";
 
 interface AuthContextValue {
   user: User | null;
@@ -32,6 +37,7 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (credentials: LoginValues) => Promise<LoginResultWithToken>;
+  loginWithGoogle: (idToken: string) => Promise<LoginResultWithToken>;
   register: (values: RegisterValues) => Promise<RegisterResult>;
   logout: () => Promise<void>;
   updateUser: (user: User) => void;
@@ -102,6 +108,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const loginWithGoogle = useCallback(
+    async (idToken: string): Promise<LoginResultWithToken> => {
+      const result = await loginWithGoogleService(idToken);
+
+      if (result.ok) {
+        try {
+          await setSession(result.token, result.user);
+        } catch {}
+
+        setToken(result.token);
+        setUser(result.user);
+      }
+
+      return result;
+    },
+    [],
+  );
+
   const register = useCallback(
     async (values: RegisterValues): Promise<RegisterResult> => {
       return registerService(values);
@@ -132,11 +156,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: user !== null && token !== null,
       isLoading,
       login,
+      loginWithGoogle,
       register,
       logout,
       updateUser,
     }),
-    [user, token, isLoading, login, register, logout, updateUser],
+    [
+      user,
+      token,
+      isLoading,
+      login,
+      loginWithGoogle,
+      register,
+      logout,
+      updateUser,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

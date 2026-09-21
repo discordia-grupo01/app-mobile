@@ -1,4 +1,5 @@
 import {
+  GOOGLE_CONNECT_FAILED,
   hasErrors,
   type RegisterErrors,
   validateRegister,
@@ -8,6 +9,7 @@ import { useState } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 
 import { useAuth } from "../auth-context";
+import { extractGoogleIdToken, useGoogleAuthRequest } from "../google-auth";
 
 import { GoogleIcon } from "../../../components/icons/GoogleIcon";
 import { Button } from "../../../components/ui/Button";
@@ -22,7 +24,7 @@ export function RegisterForm({
   onSwitchToLogin,
   onRegistered,
 }: RegisterFormProps) {
-  const { register } = useAuth();
+  const { register, loginWithGoogle } = useAuth();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -30,6 +32,46 @@ export function RegisterForm({
   const [errors, setErrors] = useState<RegisterErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
+
+  const [googleRequest, , promptGoogleAsync] = useGoogleAuthRequest();
+
+  // Se resuelve el resultado de Google directamente en el event handler
+  // (en vez de observarlo con un useEffect sobre `response`): evita
+  // "cascading renders" de setState dentro de un efecto y ademas asegura
+  // que el resultado se procese una sola vez por cada tap del boton.
+  async function handleGooglePress() {
+    setFormError(null);
+    setIsGoogleSubmitting(true);
+
+    try {
+      const response = await promptGoogleAsync();
+
+      if (response.type === "success") {
+        const idToken = extractGoogleIdToken(response);
+        if (!idToken) {
+          setFormError(GOOGLE_CONNECT_FAILED);
+          return;
+        }
+
+        const result = await loginWithGoogle(idToken);
+        if (!result.ok) {
+          setFormError(result.message);
+        }
+        return;
+      }
+
+      if (response.type === "error") {
+        setFormError(GOOGLE_CONNECT_FAILED);
+      }
+      // "cancel" / "dismiss" / "locked": el usuario cerro el flujo de
+      // Google sin completar el login, no es un error a mostrar.
+    } catch {
+      setFormError(GOOGLE_CONNECT_FAILED);
+    } finally {
+      setIsGoogleSubmitting(false);
+    }
+  }
 
   async function handleSubmit() {
     setFormError(null);
@@ -122,7 +164,9 @@ export function RegisterForm({
       <Button
         title="Continuar con Google"
         variant="secondary"
-        disabled
+        onPress={handleGooglePress}
+        disabled={!googleRequest}
+        isLoading={isGoogleSubmitting}
         iconLeft={<GoogleIcon size={18} />}
         className="mb-6"
       />
