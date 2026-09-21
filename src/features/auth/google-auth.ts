@@ -11,6 +11,17 @@ WebBrowser.maybeCompleteAuthSession();
 
 const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
 
+// URL fija de la pagina de rebote (identify-service, ver
+// internal/handler/mobile_oauth_callback_handler.go). Tiene que coincidir
+// caracter por caracter con lo que esta cargado en Google Cloud Console ->
+// Credentials -> este Client ID -> Authorized redirect URIs: Google exige
+// match exacto del redirect_uri, sin query params extra pegados. Por eso el
+// exp://... real (que cambia segun el celular/IP) NO va como query param
+// aca -- viaja por separado en el parametro `state` de OAuth, que si puede
+// llevar cualquier valor propio sin afectar el matching del redirect_uri.
+const MOBILE_OAUTH_CALLBACK_URL =
+  "https://discordia-g1.duckdns.org/oauth/mobile-callback";
+
 /**
  * Hook compartido entre LoginForm y RegisterForm para el boton
  * "Continuar con Google".
@@ -44,11 +55,15 @@ const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
  * tipo "Web application" -- y el default que arma expo-auth-session en Expo
  * Go es un esquema exp://<host>:8081/--/redirect, que Google ni siquiera
  * intenta procesar. Por eso pasamos una pagina "de rebote" HTTPS propia
- * (servida por identify-service, ver /oauth/mobile-callback) como
- * redirectUri: Google vuelve ahi, y esa pagina -- ya del lado del navegador
- * del celular, no de Google -- rearma el salto final al exp://... real. El
- * exp:// real se calcula en runtime con `makeRedirectUri`, asi que sigue
- * funcionando aunque cambie la IP publica de la VM de mobile mas adelante.
+ * (servida por identify-service) como redirectUri: Google vuelve ahi, y esa
+ * pagina -- ya del lado del navegador del celular, no de Google -- rearma
+ * el salto final al exp://... real.
+ *
+ * `state`: es donde viaja el exp://... real (calculado en runtime con
+ * `makeRedirectUri`, asi que sigue funcionando aunque cambie la IP publica
+ * de la VM de mobile mas adelante). No puede ir pegado como query param del
+ * redirectUri porque Google exige match exacto contra la URL registrada en
+ * Console (ver Error 400: redirect_uri_mismatch si se hace asi).
  */
 export function useGoogleAuthRequest(): [
   ReturnType<typeof Google.useAuthRequest>[0],
@@ -56,15 +71,13 @@ export function useGoogleAuthRequest(): [
   () => Promise<AuthSessionResult>,
 ] {
   const expoRedirect = AuthSession.makeRedirectUri({ path: "redirect" });
-  const redirectUri =
-    "https://discordia-g1.duckdns.org/oauth/mobile-callback?app_redirect=" +
-    encodeURIComponent(expoRedirect);
 
   return Google.useAuthRequest({
     webClientId: GOOGLE_WEB_CLIENT_ID,
     clientId: GOOGLE_WEB_CLIENT_ID,
     responseType: "id_token",
-    redirectUri,
+    redirectUri: MOBILE_OAUTH_CALLBACK_URL,
+    state: expoRedirect,
   });
 }
 
