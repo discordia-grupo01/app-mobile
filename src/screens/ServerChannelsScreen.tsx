@@ -3,12 +3,13 @@ import {
   type Channel,
   channelsOfCategory,
   type LeaveServerResult,
+  type OwnershipTransfer,
   type ServerSummary,
   sortByPosition,
 } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Pressable,
   ScrollView,
@@ -27,10 +28,15 @@ import { DraggableChannelList } from "../features/servers/components/channel/Dra
 import { EditChannelModal } from "../features/servers/components/channel/EditChannelModal";
 import { InviteLinkModal } from "../features/servers/components/server/InviteLinkModal";
 import { LeaveServerModal } from "../features/servers/components/server/LeaveServerModal";
+import { TransferOwnershipModal } from "../features/servers/components/server/TransferOwnershipModal";
 import { RolesModal } from "../features/roles/RolesModal";
 import { ServerRail } from "../features/servers/components/rail/ServerRail";
 import { UserProfileBar } from "../features/servers/components/account/UserProfileBar";
-import { reorderChannels } from "../features/servers/api";
+import { useAuth } from "../features/auth/auth-context";
+import {
+  getPendingOwnershipTransfer,
+  reorderChannels,
+} from "../features/servers/api";
 import { useThemeColors } from "../theme/theme-context";
 
 const HEADER_HEIGHT = 52;
@@ -113,6 +119,8 @@ export function ServerChannelsScreen({
   onServerUpdated,
 }: ServerChannelsScreenProps) {
   const colors = useThemeColors();
+  const { user } = useAuth();
+  const currentUserId = user ? String(user.id) : null;
   const [isServerMenuOpen, setIsServerMenuOpen] = useState(false);
   const [isLeaveModalVisible, setIsLeaveModalVisible] = useState(false);
   const [isInviteModalVisible, setIsInviteModalVisible] = useState(false);
@@ -121,6 +129,11 @@ export function ServerChannelsScreen({
     useState<string | null>(null);
   const [isCreateCategoryVisible, setIsCreateCategoryVisible] = useState(false);
   const [isRolesModalVisible, setIsRolesModalVisible] = useState(false);
+  const [isTransferModalVisible, setIsTransferModalVisible] = useState(false);
+  const [pendingTransfer, setPendingTransfer] =
+    useState<OwnershipTransfer | null>(null);
+  const [isLoadingPendingTransfer, setIsLoadingPendingTransfer] =
+    useState(true);
   const [collapsedSectionIds, setCollapsedSectionIds] = useState<Set<string>>(
     new Set(),
   );
@@ -135,6 +148,28 @@ export function ServerChannelsScreen({
 
   const uncategorized = channelsOfCategory(server.channels, null);
   const sortedCategories = sortByPosition(server.categories);
+
+  useEffect(() => {
+    let cancelled = false;
+    setIsLoadingPendingTransfer(true);
+    getPendingOwnershipTransfer(server.id).then((result) => {
+      if (cancelled) return;
+      setPendingTransfer(result.ok ? result.transfer : null);
+      setIsLoadingPendingTransfer(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [server.id]);
+
+  const incomingTransfer =
+    currentUserId !== null &&
+    pendingTransfer !== null &&
+    pendingTransfer.to_user_id === currentUserId
+      ? pendingTransfer
+      : null;
+  const showTransferMenuItem =
+    isOwner || (!isLoadingPendingTransfer && incomingTransfer !== null);
 
   function toggleCollapsed(id: string) {
     setCollapsedSectionIds((prev) => {
@@ -318,6 +353,24 @@ export function ServerChannelsScreen({
                     </Text>
                   </TouchableOpacity>
                 </>
+              ) : null}
+
+              {showTransferMenuItem ? (
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  className="flex-row items-center gap-2.5 rounded-lg mx-1 px-2.5 py-3"
+                  onPress={() => {
+                    setIsServerMenuOpen(false);
+                    setIsTransferModalVisible(true);
+                  }}
+                >
+                  <Feather name="repeat" size={16} color={colors.info} />
+                  <Text className="text-[14px] font-semibold text-content">
+                    {incomingTransfer
+                      ? "Responder transferencia de propiedad"
+                      : "Transferir propiedad"}
+                  </Text>
+                </TouchableOpacity>
               ) : null}
 
               <View className="h-px bg-line my-1 mx-2" />
@@ -505,6 +558,23 @@ export function ServerChannelsScreen({
         serverId={server.id}
         serverName={server.name}
         onClose={() => setIsInviteModalVisible(false)}
+      />
+      <TransferOwnershipModal
+        visible={isTransferModalVisible}
+        serverId={server.id}
+        serverName={server.name}
+        isOwner={isOwner}
+        currentUserId={currentUserId}
+        pendingTransfer={pendingTransfer}
+        isLoadingPendingTransfer={isLoadingPendingTransfer}
+        onPendingTransferChange={setPendingTransfer}
+        onClose={() => setIsTransferModalVisible(false)}
+        onOwnershipAccepted={() => {
+          setIsTransferModalVisible(false);
+          if (currentUserId) {
+            onServerUpdated({ ...server, owner_id: currentUserId });
+          }
+        }}
       />
       {isOwner ? (
         <CreateChannelModal
