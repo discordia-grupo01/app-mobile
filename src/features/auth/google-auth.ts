@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import * as AuthSession from "expo-auth-session";
 import * as Google from "expo-auth-session/providers/google";
 import * as WebBrowser from "expo-web-browser";
@@ -8,7 +9,6 @@ import type { AuthSessionResult } from "expo-auth-session";
 // resuelve la promise de `promptAsync()` cuando Google redirige de vuelta
 // a la app despues del login.
 WebBrowser.maybeCompleteAuthSession();
-
 const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
 
 // URL fija de la pagina de rebote (identify-service, ver
@@ -64,6 +64,14 @@ const MOBILE_OAUTH_CALLBACK_URL =
  * de la VM de mobile mas adelante). No puede ir pegado como query param del
  * redirectUri porque Google exige match exacto contra la URL registrada en
  * Console (ver Error 400: redirect_uri_mismatch si se hace asi).
+ *
+ * `promptAsync` propio: el de expo-auth-session abre el navegador esperando
+ * volver a `request.redirectUri` (la pagina https de rebote), pero lo que
+ * realmente vuelve a la app es el exp://... que arma esa pagina. Como no
+ * coinciden, el navegador se cierra con `type: "dismiss"` y el login se
+ * pierde en silencio. Por eso abrimos la sesion a mano, esperando el
+ * exp://... como URL de retorno, y parseamos la respuesta con el mismo
+ * `parseReturnUrl` del request (que valida el `state`).
  */
 export function useGoogleAuthRequest(): [
   ReturnType<typeof Google.useAuthRequest>[0],
@@ -72,13 +80,28 @@ export function useGoogleAuthRequest(): [
 ] {
   const expoRedirect = AuthSession.makeRedirectUri({ path: "redirect" });
 
-  return Google.useAuthRequest({
+  const [request, response] = Google.useAuthRequest({
     webClientId: GOOGLE_WEB_CLIENT_ID,
     clientId: GOOGLE_WEB_CLIENT_ID,
     responseType: "id_token",
     redirectUri: MOBILE_OAUTH_CALLBACK_URL,
     state: expoRedirect,
   });
+
+  const promptAsync = useCallback(async (): Promise<AuthSessionResult> => {
+    if (!request?.url) return { type: "locked" };
+
+    const result = await WebBrowser.openAuthSessionAsync(
+      request.url,
+      expoRedirect,
+    );
+    if (result.type !== "success") return { type: result.type };
+
+    const parsed = request.parseReturnUrl(result.url);
+    return parsed;
+  }, [request, expoRedirect]);
+
+  return [request, response, promptAsync];
 }
 
 /**
