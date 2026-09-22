@@ -1,7 +1,9 @@
 import {
+  hasErrors,
   PIN_MAX_LENGTH,
-  PIN_MIN_LENGTH,
+  type PinLoginErrors,
   type User,
+  validatePinLogin,
 } from "@discordia/client-shared";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
@@ -21,21 +23,15 @@ import { useAuth } from "../features/auth/auth-context";
 import { getStoredUser } from "../lib/storage";
 
 interface PinEntryScreenProps {
-  /** Salta el ingreso con PIN por esta sesion (no desactiva el PIN del
-   * dispositivo) y vuelve al login normal con email y contraseña. */
   onUseAnotherAccount: () => void;
 }
 
-/**
- * Pantalla de ingreso rapido con PIN (historia "Registro con PIN", CA2):
- * reemplaza a AuthTabs/LoginScreen cuando este dispositivo ya activo un PIN
- * antes (ver App.tsx). No pide email, solo el PIN de 6 a 8 digitos.
- */
 export function PinEntryScreen({ onUseAnotherAccount }: PinEntryScreenProps) {
   const { loginWithPin } = useAuth();
 
   const [pin, setPin] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<PinLoginErrors>({});
+  const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userName, setUserName] = useState<string | null>(null);
 
@@ -46,30 +42,29 @@ export function PinEntryScreen({ onUseAnotherAccount }: PinEntryScreenProps) {
   }, []);
 
   async function handleSubmit(candidatePin: string) {
-    if (candidatePin.length < PIN_MIN_LENGTH || isSubmitting) return;
+    if (isSubmitting) return;
 
-    setError(null);
+    const nextErrors = validatePinLogin({ pin: candidatePin });
+    setErrors(nextErrors);
+    if (hasErrors(nextErrors)) return;
+
+    setFormError(null);
     setIsSubmitting(true);
     const result = await loginWithPin(candidatePin);
     setIsSubmitting(false);
 
     if (!result.ok) {
-      setError(result.message);
+      setFormError("El PIN no es correcto. Probá de nuevo.");
       setPin("");
     }
-    // En exito no hace falta nada aca: AuthProvider actualiza
-    // isAuthenticated y App.tsx cambia a HomeScreen solo.
   }
 
   function handleChangePin(text: string) {
     const digits = text.replace(/\D/g, "").slice(0, PIN_MAX_LENGTH);
     setPin(digits);
-    if (error) setError(null);
+    if (errors.pin) setErrors({});
+    if (formError) setFormError(null);
 
-    // Autosubmit al llegar al largo maximo (8). Con largos intermedios
-    // (6-7) el usuario confirma con el boton "Ingresar", porque un PIN
-    // valido de 6 digitos es indistinguible de alguien que todavia esta
-    // tipeando uno de 7 u 8.
     if (digits.length === PIN_MAX_LENGTH) {
       handleSubmit(digits);
     }
@@ -111,15 +106,16 @@ export function PinEntryScreen({ onUseAnotherAccount }: PinEntryScreenProps) {
             autoFocus
             value={pin}
             onChangeText={handleChangePin}
+            error={errors.pin}
           />
 
-          {error ? (
+          {formError ? (
             <View
               className="mb-[18px] rounded-lg border border-danger/30 bg-danger/12 p-3"
               accessibilityRole="alert"
             >
               <Text className="text-center text-[13px] text-danger">
-                {error}
+                {formError}
               </Text>
             </View>
           ) : null}
@@ -128,7 +124,6 @@ export function PinEntryScreen({ onUseAnotherAccount }: PinEntryScreenProps) {
             title="Ingresar"
             onPress={() => handleSubmit(pin)}
             isLoading={isSubmitting}
-            disabled={pin.length < PIN_MIN_LENGTH}
             iconRight="arrow-right"
           />
 
