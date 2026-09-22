@@ -8,7 +8,7 @@ import {
 
 import { Feather } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -179,9 +179,19 @@ export function ServerSettingsModal({
       setGlobalError("");
       setIsSubmitting(false);
       setIsPreparingBanner(false);
-      presetRequestIdRef.current += 1;
     }
   }
+
+  // Aparte del bloque de arriba: `refs` no se pueden leer ni mutar durante
+  // el render (regla `react-hooks/refs`), a diferencia de `setState`. Mismo
+  // disparador (se abre el modal, o cambia el server con el modal ya
+  // abierto) para invalidar cualquier escritura de preset que siguiera en
+  // vuelo de la vez anterior.
+  useEffect(() => {
+    if (visible) {
+      presetRequestIdRef.current += 1;
+    }
+  }, [visible, server.id]);
 
   const nameLength = name.length;
   const trimmedName = name.trim();
