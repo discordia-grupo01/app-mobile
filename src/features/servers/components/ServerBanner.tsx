@@ -1,4 +1,4 @@
-import { Image, View, type StyleProp, type ViewStyle } from "react-native";
+import { Image, View, type ImageStyle, type StyleProp } from "react-native";
 
 import { useResolvedImageUri } from "../../../lib/use-resolved-image-uri";
 
@@ -6,7 +6,7 @@ interface ServerBannerProps {
   uri?: string | null;
   authToken?: string | null;
   height: number;
-  style?: StyleProp<ViewStyle>;
+  style?: StyleProp<ImageStyle>;
 }
 
 export function ServerBanner({

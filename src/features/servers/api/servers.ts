@@ -236,8 +236,9 @@ async function performServerUpdate(
   params: UpdateServerParams,
   token: string | null,
 ): Promise<{ status: number; rawBody: string }> {
-  const nameFields = params.name !== undefined ? { name: params.name } : {};
-  const removeBannerFields = params.removeBanner
+  const nameFields: Record<string, string> =
+    params.name !== undefined ? { name: params.name } : {};
+  const removeBannerFields: Record<string, string> = params.removeBanner
     ? { remove_banner: "true" }
     : {};
 

@@ -1,5 +1,7 @@
 import {
   MAX_NAME,
+  PRESET_BANNERS,
+  type PresetBanner,
   type ServerSummary,
   validateServerBanner,
   validateServerIcon,
@@ -28,11 +30,7 @@ import { cn } from "../../../../lib/cn";
 import { useThemeColors } from "../../../../theme/theme-context";
 import { Button } from "../../../../components/ui/Button";
 import { resolveServerBannerUrl, serverIconUrl, updateServer } from "../../api";
-import {
-  materializePresetBanner,
-  PRESET_BANNERS,
-  type PresetBanner,
-} from "../../constants/preset-banners";
+import { materializePresetBanner } from "../../constants/preset-banners";
 import type { CreateServerIconInput } from "../../types";
 import { ServerAvatar } from "../ServerAvatar";
 import { ServerBanner } from "../ServerBanner";
@@ -182,11 +180,6 @@ export function ServerSettingsModal({
     }
   }
 
-  // Aparte del bloque de arriba: `refs` no se pueden leer ni mutar durante
-  // el render (regla `react-hooks/refs`), a diferencia de `setState`. Mismo
-  // disparador (se abre el modal, o cambia el server con el modal ya
-  // abierto) para invalidar cualquier escritura de preset que siguiera en
-  // vuelo de la vez anterior.
   useEffect(() => {
     if (visible) {
       presetRequestIdRef.current += 1;
