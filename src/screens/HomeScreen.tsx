@@ -21,6 +21,7 @@ import { CreateServerModal } from "../features/servers/components/server/CreateS
 import { EmptyState } from "../features/servers/components/home/EmptyState";
 import { JoinServerModal } from "../features/servers/components/server/JoinServerModal";
 import { useAuth } from "../features/auth/auth-context";
+import { getOwnProfile } from "../features/profile/service";
 import { leaveServer, listMyServers } from "../features/servers/api";
 import { useThemeColors } from "../theme/theme-context";
 import { ChannelScreen } from "./ChannelScreen";
@@ -29,7 +30,7 @@ import { ServerPickerScreen } from "./ServerPickerScreen";
 
 export function HomeScreen() {
   const colors = useThemeColors();
-  const { user, token, logout } = useAuth();
+  const { user, token, logout, updateUser } = useAuth();
   const insets = useSafeAreaInsets();
   const [servers, setServers] = useState<ServerSummary[]>([]);
   const [isLoadingServers, setIsLoadingServers] = useState(true);
@@ -62,6 +63,18 @@ export function HomeScreen() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (!token) return;
+    let cancelled = false;
+    getOwnProfile().then((result) => {
+      if (cancelled || !result.ok) return;
+      updateUser(result.user);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [token, updateUser]);
 
   const selectedServer =
     servers.find((server) => server.id === selectedServerId) ?? null;
