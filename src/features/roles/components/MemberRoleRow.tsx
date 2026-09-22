@@ -1,9 +1,9 @@
-import { type MemberInfo } from "@discordia/client-shared";
+import { type MemberInfo, resolveImageUrl } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
 import { Text, TouchableOpacity, View } from "react-native";
 
-import { resolveImageUri } from "../../../lib/image-url";
+import { env } from "../../../lib/env";
 import { useThemeColors } from "../../../theme/theme-context";
 import { ServerAvatar } from "../../servers/components/ServerAvatar";
 import { cn } from "../../../lib/cn";
@@ -22,7 +22,7 @@ export function MemberRoleRow({
   onToggle,
 }: MemberRoleRowProps) {
   const colors = useThemeColors();
-  const avatarUri = resolveImageUri(member.avatarUrl);
+  const avatarUri = resolveImageUrl(member.avatarUrl, env.apiUrl);
 
   return (
     <View className="flex-row items-center gap-2.5 rounded-xl border border-line bg-surface-input px-2.5 py-2">

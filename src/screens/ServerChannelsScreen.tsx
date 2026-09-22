@@ -19,6 +19,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 
 import { ChannelOptionsSheet } from "../features/servers/components/channel/ChannelOptionsSheet";
 import { CreateCategoryModal } from "../features/servers/components/category/CreateCategoryModal";
@@ -28,19 +29,22 @@ import { DraggableChannelList } from "../features/servers/components/channel/Dra
 import { EditChannelModal } from "../features/servers/components/channel/EditChannelModal";
 import { InviteLinkModal } from "../features/servers/components/server/InviteLinkModal";
 import { LeaveServerModal } from "../features/servers/components/server/LeaveServerModal";
+import { ServerSettingsModal } from "../features/servers/components/server/ServerSettingsModal";
 import { TransferOwnershipModal } from "../features/servers/components/server/TransferOwnershipModal";
 import { RolesModal } from "../features/roles/RolesModal";
+import { ServerBanner } from "../features/servers/components/ServerBanner";
 import { ServerRail } from "../features/servers/components/rail/ServerRail";
 import { UserProfileBar } from "../features/servers/components/account/UserProfileBar";
 import { useAuth } from "../features/auth/auth-context";
 import {
   getPendingOwnershipTransfer,
   reorderChannels,
+  resolveServerBannerUrl,
 } from "../features/servers/api";
 import { useThemeColors } from "../theme/theme-context";
 
 const HEADER_HEIGHT = 52;
-const MENU_TOP = 58;
+const BANNER_HEIGHT = 88;
 const UNCATEGORIZED_KEY = "none";
 
 interface ServerChannelsScreenProps {
@@ -122,6 +126,7 @@ export function ServerChannelsScreen({
   const { user } = useAuth();
   const currentUserId = user ? String(user.id) : null;
   const [isServerMenuOpen, setIsServerMenuOpen] = useState(false);
+  const [isServerSettingsVisible, setIsServerSettingsVisible] = useState(false);
   const [isLeaveModalVisible, setIsLeaveModalVisible] = useState(false);
   const [isInviteModalVisible, setIsInviteModalVisible] = useState(false);
   const [isCreateChannelVisible, setIsCreateChannelVisible] = useState(false);
@@ -145,6 +150,12 @@ export function ServerChannelsScreen({
   const [dragError, setDragError] = useState("");
   const [isChannelDragActive, setIsChannelDragActive] = useState(false);
   const insets = useSafeAreaInsets();
+
+  const bannerUrl = resolveServerBannerUrl(server.id, server.banner_url);
+  const bannerVisible = Boolean(bannerUrl);
+  const headerHeight =
+    insets.top + (bannerVisible ? BANNER_HEIGHT : HEADER_HEIGHT);
+  const menuTop = headerHeight + 6;
 
   const uncategorized = channelsOfCategory(server.channels, null);
   const sortedCategories = sortByPosition(server.categories);
@@ -272,24 +283,64 @@ export function ServerChannelsScreen({
 
       <View className="flex-1">
         <TouchableOpacity
-          activeOpacity={0.7}
-          className="flex-row items-center gap-1.5 h-13 px-3.5 border-b border-b-line"
-          style={{ height: HEADER_HEIGHT + insets.top, paddingTop: insets.top }}
+          activeOpacity={0.85}
+          className="relative overflow-hidden border-b border-b-line"
+          style={{ height: headerHeight }}
           onPress={() => setIsServerMenuOpen((prev) => !prev)}
           accessibilityRole="button"
           accessibilityLabel="Opciones del servidor"
         >
-          <Text
-            className="shrink text-[17px] font-bold text-content"
-            numberOfLines={1}
+          {bannerVisible ? (
+            <>
+              <ServerBanner
+                uri={bannerUrl}
+                authToken={authToken}
+                height={headerHeight}
+                style={StyleSheet.absoluteFill}
+              />
+              {/* Degradado oscuro de abajo hacia arriba para que el nombre
+                  se lea encima de cualquier imagen -- mismo criterio que el
+                  `linear-gradient(rgba(0,0,0,0.05), rgba(0,0,0,0.55))` del
+                  prototipo de Figma. */}
+              <Svg style={StyleSheet.absoluteFill} width="100%" height="100%">
+                <Defs>
+                  <LinearGradient id="bannerScrim" x1="0" y1="0" x2="0" y2="1">
+                    <Stop offset={0} stopColor="#000000" stopOpacity={0.05} />
+                    <Stop offset={1} stopColor="#000000" stopOpacity={0.55} />
+                  </LinearGradient>
+                </Defs>
+                <Rect
+                  x={0}
+                  y={0}
+                  width="100%"
+                  height="100%"
+                  fill="url(#bannerScrim)"
+                />
+              </Svg>
+            </>
+          ) : null}
+
+          <View
+            className="absolute left-0 right-0 flex-row items-center gap-1.5 px-3.5"
+            style={
+              bannerVisible ? { bottom: 10 } : { top: insets.top, bottom: 0 }
+            }
           >
-            {server.name}
-          </Text>
-          <Feather
-            name={isServerMenuOpen ? "chevron-up" : "chevron-down"}
-            size={18}
-            color={colors.textSubtle}
-          />
+            <Text
+              className="shrink text-[17px] font-bold text-content"
+              style={bannerVisible ? styles.bannerServerName : null}
+              numberOfLines={1}
+            >
+              {server.name}
+            </Text>
+            <Feather
+              name={isServerMenuOpen ? "chevron-up" : "chevron-down"}
+              size={18}
+              color={
+                bannerVisible ? "rgba(255,255,255,0.85)" : colors.textSubtle
+              }
+            />
+          </View>
         </TouchableOpacity>
 
         {isServerMenuOpen ? (
@@ -300,7 +351,7 @@ export function ServerChannelsScreen({
             />
             <View
               className="absolute top-[58px] left-2.5 right-2.5 z-20 rounded-xl border border-line-strong bg-surface-modal py-1.5"
-              style={[styles.serverMenu, { top: MENU_TOP + insets.top }]}
+              style={[styles.serverMenu, { top: menuTop }]}
             >
               <TouchableOpacity
                 activeOpacity={0.7}
@@ -318,6 +369,20 @@ export function ServerChannelsScreen({
 
               {isOwner ? (
                 <>
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    className="flex-row items-center gap-2.5 rounded-lg mx-1 px-2.5 py-3"
+                    onPress={() => {
+                      setIsServerMenuOpen(false);
+                      setIsServerSettingsVisible(true);
+                    }}
+                  >
+                    <Feather name="settings" size={16} color={colors.info} />
+                    <Text className="text-[14px] font-semibold text-content">
+                      Configuración del servidor
+                    </Text>
+                  </TouchableOpacity>
+
                   <TouchableOpacity
                     activeOpacity={0.7}
                     className="flex-row items-center gap-2.5 rounded-lg mx-1 px-2.5 py-3"
@@ -555,6 +620,18 @@ export function ServerChannelsScreen({
         />
       </View>
 
+      {isOwner ? (
+        <ServerSettingsModal
+          visible={isServerSettingsVisible}
+          server={server}
+          authToken={authToken}
+          onClose={() => setIsServerSettingsVisible(false)}
+          onUpdated={(updated) => {
+            setIsServerSettingsVisible(false);
+            onServerUpdated(updated);
+          }}
+        />
+      ) : null}
       <LeaveServerModal
         visible={isLeaveModalVisible}
         serverName={server.name}
@@ -655,5 +732,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
+  },
+  bannerServerName: {
+    color: "#ffffff",
+    textShadowColor: "rgba(0,0,0,0.5)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
 });

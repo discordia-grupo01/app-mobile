@@ -11,23 +11,61 @@ import {
   NETWORK_ERROR_MESSAGE,
   reasonOf,
   REQUEST_FAILED_MESSAGE,
+  resolveImageUrl,
   SERVER_LEAVE_FAILED,
   SERVER_LOAD_FAILED,
   SERVER_REASONS,
+  SERVER_UPDATE_FAILED,
+  SERVER_UPDATE_FORBIDDEN,
   SERVERS_LOAD_FAILED,
   type ServerSummary,
   SESSION_EXPIRED_MESSAGE,
   UNEXPECTED_ERROR_MESSAGE,
+  type UpdateServerResult,
 } from "@discordia/client-shared";
 import * as FileSystem from "expo-file-system/legacy";
 
 import { apiFetch, refreshAccessToken } from "../../../lib/api-client";
 import { env } from "../../../lib/env";
 import { getToken } from "../../../lib/storage";
-import type { CreateServerParams } from "../types";
+import type {
+  CreateServerIconInput,
+  CreateServerParams,
+  UpdateServerParams,
+} from "../types";
+
+const iconVersions = new Map<string, number>();
+const bannerVersions = new Map<string, number>();
+
+function bumpVersion(versions: Map<string, number>, serverId: string): void {
+  versions.set(serverId, (versions.get(serverId) ?? 0) + 1);
+}
+
+function withVersion(
+  url: string,
+  versions: Map<string, number>,
+  serverId: string,
+): string {
+  const version = versions.get(serverId);
+  if (!version) return url;
+  const separator = url.includes("?") ? "&" : "?";
+  return `${url}${separator}v=${version}`;
+}
 
 export function serverIconUrl(serverId: string): string {
-  return `${env.apiUrl}/v1/servers/${serverId}/icon`;
+  return withVersion(
+    `${env.apiUrl}/v1/servers/${serverId}/icon`,
+    iconVersions,
+    serverId,
+  );
+}
+
+export function resolveServerBannerUrl(
+  serverId: string,
+  bannerUrl: string | null,
+): string | null {
+  const resolved = resolveImageUrl(bannerUrl, env.apiUrl);
+  return resolved ? withVersion(resolved, bannerVersions, serverId) : null;
 }
 
 export async function listMyServers(): Promise<ListServersResult> {
@@ -141,6 +179,178 @@ export async function createServer(
       ok: false,
       message: friendly ?? UNEXPECTED_ERROR_MESSAGE,
     };
+  }
+
+  return { ok: true, server: body as ServerSummary };
+}
+
+async function uploadServerFile(
+  serverId: string,
+  fieldName: "icon" | "banner",
+  file: CreateServerIconInput,
+  extraParams: Record<string, string>,
+  token: string | null,
+): Promise<{ status: number; rawBody: string }> {
+  const authHeaders: Record<string, string> | undefined = token
+    ? { Authorization: `Bearer ${token}` }
+    : undefined;
+
+  const uploadResult = await FileSystem.uploadAsync(
+    `${env.apiUrl}/v1/servers/${serverId}`,
+    file.uri,
+    {
+      httpMethod: "PATCH",
+      uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+      fieldName,
+      mimeType: file.type,
+      parameters: extraParams,
+      headers: authHeaders,
+    },
+  );
+  return { status: uploadResult.status, rawBody: uploadResult.body };
+}
+
+async function updateServerFieldsOnly(
+  serverId: string,
+  fields: Record<string, string>,
+  token: string | null,
+): Promise<{ status: number; rawBody: string }> {
+  const authHeaders: Record<string, string> | undefined = token
+    ? { Authorization: `Bearer ${token}` }
+    : undefined;
+
+  const formData = new FormData();
+  for (const [key, value] of Object.entries(fields)) {
+    formData.append(key, value);
+  }
+
+  const res = await fetch(`${env.apiUrl}/v1/servers/${serverId}`, {
+    method: "PATCH",
+    headers: authHeaders,
+    body: formData,
+  });
+  return { status: res.status, rawBody: await res.text() };
+}
+
+async function performServerUpdate(
+  params: UpdateServerParams,
+  token: string | null,
+): Promise<{ status: number; rawBody: string }> {
+  const nameFields: Record<string, string> =
+    params.name !== undefined ? { name: params.name } : {};
+  const removeBannerFields: Record<string, string> = params.removeBanner
+    ? { remove_banner: "true" }
+    : {};
+
+  if (params.icon && params.banner) {
+    const iconResult = await uploadServerFile(
+      params.serverId,
+      "icon",
+      params.icon,
+      nameFields,
+      token,
+    );
+    if (iconResult.status < 200 || iconResult.status >= 300) {
+      return iconResult;
+    }
+    return uploadServerFile(
+      params.serverId,
+      "banner",
+      params.banner,
+      {},
+      token,
+    );
+  }
+
+  if (params.icon) {
+    return uploadServerFile(
+      params.serverId,
+      "icon",
+      params.icon,
+      { ...nameFields, ...removeBannerFields },
+      token,
+    );
+  }
+
+  if (params.banner) {
+    return uploadServerFile(
+      params.serverId,
+      "banner",
+      params.banner,
+      nameFields,
+      token,
+    );
+  }
+
+  return updateServerFieldsOnly(
+    params.serverId,
+    { ...nameFields, ...removeBannerFields },
+    token,
+  );
+}
+
+export async function updateServer(
+  params: UpdateServerParams,
+): Promise<UpdateServerResult> {
+  let status: number;
+  let rawBody: string;
+  try {
+    const token = await getToken();
+    const first = await performServerUpdate(params, token);
+    status = first.status;
+    rawBody = first.rawBody;
+
+    if (status === 401) {
+      const newToken = await refreshAccessToken();
+      if (newToken) {
+        const retry = await performServerUpdate(params, newToken);
+        status = retry.status;
+        rawBody = retry.rawBody;
+      }
+    }
+  } catch (err) {
+    if (__DEV__) {
+      console.error("updateServer: request failed", err);
+    }
+    return { ok: false, message: NETWORK_ERROR_MESSAGE };
+  }
+
+  let body: unknown = null;
+  try {
+    body = rawBody ? JSON.parse(rawBody) : null;
+  } catch {}
+
+  if (status < 200 || status >= 300) {
+    const details = detailsOf(body);
+    const reason = reasonOf(details);
+    const field = fieldOf(details);
+    const friendly = reason ? SERVER_REASONS[reason] : undefined;
+
+    if (
+      (field === "name" || field === "icon" || field === "banner") &&
+      friendly
+    ) {
+      return {
+        ok: false,
+        message: friendly,
+        fieldErrors: { [field]: friendly },
+      };
+    }
+    if (status === 401) {
+      return { ok: false, message: SESSION_EXPIRED_MESSAGE };
+    }
+    if (status === 403) {
+      return { ok: false, message: SERVER_UPDATE_FORBIDDEN };
+    }
+    return {
+      ok: false,
+      message: friendly ?? SERVER_UPDATE_FAILED,
+    };
+  }
+
+  if (params.icon) bumpVersion(iconVersions, params.serverId);
+  if (params.banner || params.removeBanner) {
+    bumpVersion(bannerVersions, params.serverId);
   }
 
   return { ok: true, server: body as ServerSummary };
