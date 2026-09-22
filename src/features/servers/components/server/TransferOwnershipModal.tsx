@@ -1,6 +1,7 @@
 import {
   MEMBER_PAGE_LIMIT,
   type OwnershipTransfer,
+  resolveImageUrl,
 } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
@@ -27,7 +28,7 @@ import {
   listMembers,
   rejectOwnershipTransfer,
 } from "../../api";
-import { resolveImageUri } from "../../../../lib/image-url";
+import { env } from "../../../../lib/env";
 import { cn } from "../../../../lib/cn";
 import { useThemeColors } from "../../../../theme/theme-context";
 import { Button } from "../../../../components/ui/Button";
@@ -429,7 +430,7 @@ export function TransferOwnershipModal({
                   >
                     <ServerAvatar
                       name={item.name ?? item.userId}
-                      uri={resolveImageUri(item.avatarUrl)}
+                      uri={resolveImageUrl(item.avatarUrl, env.apiUrl)}
                       size={36}
                     />
                     <View className="flex-1">
@@ -492,7 +493,7 @@ export function TransferOwnershipModal({
         <View className="flex-row items-center gap-3 rounded-2xl border border-line-strong bg-surface-raised p-3.5 mb-4">
           <ServerAvatar
             name={selectedDisplayName}
-            uri={resolveImageUri(selectedMember?.avatarUrl)}
+            uri={resolveImageUrl(selectedMember?.avatarUrl, env.apiUrl)}
             size={40}
           />
           <View className="flex-1">
