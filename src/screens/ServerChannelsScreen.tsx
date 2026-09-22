@@ -149,9 +149,17 @@ export function ServerChannelsScreen({
   const uncategorized = channelsOfCategory(server.channels, null);
   const sortedCategories = sortByPosition(server.categories);
 
+  const [pendingTransferServerId, setPendingTransferServerId] = useState(
+    server.id,
+  );
+  if (server.id !== pendingTransferServerId) {
+    setPendingTransferServerId(server.id);
+    setPendingTransfer(null);
+    setIsLoadingPendingTransfer(true);
+  }
+
   useEffect(() => {
     let cancelled = false;
-    setIsLoadingPendingTransfer(true);
     getPendingOwnershipTransfer(server.id).then((result) => {
       if (cancelled) return;
       setPendingTransfer(result.ok ? result.transfer : null);

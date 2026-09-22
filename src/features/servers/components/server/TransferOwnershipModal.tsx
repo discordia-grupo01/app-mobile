@@ -39,13 +39,10 @@ interface TransferOwnershipModalProps {
   serverName: string;
   isOwner: boolean;
   currentUserId: string | null;
-  /** Viene ya resuelta desde `ServerChannelsScreen` (un solo fetch compartido
-   * entre el item de menu y este modal), igual que en `web-client`. */
   pendingTransfer: OwnershipTransfer | null;
   isLoadingPendingTransfer: boolean;
   onPendingTransferChange: (transfer: OwnershipTransfer | null) => void;
   onClose: () => void;
-  /** Se dispara solo cuando YO acepto: paso a ser el nuevo owner del server. */
   onOwnershipAccepted: () => void;
 }
 
@@ -57,18 +54,6 @@ interface PickerMember {
   avatarUrl: string | null;
 }
 
-/**
- * Cubre las 3 CA de "Transferir propiedad del servidor":
- *  - CA1/CA2 (iniciar): el owner elige un miembro de la lista real del
- *    servidor -- si no es miembro, ni siquiera aparece en la lista, y el
- *    back igual lo valida por si la lista quedo desactualizada.
- *  - CA1/CA3 (responder): el destinatario ve la oferta y puede aceptar
- *    (pasa a ser el owner) o rechazar (nada cambia).
- * El owner que inicio tambien puede cancelarla antes de que el destinatario
- * responda. Mismo diseño que `TransferOwnershipModal` de `web-client`,
- * adaptado a los pasos de "elegir miembro" / "confirmar" que ya tenia este
- * modal en mobile.
- */
 export function TransferOwnershipModal({
   visible,
   serverId,
@@ -101,7 +86,6 @@ export function TransferOwnershipModal({
     pendingTransfer !== null &&
     currentUserId !== null &&
     pendingTransfer.from_user_id === currentUserId;
-  /** El otro lado de la transferencia: a quien se la ofrecí, o quien me la ofreció. */
   const counterpartUserId = isOutgoing
     ? pendingTransfer?.to_user_id
     : isIncoming
@@ -166,12 +150,17 @@ export function TransferOwnershipModal({
   useEffect(() => {
     if (!visible || !canInitiate) return;
     return fetchMembers();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, canInitiate, fetchMembers]);
 
-  /** Nombre de la otra persona involucrada, para no mostrar el id a secas. */
-  useEffect(() => {
+  const [resolvedCounterpartId, setResolvedCounterpartId] = useState<
+    string | undefined
+  >(counterpartUserId);
+  if (counterpartUserId !== resolvedCounterpartId) {
+    setResolvedCounterpartId(counterpartUserId);
     setCounterpartName(null);
+  }
+
+  useEffect(() => {
     if (!counterpartUserId) return;
     let cancelled = false;
     getPublicUser(counterpartUserId).then((profile) => {
