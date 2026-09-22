@@ -1,4 +1,5 @@
 import {
+  type GetPendingTransferResult,
   type InitiateTransferResult,
   type ListMembersResult,
   MEMBER_REASONS,
@@ -8,9 +9,14 @@ import {
   OWNER_ONLY_TRANSFER,
   type OwnershipTransfer,
   reasonOf,
+  type RespondTransferResult,
   SERVER_NOT_FOUND,
   SESSION_EXPIRED_MESSAGE,
+  TRANSFER_ACCEPT_FAILED,
+  TRANSFER_CANCEL_FAILED,
+  TRANSFER_LOAD_FAILED,
   TRANSFER_REASONS,
+  TRANSFER_REJECT_FAILED,
   TRANSFER_START_FAILED,
 } from "@discordia/client-shared";
 
@@ -98,4 +104,91 @@ export async function initiateOwnershipTransfer(
   }
 
   return { ok: true, transfer: result.data };
+}
+
+export async function getPendingOwnershipTransfer(
+  serverId: string,
+): Promise<GetPendingTransferResult> {
+  const result = await apiFetch<OwnershipTransfer>(
+    `/v1/servers/${serverId}/ownership-transfers/pending`,
+    { method: "GET" },
+  );
+
+  if (!result.ok) {
+    if (result.status === 404) {
+      return { ok: true, transfer: null };
+    }
+    if (result.status === 401) {
+      return { ok: false, message: SESSION_EXPIRED_MESSAGE };
+    }
+    return {
+      ok: false,
+      message: messageFor(result, {}, TRANSFER_LOAD_FAILED),
+    };
+  }
+
+  return { ok: true, transfer: result.data };
+}
+
+async function respondToOwnershipTransfer(
+  serverId: string,
+  transferId: string,
+  action: "accept" | "reject" | "cancel",
+  fallback: string,
+): Promise<RespondTransferResult> {
+  const result = await apiFetch<OwnershipTransfer>(
+    `/v1/servers/${serverId}/ownership-transfers/${transferId}/${action}`,
+    { method: "POST" },
+  );
+
+  if (!result.ok) {
+    if (result.status === 401) {
+      return { ok: false, message: SESSION_EXPIRED_MESSAGE };
+    }
+    if (result.status === 404) {
+      return { ok: false, message: SERVER_NOT_FOUND };
+    }
+    return {
+      ok: false,
+      message: messageFor(result, TRANSFER_REASONS, fallback),
+    };
+  }
+
+  return { ok: true, transfer: result.data };
+}
+
+export function acceptOwnershipTransfer(
+  serverId: string,
+  transferId: string,
+): Promise<RespondTransferResult> {
+  return respondToOwnershipTransfer(
+    serverId,
+    transferId,
+    "accept",
+    TRANSFER_ACCEPT_FAILED,
+  );
+}
+
+export function rejectOwnershipTransfer(
+  serverId: string,
+  transferId: string,
+): Promise<RespondTransferResult> {
+  return respondToOwnershipTransfer(
+    serverId,
+    transferId,
+    "reject",
+    TRANSFER_REJECT_FAILED,
+  );
+}
+
+export function cancelOwnershipTransfer(
+  serverId: string,
+  transferId: string,
+): Promise<RespondTransferResult> {
+  return respondToOwnershipTransfer(
+    serverId,
+    transferId,
+    "cancel",
+    TRANSFER_CANCEL_FAILED,
+  );
 }
