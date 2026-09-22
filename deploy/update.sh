@@ -21,7 +21,7 @@ git -C "$REPO_DIR" reset --hard "$SHA"
 cd "$COMPOSE_DIR"
 docker compose -f "$COMPOSE_FILE" restart
 
-for _ in $(seq 1 48); do
+for _ in $(seq 1 120); do
   if curl -fsS -m 3 http://localhost:8081/status 2>/dev/null | grep -q "packager-status:running"; then
     echo "deploy OK: $SHA"
     exit 0
