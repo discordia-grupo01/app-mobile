@@ -281,11 +281,15 @@ export function TransferOwnershipModal({
           {errorBanner}
           <View className="items-center justify-center gap-3.5">
             <View className="w-15 h-15 rounded-[18px] items-center justify-center bg-[rgba(252,227,164,0.12)] mb-1">
-              <Feather name="award" size={26} color={colors.highlight} />
+              <MaterialCommunityIcons
+                name="crown"
+                size={26}
+                color={colors.highlight}
+              />
             </View>
             <Text className="text-[13px] leading-[19px] text-content-muted text-center">
               <Text className="text-content font-bold">
-                {counterpartName ?? pendingTransfer.from_user_id}
+                {counterpartName ?? "Cargando..."}
               </Text>{" "}
               quiere transferirte la propiedad de{" "}
               <Text className="text-content font-bold">{serverName}</Text>. Si
@@ -326,7 +330,7 @@ export function TransferOwnershipModal({
               Le ofreciste la propiedad de{" "}
               <Text className="text-content font-bold">{serverName}</Text> a{" "}
               <Text className="text-content font-bold">
-                {counterpartName ?? pendingTransfer.to_user_id}
+                {counterpartName ?? "Cargando..."}
               </Text>
               . Todavía no respondió: podés cancelar la transferencia mientras
               esté pendiente.
@@ -575,9 +579,7 @@ export function TransferOwnershipModal({
                   className="text-[17px] font-bold text-content"
                   numberOfLines={1}
                 >
-                  {isIncoming
-                    ? "Transferencia de propiedad"
-                    : "Transferir propiedad"}
+                  Transferir propiedad
                 </Text>
               </View>
             </View>
