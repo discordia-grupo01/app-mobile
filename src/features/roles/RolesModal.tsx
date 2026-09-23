@@ -3,6 +3,7 @@ import {
   MAX_NAME,
   MEMBER_PAGE_LIMIT,
   type MemberInfo,
+  NO_ROLES_YET,
   type Role,
   ROLE_PERMISSIONS,
   type RolePermission,
@@ -20,6 +21,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -62,6 +64,7 @@ export function RolesModal({
 }: RolesModalProps) {
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
   const [wasVisible, setWasVisible] = useState(visible);
   const [step, setStep] = useState<Step>("list");
 
@@ -379,10 +382,9 @@ export function RolesModal({
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
 
         <View
-          className="w-full max-w-120 flex-1 rounded-[20px] border border-line-strong bg-surface-modal overflow-hidden"
+          className="w-full max-w-120 rounded-[20px] border border-line-strong bg-surface-modal overflow-hidden"
           style={{
-            marginTop: insets.top + 12,
-            marginBottom: insets.bottom + 12,
+            maxHeight: windowHeight - insets.top - insets.bottom - 48,
           }}
         >
           <View className="flex-row items-center gap-2 px-3 py-3 border-b border-b-line">
@@ -465,7 +467,7 @@ export function RolesModal({
 
           {/* ── LISTA DE ROLES ─────────────────────────── */}
           {step === "list" ? (
-            <View className="flex-1">
+            <View className="shrink">
               <View className="gap-2.5 px-4 pt-3.5 pb-1">
                 <Text
                   className="text-[12px] text-content-subtle"
@@ -480,7 +482,7 @@ export function RolesModal({
                 />
               </View>
               <ScrollView
-                className="flex-1"
+                className="shrink"
                 contentContainerClassName="px-3 pt-2.5 pb-5 gap-1"
                 showsVerticalScrollIndicator={false}
               >
@@ -496,7 +498,7 @@ export function RolesModal({
                   </Text>
                 ) : (roles ?? []).length === 0 ? (
                   <Text className="text-content-subtle text-[13px] mt-2">
-                    Todavía no hay roles.
+                    {NO_ROLES_YET}
                   </Text>
                 ) : (
                   (roles ?? []).map((role) => (
@@ -538,9 +540,9 @@ export function RolesModal({
 
           {/* ── CREAR ROL ──────────────────────────────── */}
           {step === "create" ? (
-            <View className="flex-1">
+            <View className="shrink">
               <ScrollView
-                className="flex-1"
+                className="shrink"
                 contentContainerClassName="p-5 gap-5.5"
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
@@ -621,9 +623,9 @@ export function RolesModal({
 
           {/* ── EDITAR ROL ─────────────────────────────── */}
           {step === "edit" && selectedRole ? (
-            <View className="flex-1">
+            <View className="shrink">
               <ScrollView
-                className="flex-1"
+                className="shrink"
                 contentContainerClassName="p-5 gap-5.5"
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
@@ -842,7 +844,7 @@ export function RolesModal({
           {/* ── MIEMBROS DEL ROL ───────────────────────── */}
           {step === "members" && selectedRole ? (
             <ScrollView
-              className="flex-1"
+              className="shrink"
               contentContainerClassName="p-5 gap-5.5"
               showsVerticalScrollIndicator={false}
             >

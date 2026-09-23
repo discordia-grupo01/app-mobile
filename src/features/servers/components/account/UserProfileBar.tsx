@@ -1,3 +1,5 @@
+import { resolveImageUrl } from "@discordia/client-shared";
+
 import { Feather } from "@expo/vector-icons";
 import { useState } from "react";
 import {
@@ -9,7 +11,7 @@ import {
   View,
 } from "react-native";
 
-import { resolveImageUri } from "../../../../lib/image-url";
+import { env } from "../../../../lib/env";
 import { useThemeColors, useTheme } from "../../../../theme/theme-context";
 import { Button } from "../../../../components/ui/Button";
 import { useAuth } from "../../../auth/auth-context";
@@ -42,7 +44,7 @@ export function UserProfileBar({
   const [isDeafened, setIsDeafened] = useState(false);
   const { theme, setTheme } = useTheme();
   const displayName = (user?.name ?? userName)?.trim() || "Mi cuenta";
-  const avatarSrc = resolveImageUri(user?.avatar_url);
+  const avatarSrc = resolveImageUrl(user?.avatar_url, env.apiUrl);
   const statusText = user?.status_text?.trim();
 
   function handleConfirmLogout() {
