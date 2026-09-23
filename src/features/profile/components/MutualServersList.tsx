@@ -3,18 +3,14 @@ import { type ServerSummary } from "@discordia/client-shared";
 import { useEffect, useState } from "react";
 import { Text, View } from "react-native";
 
-import { listMyServers, serverIconUrl } from "../../servers/api";
+import { listMyServers, resolveServerIconUrl } from "../../servers/api";
 import { ServerAvatar } from "../../servers/components/ServerAvatar";
 
 interface MutualServersListProps {
   serverIds: string[];
-  authToken: string | null;
 }
 
-export function MutualServersList({
-  serverIds,
-  authToken,
-}: MutualServersListProps) {
+export function MutualServersList({ serverIds }: MutualServersListProps) {
   const [servers, setServers] = useState<ServerSummary[] | null>(null);
 
   useEffect(() => {
@@ -49,8 +45,7 @@ export function MutualServersList({
             >
               <ServerAvatar
                 name={server.name}
-                uri={serverIconUrl(server.id)}
-                authToken={authToken}
+                uri={resolveServerIconUrl(server.icon_url)}
                 size={32}
                 borderRadius={12}
               />

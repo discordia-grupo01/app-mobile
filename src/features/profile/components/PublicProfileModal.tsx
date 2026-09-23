@@ -1,4 +1,4 @@
-import { type PublicUser } from "@discordia/client-shared";
+import { type PublicUser, resolveImageUrl } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
@@ -12,8 +12,8 @@ import {
   View,
 } from "react-native";
 
+import { env } from "../../../lib/env";
 import { useThemeColors } from "../../../theme/theme-context";
-import { resolveImageUri } from "../../../lib/image-url";
 import { ServerAvatar } from "../../servers/components/ServerAvatar";
 import { MemberRoleBadges } from "../../roles/components/MemberRoleBadges";
 import { getPublicProfile } from "../service";
@@ -72,7 +72,7 @@ export function PublicProfileModal({
     };
   }, [visible, userId]);
 
-  const avatarSrc = resolveImageUri(profile?.avatar_url);
+  const avatarSrc = resolveImageUrl(profile?.avatar_url, env.apiUrl);
 
   return (
     <Modal
@@ -149,10 +149,7 @@ export function PublicProfileModal({
                 </View>
 
                 <View className="mb-4">
-                  <MutualServersList
-                    serverIds={profile.mutual_server_ids}
-                    authToken={authToken}
-                  />
+                  <MutualServersList serverIds={profile.mutual_server_ids} />
                 </View>
 
                 <View className="mb-4">

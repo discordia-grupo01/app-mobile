@@ -6,6 +6,7 @@ import {
   MAX_DESCRIPTION,
   MAX_NAME,
   NO_DESCRIPTION_YET,
+  resolveImageUrl,
   validateAvatar,
 } from "@discordia/client-shared";
 
@@ -30,8 +31,8 @@ import {
 
 import { Button } from "../../../components/ui/Button";
 import { cn } from "../../../lib/cn";
+import { env } from "../../../lib/env";
 import { useThemeColors } from "../../../theme/theme-context";
-import { resolveImageUri } from "../../../lib/image-url";
 import { useAuth } from "../../auth/auth-context";
 import { ServerAvatar } from "../../servers/components/ServerAvatar";
 import { MemberRoleBadges } from "../../roles/components/MemberRoleBadges";
@@ -98,7 +99,8 @@ export function OwnProfileModal({
 
   if (!user) return null;
 
-  const avatarSrc = imagePreview ?? resolveImageUri(user.avatar_url);
+  const avatarSrc =
+    imagePreview ?? resolveImageUrl(user.avatar_url, env.apiUrl);
 
   async function submitProfile(overrides: {
     name?: string;

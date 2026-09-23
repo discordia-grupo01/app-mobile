@@ -1,9 +1,14 @@
 import {
   MEMBER_PAGE_LIMIT,
   type OwnershipTransfer,
+  resolveImageUrl,
+  TRANSFER_CHOOSE_NEW_OWNER,
+  TRANSFER_NONE_PENDING,
+  TRANSFER_NO_OTHER_MEMBERS,
+  TRANSFER_PENDING_OTHER_VIEWER,
 } from "@discordia/client-shared";
 
-import { Feather } from "@expo/vector-icons";
+import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -27,7 +32,7 @@ import {
   listMembers,
   rejectOwnershipTransfer,
 } from "../../api";
-import { resolveImageUri } from "../../../../lib/image-url";
+import { env } from "../../../../lib/env";
 import { cn } from "../../../../lib/cn";
 import { useThemeColors } from "../../../../theme/theme-context";
 import { Button } from "../../../../components/ui/Button";
@@ -276,11 +281,15 @@ export function TransferOwnershipModal({
           {errorBanner}
           <View className="items-center justify-center gap-3.5">
             <View className="w-15 h-15 rounded-[18px] items-center justify-center bg-[rgba(252,227,164,0.12)] mb-1">
-              <Feather name="award" size={26} color={colors.highlight} />
+              <MaterialCommunityIcons
+                name="crown"
+                size={26}
+                color={colors.highlight}
+              />
             </View>
             <Text className="text-[13px] leading-[19px] text-content-muted text-center">
               <Text className="text-content font-bold">
-                {counterpartName ?? pendingTransfer.from_user_id}
+                {counterpartName ?? "Cargando..."}
               </Text>{" "}
               quiere transferirte la propiedad de{" "}
               <Text className="text-content font-bold">{serverName}</Text>. Si
@@ -321,7 +330,7 @@ export function TransferOwnershipModal({
               Le ofreciste la propiedad de{" "}
               <Text className="text-content font-bold">{serverName}</Text> a{" "}
               <Text className="text-content font-bold">
-                {counterpartName ?? pendingTransfer.to_user_id}
+                {counterpartName ?? "Cargando..."}
               </Text>
               . Todavía no respondió: podés cancelar la transferencia mientras
               esté pendiente.
@@ -345,7 +354,7 @@ export function TransferOwnershipModal({
       return (
         <View className="p-7 pt-8">
           <Text className="text-[13px] leading-[19px] text-content-muted text-center">
-            Hay una transferencia de propiedad pendiente para este servidor.
+            {TRANSFER_PENDING_OTHER_VIEWER}
           </Text>
         </View>
       );
@@ -355,7 +364,7 @@ export function TransferOwnershipModal({
       return (
         <View className="p-7 pt-8">
           <Text className="text-[13px] leading-[19px] text-content-muted text-center">
-            No hay ninguna transferencia de propiedad pendiente.
+            {TRANSFER_NONE_PENDING}
           </Text>
         </View>
       );
@@ -388,7 +397,7 @@ export function TransferOwnershipModal({
 
     if (initiateStep === "form") {
       return (
-        <View className="flex-1">
+        <View>
           {errorMessage ? <View className="px-7">{errorBanner}</View> : null}
           <Text
             className={cn(
@@ -396,17 +405,13 @@ export function TransferOwnershipModal({
               "px-7 mb-2",
             )}
           >
-            Elegí a quién transferirle el servidor
+            {TRANSFER_CHOOSE_NEW_OWNER}
           </Text>
 
           {members.length === 0 ? (
-            <View className="items-center gap-2.5 px-7 py-6">
-              <Feather name="users" size={22} color={colors.textSubtle} />
-              <Text className="text-[13px] leading-[18px] text-content-subtle text-center">
-                Todavía no hay otros miembros en este servidor. Invitá gente
-                antes de transferir la propiedad.
-              </Text>
-            </View>
+            <Text className="text-[13px] leading-[19px] text-content-muted text-center px-7 py-6">
+              {TRANSFER_NO_OTHER_MEMBERS}
+            </Text>
           ) : (
             <FlatList
               data={members}
@@ -429,7 +434,7 @@ export function TransferOwnershipModal({
                   >
                     <ServerAvatar
                       name={item.name ?? item.userId}
-                      uri={resolveImageUri(item.avatarUrl)}
+                      uri={resolveImageUrl(item.avatarUrl, env.apiUrl)}
                       size={36}
                     />
                     <View className="flex-1">
@@ -438,13 +443,6 @@ export function TransferOwnershipModal({
                         numberOfLines={1}
                       >
                         {item.name ?? "Cargando..."}
-                      </Text>
-                      <Text
-                        className="text-[11px] text-content-subtle mt-[1px]"
-                        style={styles.memberId}
-                        numberOfLines={1}
-                      >
-                        {item.userId}
                       </Text>
                     </View>
                     <View
@@ -463,21 +461,23 @@ export function TransferOwnershipModal({
             />
           )}
 
-          <View className="flex-row gap-3 mt-4 pt-8 border-t border-t-line p-7">
-            <Button
-              title="Cancelar"
-              variant="secondary"
-              onPress={onClose}
-              style={{ flex: 1, width: undefined }}
-            />
-            <Button
-              title="Continuar"
-              onPress={handleContinue}
-              disabled={!selectedUserId}
-              iconRight="arrow-right"
-              style={{ flex: 1, width: undefined }}
-            />
-          </View>
+          {members.length > 0 ? (
+            <View className="flex-row gap-3 mt-4 pt-8 border-t border-t-line p-7">
+              <Button
+                title="Cancelar"
+                variant="secondary"
+                onPress={onClose}
+                style={{ flex: 1, width: undefined }}
+              />
+              <Button
+                title="Continuar"
+                onPress={handleContinue}
+                disabled={!selectedUserId}
+                iconRight="arrow-right"
+                style={{ flex: 1, width: undefined }}
+              />
+            </View>
+          ) : null}
         </View>
       );
     }
@@ -492,7 +492,7 @@ export function TransferOwnershipModal({
         <View className="flex-row items-center gap-3 rounded-2xl border border-line-strong bg-surface-raised p-3.5 mb-4">
           <ServerAvatar
             name={selectedDisplayName}
-            uri={resolveImageUri(selectedMember?.avatarUrl)}
+            uri={resolveImageUrl(selectedMember?.avatarUrl, env.apiUrl)}
             size={40}
           />
           <View className="flex-1">
@@ -555,7 +555,7 @@ export function TransferOwnershipModal({
       >
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
 
-        <View className="w-full max-w-110 max-h-[90%] min-h-80 rounded-[20px] border border-line-strong bg-surface-modal overflow-hidden">
+        <View className="w-full max-w-110 max-h-[90%] rounded-[20px] border border-line-strong bg-surface-modal overflow-hidden">
           <TouchableOpacity
             onPress={onClose}
             className="absolute top-4 right-4 z-10 w-8 h-8 rounded-2xl items-center justify-center bg-surface-input border border-line"
@@ -568,19 +568,18 @@ export function TransferOwnershipModal({
           <View className="p-7 pt-8 pb-0">
             <View className="flex-row items-center gap-3 mb-5 pr-6">
               <View className="w-9 h-9 rounded-xl items-center justify-center bg-[rgba(107,149,189,0.15)]">
-                <Feather name="shield" size={17} color={colors.info} />
+                <MaterialCommunityIcons
+                  name="swap-horizontal"
+                  size={19}
+                  color={colors.info}
+                />
               </View>
               <View className="flex-1">
-                <Text className="text-[17px] font-bold text-content">
-                  {isIncoming
-                    ? "Transferencia de propiedad"
-                    : "Transferir propiedad"}
-                </Text>
                 <Text
-                  className="text-[12px] text-content-subtle mt-0.5"
+                  className="text-[17px] font-bold text-content"
                   numberOfLines={1}
                 >
-                  {serverName}
+                  Transferir propiedad
                 </Text>
               </View>
             </View>
@@ -602,8 +601,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 8,
     gap: 4,
-  },
-  memberId: {
-    fontFamily: "monospace",
   },
 });

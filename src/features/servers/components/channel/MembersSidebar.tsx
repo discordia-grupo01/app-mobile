@@ -1,4 +1,4 @@
-import { MEMBER_PAGE_LIMIT } from "@discordia/client-shared";
+import { MEMBER_PAGE_LIMIT, resolveImageUrl } from "@discordia/client-shared";
 
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useCallback, useEffect, useState } from "react";
@@ -15,7 +15,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { getPublicUser } from "../../../auth/service";
-import { resolveImageUri } from "../../../../lib/image-url";
+import { env } from "../../../../lib/env";
 import { useThemeColors } from "../../../../theme/theme-context";
 import { OwnProfileModal } from "../../../profile/components/OwnProfileModal";
 import { PublicProfileModal } from "../../../profile/components/PublicProfileModal";
@@ -142,7 +142,7 @@ export function MembersSidebar({
   }
 
   function renderMemberRow(member: ResolvedMember) {
-    const avatarSrc = resolveImageUri(member.avatarUrl);
+    const avatarSrc = resolveImageUrl(member.avatarUrl, env.apiUrl);
     const isSelf = member.userId === currentUserId;
 
     return (
