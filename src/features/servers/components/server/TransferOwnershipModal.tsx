@@ -436,13 +436,6 @@ export function TransferOwnershipModal({
                       >
                         {item.name ?? "Cargando..."}
                       </Text>
-                      <Text
-                        className="text-[11px] text-content-subtle mt-[1px]"
-                        style={styles.memberId}
-                        numberOfLines={1}
-                      >
-                        {item.userId}
-                      </Text>
                     </View>
                     <View
                       className={cn(
@@ -601,8 +594,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 8,
     gap: 4,
-  },
-  memberId: {
-    fontFamily: "monospace",
   },
 });
