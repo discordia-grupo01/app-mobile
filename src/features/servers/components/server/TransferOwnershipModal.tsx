@@ -4,7 +4,7 @@ import {
   resolveImageUrl,
 } from "@discordia/client-shared";
 
-import { Feather } from "@expo/vector-icons";
+import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -389,7 +389,7 @@ export function TransferOwnershipModal({
 
     if (initiateStep === "form") {
       return (
-        <View className="flex-1">
+        <View>
           {errorMessage ? <View className="px-7">{errorBanner}</View> : null}
           <Text
             className={cn(
@@ -547,7 +547,7 @@ export function TransferOwnershipModal({
       >
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
 
-        <View className="w-full max-w-110 max-h-[90%] min-h-80 rounded-[20px] border border-line-strong bg-surface-modal overflow-hidden">
+        <View className="w-full max-w-110 max-h-[90%] rounded-[20px] border border-line-strong bg-surface-modal overflow-hidden">
           <TouchableOpacity
             onPress={onClose}
             className="absolute top-4 right-4 z-10 w-8 h-8 rounded-2xl items-center justify-center bg-surface-input border border-line"
@@ -560,19 +560,20 @@ export function TransferOwnershipModal({
           <View className="p-7 pt-8 pb-0">
             <View className="flex-row items-center gap-3 mb-5 pr-6">
               <View className="w-9 h-9 rounded-xl items-center justify-center bg-[rgba(107,149,189,0.15)]">
-                <Feather name="shield" size={17} color={colors.info} />
+                <MaterialCommunityIcons
+                  name="swap-horizontal"
+                  size={19}
+                  color={colors.info}
+                />
               </View>
               <View className="flex-1">
-                <Text className="text-[17px] font-bold text-content">
+                <Text
+                  className="text-[17px] font-bold text-content"
+                  numberOfLines={1}
+                >
                   {isIncoming
                     ? "Transferencia de propiedad"
                     : "Transferir propiedad"}
-                </Text>
-                <Text
-                  className="text-[12px] text-content-subtle mt-0.5"
-                  numberOfLines={1}
-                >
-                  {serverName}
                 </Text>
               </View>
             </View>
