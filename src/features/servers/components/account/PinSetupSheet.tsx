@@ -7,8 +7,11 @@ import {
 } from "@discordia/client-shared";
 import { useState } from "react";
 import {
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -72,89 +75,98 @@ export function PinSetupSheet({ visible, onClose }: PinSetupSheetProps) {
       animationType="fade"
       onRequestClose={handleClose}
     >
-      <View className="flex-1 justify-end bg-[rgba(0,0,0,0.6)]">
+      <KeyboardAvoidingView
+        className="flex-1 bg-[rgba(0,0,0,0.6)] items-center justify-center p-4"
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
         <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
 
-        <View className="bg-surface-modal rounded-tl-[22px] rounded-tr-[22px] border-t border-line-strong px-4.5 pt-2.5 pb-7">
-          <View className="self-center w-9 h-1 rounded-xs bg-line-strong mb-4" />
-
-          {isDone ? (
-            <View className="items-center py-4">
-              <View className="w-14 h-14 rounded-2xl items-center justify-center bg-success/12 mb-4">
-                <Feather name="check" size={26} color={colors.success} />
-              </View>
-              <Text className="text-[17px] font-bold text-content mb-1.5">
-                PIN activado
-              </Text>
-              <Text className="text-[13px] text-content-muted text-center mb-5">
-                Ya podés usarlo para entrar más rápido en este dispositivo.
-              </Text>
-              <Button title="Listo" onPress={handleClose} />
-            </View>
-          ) : (
-            <>
-              <Text className="text-[17px] font-bold text-content mb-1.5">
-                Activar PIN de acceso rápido
-              </Text>
-              <Text className="text-[13px] leading-[18px] text-content-muted mb-4">
-                Entrá más rápido en este dispositivo sin escribir tu email y
-                contraseña cada vez. Elegí un PIN de 6 a 8 dígitos.
-              </Text>
-
-              <TextField
-                label="ELEGÍ TU PIN"
-                placeholder="••••••"
-                keyboardType="number-pad"
-                maxLength={PIN_MAX_LENGTH}
-                isPassword
-                iconName="lock"
-                value={pin}
-                onChangeText={(text) => setPin(text.replace(/\D/g, ""))}
-                error={errors.pin}
-              />
-
-              <TextField
-                label="CONFIRMÁ TU PIN"
-                placeholder="••••••"
-                keyboardType="number-pad"
-                maxLength={PIN_MAX_LENGTH}
-                isPassword
-                iconName="lock"
-                value={confirmPin}
-                onChangeText={(text) => setConfirmPin(text.replace(/\D/g, ""))}
-                error={errors.confirmPin}
-              />
-
-              {formError ? (
-                <View
-                  className="mb-4 rounded-lg border border-danger/30 bg-danger/12 p-3"
-                  accessibilityRole="alert"
-                >
-                  <Text className="text-center text-[13px] text-danger">
-                    {formError}
-                  </Text>
+        <View className="w-full max-w-110 max-h-[90%] rounded-[22px] border border-line-strong bg-surface-modal overflow-hidden">
+          <ScrollView
+            contentContainerClassName="px-4.5 pt-6 pb-7"
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            {isDone ? (
+              <View className="items-center py-4">
+                <View className="w-14 h-14 rounded-2xl items-center justify-center bg-success/12 mb-4">
+                  <Feather name="check" size={26} color={colors.success} />
                 </View>
-              ) : null}
-
-              <Button
-                title="Activar"
-                onPress={handleSubmit}
-                isLoading={isSubmitting}
-              />
-
-              <TouchableOpacity
-                activeOpacity={0.75}
-                className="mt-2.5 items-center py-3"
-                onPress={handleClose}
-              >
-                <Text className="text-[13px] font-bold text-content-muted">
-                  Cancelar
+                <Text className="text-[17px] font-bold text-content mb-1.5">
+                  PIN activado
                 </Text>
-              </TouchableOpacity>
-            </>
-          )}
+                <Text className="text-[13px] text-content-muted text-center mb-5">
+                  Ya podés usarlo para entrar más rápido en este dispositivo.
+                </Text>
+                <Button title="Listo" onPress={handleClose} />
+              </View>
+            ) : (
+              <>
+                <Text className="text-[17px] font-bold text-content mb-1.5">
+                  Activar PIN de acceso rápido
+                </Text>
+                <Text className="text-[13px] leading-[18px] text-content-muted mb-4">
+                  Entrá más rápido en este dispositivo sin escribir tu email y
+                  contraseña cada vez. Elegí un PIN de 6 a 8 dígitos.
+                </Text>
+
+                <TextField
+                  label="ELEGÍ TU PIN"
+                  placeholder="••••••"
+                  keyboardType="number-pad"
+                  maxLength={PIN_MAX_LENGTH}
+                  isPassword
+                  iconName="lock"
+                  value={pin}
+                  onChangeText={(text) => setPin(text.replace(/\D/g, ""))}
+                  error={errors.pin}
+                />
+
+                <TextField
+                  label="CONFIRMÁ TU PIN"
+                  placeholder="••••••"
+                  keyboardType="number-pad"
+                  maxLength={PIN_MAX_LENGTH}
+                  isPassword
+                  iconName="lock"
+                  value={confirmPin}
+                  onChangeText={(text) =>
+                    setConfirmPin(text.replace(/\D/g, ""))
+                  }
+                  error={errors.confirmPin}
+                />
+
+                {formError ? (
+                  <View
+                    className="mb-4 rounded-lg border border-danger/30 bg-danger/12 p-3"
+                    accessibilityRole="alert"
+                  >
+                    <Text className="text-center text-[13px] text-danger">
+                      {formError}
+                    </Text>
+                  </View>
+                ) : null}
+
+                <Button
+                  title="Activar"
+                  onPress={handleSubmit}
+                  isLoading={isSubmitting}
+                />
+
+                <TouchableOpacity
+                  activeOpacity={0.75}
+                  className="mt-2.5 items-center py-3"
+                  onPress={handleClose}
+                >
+                  <Text className="text-[13px] font-bold text-content-muted">
+                    Cancelar
+                  </Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </ScrollView>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
