@@ -29,7 +29,11 @@ import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 import { cn } from "../../../../lib/cn";
 import { useThemeColors } from "../../../../theme/theme-context";
 import { Button } from "../../../../components/ui/Button";
-import { resolveServerBannerUrl, serverIconUrl, updateServer } from "../../api";
+import {
+  resolveServerBannerUrl,
+  resolveServerIconUrl,
+  updateServer,
+} from "../../api";
 import { materializePresetBanner } from "../../constants/preset-banners";
 import type { CreateServerIconInput } from "../../types";
 import { ServerAvatar } from "../ServerAvatar";
@@ -134,7 +138,6 @@ function PresetSwatch({
 interface ServerSettingsModalProps {
   visible: boolean;
   server: ServerSummary;
-  authToken: string | null;
   onClose: () => void;
   onUpdated: (server: ServerSummary) => void;
 }
@@ -142,7 +145,6 @@ interface ServerSettingsModalProps {
 export function ServerSettingsModal({
   visible,
   server,
-  authToken,
   onClose,
   onUpdated,
 }: ServerSettingsModalProps) {
@@ -198,12 +200,10 @@ export function ServerSettingsModal({
     !isSubmitting &&
     !isPreparingBanner;
 
-  const previewIconUri = icon?.uri ?? serverIconUrl(server.id);
-  const previewIconAuthToken = icon ? undefined : authToken;
+  const previewIconUri = icon?.uri ?? resolveServerIconUrl(server.icon_url);
   const previewBannerUri = removeBanner
     ? null
-    : (banner?.uri ?? resolveServerBannerUrl(server.id, server.banner_url));
-  const previewBannerAuthToken = banner ? undefined : authToken;
+    : (banner?.uri ?? resolveServerBannerUrl(server.banner_url));
   const selectedPresetBanner = selectedPresetId
     ? (PRESET_BANNERS.find((preset) => preset.id === selectedPresetId) ?? null)
     : null;
@@ -417,11 +417,7 @@ export function ServerSettingsModal({
                     idPrefix="preview"
                   />
                 ) : previewBannerUri ? (
-                  <ServerBanner
-                    uri={previewBannerUri}
-                    authToken={previewBannerAuthToken}
-                    height={BANNER_HEIGHT}
-                  />
+                  <ServerBanner uri={previewBannerUri} height={BANNER_HEIGHT} />
                 ) : (
                   <View className="flex-1 items-center justify-center">
                     <Feather name="image" size={20} color={colors.textSubtle} />
@@ -465,7 +461,6 @@ export function ServerSettingsModal({
                   <ServerAvatar
                     name={name || server.name}
                     uri={previewIconUri}
-                    authToken={previewIconAuthToken}
                     size={ICON_SIZE}
                   />
                 </TouchableOpacity>

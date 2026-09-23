@@ -164,7 +164,6 @@ export function HomeScreen() {
         <ServerChannelsScreen
           server={selectedServer}
           servers={servers}
-          authToken={token}
           userName={user?.name}
           isOwner={user != null && String(user.id) === selectedServer.owner_id}
           onSelectChannel={setSelectedChannelId}
@@ -200,7 +199,6 @@ export function HomeScreen() {
           visible={isJoinModalVisible}
           onClose={() => setIsJoinModalVisible(false)}
           onJoined={addAndSelect}
-          authToken={token}
         />
       </View>
     );
@@ -212,7 +210,6 @@ export function HomeScreen() {
         <StatusBar style="light" />
         <ServerPickerScreen
           servers={servers}
-          authToken={token}
           userName={user?.name}
           onSelectServer={(id) => {
             setSelectedServerId(id);
@@ -243,7 +240,6 @@ export function HomeScreen() {
           visible={isJoinModalVisible}
           onClose={() => setIsJoinModalVisible(false)}
           onJoined={addAndSelect}
-          authToken={token}
         />
       </View>
     );
@@ -284,7 +280,6 @@ export function HomeScreen() {
         visible={isJoinModalVisible}
         onClose={() => setIsJoinModalVisible(false)}
         onJoined={addAndSelect}
-        authToken={token}
       />
     </View>
   );
