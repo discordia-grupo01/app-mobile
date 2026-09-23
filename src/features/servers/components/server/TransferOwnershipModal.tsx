@@ -2,9 +2,13 @@ import {
   MEMBER_PAGE_LIMIT,
   type OwnershipTransfer,
   resolveImageUrl,
+  TRANSFER_CHOOSE_NEW_OWNER,
+  TRANSFER_NONE_PENDING,
+  TRANSFER_NO_OTHER_MEMBERS,
+  TRANSFER_PENDING_OTHER_VIEWER,
 } from "@discordia/client-shared";
 
-import { Feather } from "@expo/vector-icons";
+import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -346,7 +350,7 @@ export function TransferOwnershipModal({
       return (
         <View className="p-7 pt-8">
           <Text className="text-[13px] leading-[19px] text-content-muted text-center">
-            Hay una transferencia de propiedad pendiente para este servidor.
+            {TRANSFER_PENDING_OTHER_VIEWER}
           </Text>
         </View>
       );
@@ -356,7 +360,7 @@ export function TransferOwnershipModal({
       return (
         <View className="p-7 pt-8">
           <Text className="text-[13px] leading-[19px] text-content-muted text-center">
-            No hay ninguna transferencia de propiedad pendiente.
+            {TRANSFER_NONE_PENDING}
           </Text>
         </View>
       );
@@ -389,7 +393,7 @@ export function TransferOwnershipModal({
 
     if (initiateStep === "form") {
       return (
-        <View className="flex-1">
+        <View>
           {errorMessage ? <View className="px-7">{errorBanner}</View> : null}
           <Text
             className={cn(
@@ -397,17 +401,13 @@ export function TransferOwnershipModal({
               "px-7 mb-2",
             )}
           >
-            Elegí a quién transferirle el servidor
+            {TRANSFER_CHOOSE_NEW_OWNER}
           </Text>
 
           {members.length === 0 ? (
-            <View className="items-center gap-2.5 px-7 py-6">
-              <Feather name="users" size={22} color={colors.textSubtle} />
-              <Text className="text-[13px] leading-[18px] text-content-subtle text-center">
-                Todavía no hay otros miembros en este servidor. Invitá gente
-                antes de transferir la propiedad.
-              </Text>
-            </View>
+            <Text className="text-[13px] leading-[19px] text-content-muted text-center px-7 py-6">
+              {TRANSFER_NO_OTHER_MEMBERS}
+            </Text>
           ) : (
             <FlatList
               data={members}
@@ -440,13 +440,6 @@ export function TransferOwnershipModal({
                       >
                         {item.name ?? "Cargando..."}
                       </Text>
-                      <Text
-                        className="text-[11px] text-content-subtle mt-[1px]"
-                        style={styles.memberId}
-                        numberOfLines={1}
-                      >
-                        {item.userId}
-                      </Text>
                     </View>
                     <View
                       className={cn(
@@ -464,21 +457,23 @@ export function TransferOwnershipModal({
             />
           )}
 
-          <View className="flex-row gap-3 mt-4 pt-8 border-t border-t-line p-7">
-            <Button
-              title="Cancelar"
-              variant="secondary"
-              onPress={onClose}
-              style={{ flex: 1, width: undefined }}
-            />
-            <Button
-              title="Continuar"
-              onPress={handleContinue}
-              disabled={!selectedUserId}
-              iconRight="arrow-right"
-              style={{ flex: 1, width: undefined }}
-            />
-          </View>
+          {members.length > 0 ? (
+            <View className="flex-row gap-3 mt-4 pt-8 border-t border-t-line p-7">
+              <Button
+                title="Cancelar"
+                variant="secondary"
+                onPress={onClose}
+                style={{ flex: 1, width: undefined }}
+              />
+              <Button
+                title="Continuar"
+                onPress={handleContinue}
+                disabled={!selectedUserId}
+                iconRight="arrow-right"
+                style={{ flex: 1, width: undefined }}
+              />
+            </View>
+          ) : null}
         </View>
       );
     }
@@ -556,7 +551,7 @@ export function TransferOwnershipModal({
       >
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
 
-        <View className="w-full max-w-110 max-h-[90%] min-h-80 rounded-[20px] border border-line-strong bg-surface-modal overflow-hidden">
+        <View className="w-full max-w-110 max-h-[90%] rounded-[20px] border border-line-strong bg-surface-modal overflow-hidden">
           <TouchableOpacity
             onPress={onClose}
             className="absolute top-4 right-4 z-10 w-8 h-8 rounded-2xl items-center justify-center bg-surface-input border border-line"
@@ -569,19 +564,20 @@ export function TransferOwnershipModal({
           <View className="p-7 pt-8 pb-0">
             <View className="flex-row items-center gap-3 mb-5 pr-6">
               <View className="w-9 h-9 rounded-xl items-center justify-center bg-[rgba(107,149,189,0.15)]">
-                <Feather name="shield" size={17} color={colors.info} />
+                <MaterialCommunityIcons
+                  name="swap-horizontal"
+                  size={19}
+                  color={colors.info}
+                />
               </View>
               <View className="flex-1">
-                <Text className="text-[17px] font-bold text-content">
+                <Text
+                  className="text-[17px] font-bold text-content"
+                  numberOfLines={1}
+                >
                   {isIncoming
                     ? "Transferencia de propiedad"
                     : "Transferir propiedad"}
-                </Text>
-                <Text
-                  className="text-[12px] text-content-subtle mt-0.5"
-                  numberOfLines={1}
-                >
-                  {serverName}
                 </Text>
               </View>
             </View>
@@ -603,8 +599,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 8,
     gap: 4,
-  },
-  memberId: {
-    fontFamily: "monospace",
   },
 });
