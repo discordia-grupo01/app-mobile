@@ -1,4 +1,5 @@
 import {
+  EMAIL_NOT_VERIFIED,
   hasErrors,
   PIN_MAX_LENGTH,
   type PinLoginErrors,
@@ -24,9 +25,13 @@ import { getStoredUser } from "../lib/storage";
 
 interface PinEntryScreenProps {
   onUseAnotherAccount: () => void;
+  onEmailNotVerified: (email: string) => void;
 }
 
-export function PinEntryScreen({ onUseAnotherAccount }: PinEntryScreenProps) {
+export function PinEntryScreen({
+  onUseAnotherAccount,
+  onEmailNotVerified,
+}: PinEntryScreenProps) {
   const { loginWithPin } = useAuth();
 
   const [pin, setPin] = useState("");
@@ -34,10 +39,14 @@ export function PinEntryScreen({ onUseAnotherAccount }: PinEntryScreenProps) {
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userName, setUserName] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
 
   useEffect(() => {
     getStoredUser<User>()
-      .then((user) => setUserName(user?.name ?? null))
+      .then((user) => {
+		setUserName(user?.name ?? null);
+		setUserEmail(user?.email ?? null);
+	  })
       .catch(() => {});
   }, []);
 
@@ -54,6 +63,10 @@ export function PinEntryScreen({ onUseAnotherAccount }: PinEntryScreenProps) {
     setIsSubmitting(false);
 
     if (!result.ok) {
+      if (result.message === EMAIL_NOT_VERIFIED && userEmail) {
+        onEmailNotVerified(userEmail);
+        return;
+      }
       setFormError("El PIN no es correcto. Probá de nuevo.");
       setPin("");
     }

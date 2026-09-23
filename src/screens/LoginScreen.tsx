@@ -14,12 +14,14 @@ import { LoginForm } from "../features/auth/components/LoginForm";
 interface LoginScreenProps {
   onSwitchMode: (mode: AuthMode) => void;
   onForgotPassword: () => void;
+  onEmailNotVerified: (email: string) => void;
   justRegistered?: boolean;
 }
 
 export function LoginScreen({
   onSwitchMode,
   onForgotPassword,
+  onEmailNotVerified,
   justRegistered = false,
 }: LoginScreenProps) {
   return (
@@ -54,6 +56,7 @@ export function LoginScreen({
           <LoginForm
             onSwitchToRegister={() => onSwitchMode("register")}
             onForgotPassword={onForgotPassword}
+            onEmailNotVerified={onEmailNotVerified}
             justRegistered={justRegistered}
           />
         </View>

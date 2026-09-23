@@ -17,7 +17,7 @@ import { TextField } from "../../../components/ui/TextField";
 
 interface RegisterFormProps {
   onSwitchToLogin: () => void;
-  onRegistered: () => void;
+  onRegistered: (email: string) => void;
 }
 
 export function RegisterForm({
@@ -93,7 +93,7 @@ export function RegisterForm({
       return;
     }
 
-    onRegistered();
+    onRegistered(email.trim());
   }
 
   return (

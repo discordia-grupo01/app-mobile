@@ -13,7 +13,7 @@ import { RegisterForm } from "../features/auth/components/RegisterForm";
 
 interface RegisterScreenProps {
   onSwitchMode: (mode: AuthMode) => void;
-  onRegistered: () => void;
+  onRegistered: (email: string) => void;
 }
 
 export function RegisterScreen({
