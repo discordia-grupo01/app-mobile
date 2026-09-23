@@ -1,7 +1,15 @@
 import {
+  ADD_BANNER_LABEL,
+  BANNER_PRESETS_LABEL,
+  CHANGE_BANNER_LABEL,
+  CHANGE_SERVER_ICON_LABEL,
   MAX_NAME,
+  PRESET_BANNER_FAILED,
   PRESET_BANNERS,
   type PresetBanner,
+  REMOVE_BANNER_LABEL,
+  SERVER_NAME_LABEL,
+  SERVER_NAME_PLACEHOLDER,
   type ServerSummary,
   validateServerBanner,
   validateServerIcon,
@@ -301,7 +309,7 @@ export function ServerSettingsModal({
       if (__DEV__) {
         console.warn("No se pudo preparar el fondo elegido", err);
       }
-      setBannerError("No pudimos preparar ese fondo. Probá de nuevo.");
+      setBannerError(PRESET_BANNER_FAILED);
     } finally {
       if (presetRequestIdRef.current === requestId) setIsPreparingBanner(false);
     }
@@ -409,7 +417,7 @@ export function ServerSettingsModal({
                 className="w-full rounded-2xl bg-surface-raised overflow-hidden border border-line-strong"
                 style={{ height: BANNER_HEIGHT }}
                 accessibilityRole="button"
-                accessibilityLabel="Cambiar banner"
+                accessibilityLabel={CHANGE_BANNER_LABEL}
               >
                 {selectedPresetBanner ? (
                   <PresetGradientFill
@@ -422,7 +430,7 @@ export function ServerSettingsModal({
                   <View className="flex-1 items-center justify-center">
                     <Feather name="image" size={20} color={colors.textSubtle} />
                     <Text className="text-[11px] text-content-subtle mt-1.5">
-                      Agregar banner
+                      {ADD_BANNER_LABEL}
                     </Text>
                   </View>
                 )}
@@ -440,7 +448,7 @@ export function ServerSettingsModal({
                   onPress={handleRemoveBanner}
                   className="absolute left-2.5 top-2.5 w-7 h-7 rounded-2xl items-center justify-center bg-[rgba(0,0,0,0.55)]"
                   accessibilityRole="button"
-                  accessibilityLabel="Quitar banner"
+                  accessibilityLabel={REMOVE_BANNER_LABEL}
                 >
                   <Feather name="x" size={13} color="#ffffff" />
                 </TouchableOpacity>
@@ -456,7 +464,7 @@ export function ServerSettingsModal({
                   className="bg-surface-modal rounded-full items-center justify-center"
                   style={{ width: ICON_BOX, height: ICON_BOX }}
                   accessibilityRole="button"
-                  accessibilityLabel="Cambiar ícono"
+                  accessibilityLabel={CHANGE_SERVER_ICON_LABEL}
                 >
                   <ServerAvatar
                     name={name || server.name}
@@ -501,8 +509,8 @@ export function ServerSettingsModal({
             ) : null}
 
             <View className="px-7 mt-5">
-              <Text className="text-[11px] font-bold tracking-[1.1px] text-content-subtle mb-2">
-                O ELEGÍ UN FONDO
+              <Text className="text-[11px] font-bold tracking-[1.1px] text-content-subtle mb-2 uppercase">
+                {BANNER_PRESETS_LABEL}
               </Text>
               <View className="gap-2.5">
                 {chunk(PRESET_BANNERS, PRESET_COLUMNS).map((row, index) => (
@@ -522,8 +530,8 @@ export function ServerSettingsModal({
 
             <View className="px-7 mt-7">
               <View className="flex-row items-center justify-between mb-1.5">
-                <Text className="text-[11px] font-bold tracking-[1.1px] text-content-subtle">
-                  NOMBRE DEL SERVIDOR{" "}
+                <Text className="text-[11px] font-bold tracking-[1.1px] text-content-subtle uppercase">
+                  {SERVER_NAME_LABEL}{" "}
                   <Text style={{ color: colors.danger }}>*</Text>
                 </Text>
                 <Text
@@ -548,7 +556,7 @@ export function ServerSettingsModal({
                     setNameError("");
                     setGlobalError("");
                   }}
-                  placeholder="Mi servidor épico"
+                  placeholder={SERVER_NAME_PLACEHOLDER}
                   placeholderTextColor={colors.textSubtle}
                   maxLength={110}
                   className="text-content text-[14px]"
