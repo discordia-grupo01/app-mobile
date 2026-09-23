@@ -1,6 +1,8 @@
 import {
   type AuthResponse,
+  type EmailConfirmationResult,
   EMAIL_ALREADY_REGISTERED,
+  EMAIL_NOT_VERIFIED,
   type ForgotPasswordResult,
   GOOGLE_UNAVAILABLE,
   GOOGLE_VERIFY_FAILED,
@@ -63,6 +65,9 @@ export async function loginService(
   });
 
   if (!result.ok) {
+    if (result.status === 403 || result.code === "EMAIL_NOT_VERIFIED") {
+      return { ok: false, message: EMAIL_NOT_VERIFIED };
+    }
     if (result.status === 401 || result.status === 400) {
       return { ok: false, message: INVALID_CREDENTIALS };
     }
@@ -73,6 +78,55 @@ export async function loginService(
   }
 
   return { ok: true, user: result.data.user, token: result.data.token };
+}
+
+export async function requestEmailConfirmationService(
+  email: string,
+): Promise<EmailConfirmationResult> {
+  const result = await apiFetch<{ message: string }>("/v1/email-confirmation", {
+    method: "POST",
+    body: JSON.stringify({ email: email.trim() }),
+  });
+
+  if (!result.ok) {
+    if (result.status === 429) {
+      return { ok: false, message: RATE_LIMITED_MESSAGE };
+    }
+    if (result.status === 400) {
+      return { ok: false, message: INVALID_EMAIL_MESSAGE };
+    }
+    return {
+      ok: false,
+      message: messageFor(result, {}, REQUEST_FAILED_MESSAGE),
+    };
+  }
+
+  return { ok: true };
+}
+
+export async function confirmEmailService(
+  token: string,
+): Promise<EmailConfirmationResult> {
+  const result = await apiFetch<{ message: string }>(
+    "/v1/email-confirmation/confirm",
+    {
+      method: "POST",
+      body: JSON.stringify({ token }),
+    },
+  );
+
+  if (!result.ok) {
+    return {
+      ok: false,
+      message: messageFor(
+        result,
+        {},
+        "El enlace de confirmación no es válido o expiró.",
+      ),
+    };
+  }
+
+  return { ok: true };
 }
 
 export async function loginWithGoogleService(

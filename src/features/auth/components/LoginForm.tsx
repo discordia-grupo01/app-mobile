@@ -1,4 +1,5 @@
 import {
+  EMAIL_NOT_VERIFIED,
   GOOGLE_CONNECT_FAILED,
   hasErrors,
   type LoginErrors,
@@ -18,12 +19,14 @@ import { TextField } from "../../../components/ui/TextField";
 interface LoginFormProps {
   onSwitchToRegister: () => void;
   onForgotPassword: () => void;
+  onEmailNotVerified: (email: string) => void;
   justRegistered?: boolean;
 }
 
 export function LoginForm({
   onSwitchToRegister,
   onForgotPassword,
+  onEmailNotVerified,
   justRegistered = false,
 }: LoginFormProps) {
   const { login, loginWithGoogle } = useAuth();
@@ -86,6 +89,10 @@ export function LoginForm({
     setIsSubmitting(false);
 
     if (!result.ok) {
+      if (result.message === EMAIL_NOT_VERIFIED) {
+        onEmailNotVerified(email.trim());
+        return;
+      }
       setFormError(result.message);
     }
   }

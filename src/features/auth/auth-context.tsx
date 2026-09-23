@@ -1,6 +1,7 @@
 import {
   type LoginResultWithToken,
   type LoginValues,
+  type EmailConfirmationResult,
   type RegisterResult,
   type RegisterValues,
   type User,
@@ -30,6 +31,7 @@ import {
   loginWithPinService,
   logoutService,
   registerService,
+  requestEmailConfirmationService,
 } from "./service";
 
 interface AuthContextValue {
@@ -41,6 +43,7 @@ interface AuthContextValue {
   loginWithGoogle: (idToken: string) => Promise<LoginResultWithToken>;
   loginWithPin: (pin: string) => Promise<LoginResultWithToken>;
   register: (values: RegisterValues) => Promise<RegisterResult>;
+  requestEmailConfirmation: (email: string) => Promise<EmailConfirmationResult>;
   logout: () => Promise<void>;
   updateUser: (user: User) => void;
 }
@@ -153,6 +156,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const requestEmailConfirmation = useCallback(
+    (email: string) => requestEmailConfirmationService(email),
+    [],
+  );
+
   const logout = useCallback(async (): Promise<void> => {
     setToken(null);
     setUser(null);
@@ -179,6 +187,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loginWithGoogle,
       loginWithPin,
       register,
+      requestEmailConfirmation,
       logout,
       updateUser,
     }),
@@ -190,6 +199,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loginWithGoogle,
       loginWithPin,
       register,
+      requestEmailConfirmation,
       logout,
       updateUser,
     ],
