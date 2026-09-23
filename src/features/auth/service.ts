@@ -65,9 +65,9 @@ export async function loginService(
   });
 
   if (!result.ok) {
-  if (result.status === 403 || result.code === "EMAIL_NOT_VERIFIED") {
-    return { ok: false, message: EMAIL_NOT_VERIFIED };
-  }
+    if (result.status === 403 || result.code === "EMAIL_NOT_VERIFIED") {
+      return { ok: false, message: EMAIL_NOT_VERIFIED };
+    }
     if (result.status === 401 || result.status === 400) {
       return { ok: false, message: INVALID_CREDENTIALS };
     }
@@ -83,13 +83,10 @@ export async function loginService(
 export async function requestEmailConfirmationService(
   email: string,
 ): Promise<EmailConfirmationResult> {
-  const result = await apiFetch<{ message: string }>(
-    "/v1/email-confirmation",
-    {
-      method: "POST",
-      body: JSON.stringify({ email: email.trim() }),
-    },
-  );
+  const result = await apiFetch<{ message: string }>("/v1/email-confirmation", {
+    method: "POST",
+    body: JSON.stringify({ email: email.trim() }),
+  });
 
   if (!result.ok) {
     if (result.status === 429) {

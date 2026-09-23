@@ -44,9 +44,9 @@ export function PinEntryScreen({
   useEffect(() => {
     getStoredUser<User>()
       .then((user) => {
-		setUserName(user?.name ?? null);
-		setUserEmail(user?.email ?? null);
-	  })
+        setUserName(user?.name ?? null);
+        setUserEmail(user?.email ?? null);
+      })
       .catch(() => {});
   }, []);
 
