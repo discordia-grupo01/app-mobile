@@ -401,13 +401,9 @@ export function TransferOwnershipModal({
           </Text>
 
           {members.length === 0 ? (
-            <View className="items-center gap-2.5 px-7 py-6">
-              <Feather name="users" size={22} color={colors.textSubtle} />
-              <Text className="text-[13px] leading-[18px] text-content-subtle text-center">
-                Todavía no hay otros miembros en este servidor. Invitá gente
-                antes de transferir la propiedad.
-              </Text>
-            </View>
+            <Text className="text-[13px] leading-[19px] text-content-muted text-center px-7 py-6">
+              No hay otros miembros en este servidor todavía.
+            </Text>
           ) : (
             <FlatList
               data={members}
@@ -464,21 +460,23 @@ export function TransferOwnershipModal({
             />
           )}
 
-          <View className="flex-row gap-3 mt-4 pt-8 border-t border-t-line p-7">
-            <Button
-              title="Cancelar"
-              variant="secondary"
-              onPress={onClose}
-              style={{ flex: 1, width: undefined }}
-            />
-            <Button
-              title="Continuar"
-              onPress={handleContinue}
-              disabled={!selectedUserId}
-              iconRight="arrow-right"
-              style={{ flex: 1, width: undefined }}
-            />
-          </View>
+          {members.length > 0 ? (
+            <View className="flex-row gap-3 mt-4 pt-8 border-t border-t-line p-7">
+              <Button
+                title="Cancelar"
+                variant="secondary"
+                onPress={onClose}
+                style={{ flex: 1, width: undefined }}
+              />
+              <Button
+                title="Continuar"
+                onPress={handleContinue}
+                disabled={!selectedUserId}
+                iconRight="arrow-right"
+                style={{ flex: 1, width: undefined }}
+              />
+            </View>
+          ) : null}
         </View>
       );
     }
