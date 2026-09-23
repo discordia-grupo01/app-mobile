@@ -1,37 +1,30 @@
-import { Image, View, type ImageStyle, type StyleProp } from "react-native";
-
-import { useResolvedImageUri } from "../../../lib/use-resolved-image-uri";
+import { useState } from "react";
+import { Image, type ImageStyle, type StyleProp } from "react-native";
 
 interface ServerBannerProps {
   uri?: string | null;
-  authToken?: string | null;
   height: number;
   style?: StyleProp<ImageStyle>;
 }
 
-export function ServerBanner({
-  uri,
-  authToken,
-  height,
-  style,
-}: ServerBannerProps) {
-  const { resolvedUri, failed, markFailed } = useResolvedImageUri(
-    uri,
-    authToken,
-    "server-banners",
-  );
+// El banner es un recurso público (ver servers/README.md y
+// servers/openapi.yaml), así que -- igual que ServerAvatar -- se le pasa la
+// URL directo a <Image>, sin bajarla a mano ni cachearla a disco.
+export function ServerBanner({ uri, height, style }: ServerBannerProps) {
+  const [failed, setFailed] = useState(false);
+  const [lastUri, setLastUri] = useState(uri);
+  if (uri !== lastUri) {
+    setLastUri(uri);
+    setFailed(false);
+  }
 
   if (!uri) return null;
   if (failed) return null;
 
-  if (!resolvedUri) {
-    return <View className="bg-surface-raised" style={[{ height }, style]} />;
-  }
-
   return (
     <Image
-      source={{ uri: resolvedUri }}
-      onError={markFailed}
+      source={{ uri }}
+      onError={() => setFailed(true)}
       resizeMode="cover"
       className="bg-surface-raised"
       style={[{ width: "100%", height }, style]}

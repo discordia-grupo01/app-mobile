@@ -9,7 +9,6 @@ import { useThemeColors } from "../theme/theme-context";
 
 interface ServerPickerScreenProps {
   servers: ServerSummary[];
-  authToken: string | null;
   userName?: string | null;
   onSelectServer: (serverId: string) => void;
   onAddServer: () => void;
@@ -18,7 +17,6 @@ interface ServerPickerScreenProps {
 
 export function ServerPickerScreen({
   servers,
-  authToken,
   userName,
   onSelectServer,
   onAddServer,
@@ -30,7 +28,6 @@ export function ServerPickerScreen({
       <ServerRail
         servers={servers}
         activeServerId={null}
-        authToken={authToken}
         onSelectHome={() => {}}
         onSelectServer={onSelectServer}
         onAddServer={onAddServer}

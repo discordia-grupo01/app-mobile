@@ -50,7 +50,6 @@ const UNCATEGORIZED_KEY = "none";
 interface ServerChannelsScreenProps {
   server: ServerSummary;
   servers: ServerSummary[];
-  authToken: string | null;
   userName?: string | null;
   isOwner?: boolean;
   onSelectChannel: (channelId: string) => void;
@@ -111,7 +110,6 @@ function ChannelRow({
 export function ServerChannelsScreen({
   server,
   servers,
-  authToken,
   userName,
   isOwner = false,
   onSelectChannel,
@@ -151,7 +149,7 @@ export function ServerChannelsScreen({
   const [isChannelDragActive, setIsChannelDragActive] = useState(false);
   const insets = useSafeAreaInsets();
 
-  const bannerUrl = resolveServerBannerUrl(server.id, server.banner_url);
+  const bannerUrl = resolveServerBannerUrl(server.banner_url);
   const bannerVisible = Boolean(bannerUrl);
   const headerHeight =
     insets.top + (bannerVisible ? BANNER_HEIGHT : HEADER_HEIGHT);
@@ -275,7 +273,6 @@ export function ServerChannelsScreen({
       <ServerRail
         servers={servers}
         activeServerId={server.id}
-        authToken={authToken}
         onSelectHome={onSelectHome}
         onSelectServer={onSwitchServer}
         onAddServer={onAddServer}
@@ -294,14 +291,9 @@ export function ServerChannelsScreen({
             <>
               <ServerBanner
                 uri={bannerUrl}
-                authToken={authToken}
                 height={headerHeight}
                 style={StyleSheet.absoluteFill}
               />
-              {/* Degradado oscuro de abajo hacia arriba para que el nombre
-                  se lea encima de cualquier imagen -- mismo criterio que el
-                  `linear-gradient(rgba(0,0,0,0.05), rgba(0,0,0,0.55))` del
-                  prototipo de Figma. */}
               <Svg style={StyleSheet.absoluteFill} width="100%" height="100%">
                 <Defs>
                   <LinearGradient id="bannerScrim" x1="0" y1="0" x2="0" y2="1">
@@ -624,7 +616,6 @@ export function ServerChannelsScreen({
         <ServerSettingsModal
           visible={isServerSettingsVisible}
           server={server}
-          authToken={authToken}
           onClose={() => setIsServerSettingsVisible(false)}
           onUpdated={(updated) => {
             setIsServerSettingsVisible(false);

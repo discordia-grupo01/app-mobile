@@ -4,7 +4,7 @@ import { Feather } from "@expo/vector-icons";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { serverIconUrl } from "../../api";
+import { resolveServerIconUrl } from "../../api";
 import { cn } from "../../../../lib/cn";
 import { useThemeColors } from "../../../../theme/theme-context";
 import { ServerAvatar } from "../ServerAvatar";
@@ -14,7 +14,6 @@ export const RAIL_WIDTH = 72;
 interface ServerRailProps {
   servers: ServerSummary[];
   activeServerId: string | null;
-  authToken: string | null;
   onSelectHome: () => void;
   onSelectServer: (serverId: string) => void;
   onAddServer: () => void;
@@ -23,12 +22,10 @@ interface ServerRailProps {
 function ServerRailIcon({
   item,
   active,
-  authToken,
   onPress,
 }: {
   item: ServerSummary;
   active: boolean;
-  authToken: string | null;
   onPress: () => void;
 }) {
   return (
@@ -43,8 +40,7 @@ function ServerRailIcon({
       ) : null}
       <ServerAvatar
         name={item.name}
-        uri={serverIconUrl(item.id)}
-        authToken={authToken}
+        uri={resolveServerIconUrl(item.icon_url)}
         size={48}
         borderRadius={active ? 16 : 24}
       />
@@ -55,7 +51,6 @@ function ServerRailIcon({
 export function ServerRail({
   servers,
   activeServerId,
-  authToken,
   onSelectHome,
   onSelectServer,
   onAddServer,
@@ -96,7 +91,6 @@ export function ServerRail({
           key={item.id}
           item={item}
           active={item.id === activeServerId}
-          authToken={authToken}
           onPress={() => onSelectServer(item.id)}
         />
       ))}

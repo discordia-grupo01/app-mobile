@@ -34,38 +34,14 @@ import type {
   UpdateServerParams,
 } from "../types";
 
-const iconVersions = new Map<string, number>();
-const bannerVersions = new Map<string, number>();
-
-function bumpVersion(versions: Map<string, number>, serverId: string): void {
-  versions.set(serverId, (versions.get(serverId) ?? 0) + 1);
-}
-
-function withVersion(
-  url: string,
-  versions: Map<string, number>,
-  serverId: string,
-): string {
-  const version = versions.get(serverId);
-  if (!version) return url;
-  const separator = url.includes("?") ? "&" : "?";
-  return `${url}${separator}v=${version}`;
-}
-
-export function serverIconUrl(serverId: string): string {
-  return withVersion(
-    `${env.apiUrl}/v1/servers/${serverId}/icon`,
-    iconVersions,
-    serverId,
-  );
+export function resolveServerIconUrl(iconUrl: string | null): string | null {
+  return resolveImageUrl(iconUrl, env.apiUrl);
 }
 
 export function resolveServerBannerUrl(
-  serverId: string,
   bannerUrl: string | null,
 ): string | null {
-  const resolved = resolveImageUrl(bannerUrl, env.apiUrl);
-  return resolved ? withVersion(resolved, bannerVersions, serverId) : null;
+  return resolveImageUrl(bannerUrl, env.apiUrl);
 }
 
 export async function listMyServers(): Promise<ListServersResult> {
@@ -348,11 +324,10 @@ export async function updateServer(
     };
   }
 
-  if (params.icon) bumpVersion(iconVersions, params.serverId);
-  if (params.banner || params.removeBanner) {
-    bumpVersion(bannerVersions, params.serverId);
-  }
-
+  // Ni el ícono ni el banner necesitan un bump de cliente acá:
+  // `server.icon_url`/`server.banner_url` que vuelven en `body` ya traen su
+  // propio "?v=" nuevo del backend cuando cambiaron (ver
+  // resolveServerIconUrl/resolveServerBannerUrl más arriba).
   return { ok: true, server: body as ServerSummary };
 }
 

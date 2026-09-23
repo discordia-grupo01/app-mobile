@@ -23,7 +23,7 @@ import {
 
 import { cn } from "../../../../lib/cn";
 import { useThemeColors } from "../../../../theme/theme-context";
-import { joinServerByCode, serverIconUrl } from "../../api";
+import { joinServerByCode, resolveServerIconUrl } from "../../api";
 import { Button } from "../../../../components/ui/Button";
 import { ServerAvatar } from "../ServerAvatar";
 
@@ -31,14 +31,12 @@ interface JoinServerModalProps {
   visible: boolean;
   onClose: () => void;
   onJoined: (server: ServerSummary) => void;
-  authToken: string | null;
 }
 
 export function JoinServerModal({
   visible,
   onClose,
   onJoined,
-  authToken,
 }: JoinServerModalProps) {
   const colors = useThemeColors();
   const [code, setCode] = useState("");
@@ -117,8 +115,7 @@ export function JoinServerModal({
               <View className="items-center gap-5">
                 <ServerAvatar
                   name={joined.server.name}
-                  uri={serverIconUrl(joined.server.id)}
-                  authToken={authToken}
+                  uri={resolveServerIconUrl(joined.server.icon_url)}
                   size={64}
                   borderRadius={20}
                 />
