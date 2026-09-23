@@ -2,6 +2,10 @@ import {
   MEMBER_PAGE_LIMIT,
   type OwnershipTransfer,
   resolveImageUrl,
+  TRANSFER_CHOOSE_NEW_OWNER,
+  TRANSFER_NONE_PENDING,
+  TRANSFER_NO_OTHER_MEMBERS,
+  TRANSFER_PENDING_OTHER_VIEWER,
 } from "@discordia/client-shared";
 
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -346,7 +350,7 @@ export function TransferOwnershipModal({
       return (
         <View className="p-7 pt-8">
           <Text className="text-[13px] leading-[19px] text-content-muted text-center">
-            Hay una transferencia de propiedad pendiente para este servidor.
+            {TRANSFER_PENDING_OTHER_VIEWER}
           </Text>
         </View>
       );
@@ -356,7 +360,7 @@ export function TransferOwnershipModal({
       return (
         <View className="p-7 pt-8">
           <Text className="text-[13px] leading-[19px] text-content-muted text-center">
-            No hay ninguna transferencia de propiedad pendiente.
+            {TRANSFER_NONE_PENDING}
           </Text>
         </View>
       );
@@ -397,12 +401,12 @@ export function TransferOwnershipModal({
               "px-7 mb-2",
             )}
           >
-            Elegí a quién transferirle el servidor
+            {TRANSFER_CHOOSE_NEW_OWNER}
           </Text>
 
           {members.length === 0 ? (
             <Text className="text-[13px] leading-[19px] text-content-muted text-center px-7 py-6">
-              No hay otros miembros en este servidor todavía.
+              {TRANSFER_NO_OTHER_MEMBERS}
             </Text>
           ) : (
             <FlatList

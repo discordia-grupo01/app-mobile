@@ -3,6 +3,7 @@ import {
   MAX_NAME,
   MEMBER_PAGE_LIMIT,
   type MemberInfo,
+  NO_ROLES_YET,
   type Role,
   ROLE_PERMISSIONS,
   type RolePermission,
@@ -497,7 +498,7 @@ export function RolesModal({
                   </Text>
                 ) : (roles ?? []).length === 0 ? (
                   <Text className="text-content-subtle text-[13px] mt-2">
-                    Todavía no hay roles.
+                    {NO_ROLES_YET}
                   </Text>
                 ) : (
                   (roles ?? []).map((role) => (
