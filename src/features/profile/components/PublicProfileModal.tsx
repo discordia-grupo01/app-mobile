@@ -149,10 +149,7 @@ export function PublicProfileModal({
                 </View>
 
                 <View className="mb-4">
-                  <MutualServersList
-                    serverIds={profile.mutual_server_ids}
-                    authToken={authToken}
-                  />
+                  <MutualServersList serverIds={profile.mutual_server_ids} />
                 </View>
 
                 <View className="mb-4">
