@@ -33,16 +33,10 @@ import type {
   UpdateServerParams,
 } from "../types";
 
-/**
- * React Native y fetch en Expo aceptan un objeto `{ uri, name, type }` como
- * "archivo" de un FormData
- */
-function asUploadPart(file: CreateServerIconInput): Blob {
-  return {
-    uri: file.uri,
-    name: file.name,
-    type: file.type,
-  } as unknown as Blob;
+async function readAsBlob(file: CreateServerIconInput): Promise<Blob> {
+  const response = await fetch(file.uri);
+  const bytes = await response.arrayBuffer();
+  return new Blob([bytes], { type: file.type });
 }
 
 export function resolveServerIconUrl(iconUrl: string | null): string | null {
@@ -92,7 +86,7 @@ async function uploadServer(
   const formData = new FormData();
   formData.append("name", params.name);
   if (params.icon) {
-    formData.append("icon", asUploadPart(params.icon));
+    formData.append("icon", await readAsBlob(params.icon), params.icon.name);
   }
 
   const res = await fetch(`${env.apiUrl}/v1/servers`, {
@@ -171,7 +165,7 @@ async function uploadServerFile(
     : undefined;
 
   const formData = new FormData();
-  formData.append(fieldName, asUploadPart(file));
+  formData.append(fieldName, await readAsBlob(file), file.name);
   for (const [key, value] of Object.entries(extraParams)) {
     formData.append(key, value);
   }
