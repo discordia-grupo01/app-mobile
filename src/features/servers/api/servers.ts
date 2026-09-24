@@ -35,8 +35,7 @@ import type {
 
 async function readAsBlob(file: CreateServerIconInput): Promise<Blob> {
   const response = await fetch(file.uri);
-  const bytes = await response.arrayBuffer();
-  return new Blob([bytes], { type: file.type });
+  return response.blob();
 }
 
 export function resolveServerIconUrl(iconUrl: string | null): string | null {
