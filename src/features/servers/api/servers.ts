@@ -24,7 +24,7 @@ import {
   type UpdateServerResult,
 } from "@discordia/client-shared";
 
-import * as FileSystem from "expo-file-system/legacy";
+import { File } from "expo-file-system";
 
 import { apiFetch, refreshAccessToken } from "../../../lib/api-client";
 import { env } from "../../../lib/env";
@@ -35,12 +35,8 @@ import type {
   UpdateServerParams,
 } from "../types";
 
-async function readAsBlob(file: CreateServerIconInput): Promise<Blob> {
-  const base64 = await FileSystem.readAsStringAsync(file.uri, {
-    encoding: FileSystem.EncodingType.Base64,
-  });
-  const response = await fetch(`data:${file.type};base64,${base64}`);
-  return response.blob();
+function asUploadFile(file: CreateServerIconInput): File {
+  return new File(file.uri);
 }
 
 export function resolveServerIconUrl(iconUrl: string | null): string | null {
@@ -90,7 +86,7 @@ async function uploadServer(
   const formData = new FormData();
   formData.append("name", params.name);
   if (params.icon) {
-    formData.append("icon", await readAsBlob(params.icon), params.icon.name);
+    formData.append("icon", asUploadFile(params.icon), params.icon.name);
   }
 
   const res = await fetch(`${env.apiUrl}/v1/servers`, {
@@ -169,7 +165,7 @@ async function uploadServerFile(
     : undefined;
 
   const formData = new FormData();
-  formData.append(fieldName, await readAsBlob(file), file.name);
+  formData.append(fieldName, asUploadFile(file), file.name);
   for (const [key, value] of Object.entries(extraParams)) {
     formData.append(key, value);
   }
