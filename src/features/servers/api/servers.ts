@@ -24,6 +24,7 @@ import {
   type UpdateServerResult,
 } from "@discordia/client-shared";
 
+import { fetch as expoFetch } from "expo/fetch";
 import { File } from "expo-file-system";
 
 import { apiFetch, refreshAccessToken } from "../../../lib/api-client";
@@ -89,7 +90,7 @@ async function uploadServer(
     formData.append("icon", asUploadFile(params.icon), params.icon.name);
   }
 
-  const res = await fetch(`${env.apiUrl}/v1/servers`, {
+  const res = await expoFetch(`${env.apiUrl}/v1/servers`, {
     method: "POST",
     headers: authHeaders,
     body: formData,
@@ -170,7 +171,7 @@ async function uploadServerFile(
     formData.append(key, value);
   }
 
-  const res = await fetch(`${env.apiUrl}/v1/servers/${serverId}`, {
+  const res = await expoFetch(`${env.apiUrl}/v1/servers/${serverId}`, {
     method: "PATCH",
     headers: authHeaders,
     body: formData,
