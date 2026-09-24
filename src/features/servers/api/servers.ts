@@ -24,6 +24,8 @@ import {
   type UpdateServerResult,
 } from "@discordia/client-shared";
 
+import * as FileSystem from "expo-file-system/legacy";
+
 import { apiFetch, refreshAccessToken } from "../../../lib/api-client";
 import { env } from "../../../lib/env";
 import { getToken } from "../../../lib/storage";
@@ -34,7 +36,10 @@ import type {
 } from "../types";
 
 async function readAsBlob(file: CreateServerIconInput): Promise<Blob> {
-  const response = await fetch(file.uri);
+  const base64 = await FileSystem.readAsStringAsync(file.uri, {
+    encoding: FileSystem.EncodingType.Base64,
+  });
+  const response = await fetch(`data:${file.type};base64,${base64}`);
   return response.blob();
 }
 
