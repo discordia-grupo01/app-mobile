@@ -23,7 +23,6 @@ import {
   UNEXPECTED_ERROR_MESSAGE,
   type UpdateServerResult,
 } from "@discordia/client-shared";
-import * as FileSystem from "expo-file-system/legacy";
 
 import { apiFetch, refreshAccessToken } from "../../../lib/api-client";
 import { env } from "../../../lib/env";
@@ -33,6 +32,18 @@ import type {
   CreateServerParams,
   UpdateServerParams,
 } from "../types";
+
+/**
+ * React Native y fetch en Expo aceptan un objeto `{ uri, name, type }` como
+ * "archivo" de un FormData
+ */
+function asUploadPart(file: CreateServerIconInput): Blob {
+  return {
+    uri: file.uri,
+    name: file.name,
+    type: file.type,
+  } as unknown as Blob;
+}
 
 export function resolveServerIconUrl(iconUrl: string | null): string | null {
   return resolveImageUrl(iconUrl, env.apiUrl);
@@ -78,24 +89,12 @@ async function uploadServer(
     ? { Authorization: `Bearer ${token}` }
     : undefined;
 
-  if (params.icon) {
-    const uploadResult = await FileSystem.uploadAsync(
-      `${env.apiUrl}/v1/servers`,
-      params.icon.uri,
-      {
-        httpMethod: "POST",
-        uploadType: FileSystem.FileSystemUploadType.MULTIPART,
-        fieldName: "icon",
-        mimeType: params.icon.type,
-        parameters: { name: params.name },
-        headers: authHeaders,
-      },
-    );
-    return { status: uploadResult.status, rawBody: uploadResult.body };
-  }
-
   const formData = new FormData();
   formData.append("name", params.name);
+  if (params.icon) {
+    formData.append("icon", asUploadPart(params.icon));
+  }
+
   const res = await fetch(`${env.apiUrl}/v1/servers`, {
     method: "POST",
     headers: authHeaders,
@@ -171,19 +170,18 @@ async function uploadServerFile(
     ? { Authorization: `Bearer ${token}` }
     : undefined;
 
-  const uploadResult = await FileSystem.uploadAsync(
-    `${env.apiUrl}/v1/servers/${serverId}`,
-    file.uri,
-    {
-      httpMethod: "PATCH",
-      uploadType: FileSystem.FileSystemUploadType.MULTIPART,
-      fieldName,
-      mimeType: file.type,
-      parameters: extraParams,
-      headers: authHeaders,
-    },
-  );
-  return { status: uploadResult.status, rawBody: uploadResult.body };
+  const formData = new FormData();
+  formData.append(fieldName, asUploadPart(file));
+  for (const [key, value] of Object.entries(extraParams)) {
+    formData.append(key, value);
+  }
+
+  const res = await fetch(`${env.apiUrl}/v1/servers/${serverId}`, {
+    method: "PATCH",
+    headers: authHeaders,
+    body: formData,
+  });
+  return { status: res.status, rawBody: await res.text() };
 }
 
 async function updateServerFieldsOnly(
@@ -324,10 +322,6 @@ export async function updateServer(
     };
   }
 
-  // Ni el ícono ni el banner necesitan un bump de cliente acá:
-  // `server.icon_url`/`server.banner_url` que vuelven en `body` ya traen su
-  // propio "?v=" nuevo del backend cuando cambiaron (ver
-  // resolveServerIconUrl/resolveServerBannerUrl más arriba).
   return { ok: true, server: body as ServerSummary };
 }
 
