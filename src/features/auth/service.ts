@@ -146,10 +146,13 @@ export async function confirmEmailService(
 export async function loginWithGoogleService(
   idToken: string,
 ): Promise<LoginResultWithToken> {
-  const result = await apiFetch<AuthResponse>("/v1/oauth/google", {
-    method: "POST",
-    body: JSON.stringify({ id_token: idToken }),
-  });
+  const result = await apiFetch<AuthResponse | TwoFactorChallengePayload>(
+    "/v1/oauth/google",
+    {
+      method: "POST",
+      body: JSON.stringify({ id_token: idToken }),
+    },
+  );
 
   if (!result.ok) {
     if (result.status === 503) {
@@ -161,6 +164,15 @@ export async function loginWithGoogleService(
     return {
       ok: false,
       message: messageFor(result, {}, GOOGLE_VERIFY_FAILED),
+    };
+  }
+
+  if (isTwoFactorChallenge(result.data)) {
+    return {
+      ok: true,
+      twoFactorRequired: true,
+      challengeToken: result.data.challenge_token,
+      expiresIn: result.data.expires_in,
     };
   }
 
@@ -241,10 +253,13 @@ export async function loginWithPinService(
 ): Promise<LoginResultWithToken> {
   const deviceId = await getOrCreateDeviceId();
 
-  const result = await apiFetch<AuthResponse>("/v1/pin/login", {
-    method: "POST",
-    body: JSON.stringify({ pin, device_id: deviceId }),
-  });
+  const result = await apiFetch<AuthResponse | TwoFactorChallengePayload>(
+    "/v1/pin/login",
+    {
+      method: "POST",
+      body: JSON.stringify({ pin, device_id: deviceId }),
+    },
+  );
 
   if (!result.ok) {
     if (result.status === 401) {
@@ -253,6 +268,15 @@ export async function loginWithPinService(
     return {
       ok: false,
       message: messageFor(result, {}, REQUEST_FAILED_MESSAGE),
+    };
+  }
+
+  if (isTwoFactorChallenge(result.data)) {
+    return {
+      ok: true,
+      twoFactorRequired: true,
+      challengeToken: result.data.challenge_token,
+      expiresIn: result.data.expires_in,
     };
   }
 

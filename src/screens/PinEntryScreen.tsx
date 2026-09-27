@@ -3,12 +3,15 @@ import {
   hasErrors,
   PIN_MAX_LENGTH,
   type PinLoginErrors,
+  TWO_FACTOR_RECOVERY_CODE_USED,
+  twoFactorRecoveryCodesRemaining,
   type User,
   validatePinLogin,
 } from "@discordia/client-shared";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import {
+  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -21,6 +24,7 @@ import {
 import { Button } from "../components/ui/Button";
 import { TextField } from "../components/ui/TextField";
 import { useAuth } from "../features/auth/auth-context";
+import { TwoFactorVerifyForm } from "../features/auth/components/TwoFactorVerifyForm";
 import { getStoredUser } from "../lib/storage";
 
 interface PinEntryScreenProps {
@@ -40,6 +44,8 @@ export function PinEntryScreen({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userName, setUserName] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [challengeToken, setChallengeToken] = useState<string | null>(null);
+  const [challengeExpiresIn, setChallengeExpiresIn] = useState(0);
 
   useEffect(() => {
     getStoredUser<User>()
@@ -69,7 +75,28 @@ export function PinEntryScreen({
       }
       setFormError("El PIN no es correcto. Probá de nuevo.");
       setPin("");
+      return;
     }
+
+    if (result.twoFactorRequired) {
+      setChallengeExpiresIn(result.expiresIn);
+      setChallengeToken(result.challengeToken);
+    }
+    // Sin segundo factor no hay nada mas que hacer: `loginWithPin` ya guardo
+    // la sesion y el arbol de la app reacciona a `isAuthenticated`.
+  }
+
+  function handleChallengeLost(message: string) {
+    setChallengeToken(null);
+    setPin("");
+    setFormError(message);
+  }
+
+  function handleRecoveryCodeUsed(remaining: number) {
+    Alert.alert(
+      "Usaste un código de recuperación",
+      `${TWO_FACTOR_RECOVERY_CODE_USED} ${twoFactorRecoveryCodesRemaining(remaining)}`,
+    );
   }
 
   function handleChangePin(text: string) {
@@ -102,53 +129,72 @@ export function PinEntryScreen({
             />
           </View>
 
-          <Text className="mb-1.5 text-[24px] font-bold text-content">
-            {userName ? `Hola de nuevo, ${userName}` : "Hola de nuevo"}
-          </Text>
-          <Text className="mb-[26px] text-[14px] text-content-muted">
-            Ingresá tu PIN de acceso rápido para este dispositivo.
-          </Text>
-
-          <TextField
-            label="TU PIN"
-            placeholder="••••••"
-            keyboardType="number-pad"
-            maxLength={PIN_MAX_LENGTH}
-            isPassword
-            iconName="lock"
-            autoFocus
-            value={pin}
-            onChangeText={handleChangePin}
-            error={errors.pin}
-          />
-
-          {formError ? (
-            <View
-              className="mb-[18px] rounded-lg border border-danger/30 bg-danger/12 p-3"
-              accessibilityRole="alert"
-            >
-              <Text className="text-center text-[13px] text-danger">
-                {formError}
+          {challengeToken ? (
+            <>
+              <Text className="mb-1.5 text-[24px] font-bold text-content">
+                Verificación en dos pasos
               </Text>
-            </View>
-          ) : null}
+              <Text className="mb-[26px] text-[14px] text-content-muted">
+                Confirmá tu identidad para terminar de iniciar sesión.
+              </Text>
+              <TwoFactorVerifyForm
+                challengeToken={challengeToken}
+                expiresIn={challengeExpiresIn}
+                onChallengeLost={handleChallengeLost}
+                onRecoveryCodeUsed={handleRecoveryCodeUsed}
+              />
+            </>
+          ) : (
+            <>
+              <Text className="mb-1.5 text-[24px] font-bold text-content">
+                {userName ? `Hola de nuevo, ${userName}` : "Hola de nuevo"}
+              </Text>
+              <Text className="mb-[26px] text-[14px] text-content-muted">
+                Ingresá tu PIN de acceso rápido para este dispositivo.
+              </Text>
 
-          <Button
-            title="Ingresar"
-            onPress={() => handleSubmit(pin)}
-            isLoading={isSubmitting}
-            iconRight="arrow-right"
-          />
+              <TextField
+                label="TU PIN"
+                placeholder="••••••"
+                keyboardType="number-pad"
+                maxLength={PIN_MAX_LENGTH}
+                isPassword
+                iconName="lock"
+                autoFocus
+                value={pin}
+                onChangeText={handleChangePin}
+                error={errors.pin}
+              />
 
-          <TouchableOpacity
-            activeOpacity={0.75}
-            className="mt-4 items-center py-3"
-            onPress={onUseAnotherAccount}
-          >
-            <Text className="text-[13px] font-bold text-content-muted">
-              ¿No sos vos? Iniciar sesión con otra cuenta
-            </Text>
-          </TouchableOpacity>
+              {formError ? (
+                <View
+                  className="mb-[18px] rounded-lg border border-danger/30 bg-danger/12 p-3"
+                  accessibilityRole="alert"
+                >
+                  <Text className="text-center text-[13px] text-danger">
+                    {formError}
+                  </Text>
+                </View>
+              ) : null}
+
+              <Button
+                title="Ingresar"
+                onPress={() => handleSubmit(pin)}
+                isLoading={isSubmitting}
+                iconRight="arrow-right"
+              />
+
+              <TouchableOpacity
+                activeOpacity={0.75}
+                className="mt-4 items-center py-3"
+                onPress={onUseAnotherAccount}
+              >
+                <Text className="text-[13px] font-bold text-content-muted">
+                  ¿No sos vos? Iniciar sesión con otra cuenta
+                </Text>
+              </TouchableOpacity>
+            </>
+          )}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

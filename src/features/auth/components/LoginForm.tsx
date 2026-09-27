@@ -66,6 +66,12 @@ export function LoginForm({
         const result = await loginWithGoogle(idToken);
         if (!result.ok) {
           setFormError(result.message);
+          return;
+        }
+
+        if (result.twoFactorRequired) {
+          setChallengeExpiresIn(result.expiresIn);
+          setChallengeToken(result.challengeToken);
         }
         return;
       }
