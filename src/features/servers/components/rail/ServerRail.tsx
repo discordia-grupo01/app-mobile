@@ -80,7 +80,7 @@ export function ServerRail({
         <Feather
           name="home"
           size={20}
-          color={isHomeActive ? "#ffffff" : "rgba(255, 255, 255, 0.7)"}
+          color={isHomeActive ? "#ffffff" : colors.textMuted}
         />
       </TouchableOpacity>
 
