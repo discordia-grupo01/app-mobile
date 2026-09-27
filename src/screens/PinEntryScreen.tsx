@@ -143,7 +143,7 @@ export function PinEntryScreen({
                 <Text className="mb-1.5 text-center text-[19px] font-bold text-content">
                   PIN bloqueado temporalmente
                 </Text>
-                <Text className="mb-4 text-center text-[14px] leading-5 text-content-muted">
+                <Text className="mb-4 text-center text-[14px] leading-5 text-on-accent-muted">
                   {PIN_LOCKED}
                 </Text>
                 <Text className="mb-2 text-[28px] font-bold text-content">
@@ -162,7 +162,7 @@ export function PinEntryScreen({
               <Text className="mb-1.5 text-[24px] font-bold text-content">
                 {userName ? `Hola de nuevo, ${userName}` : "Hola de nuevo"}
               </Text>
-              <Text className="mb-[26px] text-[14px] text-content-muted">
+              <Text className="mb-[26px] text-[14px] text-on-accent-muted">
                 Ingresá tu PIN de acceso rápido para este dispositivo.
               </Text>
 
@@ -173,6 +173,7 @@ export function PinEntryScreen({
                 maxLength={PIN_MAX_LENGTH}
                 isPassword
                 iconName="lock"
+                tone="onAccent"
                 autoFocus
                 value={pin}
                 onChangeText={handleChangePin}
@@ -202,7 +203,7 @@ export function PinEntryScreen({
                 className="mt-4 items-center py-3"
                 onPress={onUseAnotherAccount}
               >
-                <Text className="text-[13px] font-bold text-content-muted">
+                <Text className="text-[13px] font-bold text-on-accent-muted">
                   ¿No sos vos? Iniciar sesión con otra cuenta
                 </Text>
               </TouchableOpacity>

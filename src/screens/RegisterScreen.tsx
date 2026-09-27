@@ -45,7 +45,7 @@ export function RegisterScreen({
           <Text className="mb-1.5 text-[24px] font-bold text-content">
             Crea tu cuenta
           </Text>
-          <Text className="mb-[26px] text-[14px] text-content-muted">
+          <Text className="mb-[26px] text-[14px] text-on-accent-muted">
             Es gratis y siempre lo será.
           </Text>
 

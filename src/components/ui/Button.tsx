@@ -10,7 +10,7 @@ import {
 import { cn } from "../../lib/cn";
 import { useThemeColors } from "../../theme/theme-context";
 
-type ButtonVariant = "primary" | "secondary" | "danger";
+type ButtonVariant = "primary" | "secondary" | "secondaryOnAccent" | "danger";
 
 interface ButtonProps extends TouchableOpacityProps {
   title: string;
@@ -24,12 +24,14 @@ interface ButtonProps extends TouchableOpacityProps {
 const CONTAINER_VARIANT: Record<ButtonVariant, string> = {
   primary: "bg-accent",
   secondary: "bg-surface-input border border-line",
+  secondaryOnAccent: "bg-surface-input-on-accent border border-line-on-accent",
   danger: "bg-danger-strong",
 };
 
 const TEXT_VARIANT: Record<ButtonVariant, string> = {
   primary: "text-on-accent",
   secondary: "text-content-muted",
+  secondaryOnAccent: "text-on-accent-muted",
   danger: "text-on-accent",
 };
 
