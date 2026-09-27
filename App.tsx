@@ -1,6 +1,6 @@
 import "./global.css";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
@@ -38,21 +38,25 @@ function AppContent() {
   const [isPinEnabled, setIsPinEnabled] = useState(false);
   const [isPinCheckLoading, setIsPinCheckLoading] = useState(true);
   const [skipPinEntry, setSkipPinEntry] = useState(false);
+  const isFirstPinCheck = useRef(true);
 
   useEffect(() => {
     let cancelled = false;
+    const isFirstRun = isFirstPinCheck.current;
+    isFirstPinCheck.current = false;
+
     getPinEnabled()
       .then((enabled) => {
         if (!cancelled) setIsPinEnabled(enabled);
       })
       .catch(() => {})
       .finally(() => {
-        if (!cancelled) setIsPinCheckLoading(false);
+        if (!cancelled && isFirstRun) setIsPinCheckLoading(false);
       });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [isAuthenticated]);
 
   function handleSwitchMode(mode: AuthScreen) {
     setAuthScreen(mode);
