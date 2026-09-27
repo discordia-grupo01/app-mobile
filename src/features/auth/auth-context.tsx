@@ -2,6 +2,7 @@ import {
   type LoginResultWithToken,
   type LoginValues,
   type EmailConfirmationResult,
+  type PinLoginResult,
   type RegisterResult,
   type RegisterValues,
   type User,
@@ -45,7 +46,7 @@ interface AuthContextValue {
   setPinEnabled: (enabled: boolean) => Promise<void>;
   login: (credentials: LoginValues) => Promise<LoginResultWithToken>;
   loginWithGoogle: (idToken: string) => Promise<LoginResultWithToken>;
-  loginWithPin: (pin: string) => Promise<LoginResultWithToken>;
+  loginWithPin: (pin: string) => Promise<PinLoginResult>;
   register: (values: RegisterValues) => Promise<RegisterResult>;
   requestEmailConfirmation: (email: string) => Promise<EmailConfirmationResult>;
   logout: () => Promise<void>;
@@ -140,7 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const loginWithPin = useCallback(
-    async (pin: string): Promise<LoginResultWithToken> => {
+    async (pin: string): Promise<PinLoginResult> => {
       const result = await loginWithPinService(pin);
 
       if (result.ok && !result.twoFactorRequired) {
