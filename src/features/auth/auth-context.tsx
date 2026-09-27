@@ -171,14 +171,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(async (): Promise<void> => {
+    try {
+      await logoutService();
+    } catch {}
+
     setToken(null);
     setUser(null);
 
     try {
       await clearSession();
     } catch {}
-
-    await logoutService();
   }, []);
 
   const setPinEnabled = useCallback(async (enabled: boolean): Promise<void> => {
