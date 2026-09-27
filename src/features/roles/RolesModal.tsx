@@ -572,7 +572,8 @@ export function RolesModal({
               >
                 <Text className="text-[12px] text-content-subtle leading-[17px] -mt-1.5">
                   Elegí un nombre, un color y, si querés, los permisos iniciales
-                  del rol. Podés cambiar todo esto después desde "Editar rol".
+                  del rol. Podés cambiar todo esto después desde &quot;Editar
+                  rol&quot;.
                 </Text>
 
                 <View className="gap-0">
