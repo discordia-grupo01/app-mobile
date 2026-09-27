@@ -36,7 +36,8 @@ interface MembersSidebarProps {
   serverId: string;
   currentUserId?: string | null;
   authToken?: string | null;
-  isOwner?: boolean;
+  /** Owner, o miembro con el permiso MANAGE_ROLES via algún rol. */
+  canManageRoles?: boolean;
   onClose: () => void;
 }
 
@@ -45,7 +46,7 @@ export function MembersSidebar({
   serverId,
   currentUserId,
   authToken,
-  isOwner = false,
+  canManageRoles = false,
   onClose,
 }: MembersSidebarProps) {
   const colors = useThemeColors();
@@ -286,7 +287,7 @@ export function MembersSidebar({
         userId={viewingUserId}
         authToken={authToken ?? null}
         serverId={serverId}
-        canManageRoles={isOwner}
+        canManageRoles={canManageRoles}
         onClose={() => setViewingUserId(null)}
       />
     </>

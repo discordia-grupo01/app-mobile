@@ -1,5 +1,7 @@
 import {
+  hasPermission,
   type LeaveServerResult,
+  type Role,
   type ServerSummary,
   SESSION_EXPIRED_MESSAGE,
 } from "@discordia/client-shared";
@@ -23,6 +25,7 @@ import { JoinServerModal } from "../features/servers/components/server/JoinServe
 import { useAuth } from "../features/auth/auth-context";
 import { getOwnProfile } from "../features/profile/service";
 import { leaveServer, listMyServers } from "../features/servers/api";
+import { listMemberRoles } from "../features/roles/api";
 import { useThemeColors } from "../theme/theme-context";
 import { ChannelScreen } from "./ChannelScreen";
 import { ServerChannelsScreen } from "./ServerChannelsScreen";
@@ -41,6 +44,7 @@ export function HomeScreen() {
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
   const [isJoinModalVisible, setIsJoinModalVisible] = useState(false);
   const [isAddServerSheetVisible, setIsAddServerSheetVisible] = useState(false);
+  const [myRoles, setMyRoles] = useState<Role[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -82,6 +86,41 @@ export function HomeScreen() {
     selectedServer?.channels.find(
       (channel) => channel.id === selectedChannelId,
     ) ?? null;
+
+  const isOwner =
+    user != null &&
+    selectedServer != null &&
+    String(user.id) === selectedServer.owner_id;
+
+  /**
+   * Roles asignados al usuario actual en `selectedServer`
+   */
+  const fetchMyRoles = useCallback(() => {
+    if (!user || !selectedServer) return undefined;
+    let cancelled = false;
+    listMemberRoles(selectedServer.id, String(user.id)).then((result) => {
+      if (cancelled) return;
+      setMyRoles(result.ok ? result.roles : []);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [user, selectedServer]);
+
+  useEffect(() => fetchMyRoles(), [fetchMyRoles]);
+
+  const canManageChannels = hasPermission(
+    { isOwner, roles: myRoles },
+    "MANAGE_CHANNELS",
+  );
+  const canManageRoles = hasPermission(
+    { isOwner, roles: myRoles },
+    "MANAGE_ROLES",
+  );
+  const canManageServer = hasPermission(
+    { isOwner, roles: myRoles },
+    "MANAGE_SERVER",
+  );
 
   function handleSelectHome() {
     setSelectedServerId(null);
@@ -150,7 +189,7 @@ export function HomeScreen() {
           serverId={selectedServer.id}
           authToken={token}
           currentUserId={user ? String(user.id) : null}
-          isOwner={user != null && String(user.id) === selectedServer.owner_id}
+          canManageRoles={canManageRoles}
           onBack={() => setSelectedChannelId(null)}
         />
       </View>
@@ -165,7 +204,11 @@ export function HomeScreen() {
           server={selectedServer}
           servers={servers}
           userName={user?.name}
-          isOwner={user != null && String(user.id) === selectedServer.owner_id}
+          isOwner={isOwner}
+          canManageChannels={canManageChannels}
+          canManageRoles={canManageRoles}
+          canManageServer={canManageServer}
+          onPermissionsChanged={fetchMyRoles}
           onSelectChannel={setSelectedChannelId}
           onSelectHome={handleSelectHome}
           onSwitchServer={(id) => {
