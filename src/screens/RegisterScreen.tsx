@@ -27,10 +27,10 @@ export function RegisterScreen({
     >
       <StatusBar style="light" />
       <ScrollView
-        contentContainerClassName="grow items-center justify-center p-5"
+        contentContainerClassName="grow items-center justify-center p-4"
         keyboardShouldPersistTaps="handled"
       >
-        <View className="w-full max-w-[420px] px-7">
+        <View className="w-full max-w-[420px] px-4">
           {/* Logo Discordia (Light Version for Dark Background) */}
           <View className="mb-5 items-center">
             <Image

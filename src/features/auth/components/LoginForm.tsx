@@ -3,11 +3,13 @@ import {
   GOOGLE_CONNECT_FAILED,
   hasErrors,
   type LoginErrors,
+  TWO_FACTOR_RECOVERY_CODE_USED,
+  twoFactorRecoveryCodesRemaining,
   validateLogin,
 } from "@discordia/client-shared";
 
 import { useState } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { Alert, Text, TouchableOpacity, View } from "react-native";
 
 import { useAuth } from "../auth-context";
 import { extractGoogleIdToken, useGoogleAuthRequest } from "../google-auth";
@@ -15,11 +17,13 @@ import { extractGoogleIdToken, useGoogleAuthRequest } from "../google-auth";
 import { GoogleIcon } from "../../../components/icons/GoogleIcon";
 import { Button } from "../../../components/ui/Button";
 import { TextField } from "../../../components/ui/TextField";
+import { TwoFactorLoginStep } from "./TwoFactorLoginStep";
 
 interface LoginFormProps {
   onSwitchToRegister: () => void;
   onForgotPassword: () => void;
   onEmailNotVerified: (email: string) => void;
+  onTwoFactorChallengeChange?: (active: boolean) => void;
   justRegistered?: boolean;
 }
 
@@ -27,6 +31,7 @@ export function LoginForm({
   onSwitchToRegister,
   onForgotPassword,
   onEmailNotVerified,
+  onTwoFactorChallengeChange,
   justRegistered = false,
 }: LoginFormProps) {
   const { login, loginWithGoogle } = useAuth();
@@ -37,6 +42,8 @@ export function LoginForm({
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
+  const [challengeToken, setChallengeToken] = useState<string | null>(null);
+  const [challengeExpiresIn, setChallengeExpiresIn] = useState(0);
 
   const [googleRequest, , promptGoogleAsync] = useGoogleAuthRequest();
 
@@ -61,6 +68,13 @@ export function LoginForm({
         const result = await loginWithGoogle(idToken);
         if (!result.ok) {
           setFormError(result.message);
+          return;
+        }
+
+        if (result.twoFactorRequired) {
+          setChallengeExpiresIn(result.expiresIn);
+          setChallengeToken(result.challengeToken);
+          onTwoFactorChallengeChange?.(true);
         }
         return;
       }
@@ -94,7 +108,49 @@ export function LoginForm({
         return;
       }
       setFormError(result.message);
+      return;
     }
+
+    if (result.twoFactorRequired) {
+      setPassword("");
+      setChallengeExpiresIn(result.expiresIn);
+      setChallengeToken(result.challengeToken);
+      onTwoFactorChallengeChange?.(true);
+    }
+    // Sin segundo factor no hay nada mas que hacer: `login` ya guardo la
+    // sesion y el arbol de la app reacciona a `isAuthenticated`.
+  }
+
+  function handleChallengeLost(message: string) {
+    setChallengeToken(null);
+    setPassword("");
+    setFormError(message);
+    onTwoFactorChallengeChange?.(false);
+  }
+
+  function handleBack() {
+    setChallengeToken(null);
+    setPassword("");
+    onTwoFactorChallengeChange?.(false);
+  }
+
+  function handleRecoveryCodeUsed(remaining: number) {
+    Alert.alert(
+      "Usaste un código de recuperación",
+      `${TWO_FACTOR_RECOVERY_CODE_USED} ${twoFactorRecoveryCodesRemaining(remaining)}`,
+    );
+  }
+
+  if (challengeToken) {
+    return (
+      <TwoFactorLoginStep
+        challengeToken={challengeToken}
+        expiresIn={challengeExpiresIn}
+        onBack={handleBack}
+        onChallengeLost={handleChallengeLost}
+        onRecoveryCodeUsed={handleRecoveryCodeUsed}
+      />
+    );
   }
 
   return (
