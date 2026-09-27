@@ -2,6 +2,7 @@ import { Feather } from "@expo/vector-icons";
 import { Text, View } from "react-native";
 
 import { Button } from "../../../../../components/ui/Button";
+import { withAlpha } from "../../../../../lib/color";
 import { useThemeColors } from "../../../../../theme/theme-context";
 
 interface TwoFactorDisabledConfirmationStepProps {
@@ -18,7 +19,10 @@ export function TwoFactorDisabledConfirmationStep({
   return (
     <>
       <View className="items-center">
-        <View className="mb-4 size-16 items-center justify-center rounded-2xl bg-success/15">
+        <View
+          className="mb-4 size-16 items-center justify-center rounded-2xl"
+          style={{ backgroundColor: withAlpha(colors.success, 0.15) }}
+        >
           <Feather name="check-circle" size={30} color={colors.success} />
         </View>
         <Text className="text-center text-[17px] font-bold text-content">
@@ -30,7 +34,7 @@ export function TwoFactorDisabledConfirmationStep({
         </Text>
       </View>
 
-      <View className="my-4 rounded-2xl border border-line bg-surface-input p-4">
+      <View className="my-4 rounded-2xl border border-line bg-surface-raised p-4">
         <Text className="text-[13px] font-bold text-info">
           Podés volver a activarla cuando quieras
         </Text>

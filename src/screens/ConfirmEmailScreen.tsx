@@ -8,6 +8,7 @@ import { Button } from "../components/ui/Button";
 import { ThemeToggleButton } from "../components/ui/ThemeToggleButton";
 import { useAuth } from "../features/auth/auth-context";
 import { confirmEmailService } from "../features/auth/service";
+import { withAlpha } from "../lib/color";
 import { useStatusBarStyle, useThemeColors } from "../theme/theme-context";
 interface ConfirmEmailScreenProps {
   email?: string;
@@ -83,7 +84,17 @@ export function ConfirmEmailScreen({
 
           <View className="items-center">
             <View
-              className={`mb-5 size-16 items-center justify-center rounded-2xl ${confirmed ? "bg-success/15" : expired ? "bg-danger/15" : "bg-accent/15"}`}
+              className="mb-5 size-16 items-center justify-center rounded-2xl"
+              style={{
+                backgroundColor: withAlpha(
+                  confirmed
+                    ? colors.success
+                    : expired
+                      ? colors.danger
+                      : colors.accent,
+                  0.15,
+                ),
+              }}
             >
               {confirmed ? (
                 <Feather name="check-circle" size={32} color={colors.success} />

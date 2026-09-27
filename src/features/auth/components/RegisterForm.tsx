@@ -13,6 +13,7 @@ import { extractGoogleIdToken, useGoogleAuthRequest } from "../google-auth";
 
 import { GoogleIcon } from "../../../components/icons/GoogleIcon";
 import { Button } from "../../../components/ui/Button";
+import { FormErrorBanner } from "../../../components/ui/FormErrorBanner";
 import { TextField } from "../../../components/ui/TextField";
 
 interface RegisterFormProps {
@@ -131,16 +132,7 @@ export function RegisterForm({
         error={errors.password}
       />
 
-      {formError ? (
-        <View
-          className="mb-[18px] rounded-lg border border-danger/30 bg-danger/12 p-3"
-          accessibilityRole="alert"
-        >
-          <Text className="text-center text-[13px] text-danger">
-            {formError}
-          </Text>
-        </View>
-      ) : null}
+      <FormErrorBanner message={formError} />
 
       {/* Submit Button */}
       <Button

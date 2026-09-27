@@ -9,7 +9,9 @@ import { useEffect, useState, type RefObject } from "react";
 import { ScrollView, Text, View } from "react-native";
 
 import { Button } from "../../../../components/ui/Button";
+import { FormErrorBanner } from "../../../../components/ui/FormErrorBanner";
 import { TextField } from "../../../../components/ui/TextField";
+import { withAlpha } from "../../../../lib/color";
 import { useThemeColors } from "../../../../theme/theme-context";
 import { useAuth } from "../../../auth/auth-context";
 import { configurePinService } from "../../../auth/service";
@@ -62,7 +64,10 @@ export function PinSetupPanel({
   if (isDone) {
     return (
       <View className="px-4.5 pt-6 items-center">
-        <View className="w-14 h-14 rounded-2xl items-center justify-center bg-success/12 mb-4">
+        <View
+          className="w-14 h-14 rounded-2xl items-center justify-center mb-4"
+          style={{ backgroundColor: withAlpha(colors.success, 0.12) }}
+        >
           <Feather name="check" size={26} color={colors.success} />
         </View>
         <Text className="text-[17px] font-bold text-content mb-1.5">
@@ -110,16 +115,7 @@ export function PinSetupPanel({
         error={errors.confirmPin}
       />
 
-      {formError ? (
-        <View
-          className="mb-4 rounded-lg border border-danger/30 bg-danger/12 p-3"
-          accessibilityRole="alert"
-        >
-          <Text className="text-center text-[13px] text-danger">
-            {formError}
-          </Text>
-        </View>
-      ) : null}
+      <FormErrorBanner message={formError} />
 
       <Button
         title={isPinEnabled ? "Guardar" : "Activar"}

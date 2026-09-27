@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 
 import { Button } from "../../../../../components/ui/Button";
+import { withAlpha } from "../../../../../lib/color";
 import { useThemeColors } from "../../../../../theme/theme-context";
 
 interface TwoFactorCodesStepProps {
@@ -29,7 +30,10 @@ export function TwoFactorCodesStep({
   return (
     <>
       <View className="mb-3 items-center">
-        <View className="mb-3 size-14 items-center justify-center rounded-2xl bg-success/15">
+        <View
+          className="mb-3 size-14 items-center justify-center rounded-2xl"
+          style={{ backgroundColor: withAlpha(colors.success, 0.15) }}
+        >
           <Feather name="check-circle" size={26} color={colors.success} />
         </View>
         <Text className="text-center text-[17px] font-bold text-content">
@@ -41,16 +45,17 @@ export function TwoFactorCodesStep({
         </Text>
       </View>
 
-      <View className="mb-4 flex-row flex-wrap rounded-xl border border-line bg-surface-input p-3">
+      <View className="mb-4 flex-row flex-wrap gap-2 rounded-2xl border border-line bg-surface-raised p-4">
         {recoveryCodes.map((recoveryCode, index) => (
-          <Text
+          <View
             key={recoveryCode}
-            selectable
-            className="w-1/2 py-1 text-center text-[13px] text-content"
+            className="w-[47%] items-center rounded-lg bg-surface-input px-2 py-2"
           >
-            <Text className="text-content-subtle">{index + 1}. </Text>
-            {recoveryCode}
-          </Text>
+            <Text selectable className="text-center text-[13px] text-content">
+              <Text className="text-content-subtle">{index + 1}. </Text>
+              {recoveryCode}
+            </Text>
+          </View>
         ))}
       </View>
 

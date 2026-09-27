@@ -12,7 +12,9 @@ import { forgotPasswordService } from "../service";
 import { useThemeColors } from "../../../theme/theme-context";
 
 import { Button } from "../../../components/ui/Button";
+import { FormErrorBanner } from "../../../components/ui/FormErrorBanner";
 import { TextField } from "../../../components/ui/TextField";
+import { withAlpha } from "../../../lib/color";
 
 interface ForgotPasswordFormProps {
   onBack: () => void;
@@ -48,7 +50,10 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
   if (sent) {
     return (
       <View className="w-full items-center">
-        <View className="mb-5 h-16 w-16 items-center justify-center rounded-[20px] bg-success/15">
+        <View
+          className="mb-5 h-16 w-16 items-center justify-center rounded-[20px]"
+          style={{ backgroundColor: withAlpha(colors.success, 0.15) }}
+        >
           <Feather name="check-circle" size={32} color={colors.success} />
         </View>
 
@@ -106,16 +111,7 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
         error={errors.email}
       />
 
-      {formError ? (
-        <View
-          className="mb-[18px] rounded-lg border border-danger/30 bg-danger/12 p-3"
-          accessibilityRole="alert"
-        >
-          <Text className="text-center text-[13px] text-danger">
-            {formError}
-          </Text>
-        </View>
-      ) : null}
+      <FormErrorBanner message={formError} />
 
       <Button
         title="Enviar enlace"
