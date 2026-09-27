@@ -143,9 +143,7 @@ export function TwoFactorStatusStep({
         className="mt-2.5 items-center py-3"
         onPress={onClose}
       >
-        <Text className="text-[13px] font-bold text-content-muted">
-          Cerrar
-        </Text>
+        <Text className="text-[13px] font-bold text-content-muted">Cerrar</Text>
       </TouchableOpacity>
     </>
   );

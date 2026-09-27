@@ -65,8 +65,9 @@ export function TwoFactorPanel({ onClose, scrollRef }: TwoFactorPanelProps) {
 
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [newPasswordErrors, setNewPasswordErrors] =
-    useState<SetPasswordErrors>({});
+  const [newPasswordErrors, setNewPasswordErrors] = useState<SetPasswordErrors>(
+    {},
+  );
   const [passwordAlreadySet, setPasswordAlreadySet] = useState(false);
 
   const loadStatus = useCallback(() => {

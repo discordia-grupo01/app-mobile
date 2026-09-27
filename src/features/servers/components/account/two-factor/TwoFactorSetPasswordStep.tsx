@@ -44,8 +44,8 @@ export function TwoFactorSetPasswordStep({
         Creá una contraseña primero
       </Text>
       <Text className="mb-4 text-[13px] leading-[18px] text-content-muted">
-        Tu cuenta usa Google y todavía no tiene una contraseña propia. La vas
-        a necesitar para recuperar códigos o desactivar el segundo factor más
+        Tu cuenta usa Google y todavía no tiene una contraseña propia. La vas a
+        necesitar para recuperar códigos o desactivar el segundo factor más
         adelante.
       </Text>
 

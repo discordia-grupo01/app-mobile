@@ -36,8 +36,8 @@ export function TwoFactorCodesStep({
           Guardá tus códigos de recuperación
         </Text>
         <Text className="mt-1 text-center text-[13px] leading-[18px] text-content-muted">
-          Cada código sirve una sola vez. Esta es la única vez que
-          mostraremos esta lista.
+          Cada código sirve una sola vez. Esta es la única vez que mostraremos
+          esta lista.
         </Text>
       </View>
 
