@@ -25,12 +25,14 @@ import {
 
 import { AuthLogo } from "../components/auth/AuthLogo";
 import { Button } from "../components/ui/Button";
+import { FormErrorBanner } from "../components/ui/FormErrorBanner";
 import { TextField } from "../components/ui/TextField";
 import { ThemeToggleButton } from "../components/ui/ThemeToggleButton";
 import { useAuth } from "../features/auth/auth-context";
 import { TwoFactorLoginStep } from "../features/auth/components/TwoFactorLoginStep";
-import { useStatusBarStyle, useThemeColors } from "../theme/theme-context";
+import { withAlpha } from "../lib/color";
 import { getStoredUser } from "../lib/storage";
+import { useStatusBarStyle, useThemeColors } from "../theme/theme-context";
 
 interface PinEntryScreenProps {
   onUseAnotherAccount: () => void;
@@ -168,7 +170,10 @@ export function PinEntryScreen({
           {isLocked ? (
             <>
               <View className="mb-4 items-center">
-                <View className="mb-4 h-14 w-14 items-center justify-center rounded-2xl bg-danger/12">
+                <View
+                  className="mb-4 h-14 w-14 items-center justify-center rounded-2xl"
+                  style={{ backgroundColor: withAlpha(colors.danger, 0.12) }}
+                >
                   <Feather name="lock" size={26} color={colors.danger} />
                 </View>
                 <Text className="mb-1.5 text-center text-[19px] font-bold text-content">
@@ -218,16 +223,7 @@ export function PinEntryScreen({
                 error={errors.pin}
               />
 
-              {formError ? (
-                <View
-                  className="mb-[18px] rounded-lg border border-danger/30 bg-danger/12 p-3"
-                  accessibilityRole="alert"
-                >
-                  <Text className="text-center text-[13px] text-danger">
-                    {formError}
-                  </Text>
-                </View>
-              ) : null}
+              <FormErrorBanner message={formError} />
 
               <Button
                 title="Ingresar"

@@ -29,6 +29,7 @@ import {
   revokeInvite,
 } from "../../api";
 import { cn } from "../../../../lib/cn";
+import { withAlpha } from "../../../../lib/color";
 import { useThemeColors } from "../../../../theme/theme-context";
 
 interface InviteLinkModalProps {
@@ -40,27 +41,27 @@ interface InviteLinkModalProps {
 
 const STATUS_COPY: Record<
   InviteStatus,
-  { label: string; textClass: string; bgClass: string }
+  {
+    label: string;
+    textClass: string;
+    badgeColor: "success" | "danger" | null;
+  }
 > = {
-  active: {
-    label: "Activa",
-    textClass: "text-success",
-    bgClass: "bg-success/15",
-  },
+  active: { label: "Activa", textClass: "text-success", badgeColor: "success" },
   revoked: {
     label: "Revocada",
     textClass: "text-danger",
-    bgClass: "bg-danger/15",
+    badgeColor: "danger",
   },
   expired: {
     label: "Vencida",
     textClass: "text-content-subtle",
-    bgClass: "bg-surface-input",
+    badgeColor: null,
   },
   exhausted: {
     label: "Agotada",
     textClass: "text-content-subtle",
-    bgClass: "bg-surface-input",
+    badgeColor: null,
   },
 };
 
@@ -106,7 +107,22 @@ function InvitationRow({
         >
           {inviteLinkText(invitation.code)}
         </Text>
-        <View className={cn("rounded-full px-2 py-[3px]", statusCopy.bgClass)}>
+        <View
+          className={cn(
+            "rounded-full px-2 py-[3px]",
+            !statusCopy.badgeColor && "bg-surface-input",
+          )}
+          style={
+            statusCopy.badgeColor
+              ? {
+                  backgroundColor: withAlpha(
+                    colors[statusCopy.badgeColor],
+                    0.15,
+                  ),
+                }
+              : undefined
+          }
+        >
           <Text
             className={cn(
               "text-[10px] font-bold tracking-[0.6px] uppercase",

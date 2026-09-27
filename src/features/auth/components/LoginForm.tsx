@@ -16,7 +16,10 @@ import { extractGoogleIdToken, useGoogleAuthRequest } from "../google-auth";
 
 import { GoogleIcon } from "../../../components/icons/GoogleIcon";
 import { Button } from "../../../components/ui/Button";
+import { FormErrorBanner } from "../../../components/ui/FormErrorBanner";
 import { TextField } from "../../../components/ui/TextField";
+import { withAlpha } from "../../../lib/color";
+import { useThemeColors } from "../../../theme/theme-context";
 import { TwoFactorLoginStep } from "./TwoFactorLoginStep";
 
 interface LoginFormProps {
@@ -35,6 +38,7 @@ export function LoginForm({
   justRegistered = false,
 }: LoginFormProps) {
   const { login, loginWithGoogle } = useAuth();
+  const colors = useThemeColors();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -156,7 +160,13 @@ export function LoginForm({
   return (
     <View className="w-full">
       {justRegistered ? (
-        <View className="mb-[18px] rounded-lg border border-success/30 bg-success/12 p-3">
+        <View
+          className="mb-[18px] rounded-lg border p-3"
+          style={{
+            borderColor: withAlpha(colors.success, 0.3),
+            backgroundColor: withAlpha(colors.success, 0.12),
+          }}
+        >
           <Text className="text-center text-[13px] text-success">
             ¡Cuenta creada con éxito! Ingresa tus datos para continuar.
           </Text>
@@ -194,16 +204,7 @@ export function LoginForm({
         </TouchableOpacity>
       </View>
 
-      {formError ? (
-        <View
-          className="mb-[18px] rounded-lg border border-danger/30 bg-danger/12 p-3"
-          accessibilityRole="alert"
-        >
-          <Text className="text-center text-[13px] text-danger">
-            {formError}
-          </Text>
-        </View>
-      ) : null}
+      <FormErrorBanner message={formError} />
 
       {/* Submit Button */}
       <Button

@@ -15,7 +15,7 @@ import QRCode from "react-native-qrcode-svg";
 import { Button } from "../../../../../components/ui/Button";
 import { TextField } from "../../../../../components/ui/TextField";
 import { useThemeColors } from "../../../../../theme/theme-context";
-import { TwoFactorErrorBanner } from "./TwoFactorErrorBanner";
+import { FormErrorBanner } from "../../../../../components/ui/FormErrorBanner";
 
 interface TwoFactorSetupStepProps {
   setup: TwoFactorSetup;
@@ -49,43 +49,47 @@ export function TwoFactorSetupStep({
   return (
     <>
       <Text className="mb-1.5 text-[17px] font-bold text-content">
-        Escaneá el código
+        Conectá tu app autenticadora
       </Text>
       <Text className="mb-4 text-[13px] leading-[18px] text-content-muted">
         {TWO_FACTOR_SCAN_INSTRUCTIONS}
       </Text>
 
-      <View className="mb-4 items-center">
-        <View className="rounded-xl bg-white p-4">
-          <QRCode value={setup.otpauth_url} size={180} />
+      <View className="mb-4 gap-4 rounded-2xl border border-line bg-surface-raised p-4">
+        <View className="items-center">
+          <View className="rounded-xl bg-white p-4">
+            <QRCode value={setup.otpauth_url} size={180} />
+          </View>
         </View>
-      </View>
 
-      <View className="mb-1.5 flex-row items-center gap-2">
-        <Feather name="smartphone" size={16} color={colors.info} />
-        <Text className="text-[13px] font-semibold text-info">
-          ¿No podés escanear?
-        </Text>
-      </View>
-      <Text className="mb-2 text-[12px] text-content-subtle">
-        Ingresá esta clave manualmente. Si cerrás y volvés, seguirá siendo la
-        misma.
-      </Text>
-      <View className="mb-4 flex-row items-center justify-between gap-3 rounded-xl border border-line bg-surface-input px-3 py-3">
-        <Text selectable className="flex-1 text-[13px] text-content">
-          {setup.secret}
-        </Text>
-        <TouchableOpacity
-          activeOpacity={0.75}
-          onPress={copySecret}
-          accessibilityLabel="Copiar clave"
-        >
-          <Feather
-            name={secretCopied ? "check" : "copy"}
-            size={16}
-            color={colors.info}
-          />
-        </TouchableOpacity>
+        <View>
+          <View className="mb-1.5 flex-row items-center gap-2">
+            <Feather name="smartphone" size={16} color={colors.info} />
+            <Text className="text-[13px] font-semibold text-info">
+              ¿No podés escanear?
+            </Text>
+          </View>
+          <Text className="mb-2 text-[12px] text-content-subtle">
+            Ingresá esta clave manualmente. Si cerrás y volvés, seguirá siendo
+            la misma.
+          </Text>
+          <View className="flex-row items-center justify-between gap-3 rounded-xl border border-line bg-surface-input px-3 py-3">
+            <Text selectable className="flex-1 text-[13px] text-content">
+              {setup.secret}
+            </Text>
+            <TouchableOpacity
+              activeOpacity={0.75}
+              onPress={copySecret}
+              accessibilityLabel="Copiar clave"
+            >
+              <Feather
+                name={secretCopied ? "check" : "copy"}
+                size={16}
+                color={colors.info}
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
 
       <TextField
@@ -99,7 +103,7 @@ export function TwoFactorSetupStep({
         error={codeErrors.code}
       />
 
-      {formError ? <TwoFactorErrorBanner message={formError} /> : null}
+      {formError ? <FormErrorBanner message={formError} /> : null}
 
       <Button title="Activar" onPress={onActivate} isLoading={isSubmitting} />
 

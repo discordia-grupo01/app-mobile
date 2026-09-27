@@ -4,13 +4,14 @@ import {
   type TwoFactorStatus,
 } from "@discordia/client-shared";
 
-import { Feather } from "@expo/vector-icons";
+import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Text, TouchableOpacity, View } from "react-native";
 
 import { Button } from "../../../../../components/ui/Button";
 import { cn } from "../../../../../lib/cn";
+import { withAlpha } from "../../../../../lib/color";
 import { useThemeColors } from "../../../../../theme/theme-context";
-import { TwoFactorErrorBanner } from "./TwoFactorErrorBanner";
+import { FormErrorBanner } from "../../../../../components/ui/FormErrorBanner";
 
 interface TwoFactorStatusStepProps {
   status: TwoFactorStatus | null;
@@ -45,14 +46,23 @@ export function TwoFactorStatusStep({
         <View
           className={cn(
             "size-14 items-center justify-center rounded-2xl",
-            enabled ? "bg-success/15" : "bg-surface-input",
+            !enabled && "bg-surface-input",
           )}
+          style={
+            enabled
+              ? { backgroundColor: withAlpha(colors.success, 0.15) }
+              : undefined
+          }
         >
-          <Feather
-            name={enabled ? "check-circle" : "key"}
-            size={26}
-            color={enabled ? colors.success : colors.textSubtle}
-          />
+          {enabled ? (
+            <MaterialCommunityIcons
+              name="shield-check"
+              size={28}
+              color={colors.success}
+            />
+          ) : (
+            <Feather name="key" size={26} color={colors.textSubtle} />
+          )}
         </View>
         <View className="flex-1">
           <View className="mb-1 flex-row flex-wrap items-center gap-2">
@@ -62,8 +72,13 @@ export function TwoFactorStatusStep({
             <View
               className={cn(
                 "rounded-full px-2 py-0.5",
-                enabled ? "bg-success/15" : "bg-surface-input",
+                !enabled && "bg-surface-input",
               )}
+              style={
+                enabled
+                  ? { backgroundColor: withAlpha(colors.success, 0.15) }
+                  : undefined
+              }
             >
               <Text
                 className={cn(
@@ -98,7 +113,7 @@ export function TwoFactorStatusStep({
         </View>
       </View>
 
-      {formError ? <TwoFactorErrorBanner message={formError} /> : null}
+      {formError ? <FormErrorBanner message={formError} /> : null}
 
       {enabled ? (
         <View className="gap-3">
@@ -121,7 +136,12 @@ export function TwoFactorStatusStep({
           <TouchableOpacity
             activeOpacity={0.75}
             onPress={onDisable}
-            className="flex-row items-start gap-3 rounded-xl border border-danger/20 bg-danger/6 p-4"
+            className="flex-row items-start gap-3 rounded-xl p-4"
+            style={{
+              borderWidth: 1,
+              borderColor: withAlpha(colors.danger, 0.2),
+              backgroundColor: withAlpha(colors.danger, 0.06),
+            }}
           >
             <Feather name="lock" size={19} color={colors.danger} />
             <View className="flex-1">

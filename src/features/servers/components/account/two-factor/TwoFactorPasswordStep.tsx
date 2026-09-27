@@ -4,7 +4,7 @@ import { Text, TouchableOpacity } from "react-native";
 
 import { Button } from "../../../../../components/ui/Button";
 import { TextField } from "../../../../../components/ui/TextField";
-import { TwoFactorErrorBanner } from "./TwoFactorErrorBanner";
+import { FormErrorBanner } from "../../../../../components/ui/FormErrorBanner";
 
 interface TwoFactorPasswordStepProps {
   title: string;
@@ -58,7 +58,7 @@ export function TwoFactorPasswordStep({
         error={passwordErrors.password}
       />
 
-      {formError ? <TwoFactorErrorBanner message={formError} /> : null}
+      {formError ? <FormErrorBanner message={formError} /> : null}
 
       <Button
         title={confirmLabel}

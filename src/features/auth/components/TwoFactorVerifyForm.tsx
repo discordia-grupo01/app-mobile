@@ -8,12 +8,14 @@ import {
   validateTwoFactorCode,
 } from "@discordia/client-shared";
 
-import { Feather } from "@expo/vector-icons";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useEffect, useRef, useState } from "react";
 import { Text, View } from "react-native";
 
 import { Button } from "../../../components/ui/Button";
+import { FormErrorBanner } from "../../../components/ui/FormErrorBanner";
 import { TextField } from "../../../components/ui/TextField";
+import { withAlpha } from "../../../lib/color";
 import { useThemeColors } from "../../../theme/theme-context";
 import { useAuth } from "../auth-context";
 
@@ -45,21 +47,23 @@ export function TwoFactorVerifyForm({
   }, [onChallengeLost]);
 
   // Un solo interval para toda la vida del componente: al llegar a 0 se
-  // comporta igual que si el backend respondiera "vencido".
+  // comporta igual que si el backend respondiera "vencido". El aviso al
+  // padre va afuera del updater de `setSecondsLeft` (no se puede notificar
+  // a un padre que desmonta este componente desde ahi adentro).
   useEffect(() => {
     if (expiresIn <= 0) {
       onChallengeLostRef.current(TWO_FACTOR_CHALLENGE_EXPIRED);
       return;
     }
+
+    let remaining = expiresIn;
     const interval = setInterval(() => {
-      setSecondsLeft((value) => {
-        if (value <= 1) {
-          clearInterval(interval);
-          onChallengeLostRef.current(TWO_FACTOR_CHALLENGE_EXPIRED);
-          return 0;
-        }
-        return value - 1;
-      });
+      remaining -= 1;
+      setSecondsLeft(Math.max(0, remaining));
+      if (remaining <= 0) {
+        clearInterval(interval);
+        onChallengeLostRef.current(TWO_FACTOR_CHALLENGE_EXPIRED);
+      }
     }, 1000);
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -93,8 +97,18 @@ export function TwoFactorVerifyForm({
 
   return (
     <View className="w-full">
-      <View className="mb-[18px] flex-row items-start gap-3 rounded-lg border border-info/30 bg-info/12 p-3">
-        <Feather name="shield" size={16} color={colors.info} />
+      <View
+        className="mb-[18px] flex-row items-start gap-3 rounded-lg border p-3"
+        style={{
+          borderColor: withAlpha(colors.info, 0.3),
+          backgroundColor: withAlpha(colors.info, 0.12),
+        }}
+      >
+        <MaterialCommunityIcons
+          name="shield-check"
+          size={16}
+          color={colors.info}
+        />
         <Text className="flex-1 text-[13px] leading-[18px] text-content-muted">
           {TWO_FACTOR_VERIFY_INSTRUCTIONS}
         </Text>
@@ -112,16 +126,7 @@ export function TwoFactorVerifyForm({
         error={errors.code}
       />
 
-      {formError ? (
-        <View
-          className="mb-[18px] rounded-lg border border-danger/30 bg-danger/12 p-3"
-          accessibilityRole="alert"
-        >
-          <Text className="text-center text-[13px] text-danger">
-            {formError}
-          </Text>
-        </View>
-      ) : null}
+      <FormErrorBanner message={formError} />
 
       <Button
         title="Verificar"
