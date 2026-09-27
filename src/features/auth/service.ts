@@ -23,7 +23,6 @@ import {
 
 import { apiFetch } from "../../lib/api-client";
 import { getOrCreateDeviceId } from "../../lib/device-id";
-import { setPinEnabled } from "../../lib/storage";
 
 export async function registerService(
   values: RegisterValues,
@@ -193,10 +192,6 @@ export async function forgotPasswordService(
   return { ok: true };
 }
 
-/**
- * Activa el PIN de acceso rápido en este dispositivo (historia "Registro
- * con PIN"). Requiere sesión activa
- */
 export async function configurePinService(
   pin: string,
 ): Promise<{ ok: true } | { ok: false; message: string }> {
@@ -214,14 +209,9 @@ export async function configurePinService(
     };
   }
 
-  await setPinEnabled(true);
   return { ok: true };
 }
 
-/**
- * Login rápido con PIN (historia "Registro con PIN"), sin pedir email
- * (CA2). Solo funciona si este dispositivo ya activó un PIN antes
- */
 export async function loginWithPinService(
   pin: string,
 ): Promise<LoginResultWithToken> {

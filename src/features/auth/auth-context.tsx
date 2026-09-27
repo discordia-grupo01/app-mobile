@@ -20,8 +20,10 @@ import {
 import { refreshAccessToken, setAuthEventHandlers } from "../../lib/api-client";
 import {
   clearSession,
+  getPinEnabled,
   getStoredUser,
   getToken,
+  setPinEnabled as persistPinEnabled,
   setSession,
   updateStoredUser,
 } from "../../lib/storage";
@@ -39,6 +41,8 @@ interface AuthContextValue {
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isPinEnabled: boolean;
+  setPinEnabled: (enabled: boolean) => Promise<void>;
   login: (credentials: LoginValues) => Promise<LoginResultWithToken>;
   loginWithGoogle: (idToken: string) => Promise<LoginResultWithToken>;
   loginWithPin: (pin: string) => Promise<LoginResultWithToken>;
@@ -54,6 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isPinEnabled, setIsPinEnabledState] = useState(false);
 
   useEffect(() => {
     setAuthEventHandlers({
@@ -72,6 +77,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     async function loadStoredSession() {
+      const pinEnabled = await getPinEnabled().catch(() => false);
+      setIsPinEnabledState(pinEnabled);
+
       try {
         const storedUser = await getStoredUser<User>();
         const storedToken = await getToken();
@@ -172,6 +180,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await logoutService();
   }, []);
 
+  const setPinEnabled = useCallback(async (enabled: boolean): Promise<void> => {
+    setIsPinEnabledState(enabled);
+    try {
+      await persistPinEnabled(enabled);
+    } catch {}
+  }, []);
+
   const updateUser = useCallback((updated: User): void => {
     setUser(updated);
     updateStoredUser(updated).catch(() => {});
@@ -183,6 +198,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       token,
       isAuthenticated: user !== null && token !== null,
       isLoading,
+      isPinEnabled,
+      setPinEnabled,
       login,
       loginWithGoogle,
       loginWithPin,
@@ -195,6 +212,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       token,
       isLoading,
+      isPinEnabled,
+      setPinEnabled,
       login,
       loginWithGoogle,
       loginWithPin,
