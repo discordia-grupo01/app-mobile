@@ -9,7 +9,7 @@ import {
 } from "@discordia/client-shared";
 
 import * as Clipboard from "expo-clipboard";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 
 import { useThemeColors } from "../../../../theme/theme-context";
@@ -69,18 +69,26 @@ export function TwoFactorPanel({ onClose }: TwoFactorPanelProps) {
   }, []);
 
   useEffect(() => {
-    void loadStatus();
-  }, [loadStatus]);
-
-  const didAutoSkipRef = useRef(false);
-  useEffect(() => {
-    if (isLoading || didAutoSkipRef.current || step !== "status") return;
-    didAutoSkipRef.current = true;
-    if (status && !status.enabled) {
-      void handleStartSetup();
-    }
+    let active = true;
+    void getTwoFactorStatusService().then((result) => {
+      if (!active) return;
+      if (!result.ok) {
+        setIsLoading(false);
+        setFormError(result.message);
+        return;
+      }
+      setStatus(result.status);
+      if (result.status.enabled) {
+        setIsLoading(false);
+      } else {
+        void handleStartSetup();
+      }
+    });
+    return () => {
+      active = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoading, status, step]);
+  }, []);
 
   function resetForms() {
     setCode("");
@@ -104,6 +112,7 @@ export function TwoFactorPanel({ onClose }: TwoFactorPanelProps) {
     setIsSubmitting(true);
     const result = await startTwoFactorSetupService();
     setIsSubmitting(false);
+    setIsLoading(false);
 
     if (!result.ok) {
       setFormError(result.message);
