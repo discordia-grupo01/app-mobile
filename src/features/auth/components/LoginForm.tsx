@@ -17,12 +17,13 @@ import { extractGoogleIdToken, useGoogleAuthRequest } from "../google-auth";
 import { GoogleIcon } from "../../../components/icons/GoogleIcon";
 import { Button } from "../../../components/ui/Button";
 import { TextField } from "../../../components/ui/TextField";
-import { TwoFactorVerifyForm } from "./TwoFactorVerifyForm";
+import { TwoFactorLoginStep } from "./TwoFactorLoginStep";
 
 interface LoginFormProps {
   onSwitchToRegister: () => void;
   onForgotPassword: () => void;
   onEmailNotVerified: (email: string) => void;
+  onTwoFactorChallengeChange?: (active: boolean) => void;
   justRegistered?: boolean;
 }
 
@@ -30,6 +31,7 @@ export function LoginForm({
   onSwitchToRegister,
   onForgotPassword,
   onEmailNotVerified,
+  onTwoFactorChallengeChange,
   justRegistered = false,
 }: LoginFormProps) {
   const { login, loginWithGoogle } = useAuth();
@@ -72,6 +74,7 @@ export function LoginForm({
         if (result.twoFactorRequired) {
           setChallengeExpiresIn(result.expiresIn);
           setChallengeToken(result.challengeToken);
+          onTwoFactorChallengeChange?.(true);
         }
         return;
       }
@@ -112,6 +115,7 @@ export function LoginForm({
       setPassword("");
       setChallengeExpiresIn(result.expiresIn);
       setChallengeToken(result.challengeToken);
+      onTwoFactorChallengeChange?.(true);
     }
     // Sin segundo factor no hay nada mas que hacer: `login` ya guardo la
     // sesion y el arbol de la app reacciona a `isAuthenticated`.
@@ -121,6 +125,13 @@ export function LoginForm({
     setChallengeToken(null);
     setPassword("");
     setFormError(message);
+    onTwoFactorChallengeChange?.(false);
+  }
+
+  function handleBack() {
+    setChallengeToken(null);
+    setPassword("");
+    onTwoFactorChallengeChange?.(false);
   }
 
   function handleRecoveryCodeUsed(remaining: number) {
@@ -132,9 +143,10 @@ export function LoginForm({
 
   if (challengeToken) {
     return (
-      <TwoFactorVerifyForm
+      <TwoFactorLoginStep
         challengeToken={challengeToken}
         expiresIn={challengeExpiresIn}
+        onBack={handleBack}
         onChallengeLost={handleChallengeLost}
         onRecoveryCodeUsed={handleRecoveryCodeUsed}
       />

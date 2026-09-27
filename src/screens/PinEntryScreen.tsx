@@ -24,7 +24,7 @@ import {
 import { Button } from "../components/ui/Button";
 import { TextField } from "../components/ui/TextField";
 import { useAuth } from "../features/auth/auth-context";
-import { TwoFactorVerifyForm } from "../features/auth/components/TwoFactorVerifyForm";
+import { TwoFactorLoginStep } from "../features/auth/components/TwoFactorLoginStep";
 import { getStoredUser } from "../lib/storage";
 
 interface PinEntryScreenProps {
@@ -92,6 +92,11 @@ export function PinEntryScreen({
     setFormError(message);
   }
 
+  function handleBack() {
+    setChallengeToken(null);
+    setPin("");
+  }
+
   function handleRecoveryCodeUsed(remaining: number) {
     Alert.alert(
       "Usaste un código de recuperación",
@@ -130,20 +135,13 @@ export function PinEntryScreen({
           </View>
 
           {challengeToken ? (
-            <>
-              <Text className="mb-1.5 text-[24px] font-bold text-content">
-                Verificación en dos pasos
-              </Text>
-              <Text className="mb-[26px] text-[14px] text-content-muted">
-                Confirmá tu identidad para terminar de iniciar sesión.
-              </Text>
-              <TwoFactorVerifyForm
-                challengeToken={challengeToken}
-                expiresIn={challengeExpiresIn}
-                onChallengeLost={handleChallengeLost}
-                onRecoveryCodeUsed={handleRecoveryCodeUsed}
-              />
-            </>
+            <TwoFactorLoginStep
+              challengeToken={challengeToken}
+              expiresIn={challengeExpiresIn}
+              onBack={handleBack}
+              onChallengeLost={handleChallengeLost}
+              onRecoveryCodeUsed={handleRecoveryCodeUsed}
+            />
           ) : (
             <>
               <Text className="mb-1.5 text-[24px] font-bold text-content">
