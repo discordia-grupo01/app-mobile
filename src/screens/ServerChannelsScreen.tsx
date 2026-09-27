@@ -52,6 +52,10 @@ interface ServerChannelsScreenProps {
   servers: ServerSummary[];
   userName?: string | null;
   isOwner?: boolean;
+  canManageChannels?: boolean;
+  canManageRoles?: boolean;
+  canManageServer?: boolean;
+  onPermissionsChanged?: () => void;
   onSelectChannel: (channelId: string) => void;
   onSelectHome: () => void;
   onSwitchServer: (serverId: string) => void;
@@ -63,12 +67,12 @@ interface ServerChannelsScreenProps {
 
 function ChannelRow({
   channel,
-  isOwner,
+  canManage,
   onPress,
   onOptions,
 }: {
   channel: Channel;
-  isOwner: boolean;
+  canManage: boolean;
   onPress: () => void;
   onOptions: () => void;
 }) {
@@ -92,7 +96,7 @@ function ChannelRow({
           {channel.name}
         </Text>
       </TouchableOpacity>
-      {isOwner ? (
+      {canManage ? (
         <TouchableOpacity
           onPress={onOptions}
           className="px-2 py-2"
@@ -112,6 +116,10 @@ export function ServerChannelsScreen({
   servers,
   userName,
   isOwner = false,
+  canManageChannels = false,
+  canManageRoles = false,
+  canManageServer = false,
+  onPermissionsChanged,
   onSelectChannel,
   onSelectHome,
   onSwitchServer,
@@ -261,7 +269,7 @@ export function ServerChannelsScreen({
       <ChannelRow
         key={channel.id}
         channel={channel}
-        isOwner={isOwner}
+        canManage={canManageChannels}
         onPress={() => onSelectChannel(channel.id)}
         onOptions={() => setChannelOptionsFor(channel)}
       />
@@ -359,22 +367,24 @@ export function ServerChannelsScreen({
                 </Text>
               </TouchableOpacity>
 
-              {isOwner ? (
-                <>
-                  <TouchableOpacity
-                    activeOpacity={0.7}
-                    className="flex-row items-center gap-2.5 rounded-lg mx-1 px-2.5 py-3"
-                    onPress={() => {
-                      setIsServerMenuOpen(false);
-                      setIsServerSettingsVisible(true);
-                    }}
-                  >
-                    <Feather name="settings" size={16} color={colors.info} />
-                    <Text className="text-[14px] font-semibold text-content">
-                      Configuración del servidor
-                    </Text>
-                  </TouchableOpacity>
+              {canManageServer ? (
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  className="flex-row items-center gap-2.5 rounded-lg mx-1 px-2.5 py-3"
+                  onPress={() => {
+                    setIsServerMenuOpen(false);
+                    setIsServerSettingsVisible(true);
+                  }}
+                >
+                  <Feather name="settings" size={16} color={colors.info} />
+                  <Text className="text-[14px] font-semibold text-content">
+                    Configuración del servidor
+                  </Text>
+                </TouchableOpacity>
+              ) : null}
 
+              {canManageChannels ? (
+                <>
                   <TouchableOpacity
                     activeOpacity={0.7}
                     className="flex-row items-center gap-2.5 rounded-lg mx-1 px-2.5 py-3"
@@ -403,21 +413,23 @@ export function ServerChannelsScreen({
                       Crear categoría
                     </Text>
                   </TouchableOpacity>
-
-                  <TouchableOpacity
-                    activeOpacity={0.7}
-                    className="flex-row items-center gap-2.5 rounded-lg mx-1 px-2.5 py-3"
-                    onPress={() => {
-                      setIsServerMenuOpen(false);
-                      setIsRolesModalVisible(true);
-                    }}
-                  >
-                    <Feather name="shield" size={16} color={colors.info} />
-                    <Text className="text-[14px] font-semibold text-content">
-                      Gestionar roles
-                    </Text>
-                  </TouchableOpacity>
                 </>
+              ) : null}
+
+              {canManageRoles ? (
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  className="flex-row items-center gap-2.5 rounded-lg mx-1 px-2.5 py-3"
+                  onPress={() => {
+                    setIsServerMenuOpen(false);
+                    setIsRolesModalVisible(true);
+                  }}
+                >
+                  <Feather name="shield" size={16} color={colors.info} />
+                  <Text className="text-[14px] font-semibold text-content">
+                    Gestionar roles
+                  </Text>
+                </TouchableOpacity>
               ) : null}
 
               {showTransferMenuItem ? (
@@ -501,7 +513,7 @@ export function ServerChannelsScreen({
                 </Text>
               </TouchableOpacity>
               {!collapsedSectionIds.has(UNCATEGORIZED_KEY) ? (
-                isOwner && uncategorized.length > 1 ? (
+                canManageChannels && uncategorized.length > 1 ? (
                   <DraggableChannelList
                     channels={uncategorized}
                     onReorder={(orderedIds) =>
@@ -511,7 +523,7 @@ export function ServerChannelsScreen({
                     renderChannel={(channel) => (
                       <ChannelRow
                         channel={channel}
-                        isOwner={isOwner}
+                        canManage={canManageChannels}
                         onPress={() => onSelectChannel(channel.id)}
                         onOptions={() => setChannelOptionsFor(channel)}
                       />
@@ -551,7 +563,7 @@ export function ServerChannelsScreen({
                       {category.name}
                     </Text>
                   </TouchableOpacity>
-                  {isOwner ? (
+                  {canManageChannels ? (
                     <TouchableOpacity
                       onPress={() => {
                         setCreateChannelDefaultCategoryId(category.id);
@@ -570,7 +582,7 @@ export function ServerChannelsScreen({
                   ) : null}
                 </View>
                 {!collapsed ? (
-                  isOwner && channels.length > 1 ? (
+                  canManageChannels && channels.length > 1 ? (
                     <DraggableChannelList
                       channels={channels}
                       onReorder={(orderedIds) =>
@@ -580,7 +592,7 @@ export function ServerChannelsScreen({
                       renderChannel={(channel) => (
                         <ChannelRow
                           channel={channel}
-                          isOwner={isOwner}
+                          canManage={canManageChannels}
                           onPress={() => onSelectChannel(channel.id)}
                           onOptions={() => setChannelOptionsFor(channel)}
                         />
@@ -598,7 +610,7 @@ export function ServerChannelsScreen({
 
           {uncategorized.length === 0 && sortedCategories.length === 0 ? (
             <Text className="px-2 pt-2 text-[13px] text-content-subtle">
-              {isOwner
+              {canManageChannels
                 ? "Todavía no hay canales. Creá el primero."
                 : "Todavía no hay canales en este servidor."}
             </Text>
@@ -612,7 +624,7 @@ export function ServerChannelsScreen({
         />
       </View>
 
-      {isOwner ? (
+      {canManageServer ? (
         <ServerSettingsModal
           visible={isServerSettingsVisible}
           server={server}
@@ -652,7 +664,7 @@ export function ServerChannelsScreen({
           }
         }}
       />
-      {isOwner ? (
+      {canManageChannels ? (
         <CreateChannelModal
           visible={isCreateChannelVisible}
           serverId={server.id}
@@ -665,7 +677,7 @@ export function ServerChannelsScreen({
           onCreated={handleChannelCreated}
         />
       ) : null}
-      {isOwner ? (
+      {canManageChannels ? (
         <CreateCategoryModal
           visible={isCreateCategoryVisible}
           serverId={server.id}
@@ -673,15 +685,18 @@ export function ServerChannelsScreen({
           onCreated={handleCategoryCreated}
         />
       ) : null}
-      {isOwner ? (
+      {canManageRoles ? (
         <RolesModal
           visible={isRolesModalVisible}
           serverId={server.id}
           serverName={server.name}
-          onClose={() => setIsRolesModalVisible(false)}
+          onClose={() => {
+            setIsRolesModalVisible(false);
+            onPermissionsChanged?.();
+          }}
         />
       ) : null}
-      {isOwner ? (
+      {canManageChannels ? (
         <ChannelOptionsSheet
           visible={channelOptionsFor !== null}
           channel={channelOptionsFor}

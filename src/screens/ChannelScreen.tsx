@@ -17,7 +17,8 @@ interface ChannelScreenProps {
   serverId: string;
   authToken?: string | null;
   currentUserId?: string | null;
-  isOwner?: boolean;
+  /** Owner, o miembro con el permiso MANAGE_ROLES via algún rol. */
+  canManageRoles?: boolean;
   onBack: () => void;
 }
 
@@ -26,7 +27,7 @@ export function ChannelScreen({
   serverId,
   authToken,
   currentUserId,
-  isOwner = false,
+  canManageRoles = false,
   onBack,
 }: ChannelScreenProps) {
   const colors = useThemeColors();
@@ -73,7 +74,7 @@ export function ChannelScreen({
         serverId={serverId}
         currentUserId={currentUserId}
         authToken={authToken}
-        isOwner={isOwner}
+        canManageRoles={canManageRoles}
         onClose={() => setIsMembersVisible(false)}
       />
 
