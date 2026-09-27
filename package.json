@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.ts",
   "dependencies": {
-    "@discordia/client-shared": "github:discordia-grupo01/client-shared#v0.13.2",
+    "@discordia/client-shared": "github:discordia-grupo01/client-shared#v0.13.3",
     "@expo/vector-icons": "^15.1.1",
     "@react-native-async-storage/async-storage": "2.2.0",
     "expo": "~57.0.20",
@@ -33,6 +33,7 @@
     "@types/react": "~19.2.2",
     "eslint": "^9.0.0",
     "eslint-config-expo": "~57.0.2",
+    "expo-mcp": "~0.2.1",
     "jest": "^30",
     "jest-expo": "~57.0.5",
     "lightningcss": "1.30.1",

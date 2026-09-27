@@ -190,9 +190,12 @@ function InvitationRow({
  * Lista todas las invitaciones del server (`GET /v1/servers/:id/invites`) y
  * permite generar nuevas o revocar las activas. El back permite varias
  * invitaciones activas a la vez (no hay "la" invitación actual): mostramos
- * todo el historial en vez de fingir que hay una sola. El link no se genera
- * hasta que el dueño toca "Generar".
+ * todo el historial en vez de fingir que hay una sola -- separado en dos
+ * solapas (activas / inactivas) para no mezclar links que ya no sirven con
+ * los que si. El link no se genera hasta que el dueño toca "Generar".
  */
+type InviteTab = "active" | "inactive";
+
 export function InviteLinkModal({
   visible,
   serverId,
@@ -204,6 +207,7 @@ export function InviteLinkModal({
   const [maxUsesInput, setMaxUsesInput] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [activeTab, setActiveTab] = useState<InviteTab>("active");
 
   // Cada vez que el modal se abre (o cambia de server mientras está
   // abierto) hay que volver a pedir las invitaciones desde cero. Se ajusta
@@ -217,6 +221,7 @@ export function InviteLinkModal({
       setInvitations(null);
       setMaxUsesInput("");
       setErrorMessage("");
+      setActiveTab("active");
     }
   }
 
@@ -274,6 +279,13 @@ export function InviteLinkModal({
         ) ?? null,
     );
   }
+
+  const activeInvitations =
+    invitations?.filter((inv) => inviteStatus(inv) === "active") ?? [];
+  const inactiveInvitations =
+    invitations?.filter((inv) => inviteStatus(inv) !== "active") ?? [];
+  const visibleInvitations =
+    activeTab === "active" ? activeInvitations : inactiveInvitations;
 
   return (
     <Modal
@@ -369,8 +381,48 @@ export function InviteLinkModal({
           >
             <Text className="text-[11px] font-bold tracking-[1.1px] text-content-subtle mb-2 uppercase">
               Invitaciones
-              {invitations !== null ? ` — ${invitations.length}` : ""}
             </Text>
+
+            <View className="flex-row items-center gap-1 rounded-xl bg-surface-input p-1 mb-3">
+              <TouchableOpacity
+                onPress={() => setActiveTab("active")}
+                className={cn(
+                  "flex-1 rounded-lg px-3 py-1.5",
+                  activeTab === "active" ? "bg-accent" : null,
+                )}
+                accessibilityRole="button"
+              >
+                <Text
+                  className={cn(
+                    "text-center text-[12px] font-bold",
+                    activeTab === "active"
+                      ? "text-white"
+                      : "text-content-muted",
+                  )}
+                >
+                  Activas ({activeInvitations.length})
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setActiveTab("inactive")}
+                className={cn(
+                  "flex-1 rounded-lg px-3 py-1.5",
+                  activeTab === "inactive" ? "bg-accent" : null,
+                )}
+                accessibilityRole="button"
+              >
+                <Text
+                  className={cn(
+                    "text-center text-[12px] font-bold",
+                    activeTab === "inactive"
+                      ? "text-white"
+                      : "text-content-muted",
+                  )}
+                >
+                  Inactivas ({inactiveInvitations.length})
+                </Text>
+              </TouchableOpacity>
+            </View>
 
             {invitations === null ? (
               <View className="py-6 items-center">
@@ -380,9 +432,15 @@ export function InviteLinkModal({
               <Text className="py-4 text-center text-[13px] text-content-muted">
                 Todavía no hay invitaciones. Generá una arriba.
               </Text>
+            ) : visibleInvitations.length === 0 ? (
+              <Text className="py-4 text-center text-[13px] text-content-muted">
+                {activeTab === "active"
+                  ? "No tenés invitaciones activas en este momento."
+                  : "Todavía no hay invitaciones inactivas."}
+              </Text>
             ) : (
               <View className="gap-2.5">
-                {invitations.map((inv) => (
+                {visibleInvitations.map((inv) => (
                   <InvitationRow
                     key={inv.code}
                     invitation={inv}
