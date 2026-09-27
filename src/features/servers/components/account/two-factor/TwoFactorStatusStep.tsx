@@ -1,4 +1,5 @@
 import {
+  RECOVERY_CODES_LOW_THRESHOLD,
   twoFactorRecoveryCodesRemaining,
   type TwoFactorStatus,
 } from "@discordia/client-shared";
@@ -80,7 +81,15 @@ export function TwoFactorStatusStep({
               : "Sumá una segunda barrera de seguridad con una app autenticadora."}
           </Text>
           {enabled ? (
-            <Text className="mt-1 text-[12px] text-content-muted">
+            <Text
+              className={cn(
+                "mt-1 text-[12px]",
+                (status?.recovery_codes_remaining ?? 0) <=
+                  RECOVERY_CODES_LOW_THRESHOLD
+                  ? "text-highlight"
+                  : "text-content-muted",
+              )}
+            >
               {twoFactorRecoveryCodesRemaining(
                 status?.recovery_codes_remaining ?? 0,
               )}
