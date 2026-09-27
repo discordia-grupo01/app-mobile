@@ -48,7 +48,7 @@ export function LoginScreen({
           <Text className="mb-1.5 text-[24px] font-bold text-content">
             ¡Bienvenido de nuevo!
           </Text>
-          <Text className="mb-[26px] text-[14px] text-content-muted">
+          <Text className="mb-[26px] text-[14px] text-on-accent-muted">
             Ingresa tus credenciales para acceder.
           </Text>
 

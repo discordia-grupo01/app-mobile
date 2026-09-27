@@ -114,6 +114,7 @@ export function LoginForm({
         autoCapitalize="none"
         autoComplete="email"
         iconName="mail"
+        tone="onAccent"
         value={email}
         onChangeText={setEmail}
         error={errors.email}
@@ -124,6 +125,7 @@ export function LoginForm({
         placeholder="••••••••"
         isPassword
         iconName="lock"
+        tone="onAccent"
         value={password}
         onChangeText={setPassword}
         error={errors.password}
@@ -160,17 +162,17 @@ export function LoginForm({
 
       {/* Divider */}
       <View className="mb-5 flex-row items-center">
-        <View className="h-px flex-1 bg-line" />
-        <Text className="mx-3 text-[12px] font-medium text-content-subtle">
+        <View className="h-px flex-1 bg-line-on-accent" />
+        <Text className="mx-3 text-[12px] font-medium text-on-accent-subtle">
           o continúa con
         </Text>
-        <View className="h-px flex-1 bg-line" />
+        <View className="h-px flex-1 bg-line-on-accent" />
       </View>
 
       {/* Google Button */}
       <Button
         title="Continuar con Google"
-        variant="secondary"
+        variant="secondaryOnAccent"
         onPress={handleGooglePress}
         disabled={!googleRequest}
         isLoading={isGoogleSubmitting}
@@ -180,11 +182,11 @@ export function LoginForm({
 
       {/* Footer link */}
       <View className="flex-row items-center justify-center">
-        <Text className="text-[13px] text-content-subtle">
+        <Text className="text-[13px] text-on-accent-subtle">
           ¿No tienes cuenta?{" "}
         </Text>
         <TouchableOpacity activeOpacity={0.7} onPress={onSwitchToRegister}>
-          <Text className="text-[13px] font-bold text-content-muted">
+          <Text className="text-[13px] font-bold text-on-accent-muted">
             Regístrate gratis
           </Text>
         </TouchableOpacity>

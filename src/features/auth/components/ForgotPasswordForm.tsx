@@ -55,17 +55,17 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
         <Text className="mb-2.5 text-center text-[24px] font-bold text-content">
           Revisa tu correo
         </Text>
-        <Text className="mb-2 text-center text-[14px] leading-5 text-content-muted">
+        <Text className="mb-2 text-center text-[14px] leading-5 text-on-accent-muted">
           Si <Text className="font-bold text-content">{email.trim()}</Text> está
           registrado en Discordia, recibirás un enlace para restablecer tu
           contraseña en los próximos minutos.
         </Text>
-        <Text className="mb-8 text-center text-[12px] text-content-subtle">
+        <Text className="mb-8 text-center text-[12px] text-on-accent-subtle">
           Recordá revisar tu carpeta de spam por si acaso.
         </Text>
 
         <TouchableOpacity activeOpacity={0.7} onPress={onBack}>
-          <Text className="text-[13px] text-content-subtle">
+          <Text className="text-[13px] text-on-accent-subtle">
             Volver al inicio de sesión
           </Text>
         </TouchableOpacity>
@@ -80,8 +80,8 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
         activeOpacity={0.7}
         onPress={onBack}
       >
-        <Feather name="arrow-left" size={14} color={colors.textSubtle} />
-        <Text className="ml-1.5 text-[13px] text-content-subtle">
+        <Feather name="arrow-left" size={14} color={colors.onAccentSubtle} />
+        <Text className="ml-1.5 text-[13px] text-on-accent-subtle">
           Volver al inicio de sesión
         </Text>
       </TouchableOpacity>
@@ -89,7 +89,7 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
       <Text className="mb-1.5 text-[24px] font-bold text-content">
         Recuperar contraseña
       </Text>
-      <Text className="mb-[26px] text-[14px] leading-5 text-content-muted">
+      <Text className="mb-[26px] text-[14px] leading-5 text-on-accent-muted">
         Ingresa tu correo y te enviaremos un enlace para restablecer tu
         contraseña.
       </Text>
@@ -101,6 +101,7 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
         autoCapitalize="none"
         autoComplete="email"
         iconName="mail"
+        tone="onAccent"
         value={email}
         onChangeText={setEmail}
         error={errors.email}

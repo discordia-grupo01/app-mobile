@@ -12,7 +12,9 @@ import {
   type LoginResultWithToken,
   type LoginValues,
   messageFor,
+  PIN_LOCKED,
   PIN_LOGIN_FAILED,
+  type PinLoginResult,
   type PublicUser,
   RATE_LIMITED_MESSAGE,
   type RegisterResult,
@@ -23,7 +25,6 @@ import {
 
 import { apiFetch } from "../../lib/api-client";
 import { getOrCreateDeviceId } from "../../lib/device-id";
-import { setPinEnabled } from "../../lib/storage";
 
 export async function registerService(
   values: RegisterValues,
@@ -193,10 +194,6 @@ export async function forgotPasswordService(
   return { ok: true };
 }
 
-/**
- * Activa el PIN de acceso rápido en este dispositivo (historia "Registro
- * con PIN"). Requiere sesión activa
- */
 export async function configurePinService(
   pin: string,
 ): Promise<{ ok: true } | { ok: false; message: string }> {
@@ -214,17 +211,14 @@ export async function configurePinService(
     };
   }
 
-  await setPinEnabled(true);
   return { ok: true };
 }
 
-/**
- * Login rápido con PIN (historia "Registro con PIN"), sin pedir email
- * (CA2). Solo funciona si este dispositivo ya activó un PIN antes
- */
+const DEFAULT_PIN_LOCK_SECONDS = 15 * 60;
+
 export async function loginWithPinService(
   pin: string,
-): Promise<LoginResultWithToken> {
+): Promise<PinLoginResult> {
   const deviceId = await getOrCreateDeviceId();
 
   const result = await apiFetch<AuthResponse>("/v1/pin/login", {
@@ -233,6 +227,18 @@ export async function loginWithPinService(
   });
 
   if (!result.ok) {
+    if (result.status === 423) {
+      const retryAfterSeconds =
+        typeof result.details?.retry_after_seconds === "number"
+          ? result.details.retry_after_seconds
+          : DEFAULT_PIN_LOCK_SECONDS;
+      return {
+        ok: false,
+        locked: true,
+        message: PIN_LOCKED,
+        retryAfterSeconds,
+      };
+    }
     if (result.status === 401) {
       return { ok: false, message: PIN_LOGIN_FAILED };
     }

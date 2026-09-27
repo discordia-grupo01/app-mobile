@@ -21,6 +21,7 @@ import {
 import { Button } from "../../../../components/ui/Button";
 import { TextField } from "../../../../components/ui/TextField";
 import { useThemeColors } from "../../../../theme/theme-context";
+import { useAuth } from "../../../auth/auth-context";
 import { configurePinService } from "../../../auth/service";
 
 interface PinSetupSheetProps {
@@ -37,6 +38,7 @@ export function PinSetupSheet({
   onConfigured,
 }: PinSetupSheetProps) {
   const colors = useThemeColors();
+  const { setPinEnabled } = useAuth();
   const [pin, setPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
   const [errors, setErrors] = useState<PinSetupErrors>({});
@@ -71,6 +73,8 @@ export function PinSetupSheet({
       setFormError(result.message);
       return;
     }
+
+    await setPinEnabled(true);
 
     setIsDone(true);
     onConfigured?.();
