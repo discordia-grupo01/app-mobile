@@ -31,13 +31,14 @@ export function UserProfileBar({
   onLogout,
 }: UserProfileBarProps) {
   const colors = useThemeColors();
-  const { user } = useAuth();
+  const { user, isPinEnabled } = useAuth();
   const [isConfirmVisible, setIsConfirmVisible] = useState(false);
   const [isSettingsVisible, setIsSettingsVisible] = useState(false);
   const [isProfileVisible, setIsProfileVisible] = useState(false);
   const [isMicMuted, setIsMicMuted] = useState(false);
   const [isDeafened, setIsDeafened] = useState(false);
   const { theme, setTheme } = useTheme();
+
   const displayName = (user?.name ?? userName)?.trim() || "Mi cuenta";
   const avatarSrc = resolveImageUrl(user?.avatar_url, env.apiUrl);
   const statusText = user?.status_text?.trim();
@@ -131,6 +132,7 @@ export function UserProfileBar({
 
       <AccountSettingsSheet
         visible={isSettingsVisible}
+        isPinEnabled={isPinEnabled}
         onClose={() => setIsSettingsVisible(false)}
         theme={theme}
         onSelectTheme={setTheme}

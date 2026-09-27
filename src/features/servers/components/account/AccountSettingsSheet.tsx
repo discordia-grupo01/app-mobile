@@ -40,6 +40,7 @@ const BACK_TARGET: Record<Section, Section> = {
 
 interface AccountSettingsSheetProps {
   visible: boolean;
+  isPinEnabled: boolean;
   onClose: () => void;
   theme: ThemeName;
   onSelectTheme: (preference: ThemeName) => void;
@@ -47,6 +48,7 @@ interface AccountSettingsSheetProps {
 
 export function AccountSettingsSheet({
   visible,
+  isPinEnabled,
   onClose,
   theme,
   onSelectTheme,
@@ -115,13 +117,18 @@ export function AccountSettingsSheet({
             <AppearanceSettingsStep selected={theme} onSelect={onSelectTheme} />
           ) : section === "security" ? (
             <SecuritySettingsStep
+              isPinEnabled={isPinEnabled}
               onOpenTwoFactor={() => setSection("two-factor")}
               onOpenPinSetup={() => setSection("pin")}
             />
           ) : section === "two-factor" ? (
             <TwoFactorPanel onClose={goBack} scrollRef={scrollRef} />
           ) : (
-            <PinSetupPanel onClose={goBack} scrollRef={scrollRef} />
+            <PinSetupPanel
+              isPinEnabled={isPinEnabled}
+              onClose={goBack}
+              scrollRef={scrollRef}
+            />
           )}
         </ScrollView>
       </KeyboardAvoidingView>

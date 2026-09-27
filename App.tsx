@@ -1,6 +1,6 @@
 import "./global.css";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
@@ -8,7 +8,6 @@ import type { AuthMode } from "./src/features/auth/components/AuthTabs";
 import { AuthProvider, useAuth } from "./src/features/auth/auth-context";
 import { useEmailConfirmation } from "./src/features/auth/use-email-confirmation";
 
-import { getPinEnabled } from "./src/lib/storage";
 import { ForgotPasswordScreen } from "./src/screens/ForgotPasswordScreen";
 import { HomeScreen } from "./src/screens/HomeScreen";
 import { LoginScreen } from "./src/screens/LoginScreen";
@@ -21,7 +20,7 @@ type AuthScreen = AuthMode | "forgot-password" | "confirm-email";
 
 function AppContent() {
   const colors = useThemeColors();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, isPinEnabled } = useAuth();
   const [authScreen, setAuthScreen] = useState<AuthScreen>("login");
   const [justRegistered, setJustRegistered] = useState(false);
   const {
@@ -35,24 +34,7 @@ function AppContent() {
     useCallback(() => setAuthScreen("confirm-email"), []),
   );
 
-  const [isPinEnabled, setIsPinEnabled] = useState(false);
-  const [isPinCheckLoading, setIsPinCheckLoading] = useState(true);
   const [skipPinEntry, setSkipPinEntry] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    getPinEnabled()
-      .then((enabled) => {
-        if (!cancelled) setIsPinEnabled(enabled);
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (!cancelled) setIsPinCheckLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   function handleSwitchMode(mode: AuthScreen) {
     setAuthScreen(mode);
@@ -73,7 +55,7 @@ function AppContent() {
     setAuthScreen("confirm-email");
   }
 
-  if (isLoading || isPinCheckLoading) {
+  if (isLoading) {
     return (
       <View className="flex-1 bg-surface-servers justify-center items-center">
         <ActivityIndicator size="large" color={colors.accentBright} />

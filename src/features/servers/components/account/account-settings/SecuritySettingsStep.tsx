@@ -4,11 +4,13 @@ import { Text, TouchableOpacity, View } from "react-native";
 import { useThemeColors } from "../../../../../theme/theme-context";
 
 interface SecuritySettingsStepProps {
+  isPinEnabled: boolean;
   onOpenTwoFactor: () => void;
   onOpenPinSetup: () => void;
 }
 
 export function SecuritySettingsStep({
+  isPinEnabled,
   onOpenTwoFactor,
   onOpenPinSetup,
 }: SecuritySettingsStepProps) {
@@ -52,10 +54,14 @@ export function SecuritySettingsStep({
         </View>
         <View className="flex-1">
           <Text className="text-[15px] font-bold text-content mb-0.5">
-            PIN de acceso rápido
+            {isPinEnabled
+              ? "Modificar PIN de acceso rápido"
+              : "PIN de acceso rápido"}
           </Text>
           <Text className="text-[12px] leading-[17px] text-content-muted">
-            Creá un PIN para entrar más rápido desde este dispositivo.
+            {isPinEnabled
+              ? "Cambiá el PIN de este dispositivo."
+              : "Creá un PIN para entrar más rápido desde este dispositivo."}
           </Text>
         </View>
         <Feather name="chevron-right" size={18} color={colors.textSubtle} />

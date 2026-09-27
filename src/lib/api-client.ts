@@ -24,7 +24,11 @@ export function setAuthEventHandlers(handlers: AuthEventHandlers): void {
 }
 let refreshPromise: Promise<string | null> | null = null;
 
-const AUTH_PATHS_WITHOUT_RETRY = new Set(["/v1/login", "/v1/login/2fa"]);
+const AUTH_PATHS_WITHOUT_RETRY = new Set([
+  "/v1/login",
+  "/v1/login/2fa",
+  "/v1/logout",
+]);
 
 export function refreshAccessToken(): Promise<string | null> {
   if (!refreshPromise) {
@@ -91,9 +95,10 @@ export async function apiFetch<T = unknown>(
   // renovar una sola vez (con el refresh token de la cookie) y se reintenta
   // la request original antes de rendirse.
   //
-  // Los dos pasos del login quedan afuera: ahi un 401 significa "credencial
-  // incorrecta", no "sesion vencida". Reintentarlos gastaria un intento del
-  // desafio de segundo factor por cada codigo mal tipeado.
+  // Login, el paso de 2FA y logout quedan afuera: en login/2fa un 401 significa
+  // "credencial incorrecta", no "sesion vencida" (reintentarlos gastaria un
+  // intento del desafio por cada codigo mal tipeado); en logout no tiene
+  // sentido renovar la sesion que justo se esta cerrando.
   if (res.status === 401 && !isRetry && !AUTH_PATHS_WITHOUT_RETRY.has(path)) {
     const newToken = await refreshAccessToken();
     if (newToken) {

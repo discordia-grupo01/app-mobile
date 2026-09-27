@@ -11,15 +11,22 @@ import { ScrollView, Text, View } from "react-native";
 import { Button } from "../../../../components/ui/Button";
 import { TextField } from "../../../../components/ui/TextField";
 import { useThemeColors } from "../../../../theme/theme-context";
+import { useAuth } from "../../../auth/auth-context";
 import { configurePinService } from "../../../auth/service";
 
 interface PinSetupPanelProps {
+  isPinEnabled: boolean;
   onClose: () => void;
   scrollRef: RefObject<ScrollView | null>;
 }
 
-export function PinSetupPanel({ onClose, scrollRef }: PinSetupPanelProps) {
+export function PinSetupPanel({
+  isPinEnabled,
+  onClose,
+  scrollRef,
+}: PinSetupPanelProps) {
   const colors = useThemeColors();
+  const { setPinEnabled } = useAuth();
   const [pin, setPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
   const [errors, setErrors] = useState<PinSetupErrors>({});
@@ -48,6 +55,7 @@ export function PinSetupPanel({ onClose, scrollRef }: PinSetupPanelProps) {
       return;
     }
 
+    await setPinEnabled(true);
     setIsDone(true);
   }
 
@@ -58,10 +66,12 @@ export function PinSetupPanel({ onClose, scrollRef }: PinSetupPanelProps) {
           <Feather name="check" size={26} color={colors.success} />
         </View>
         <Text className="text-[17px] font-bold text-content mb-1.5">
-          PIN activado
+          {isPinEnabled ? "PIN actualizado" : "PIN activado"}
         </Text>
         <Text className="text-[13px] text-content-muted text-center mb-5">
-          Ya podés usarlo para entrar más rápido en este dispositivo.
+          {isPinEnabled
+            ? "Tu PIN de acceso rápido en este dispositivo se actualizó correctamente."
+            : "Ya podés usarlo para entrar más rápido en este dispositivo."}
         </Text>
         <Button title="Listo" onPress={onClose} />
       </View>
@@ -71,8 +81,9 @@ export function PinSetupPanel({ onClose, scrollRef }: PinSetupPanelProps) {
   return (
     <View className="px-4.5 pt-6">
       <Text className="text-[13px] leading-[18px] text-content-muted mb-4">
-        Entrá más rápido en este dispositivo sin escribir tu email y contraseña
-        cada vez. Elegí un PIN de 6 a 8 dígitos.
+        {isPinEnabled
+          ? "Este dispositivo ya tiene un PIN configurado. Elegí uno nuevo para reemplazarlo."
+          : "Entrá más rápido en este dispositivo sin escribir tu email y contraseña cada vez. Elegí un PIN de 6 a 8 dígitos."}
       </Text>
 
       <TextField
@@ -110,7 +121,11 @@ export function PinSetupPanel({ onClose, scrollRef }: PinSetupPanelProps) {
         </View>
       ) : null}
 
-      <Button title="Activar" onPress={handleSubmit} isLoading={isSubmitting} />
+      <Button
+        title={isPinEnabled ? "Guardar" : "Activar"}
+        onPress={handleSubmit}
+        isLoading={isSubmitting}
+      />
     </View>
   );
 }

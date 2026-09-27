@@ -1,6 +1,8 @@
 import {
   EMAIL_NOT_VERIFIED,
+  formatPinLockRemaining,
   hasErrors,
+  PIN_LOCKED,
   PIN_MAX_LENGTH,
   type PinLoginErrors,
   TWO_FACTOR_RECOVERY_CODE_USED,
@@ -8,6 +10,7 @@ import {
   type User,
   validatePinLogin,
 } from "@discordia/client-shared";
+import { Feather } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import {
@@ -25,6 +28,7 @@ import { Button } from "../components/ui/Button";
 import { TextField } from "../components/ui/TextField";
 import { useAuth } from "../features/auth/auth-context";
 import { TwoFactorLoginStep } from "../features/auth/components/TwoFactorLoginStep";
+import { useThemeColors } from "../theme/theme-context";
 import { getStoredUser } from "../lib/storage";
 
 interface PinEntryScreenProps {
@@ -37,6 +41,7 @@ export function PinEntryScreen({
   onEmailNotVerified,
 }: PinEntryScreenProps) {
   const { loginWithPin } = useAuth();
+  const colors = useThemeColors();
 
   const [pin, setPin] = useState("");
   const [errors, setErrors] = useState<PinLoginErrors>({});
@@ -47,6 +52,9 @@ export function PinEntryScreen({
   const [challengeToken, setChallengeToken] = useState<string | null>(null);
   const [challengeExpiresIn, setChallengeExpiresIn] = useState(0);
 
+  const [isLocked, setIsLocked] = useState(false);
+  const [lockSecondsLeft, setLockSecondsLeft] = useState(0);
+
   useEffect(() => {
     getStoredUser<User>()
       .then((user) => {
@@ -56,8 +64,24 @@ export function PinEntryScreen({
       .catch(() => {});
   }, []);
 
+  useEffect(() => {
+    if (!isLocked) return;
+
+    const id = setInterval(() => {
+      setLockSecondsLeft((prev) => {
+        if (prev <= 1) {
+          setIsLocked(false);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(id);
+  }, [isLocked]);
+
   async function handleSubmit(candidatePin: string) {
-    if (isSubmitting) return;
+    if (isSubmitting || isLocked) return;
 
     const nextErrors = validatePinLogin({ pin: candidatePin });
     setErrors(nextErrors);
@@ -69,12 +93,20 @@ export function PinEntryScreen({
     setIsSubmitting(false);
 
     if (!result.ok) {
+      setPin("");
+
+      if ("locked" in result && result.locked) {
+        setIsLocked(true);
+        setLockSecondsLeft(result.retryAfterSeconds);
+        return;
+      }
+
       if (result.message === EMAIL_NOT_VERIFIED && userEmail) {
         onEmailNotVerified(userEmail);
         return;
       }
+
       setFormError("El PIN no es correcto. Probá de nuevo.");
-      setPin("");
       return;
     }
 
@@ -134,7 +166,30 @@ export function PinEntryScreen({
             />
           </View>
 
-          {challengeToken ? (
+          {isLocked ? (
+            <>
+              <View className="mb-4 items-center">
+                <View className="mb-4 h-14 w-14 items-center justify-center rounded-2xl bg-danger/12">
+                  <Feather name="lock" size={26} color={colors.danger} />
+                </View>
+                <Text className="mb-1.5 text-center text-[19px] font-bold text-content">
+                  PIN bloqueado temporalmente
+                </Text>
+                <Text className="mb-4 text-center text-[14px] leading-5 text-on-accent-muted">
+                  {PIN_LOCKED}
+                </Text>
+                <Text className="mb-2 text-[28px] font-bold text-content">
+                  {formatPinLockRemaining(lockSecondsLeft)}
+                </Text>
+              </View>
+
+              <Button
+                title="Iniciar sesión con email y contraseña"
+                onPress={onUseAnotherAccount}
+                iconRight="arrow-right"
+              />
+            </>
+          ) : challengeToken ? (
             <TwoFactorLoginStep
               challengeToken={challengeToken}
               expiresIn={challengeExpiresIn}
@@ -147,7 +202,7 @@ export function PinEntryScreen({
               <Text className="mb-1.5 text-[24px] font-bold text-content">
                 {userName ? `Hola de nuevo, ${userName}` : "Hola de nuevo"}
               </Text>
-              <Text className="mb-[26px] text-[14px] text-content-muted">
+              <Text className="mb-[26px] text-[14px] text-on-accent-muted">
                 Ingresá tu PIN de acceso rápido para este dispositivo.
               </Text>
 
@@ -158,6 +213,7 @@ export function PinEntryScreen({
                 maxLength={PIN_MAX_LENGTH}
                 isPassword
                 iconName="lock"
+                tone="onAccent"
                 autoFocus
                 value={pin}
                 onChangeText={handleChangePin}
@@ -187,7 +243,7 @@ export function PinEntryScreen({
                 className="mt-4 items-center py-3"
                 onPress={onUseAnotherAccount}
               >
-                <Text className="text-[13px] font-bold text-content-muted">
+                <Text className="text-[13px] font-bold text-on-accent-muted">
                   ¿No sos vos? Iniciar sesión con otra cuenta
                 </Text>
               </TouchableOpacity>

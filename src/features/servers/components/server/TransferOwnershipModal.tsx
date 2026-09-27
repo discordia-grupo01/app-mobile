@@ -106,7 +106,6 @@ export function TransferOwnershipModal({
       setSelectedUserId(null);
       setErrorMessage("");
       setIsSubmitting(false);
-      setCounterpartName(null);
     }
   }
 

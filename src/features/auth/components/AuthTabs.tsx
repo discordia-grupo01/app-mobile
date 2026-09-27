@@ -9,10 +9,9 @@ interface AuthTabsProps {
   onChange: (mode: AuthMode) => void;
 }
 
-/** Selector "Iniciar Sesion / Crear Cuenta" que se muestra en ambas pantallas de auth. */
 export function AuthTabs({ active, onChange }: AuthTabsProps) {
   return (
-    <View className="mb-7 flex-row rounded-xl bg-surface-input p-1">
+    <View className="mb-7 flex-row rounded-xl bg-surface-input-on-accent p-1">
       <TouchableOpacity
         className={cn(
           "flex-1 items-center rounded-[9px] py-2.5",
@@ -24,7 +23,7 @@ export function AuthTabs({ active, onChange }: AuthTabsProps) {
         <Text
           className={cn(
             "text-[13px] font-semibold",
-            active === "login" ? "text-on-accent" : "text-content-subtle",
+            active === "login" ? "text-on-accent" : "text-on-accent-subtle",
           )}
         >
           Iniciar Sesión
@@ -42,7 +41,7 @@ export function AuthTabs({ active, onChange }: AuthTabsProps) {
         <Text
           className={cn(
             "text-[13px] font-semibold",
-            active === "register" ? "text-on-accent" : "text-content-subtle",
+            active === "register" ? "text-on-accent" : "text-on-accent-subtle",
           )}
         >
           Crear Cuenta
