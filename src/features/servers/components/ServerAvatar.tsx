@@ -1,7 +1,10 @@
 import { getInitial } from "@discordia/client-shared";
 
 import { useState } from "react";
-import { Image, Text, View } from "react-native";
+import { Image, StyleSheet, Text, View } from "react-native";
+import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
+
+import { useThemeColors } from "../../../theme/theme-context";
 
 interface ServerAvatarProps {
   name: string;
@@ -16,6 +19,7 @@ export function ServerAvatar({
   size = 48,
   borderRadius,
 }: ServerAvatarProps) {
+  const colors = useThemeColors();
   const radius = borderRadius ?? size / 2;
   const [failed, setFailed] = useState(false);
   const [lastUri, setLastUri] = useState(uri);
@@ -39,10 +43,28 @@ export function ServerAvatar({
 
   return (
     <View
-      className="items-center justify-center bg-accent"
+      className="items-center justify-center overflow-hidden"
       style={{ width: size, height: size, borderRadius: radius }}
     >
-      <Text className="text-white font-bold" style={{ fontSize: size * 0.42 }}>
+      <Svg style={StyleSheet.absoluteFill} width="100%" height="100%">
+        <Defs>
+          <LinearGradient id="serverAvatarGradient" x1="0" y1="0" x2="1" y2="1">
+            <Stop offset="0" stopColor={colors.accentGradientStart} />
+            <Stop offset="1" stopColor={colors.accentGradientEnd} />
+          </LinearGradient>
+        </Defs>
+        <Rect
+          x={0}
+          y={0}
+          width="100%"
+          height="100%"
+          fill="url(#serverAvatarGradient)"
+        />
+      </Svg>
+      <Text
+        className="text-on-accent font-bold"
+        style={{ fontSize: size * 0.42 }}
+      >
         {initial}
       </Text>
     </View>

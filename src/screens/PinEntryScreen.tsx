@@ -15,7 +15,6 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import {
   Alert,
-  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -24,11 +23,13 @@ import {
   View,
 } from "react-native";
 
+import { AuthLogo } from "../components/auth/AuthLogo";
 import { Button } from "../components/ui/Button";
 import { TextField } from "../components/ui/TextField";
+import { ThemeToggleButton } from "../components/ui/ThemeToggleButton";
 import { useAuth } from "../features/auth/auth-context";
 import { TwoFactorLoginStep } from "../features/auth/components/TwoFactorLoginStep";
-import { useThemeColors } from "../theme/theme-context";
+import { useStatusBarStyle, useThemeColors } from "../theme/theme-context";
 import { getStoredUser } from "../lib/storage";
 
 interface PinEntryScreenProps {
@@ -42,6 +43,7 @@ export function PinEntryScreen({
 }: PinEntryScreenProps) {
   const { loginWithPin } = useAuth();
   const colors = useThemeColors();
+  const statusBarStyle = useStatusBarStyle();
 
   const [pin, setPin] = useState("");
   const [errors, setErrors] = useState<PinLoginErrors>({});
@@ -149,21 +151,18 @@ export function PinEntryScreen({
 
   return (
     <KeyboardAvoidingView
-      className="flex-1 bg-surface-servers"
+      className="flex-1 bg-surface-sunken"
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <StatusBar style="light" />
+      <StatusBar style={statusBarStyle} />
+      <ThemeToggleButton />
       <ScrollView
         contentContainerClassName="grow items-center justify-center p-4"
         keyboardShouldPersistTaps="handled"
       >
         <View className="w-full max-w-[420px] px-4">
           <View className="mb-5 items-center">
-            <Image
-              source={require("../../assets/logo-light.png")}
-              className="h-[52px] w-[200px]"
-              resizeMode="contain"
-            />
+            <AuthLogo />
           </View>
 
           {isLocked ? (
@@ -175,7 +174,7 @@ export function PinEntryScreen({
                 <Text className="mb-1.5 text-center text-[19px] font-bold text-content">
                   PIN bloqueado temporalmente
                 </Text>
-                <Text className="mb-4 text-center text-[14px] leading-5 text-on-accent-muted">
+                <Text className="mb-4 text-center text-[14px] leading-5 text-content-muted">
                   {PIN_LOCKED}
                 </Text>
                 <Text className="mb-2 text-[28px] font-bold text-content">
@@ -202,7 +201,7 @@ export function PinEntryScreen({
               <Text className="mb-1.5 text-[24px] font-bold text-content">
                 {userName ? `Hola de nuevo, ${userName}` : "Hola de nuevo"}
               </Text>
-              <Text className="mb-[26px] text-[14px] text-on-accent-muted">
+              <Text className="mb-[26px] text-[14px] text-content-muted">
                 Ingresá tu PIN de acceso rápido para este dispositivo.
               </Text>
 
@@ -213,7 +212,6 @@ export function PinEntryScreen({
                 maxLength={PIN_MAX_LENGTH}
                 isPassword
                 iconName="lock"
-                tone="onAccent"
                 autoFocus
                 value={pin}
                 onChangeText={handleChangePin}
@@ -243,7 +241,7 @@ export function PinEntryScreen({
                 className="mt-4 items-center py-3"
                 onPress={onUseAnotherAccount}
               >
-                <Text className="text-[13px] font-bold text-on-accent-muted">
+                <Text className="text-[13px] font-bold text-sky">
                   ¿No sos vos? Iniciar sesión con otra cuenta
                 </Text>
               </TouchableOpacity>

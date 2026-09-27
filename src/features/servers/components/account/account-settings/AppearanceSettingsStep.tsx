@@ -4,7 +4,6 @@ import { Feather } from "@expo/vector-icons";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 
-import { LIGHT_THEME_ENABLED } from "../../../../../lib/constants";
 import { cn } from "../../../../../lib/cn";
 import { useThemeColors } from "../../../../../theme/theme-context";
 
@@ -21,7 +20,7 @@ interface AppearanceOption {
   description: string;
 }
 
-const ALL_OPTIONS: AppearanceOption[] = [
+const OPTIONS: AppearanceOption[] = [
   {
     value: "dark",
     icon: "moon",
@@ -37,10 +36,6 @@ const ALL_OPTIONS: AppearanceOption[] = [
     description: "Paper, cálido y luminoso",
   },
 ];
-
-const OPTIONS = ALL_OPTIONS.filter(
-  (option) => option.value !== "light" || LIGHT_THEME_ENABLED,
-);
 
 /** Mockup en miniatura de la app, igual al preview de las tarjetas del Figma. */
 function ThemePreview({ theme }: { theme: ThemeName }) {

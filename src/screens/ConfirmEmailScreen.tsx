@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import { Feather } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
-import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 
+import { AuthLogo } from "../components/auth/AuthLogo";
 import { Button } from "../components/ui/Button";
+import { ThemeToggleButton } from "../components/ui/ThemeToggleButton";
 import { useAuth } from "../features/auth/auth-context";
 import { confirmEmailService } from "../features/auth/service";
+import { useStatusBarStyle, useThemeColors } from "../theme/theme-context";
 interface ConfirmEmailScreenProps {
   email?: string;
   token?: string;
@@ -20,6 +23,8 @@ export function ConfirmEmailScreen({
   onBackToLogin,
 }: ConfirmEmailScreenProps) {
   const { requestEmailConfirmation } = useAuth();
+  const colors = useThemeColors();
+  const statusBarStyle = useStatusBarStyle();
   const [isConfirming, setIsConfirming] = useState(Boolean(token));
   const [isResending, setIsResending] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
@@ -64,19 +69,16 @@ export function ConfirmEmailScreen({
   }
 
   return (
-    <View className="flex-1 bg-surface-servers">
-      <StatusBar style="light" />
+    <View className="flex-1 bg-surface-sunken">
+      <StatusBar style={statusBarStyle} />
+      <ThemeToggleButton />
       <ScrollView
         contentContainerClassName="grow items-center justify-center p-4"
         keyboardShouldPersistTaps="handled"
       >
         <View className="w-full max-w-[420px] px-4">
           <View className="mb-8 items-center">
-            <Image
-              source={require("../../assets/logo-light.png")}
-              className="h-[52px] w-[200px]"
-              resizeMode="contain"
-            />
+            <AuthLogo />
           </View>
 
           <View className="items-center">
@@ -84,11 +86,11 @@ export function ConfirmEmailScreen({
               className={`mb-5 size-16 items-center justify-center rounded-2xl ${confirmed ? "bg-success/15" : expired ? "bg-danger/15" : "bg-accent/15"}`}
             >
               {confirmed ? (
-                <Feather name="check-circle" size={32} color="#70d6a0" />
+                <Feather name="check-circle" size={32} color={colors.success} />
               ) : expired ? (
-                <Feather name="alert-triangle" size={32} color="#f28b82" />
+                <Feather name="alert-triangle" size={32} color={colors.danger} />
               ) : (
-                <Feather name="mail" size={32} color="#8cc8dc" />
+                <Feather name="mail" size={32} color={colors.sky} />
               )}
             </View>
 
@@ -115,7 +117,7 @@ export function ConfirmEmailScreen({
 
             {isConfirming ? (
               <View className="flex-row items-center gap-2 py-3">
-                <Feather name="refresh-cw" size={16} color="#8ea4b7" />
+                <Feather name="refresh-cw" size={16} color={colors.textSubtle} />
                 <Text className="text-[14px] text-content-muted">
                   Confirmando tu correo...
                 </Text>

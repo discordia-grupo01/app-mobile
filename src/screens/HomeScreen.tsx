@@ -24,15 +24,16 @@ import { EmptyState } from "../features/servers/components/home/EmptyState";
 import { JoinServerModal } from "../features/servers/components/server/JoinServerModal";
 import { useAuth } from "../features/auth/auth-context";
 import { getOwnProfile } from "../features/profile/service";
-import { leaveServer, listMyServers } from "../features/servers/api";
 import { listMemberRoles } from "../features/roles/api";
-import { useThemeColors } from "../theme/theme-context";
+import { leaveServer, listMyServers } from "../features/servers/api";
+import { useStatusBarStyle, useThemeColors } from "../theme/theme-context";
 import { ChannelScreen } from "./ChannelScreen";
 import { ServerChannelsScreen } from "./ServerChannelsScreen";
 import { ServerPickerScreen } from "./ServerPickerScreen";
 
 export function HomeScreen() {
   const colors = useThemeColors();
+  const statusBarStyle = useStatusBarStyle();
   const { user, token, logout, updateUser } = useAuth();
   const insets = useSafeAreaInsets();
   const [servers, setServers] = useState<ServerSummary[]>([]);
@@ -174,7 +175,7 @@ export function HomeScreen() {
   if (isLoadingServers) {
     return (
       <View className="flex-1 bg-surface-servers items-center justify-center">
-        <StatusBar style="light" />
+        <StatusBar style={statusBarStyle} />
         <ActivityIndicator size="large" color={colors.accentBright} />
       </View>
     );
@@ -183,7 +184,7 @@ export function HomeScreen() {
   if (selectedServer && selectedChannel) {
     return (
       <View className="flex-1">
-        <StatusBar style="light" />
+        <StatusBar style={statusBarStyle} />
         <ChannelScreen
           channel={selectedChannel}
           serverId={selectedServer.id}
@@ -199,7 +200,7 @@ export function HomeScreen() {
   if (selectedServer) {
     return (
       <View className="flex-1">
-        <StatusBar style="light" />
+        <StatusBar style={statusBarStyle} />
         <ServerChannelsScreen
           server={selectedServer}
           servers={servers}
@@ -250,7 +251,7 @@ export function HomeScreen() {
   if (servers.length > 0) {
     return (
       <View className="flex-1">
-        <StatusBar style="light" />
+        <StatusBar style={statusBarStyle} />
         <ServerPickerScreen
           servers={servers}
           userName={user?.name}
@@ -290,7 +291,7 @@ export function HomeScreen() {
 
   return (
     <View className="flex-1 bg-surface-servers">
-      <StatusBar style="light" />
+      <StatusBar style={statusBarStyle} />
       <View
         className="flex-row justify-end px-5 pt-3"
         style={{ paddingTop: insets.top + 12 }}

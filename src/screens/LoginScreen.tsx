@@ -1,7 +1,6 @@
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
 import {
-  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -9,8 +8,11 @@ import {
   View,
 } from "react-native";
 
+import { AuthLogo } from "../components/auth/AuthLogo";
+import { ThemeToggleButton } from "../components/ui/ThemeToggleButton";
 import { AuthTabs, type AuthMode } from "../features/auth/components/AuthTabs";
 import { LoginForm } from "../features/auth/components/LoginForm";
+import { useStatusBarStyle } from "../theme/theme-context";
 
 interface LoginScreenProps {
   onSwitchMode: (mode: AuthMode) => void;
@@ -26,24 +28,22 @@ export function LoginScreen({
   justRegistered = false,
 }: LoginScreenProps) {
   const [twoFactorActive, setTwoFactorActive] = useState(false);
+  const statusBarStyle = useStatusBarStyle();
 
   return (
     <KeyboardAvoidingView
-      className="flex-1 bg-surface-servers"
+      className="flex-1 bg-surface-sunken"
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <StatusBar style="light" />
+      <StatusBar style={statusBarStyle} />
+      <ThemeToggleButton />
       <ScrollView
         contentContainerClassName="grow items-center justify-center p-4"
         keyboardShouldPersistTaps="handled"
       >
         <View className="w-full max-w-[420px] px-4">
           <View className="mb-5 items-center">
-            <Image
-              source={require("../../assets/logo-light.png")}
-              className="h-[52px] w-[200px]"
-              resizeMode="contain"
-            />
+            <AuthLogo />
           </View>
 
           {!twoFactorActive ? (
@@ -53,7 +53,7 @@ export function LoginScreen({
               <Text className="mb-1.5 text-[24px] font-bold text-content">
                 ¡Bienvenido de nuevo!
               </Text>
-              <Text className="mb-[26px] text-[14px] text-on-accent-muted">
+              <Text className="mb-[26px] text-[14px] text-content-muted">
                 Ingresa tus credenciales para acceder.
               </Text>
             </>
