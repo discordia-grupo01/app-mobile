@@ -94,6 +94,7 @@ export function RolesModal({
   // Create form
   const [newName, setNewName] = useState("");
   const [newColor, setNewColor] = useState(COLOR_PALETTE[0]);
+  const [newPerms, setNewPerms] = useState<RolePermission[]>([]);
   const [newNameError, setNewNameError] = useState("");
   const [newColorError, setNewColorError] = useState("");
   const [creating, setCreating] = useState(false);
@@ -175,9 +176,16 @@ export function RolesModal({
   function openCreateForm() {
     setNewName("");
     setNewColor(COLOR_PALETTE[0]);
+    setNewPerms([]);
     setNewNameError("");
     setNewColorError("");
     setStep("create");
+  }
+
+  function handleToggleNewPerm(perm: RolePermission, on: boolean) {
+    setNewPerms((prev) =>
+      on ? [...prev, perm] : prev.filter((p) => p !== perm),
+    );
   }
 
   function loadMembers() {
@@ -355,18 +363,33 @@ export function RolesModal({
       name: trimmed,
       color: newColor,
     });
-    setCreating(false);
 
     if (!result.ok) {
+      setCreating(false);
       if (result.fieldErrors?.name) setNewNameError(result.fieldErrors.name);
       if (result.fieldErrors?.color) setNewColorError(result.fieldErrors.color);
       if (!result.fieldErrors) showToast(result.message);
       return;
     }
 
-    setRoles((prev) => [...(prev ?? []), result.role]);
-    showToast(`Rol "${trimmed}" creado`);
-    openRoleForEdit(result.role);
+    let createdRole = result.role;
+    let toastMessage = `Rol "${trimmed}" creado`;
+
+    if (newPerms.length > 0) {
+      const permsResult = await updateRole(createdRole.id, {
+        permissions: newPerms,
+      });
+      if (permsResult.ok) {
+        createdRole = permsResult.role;
+      } else {
+        toastMessage = `Rol "${trimmed}" creado, pero no se pudieron guardar los permisos: ${permsResult.message}`;
+      }
+    }
+
+    setCreating(false);
+    setRoles((prev) => [...(prev ?? []), createdRole]);
+    showToast(toastMessage);
+    openRoleForEdit(createdRole);
   }
 
   const isLoadingRoles = roles === null;
@@ -548,8 +571,9 @@ export function RolesModal({
                 showsVerticalScrollIndicator={false}
               >
                 <Text className="text-[12px] text-content-subtle leading-[17px] -mt-1.5">
-                  El nuevo rol se crea sin permisos. Podés configurarlos
-                  después.
+                  Elegí un nombre, un color y, si querés, los permisos iniciales
+                  del rol. Podés cambiar todo esto después desde &quot;Editar
+                  rol&quot;.
                 </Text>
 
                 <View className="gap-0">
@@ -601,6 +625,27 @@ export function RolesModal({
                     }}
                   />
                   <FieldError message={newColorError} />
+                </View>
+
+                <View className="gap-0">
+                  <Text
+                    className={cn(
+                      "text-[11px] font-bold tracking-[1px] uppercase text-content-subtle",
+                      "mb-2.5",
+                    )}
+                  >
+                    Permisos
+                  </Text>
+                  <View className="gap-2">
+                    {ROLE_PERMISSIONS.map((perm) => (
+                      <PermissionToggle
+                        key={perm}
+                        perm={perm}
+                        enabled={newPerms.includes(perm)}
+                        onChange={(on) => handleToggleNewPerm(perm, on)}
+                      />
+                    ))}
+                  </View>
                 </View>
               </ScrollView>
 

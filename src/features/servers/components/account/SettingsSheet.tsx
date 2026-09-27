@@ -12,6 +12,7 @@ import { useThemeColors } from "../../../../theme/theme-context";
 
 interface SettingsSheetProps {
   visible: boolean;
+  isPinEnabled?: boolean;
   onClose: () => void;
   onOpenAppearance: () => void;
   onOpenPinSetup: () => void;
@@ -19,6 +20,7 @@ interface SettingsSheetProps {
 
 export function SettingsSheet({
   visible,
+  isPinEnabled = false,
   onClose,
   onOpenAppearance,
   onOpenPinSetup,
@@ -73,10 +75,14 @@ export function SettingsSheet({
             </View>
             <View className="flex-1">
               <Text className="text-[15px] font-bold text-content mb-0.5">
-                Activar PIN de acceso rápido
+                {isPinEnabled
+                  ? "Modificar PIN de acceso rápido"
+                  : "Activar PIN de acceso rápido"}
               </Text>
               <Text className="text-[12px] leading-[17px] text-content-muted">
-                Entrá más rápido en este dispositivo.
+                {isPinEnabled
+                  ? "Cambiá el PIN de este dispositivo."
+                  : "Entrá más rápido en este dispositivo."}
               </Text>
             </View>
             <Feather name="chevron-right" size={18} color={colors.textSubtle} />
