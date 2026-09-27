@@ -38,11 +38,7 @@ export function TextField({
       <View
         className={cn(
           "min-h-12 flex-row items-center rounded-xl border bg-surface-input px-3.5",
-          error
-            ? "border-danger"
-            : isFocused
-              ? "border-accent"
-              : "border-line",
+          error ? "border-danger" : isFocused ? "border-accent" : "border-line",
         )}
       >
         {iconName ? (

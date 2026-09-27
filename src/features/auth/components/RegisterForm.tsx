@@ -177,9 +177,7 @@ export function RegisterForm({
           ¿Ya tienes cuenta?{" "}
         </Text>
         <TouchableOpacity activeOpacity={0.7} onPress={onSwitchToLogin}>
-          <Text className="text-[13px] font-bold text-sky">
-            Inicia sesión
-          </Text>
+          <Text className="text-[13px] font-bold text-sky">Inicia sesión</Text>
         </TouchableOpacity>
       </View>
 

@@ -88,7 +88,11 @@ export function ConfirmEmailScreen({
               {confirmed ? (
                 <Feather name="check-circle" size={32} color={colors.success} />
               ) : expired ? (
-                <Feather name="alert-triangle" size={32} color={colors.danger} />
+                <Feather
+                  name="alert-triangle"
+                  size={32}
+                  color={colors.danger}
+                />
               ) : (
                 <Feather name="mail" size={32} color={colors.sky} />
               )}
@@ -117,7 +121,11 @@ export function ConfirmEmailScreen({
 
             {isConfirming ? (
               <View className="flex-row items-center gap-2 py-3">
-                <Feather name="refresh-cw" size={16} color={colors.textSubtle} />
+                <Feather
+                  name="refresh-cw"
+                  size={16}
+                  color={colors.textSubtle}
+                />
                 <Text className="text-[14px] text-content-muted">
                   Confirmando tu correo...
                 </Text>
