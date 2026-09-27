@@ -17,9 +17,7 @@ import { Button } from "../../../../components/ui/Button";
 import { useAuth } from "../../../auth/auth-context";
 import { OwnProfileModal } from "../../../profile/components/OwnProfileModal";
 import { ServerAvatar } from "../ServerAvatar";
-import { AppearanceSheet } from "./AppearanceSheet";
-import { PinSetupSheet } from "./PinSetupSheet";
-import { SettingsSheet } from "./SettingsSheet";
+import { AccountSettingsSheet } from "./AccountSettingsSheet";
 
 interface UserProfileBarProps {
   userName?: string | null;
@@ -36,8 +34,6 @@ export function UserProfileBar({
   const { user, isPinEnabled } = useAuth();
   const [isConfirmVisible, setIsConfirmVisible] = useState(false);
   const [isSettingsVisible, setIsSettingsVisible] = useState(false);
-  const [isAppearanceVisible, setIsAppearanceVisible] = useState(false);
-  const [isPinSetupVisible, setIsPinSetupVisible] = useState(false);
   const [isProfileVisible, setIsProfileVisible] = useState(false);
   const [isMicMuted, setIsMicMuted] = useState(false);
   const [isDeafened, setIsDeafened] = useState(false);
@@ -50,16 +46,6 @@ export function UserProfileBar({
   function handleConfirmLogout() {
     setIsConfirmVisible(false);
     onLogout();
-  }
-
-  function handleOpenAppearance() {
-    setIsSettingsVisible(false);
-    setIsAppearanceVisible(true);
-  }
-
-  function handleOpenPinSetup() {
-    setIsSettingsVisible(false);
-    setIsPinSetupVisible(true);
   }
 
   return (
@@ -144,25 +130,12 @@ export function UserProfileBar({
         onClose={() => setIsProfileVisible(false)}
       />
 
-      <SettingsSheet
+      <AccountSettingsSheet
         visible={isSettingsVisible}
         isPinEnabled={isPinEnabled}
         onClose={() => setIsSettingsVisible(false)}
-        onOpenAppearance={handleOpenAppearance}
-        onOpenPinSetup={handleOpenPinSetup}
-      />
-
-      <AppearanceSheet
-        visible={isAppearanceVisible}
-        selected={theme}
-        onSelect={setTheme}
-        onClose={() => setIsAppearanceVisible(false)}
-      />
-
-      <PinSetupSheet
-        visible={isPinSetupVisible}
-        isPinEnabled={isPinEnabled}
-        onClose={() => setIsPinSetupVisible(false)}
+        theme={theme}
+        onSelectTheme={setTheme}
       />
 
       <Modal

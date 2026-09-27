@@ -5,6 +5,8 @@ import {
   PIN_LOCKED,
   PIN_MAX_LENGTH,
   type PinLoginErrors,
+  TWO_FACTOR_RECOVERY_CODE_USED,
+  twoFactorRecoveryCodesRemaining,
   type User,
   validatePinLogin,
 } from "@discordia/client-shared";
@@ -12,6 +14,7 @@ import { Feather } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import {
+  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -24,6 +27,7 @@ import {
 import { Button } from "../components/ui/Button";
 import { TextField } from "../components/ui/TextField";
 import { useAuth } from "../features/auth/auth-context";
+import { TwoFactorLoginStep } from "../features/auth/components/TwoFactorLoginStep";
 import { useThemeColors } from "../theme/theme-context";
 import { getStoredUser } from "../lib/storage";
 
@@ -45,6 +49,8 @@ export function PinEntryScreen({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userName, setUserName] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [challengeToken, setChallengeToken] = useState<string | null>(null);
+  const [challengeExpiresIn, setChallengeExpiresIn] = useState(0);
 
   const [isLocked, setIsLocked] = useState(false);
   const [lockSecondsLeft, setLockSecondsLeft] = useState(0);
@@ -101,7 +107,33 @@ export function PinEntryScreen({
       }
 
       setFormError("El PIN no es correcto. Probá de nuevo.");
+      return;
     }
+
+    if (result.twoFactorRequired) {
+      setChallengeExpiresIn(result.expiresIn);
+      setChallengeToken(result.challengeToken);
+    }
+    // Sin segundo factor no hay nada mas que hacer: `loginWithPin` ya guardo
+    // la sesion y el arbol de la app reacciona a `isAuthenticated`.
+  }
+
+  function handleChallengeLost(message: string) {
+    setChallengeToken(null);
+    setPin("");
+    setFormError(message);
+  }
+
+  function handleBack() {
+    setChallengeToken(null);
+    setPin("");
+  }
+
+  function handleRecoveryCodeUsed(remaining: number) {
+    Alert.alert(
+      "Usaste un código de recuperación",
+      `${TWO_FACTOR_RECOVERY_CODE_USED} ${twoFactorRecoveryCodesRemaining(remaining)}`,
+    );
   }
 
   function handleChangePin(text: string) {
@@ -122,10 +154,10 @@ export function PinEntryScreen({
     >
       <StatusBar style="light" />
       <ScrollView
-        contentContainerClassName="grow items-center justify-center p-5"
+        contentContainerClassName="grow items-center justify-center p-4"
         keyboardShouldPersistTaps="handled"
       >
-        <View className="w-full max-w-[420px] px-7">
+        <View className="w-full max-w-[420px] px-4">
           <View className="mb-5 items-center">
             <Image
               source={require("../../assets/logo-light.png")}
@@ -157,6 +189,14 @@ export function PinEntryScreen({
                 iconRight="arrow-right"
               />
             </>
+          ) : challengeToken ? (
+            <TwoFactorLoginStep
+              challengeToken={challengeToken}
+              expiresIn={challengeExpiresIn}
+              onBack={handleBack}
+              onChallengeLost={handleChallengeLost}
+              onRecoveryCodeUsed={handleRecoveryCodeUsed}
+            />
           ) : (
             <>
               <Text className="mb-1.5 text-[24px] font-bold text-content">

@@ -5,6 +5,7 @@ import {
   type PinLoginResult,
   type RegisterResult,
   type RegisterValues,
+  type TwoFactorVerifyResultWithToken,
   type User,
 } from "@discordia/client-shared";
 
@@ -36,6 +37,7 @@ import {
   registerService,
   requestEmailConfirmationService,
 } from "./service";
+import { verifyTwoFactorService } from "../two-factor/service";
 
 interface AuthContextValue {
   user: User | null;
@@ -47,6 +49,10 @@ interface AuthContextValue {
   login: (credentials: LoginValues) => Promise<LoginResultWithToken>;
   loginWithGoogle: (idToken: string) => Promise<LoginResultWithToken>;
   loginWithPin: (pin: string) => Promise<PinLoginResult>;
+  verifyTwoFactor: (
+    challengeToken: string,
+    code: string,
+  ) => Promise<TwoFactorVerifyResultWithToken>;
   register: (values: RegisterValues) => Promise<RegisterResult>;
   requestEmailConfirmation: (email: string) => Promise<EmailConfirmationResult>;
   logout: () => Promise<void>;
@@ -158,6 +164,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const verifyTwoFactor = useCallback(
+    async (
+      challengeToken: string,
+      code: string,
+    ): Promise<TwoFactorVerifyResultWithToken> => {
+      const result = await verifyTwoFactorService(challengeToken, code);
+
+      if (result.ok) {
+        try {
+          await setSession(result.token, result.user);
+        } catch {}
+
+        setToken(result.token);
+        setUser(result.user);
+      }
+
+      return result;
+    },
+    [],
+  );
+
   const register = useCallback(
     async (values: RegisterValues): Promise<RegisterResult> => {
       return registerService(values);
@@ -206,6 +233,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       loginWithGoogle,
       loginWithPin,
+      verifyTwoFactor,
       register,
       requestEmailConfirmation,
       logout,
@@ -220,6 +248,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       loginWithGoogle,
       loginWithPin,
+      verifyTwoFactor,
       register,
       requestEmailConfirmation,
       logout,

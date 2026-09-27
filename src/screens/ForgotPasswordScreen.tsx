@@ -21,10 +21,10 @@ export function ForgotPasswordScreen({ onBack }: ForgotPasswordScreenProps) {
     >
       <StatusBar style="light" />
       <ScrollView
-        contentContainerClassName="grow items-center justify-center p-5"
+        contentContainerClassName="grow items-center justify-center p-4"
         keyboardShouldPersistTaps="handled"
       >
-        <View className="w-full max-w-[420px] px-7">
+        <View className="w-full max-w-[420px] px-4">
           <View className="mb-5 items-center">
             <Image
               source={require("../../assets/logo-light.png")}

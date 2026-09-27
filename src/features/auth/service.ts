@@ -9,9 +9,12 @@ import {
   INVALID_CREDENTIALS,
   INVALID_DATA_MESSAGE,
   INVALID_EMAIL_MESSAGE,
+  isTwoFactorChallenge,
   type LoginResultWithToken,
   type LoginValues,
   messageFor,
+  PASSWORD_ALREADY_SET,
+  PASSWORD_TOO_WEAK,
   PIN_LOCKED,
   PIN_LOGIN_FAILED,
   type PinLoginResult,
@@ -20,6 +23,9 @@ import {
   type RegisterResult,
   type RegisterValues,
   REQUEST_FAILED_MESSAGE,
+  SET_PASSWORD_UNAVAILABLE,
+  type SetPasswordResult,
+  type TwoFactorChallengePayload,
   type User,
 } from "@discordia/client-shared";
 
@@ -57,13 +63,16 @@ export async function registerService(
 export async function loginService(
   credentials: LoginValues,
 ): Promise<LoginResultWithToken> {
-  const result = await apiFetch<AuthResponse>("/v1/login", {
-    method: "POST",
-    body: JSON.stringify({
-      email: credentials.email.trim(),
-      password: credentials.password,
-    }),
-  });
+  const result = await apiFetch<AuthResponse | TwoFactorChallengePayload>(
+    "/v1/login",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        email: credentials.email.trim(),
+        password: credentials.password,
+      }),
+    },
+  );
 
   if (!result.ok) {
     if (result.status === 403 || result.code === "EMAIL_NOT_VERIFIED") {
@@ -75,6 +84,15 @@ export async function loginService(
     return {
       ok: false,
       message: messageFor(result, {}, REQUEST_FAILED_MESSAGE),
+    };
+  }
+
+  if (isTwoFactorChallenge(result.data)) {
+    return {
+      ok: true,
+      twoFactorRequired: true,
+      challengeToken: result.data.challenge_token,
+      expiresIn: result.data.expires_in,
     };
   }
 
@@ -133,10 +151,13 @@ export async function confirmEmailService(
 export async function loginWithGoogleService(
   idToken: string,
 ): Promise<LoginResultWithToken> {
-  const result = await apiFetch<AuthResponse>("/v1/oauth/google", {
-    method: "POST",
-    body: JSON.stringify({ id_token: idToken }),
-  });
+  const result = await apiFetch<AuthResponse | TwoFactorChallengePayload>(
+    "/v1/oauth/google",
+    {
+      method: "POST",
+      body: JSON.stringify({ id_token: idToken }),
+    },
+  );
 
   if (!result.ok) {
     if (result.status === 503) {
@@ -148,6 +169,15 @@ export async function loginWithGoogleService(
     return {
       ok: false,
       message: messageFor(result, {}, GOOGLE_VERIFY_FAILED),
+    };
+  }
+
+  if (isTwoFactorChallenge(result.data)) {
+    return {
+      ok: true,
+      twoFactorRequired: true,
+      challengeToken: result.data.challenge_token,
+      expiresIn: result.data.expires_in,
     };
   }
 
@@ -221,10 +251,13 @@ export async function loginWithPinService(
 ): Promise<PinLoginResult> {
   const deviceId = await getOrCreateDeviceId();
 
-  const result = await apiFetch<AuthResponse>("/v1/pin/login", {
-    method: "POST",
-    body: JSON.stringify({ pin, device_id: deviceId }),
-  });
+  const result = await apiFetch<AuthResponse | TwoFactorChallengePayload>(
+    "/v1/pin/login",
+    {
+      method: "POST",
+      body: JSON.stringify({ pin, device_id: deviceId }),
+    },
+  );
 
   if (!result.ok) {
     if (result.status === 423) {
@@ -248,5 +281,43 @@ export async function loginWithPinService(
     };
   }
 
+  if (isTwoFactorChallenge(result.data)) {
+    return {
+      ok: true,
+      twoFactorRequired: true,
+      challengeToken: result.data.challenge_token,
+      expiresIn: result.data.expires_in,
+    };
+  }
+
   return { ok: true, user: result.data.user, token: result.data.token };
+}
+
+/**
+ * Le da una contraseña a una cuenta que nunca tuvo una (alta puramente
+ * federada por Google): la necesita antes de poder activar el 2FA, porque
+ * desactivarlo y regenerar códigos de recuperación piden reingresarla.
+ */
+export async function setPasswordService(
+  password: string,
+): Promise<SetPasswordResult> {
+  const result = await apiFetch("/v1/me/password", {
+    method: "POST",
+    body: JSON.stringify({ password }),
+  });
+
+  if (!result.ok) {
+    if (result.status === 409) {
+      return { ok: false, message: PASSWORD_ALREADY_SET, alreadySet: true };
+    }
+    if (result.status === 400) {
+      return { ok: false, message: PASSWORD_TOO_WEAK };
+    }
+    return {
+      ok: false,
+      message: messageFor(result, {}, SET_PASSWORD_UNAVAILABLE),
+    };
+  }
+
+  return { ok: true };
 }

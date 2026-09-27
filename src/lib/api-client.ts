@@ -24,6 +24,12 @@ export function setAuthEventHandlers(handlers: AuthEventHandlers): void {
 }
 let refreshPromise: Promise<string | null> | null = null;
 
+const AUTH_PATHS_WITHOUT_RETRY = new Set([
+  "/v1/login",
+  "/v1/login/2fa",
+  "/v1/logout",
+]);
+
 export function refreshAccessToken(): Promise<string | null> {
   if (!refreshPromise) {
     refreshPromise = doRefresh().finally(() => {
@@ -84,12 +90,16 @@ export async function apiFetch<T = unknown>(
     return networkFailure();
   }
 
-  if (
-    res.status === 401 &&
-    !isRetry &&
-    path !== "/v1/login" &&
-    path !== "/v1/logout"
-  ) {
+  // El access token dura 15 min: cualquier request se tope
+  // con uno vencido. En vez de mostrarle un error al usuario, se intenta
+  // renovar una sola vez (con el refresh token de la cookie) y se reintenta
+  // la request original antes de rendirse.
+  //
+  // Login, el paso de 2FA y logout quedan afuera: en login/2fa un 401 significa
+  // "credencial incorrecta", no "sesion vencida" (reintentarlos gastaria un
+  // intento del desafio por cada codigo mal tipeado); en logout no tiene
+  // sentido renovar la sesion que justo se esta cerrando.
+  if (res.status === 401 && !isRetry && !AUTH_PATHS_WITHOUT_RETRY.has(path)) {
     const newToken = await refreshAccessToken();
     if (newToken) {
       return apiFetch<T>(path, options, true);
