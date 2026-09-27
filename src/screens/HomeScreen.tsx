@@ -96,10 +96,7 @@ export function HomeScreen() {
    * Roles asignados al usuario actual en `selectedServer`
    */
   const fetchMyRoles = useCallback(() => {
-    if (!user || !selectedServer) {
-      setMyRoles([]);
-      return;
-    }
+    if (!user || !selectedServer) return undefined;
     let cancelled = false;
     listMemberRoles(selectedServer.id, String(user.id)).then((result) => {
       if (cancelled) return;
@@ -108,7 +105,7 @@ export function HomeScreen() {
     return () => {
       cancelled = true;
     };
-  }, [user, selectedServer?.id]);
+  }, [user, selectedServer]);
 
   useEffect(() => fetchMyRoles(), [fetchMyRoles]);
 
