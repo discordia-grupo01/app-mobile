@@ -36,7 +36,7 @@ function ServerRailIcon({
       style={styles.iconWrap}
     >
       {active ? (
-        <View className="absolute left-0 top-[50%] -mt-3 w-1 h-6 rounded-xs bg-white" />
+        <View className="absolute left-0 top-[50%] -mt-3 w-1 h-6 rounded-xs bg-server-pill" />
       ) : null}
       <ServerAvatar
         name={item.name}
@@ -72,15 +72,16 @@ export function ServerRail({
         className={cn(
           "w-12 h-12 items-center justify-center",
           isHomeActive
-            ? "bg-accent rounded-2xl"
-            : "bg-surface-input rounded-3xl",
+            ? "bg-rail-active-bg rounded-2xl"
+            : "bg-rail-surface rounded-3xl",
         )}
         accessibilityLabel="Inicio"
       >
         <Feather
           name="home"
           size={20}
-          color={isHomeActive ? "#ffffff" : colors.textMuted}
+          color={isHomeActive ? colors.railActiveText : colors.onAccent}
+          style={isHomeActive ? undefined : { opacity: 0.7 }}
         />
       </TouchableOpacity>
 
@@ -97,7 +98,7 @@ export function ServerRail({
 
       <TouchableOpacity
         onPress={onAddServer}
-        className="w-12 h-12 rounded-3xl items-center justify-center bg-surface-input"
+        className="w-12 h-12 rounded-3xl items-center justify-center bg-rail-surface"
         accessibilityLabel="Agregar servidor"
       >
         <Feather name="plus" size={20} color={colors.success} />

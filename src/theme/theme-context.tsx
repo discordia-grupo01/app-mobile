@@ -17,7 +17,6 @@ import {
   type ReactNode,
 } from "react";
 
-import { LIGHT_THEME_ENABLED } from "../lib/constants";
 import { getThemePreference, setThemePreference } from "../lib/storage";
 
 interface ThemeContextValue {
@@ -39,8 +38,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     getThemePreference()
       .then((stored) => {
-        if (!cancelled)
-          setThemeState(LIGHT_THEME_ENABLED ? stored : DEFAULT_THEME);
+        if (!cancelled) setThemeState(stored);
       })
       .catch(() => {});
     return () => {
@@ -82,4 +80,9 @@ export function useTheme(): ThemeContextValue {
  */
 export function useThemeColors(): ThemeColors {
   return THEMES[useTheme().theme];
+}
+
+/** Estilo de `<StatusBar>` (expo-status-bar) que contrasta con el fondo del tema activo. */
+export function useStatusBarStyle(): "light" | "dark" {
+  return useTheme().theme === "light" ? "dark" : "light";
 }
