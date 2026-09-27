@@ -1,7 +1,7 @@
 import { resolveImageUrl } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Modal,
   Pressable,
@@ -12,6 +12,7 @@ import {
 } from "react-native";
 
 import { env } from "../../../../lib/env";
+import { getPinEnabled } from "../../../../lib/storage";
 import { useThemeColors, useTheme } from "../../../../theme/theme-context";
 import { Button } from "../../../../components/ui/Button";
 import { useAuth } from "../../../auth/auth-context";
@@ -23,7 +24,6 @@ import { SettingsSheet } from "./SettingsSheet";
 
 interface UserProfileBarProps {
   userName?: string | null;
-  /** Servidor activo, para mostrar mis roles ahí en el perfil propio. */
   serverId?: string | null;
   onLogout: () => void;
 }
@@ -39,10 +39,24 @@ export function UserProfileBar({
   const [isSettingsVisible, setIsSettingsVisible] = useState(false);
   const [isAppearanceVisible, setIsAppearanceVisible] = useState(false);
   const [isPinSetupVisible, setIsPinSetupVisible] = useState(false);
+  const [isPinEnabled, setIsPinEnabled] = useState(false);
   const [isProfileVisible, setIsProfileVisible] = useState(false);
   const [isMicMuted, setIsMicMuted] = useState(false);
   const [isDeafened, setIsDeafened] = useState(false);
   const { theme, setTheme } = useTheme();
+
+  useEffect(() => {
+    if (!isSettingsVisible) return;
+    let cancelled = false;
+    getPinEnabled()
+      .then((enabled) => {
+        if (!cancelled) setIsPinEnabled(enabled);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [isSettingsVisible]);
   const displayName = (user?.name ?? userName)?.trim() || "Mi cuenta";
   const avatarSrc = resolveImageUrl(user?.avatar_url, env.apiUrl);
   const statusText = user?.status_text?.trim();
@@ -146,6 +160,7 @@ export function UserProfileBar({
 
       <SettingsSheet
         visible={isSettingsVisible}
+        isPinEnabled={isPinEnabled}
         onClose={() => setIsSettingsVisible(false)}
         onOpenAppearance={handleOpenAppearance}
         onOpenPinSetup={handleOpenPinSetup}
@@ -160,7 +175,9 @@ export function UserProfileBar({
 
       <PinSetupSheet
         visible={isPinSetupVisible}
+        isPinEnabled={isPinEnabled}
         onClose={() => setIsPinSetupVisible(false)}
+        onConfigured={() => setIsPinEnabled(true)}
       />
 
       <Modal

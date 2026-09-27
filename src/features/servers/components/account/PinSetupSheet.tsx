@@ -25,10 +25,17 @@ import { configurePinService } from "../../../auth/service";
 
 interface PinSetupSheetProps {
   visible: boolean;
+  isPinEnabled?: boolean;
   onClose: () => void;
+  onConfigured?: () => void;
 }
 
-export function PinSetupSheet({ visible, onClose }: PinSetupSheetProps) {
+export function PinSetupSheet({
+  visible,
+  isPinEnabled = false,
+  onClose,
+  onConfigured,
+}: PinSetupSheetProps) {
   const colors = useThemeColors();
   const [pin, setPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
@@ -66,6 +73,7 @@ export function PinSetupSheet({ visible, onClose }: PinSetupSheetProps) {
     }
 
     setIsDone(true);
+    onConfigured?.();
   }
 
   return (
@@ -93,21 +101,26 @@ export function PinSetupSheet({ visible, onClose }: PinSetupSheetProps) {
                   <Feather name="check" size={26} color={colors.success} />
                 </View>
                 <Text className="text-[17px] font-bold text-content mb-1.5">
-                  PIN activado
+                  {isPinEnabled ? "PIN actualizado" : "PIN activado"}
                 </Text>
                 <Text className="text-[13px] text-content-muted text-center mb-5">
-                  Ya podés usarlo para entrar más rápido en este dispositivo.
+                  {isPinEnabled
+                    ? "Tu PIN de acceso rápido en este dispositivo se actualizó correctamente."
+                    : "Ya podés usarlo para entrar más rápido en este dispositivo."}
                 </Text>
                 <Button title="Listo" onPress={handleClose} />
               </View>
             ) : (
               <>
                 <Text className="text-[17px] font-bold text-content mb-1.5">
-                  Activar PIN de acceso rápido
+                  {isPinEnabled
+                    ? "Modificar PIN de acceso rápido"
+                    : "Activar PIN de acceso rápido"}
                 </Text>
                 <Text className="text-[13px] leading-[18px] text-content-muted mb-4">
-                  Entrá más rápido en este dispositivo sin escribir tu email y
-                  contraseña cada vez. Elegí un PIN de 6 a 8 dígitos.
+                  {isPinEnabled
+                    ? "Este dispositivo ya tiene un PIN configurado. Elegí uno nuevo para reemplazarlo."
+                    : "Entrá más rápido en este dispositivo sin escribir tu email y contraseña cada vez. Elegí un PIN de 6 a 8 dígitos."}
                 </Text>
 
                 <TextField
@@ -148,7 +161,7 @@ export function PinSetupSheet({ visible, onClose }: PinSetupSheetProps) {
                 ) : null}
 
                 <Button
-                  title="Activar"
+                  title={isPinEnabled ? "Guardar" : "Activar"}
                   onPress={handleSubmit}
                   isLoading={isSubmitting}
                 />
