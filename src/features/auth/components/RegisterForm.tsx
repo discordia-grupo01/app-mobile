@@ -104,7 +104,6 @@ export function RegisterForm({
         autoCapitalize="none"
         autoComplete="username"
         iconName="at-sign"
-        tone="onAccent"
         value={name}
         onChangeText={setName}
         error={errors.name}
@@ -117,7 +116,6 @@ export function RegisterForm({
         autoCapitalize="none"
         autoComplete="email"
         iconName="mail"
-        tone="onAccent"
         value={email}
         onChangeText={setEmail}
         error={errors.email}
@@ -128,7 +126,6 @@ export function RegisterForm({
         placeholder="••••••••"
         isPassword
         iconName="lock"
-        tone="onAccent"
         value={password}
         onChangeText={setPassword}
         error={errors.password}
@@ -156,17 +153,17 @@ export function RegisterForm({
 
       {/* Divider */}
       <View className="mb-5 flex-row items-center">
-        <View className="h-px flex-1 bg-line-on-accent" />
-        <Text className="mx-3 text-[12px] font-medium text-on-accent-subtle">
+        <View className="h-px flex-1 bg-line" />
+        <Text className="mx-3 text-[12px] font-medium text-content-subtle">
           o continúa con
         </Text>
-        <View className="h-px flex-1 bg-line-on-accent" />
+        <View className="h-px flex-1 bg-line" />
       </View>
 
       {/* Google Button */}
       <Button
         title="Continuar con Google"
-        variant="secondaryOnAccent"
+        variant="secondary"
         onPress={handleGooglePress}
         disabled={!googleRequest}
         isLoading={isGoogleSubmitting}
@@ -176,18 +173,18 @@ export function RegisterForm({
 
       {/* Footer link */}
       <View className="flex-row items-center justify-center">
-        <Text className="text-[13px] text-on-accent-subtle">
+        <Text className="text-[13px] text-content-subtle">
           ¿Ya tienes cuenta?{" "}
         </Text>
         <TouchableOpacity activeOpacity={0.7} onPress={onSwitchToLogin}>
-          <Text className="text-[13px] font-bold text-on-accent-muted">
+          <Text className="text-[13px] font-bold text-content-muted">
             Inicia sesión
           </Text>
         </TouchableOpacity>
       </View>
 
       {/* Terms / privacy — sin pantallas propias todavia, texto informativo */}
-      <Text className="mt-4 text-center text-[11px] leading-4 text-on-accent-subtle">
+      <Text className="mt-4 text-center text-[11px] leading-4 text-content-subtle">
         Al registrarte aceptas nuestros Términos de Servicio y Política de
         Privacidad.
       </Text>
