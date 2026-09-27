@@ -5,8 +5,8 @@ import {
   type PinSetupErrors,
   validatePinSetup,
 } from "@discordia/client-shared";
-import { useState } from "react";
-import { Text, View } from "react-native";
+import { useEffect, useState, type RefObject } from "react";
+import { ScrollView, Text, View } from "react-native";
 
 import { Button } from "../../../../components/ui/Button";
 import { TextField } from "../../../../components/ui/TextField";
@@ -15,9 +15,10 @@ import { configurePinService } from "../../../auth/service";
 
 interface PinSetupPanelProps {
   onClose: () => void;
+  scrollRef: RefObject<ScrollView | null>;
 }
 
-export function PinSetupPanel({ onClose }: PinSetupPanelProps) {
+export function PinSetupPanel({ onClose, scrollRef }: PinSetupPanelProps) {
   const colors = useThemeColors();
   const [pin, setPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
@@ -25,6 +26,12 @@ export function PinSetupPanel({ onClose }: PinSetupPanelProps) {
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDone, setIsDone] = useState(false);
+
+  // Pasar del formulario a la confirmación achica mucho el contenido; sin
+  // esto el ScrollView queda con el scroll viejo y se ve un salto/parpadeo.
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+  }, [isDone, scrollRef]);
 
   async function handleSubmit() {
     const nextErrors = validatePinSetup({ pin, confirmPin });

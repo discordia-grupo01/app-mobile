@@ -1,7 +1,7 @@
 import type { ThemeName } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   KeyboardAvoidingView,
   Modal,
@@ -54,6 +54,11 @@ export function AccountSettingsSheet({
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
   const [section, setSection] = useState<Section>("menu");
+  const scrollRef = useRef<ScrollView>(null);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+  }, [section]);
 
   function handleClose() {
     setSection("menu");
@@ -96,6 +101,7 @@ export function AccountSettingsSheet({
         </View>
 
         <ScrollView
+          ref={scrollRef}
           contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
@@ -113,9 +119,9 @@ export function AccountSettingsSheet({
               onOpenPinSetup={() => setSection("pin")}
             />
           ) : section === "two-factor" ? (
-            <TwoFactorPanel onClose={goBack} />
+            <TwoFactorPanel onClose={goBack} scrollRef={scrollRef} />
           ) : (
-            <PinSetupPanel onClose={goBack} />
+            <PinSetupPanel onClose={goBack} scrollRef={scrollRef} />
           )}
         </ScrollView>
       </KeyboardAvoidingView>

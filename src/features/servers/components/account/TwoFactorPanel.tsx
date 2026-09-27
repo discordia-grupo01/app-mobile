@@ -9,8 +9,8 @@ import {
 } from "@discordia/client-shared";
 
 import * as Clipboard from "expo-clipboard";
-import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { useCallback, useEffect, useState, type RefObject } from "react";
+import { ActivityIndicator, ScrollView, View } from "react-native";
 
 import { useThemeColors } from "../../../../theme/theme-context";
 import {
@@ -28,6 +28,7 @@ import { TwoFactorStatusStep } from "./two-factor/TwoFactorStatusStep";
 
 interface TwoFactorPanelProps {
   onClose: () => void;
+  scrollRef: RefObject<ScrollView | null>;
 }
 
 type Step =
@@ -38,7 +39,7 @@ type Step =
   | "regenerate"
   | "disabled-confirmation";
 
-export function TwoFactorPanel({ onClose }: TwoFactorPanelProps) {
+export function TwoFactorPanel({ onClose, scrollRef }: TwoFactorPanelProps) {
   const colors = useThemeColors();
 
   const [step, setStep] = useState<Step>("status");
@@ -89,6 +90,13 @@ export function TwoFactorPanel({ onClose }: TwoFactorPanelProps) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Pasar de un paso alto (QR + clave + input) a uno bajo (códigos, status)
+  // deja el ScrollView con el scroll viejo por un frame; sin esto se ve un
+  // salto/parpadeo apenas se pinta el paso nuevo.
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+  }, [step, scrollRef]);
 
   function resetForms() {
     setCode("");
