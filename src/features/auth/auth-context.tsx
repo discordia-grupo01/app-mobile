@@ -99,7 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (credentials: LoginValues): Promise<LoginResultWithToken> => {
       const result = await loginService(credentials);
 
-      if (result.ok) {
+      if (result.ok && !result.twoFactorRequired) {
         try {
           await setSession(result.token, result.user);
         } catch {}
@@ -117,7 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (idToken: string): Promise<LoginResultWithToken> => {
       const result = await loginWithGoogleService(idToken);
 
-      if (result.ok) {
+      if (result.ok && !result.twoFactorRequired) {
         try {
           await setSession(result.token, result.user);
         } catch {}
@@ -135,7 +135,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (pin: string): Promise<LoginResultWithToken> => {
       const result = await loginWithPinService(pin);
 
-      if (result.ok) {
+      if (result.ok && !result.twoFactorRequired) {
         try {
           await setSession(result.token, result.user);
         } catch {}
