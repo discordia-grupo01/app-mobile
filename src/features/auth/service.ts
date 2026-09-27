@@ -12,7 +12,9 @@ import {
   type LoginResultWithToken,
   type LoginValues,
   messageFor,
+  PIN_LOCKED,
   PIN_LOGIN_FAILED,
+  type PinLoginResult,
   type PublicUser,
   RATE_LIMITED_MESSAGE,
   type RegisterResult,
@@ -212,9 +214,11 @@ export async function configurePinService(
   return { ok: true };
 }
 
+const DEFAULT_PIN_LOCK_SECONDS = 15 * 60;
+
 export async function loginWithPinService(
   pin: string,
-): Promise<LoginResultWithToken> {
+): Promise<PinLoginResult> {
   const deviceId = await getOrCreateDeviceId();
 
   const result = await apiFetch<AuthResponse>("/v1/pin/login", {
@@ -223,6 +227,18 @@ export async function loginWithPinService(
   });
 
   if (!result.ok) {
+    if (result.status === 423) {
+      const retryAfterSeconds =
+        typeof result.details?.retry_after_seconds === "number"
+          ? result.details.retry_after_seconds
+          : DEFAULT_PIN_LOCK_SECONDS;
+      return {
+        ok: false,
+        locked: true,
+        message: PIN_LOCKED,
+        retryAfterSeconds,
+      };
+    }
     if (result.status === 401) {
       return { ok: false, message: PIN_LOGIN_FAILED };
     }
