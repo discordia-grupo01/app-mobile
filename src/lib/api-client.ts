@@ -84,11 +84,12 @@ export async function apiFetch<T = unknown>(
     return networkFailure();
   }
 
-  // El access token dura 15 min: cualquier request se tope
-  // con uno vencido. En vez de mostrarle un error al usuario, se intenta
-  // renovar una sola vez (con el refresh token de la cookie) y se reintenta
-  // la request original antes de rendirse.
-  if (res.status === 401 && !isRetry && path !== "/v1/login") {
+  if (
+    res.status === 401 &&
+    !isRetry &&
+    path !== "/v1/login" &&
+    path !== "/v1/logout"
+  ) {
     const newToken = await refreshAccessToken();
     if (newToken) {
       return apiFetch<T>(path, options, true);
