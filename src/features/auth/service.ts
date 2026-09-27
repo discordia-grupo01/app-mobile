@@ -13,12 +13,16 @@ import {
   type LoginResultWithToken,
   type LoginValues,
   messageFor,
+  PASSWORD_ALREADY_SET,
+  PASSWORD_TOO_WEAK,
   PIN_LOGIN_FAILED,
   type PublicUser,
   RATE_LIMITED_MESSAGE,
   type RegisterResult,
   type RegisterValues,
   REQUEST_FAILED_MESSAGE,
+  SET_PASSWORD_UNAVAILABLE,
+  type SetPasswordResult,
   type TwoFactorChallengePayload,
   type User,
 } from "@discordia/client-shared";
@@ -281,4 +285,33 @@ export async function loginWithPinService(
   }
 
   return { ok: true, user: result.data.user, token: result.data.token };
+}
+
+/**
+ * Le da una contraseña a una cuenta que nunca tuvo una (alta puramente
+ * federada por Google): la necesita antes de poder activar el 2FA, porque
+ * desactivarlo y regenerar códigos de recuperación piden reingresarla.
+ */
+export async function setPasswordService(
+  password: string,
+): Promise<SetPasswordResult> {
+  const result = await apiFetch("/v1/me/password", {
+    method: "POST",
+    body: JSON.stringify({ password }),
+  });
+
+  if (!result.ok) {
+    if (result.status === 409) {
+      return { ok: false, message: PASSWORD_ALREADY_SET, alreadySet: true };
+    }
+    if (result.status === 400) {
+      return { ok: false, message: PASSWORD_TOO_WEAK };
+    }
+    return {
+      ok: false,
+      message: messageFor(result, {}, SET_PASSWORD_UNAVAILABLE),
+    };
+  }
+
+  return { ok: true };
 }

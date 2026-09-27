@@ -8,6 +8,7 @@ import {
   TWO_FACTOR_CODE_INVALID,
   TWO_FACTOR_NOT_ENABLED,
   TWO_FACTOR_PASSWORD_INVALID,
+  TWO_FACTOR_PASSWORD_REQUIRED,
   TWO_FACTOR_SETUP_MISSING,
   TWO_FACTOR_TOO_MANY_ATTEMPTS,
   type TwoFactorDisableResult,
@@ -51,6 +52,13 @@ export async function startTwoFactorSetupService(): Promise<TwoFactorSetupResult
   });
 
   if (!result.ok) {
+    if (result.code === "PASSWORD_REQUIRED_FOR_TWO_FACTOR") {
+      return {
+        ok: false,
+        message: TWO_FACTOR_PASSWORD_REQUIRED,
+        passwordRequired: true,
+      };
+    }
     if (result.status === 409) {
       return { ok: false, message: TWO_FACTOR_ALREADY_ENABLED };
     }

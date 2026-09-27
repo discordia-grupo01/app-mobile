@@ -1,9 +1,11 @@
 import {
   hasErrors,
+  type SetPasswordErrors,
   type TwoFactorCodeErrors,
   type TwoFactorPasswordErrors,
   type TwoFactorSetup,
   type TwoFactorStatus,
+  validateSetPassword,
   validateTwoFactorActivationCode,
   validateTwoFactorPassword,
 } from "@discordia/client-shared";
@@ -13,6 +15,7 @@ import { useCallback, useEffect, useState, type RefObject } from "react";
 import { ActivityIndicator, ScrollView, View } from "react-native";
 
 import { useThemeColors } from "../../../../theme/theme-context";
+import { setPasswordService } from "../../../auth/service";
 import {
   activateTwoFactorService,
   disableTwoFactorService,
@@ -23,6 +26,7 @@ import {
 import { TwoFactorCodesStep } from "./two-factor/TwoFactorCodesStep";
 import { TwoFactorDisabledConfirmationStep } from "./two-factor/TwoFactorDisabledConfirmationStep";
 import { TwoFactorPasswordStep } from "./two-factor/TwoFactorPasswordStep";
+import { TwoFactorSetPasswordStep } from "./two-factor/TwoFactorSetPasswordStep";
 import { TwoFactorSetupStep } from "./two-factor/TwoFactorSetupStep";
 import { TwoFactorStatusStep } from "./two-factor/TwoFactorStatusStep";
 
@@ -33,6 +37,7 @@ interface TwoFactorPanelProps {
 
 type Step =
   | "status"
+  | "set-password"
   | "setup"
   | "codes"
   | "disable"
@@ -57,6 +62,12 @@ export function TwoFactorPanel({ onClose, scrollRef }: TwoFactorPanelProps) {
     {},
   );
   const [copied, setCopied] = useState(false);
+
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [newPasswordErrors, setNewPasswordErrors] =
+    useState<SetPasswordErrors>({});
+  const [passwordAlreadySet, setPasswordAlreadySet] = useState(false);
 
   const loadStatus = useCallback(() => {
     return getTwoFactorStatusService().then((result) => {
@@ -105,6 +116,10 @@ export function TwoFactorPanel({ onClose, scrollRef }: TwoFactorPanelProps) {
     setPasswordErrors({});
     setFormError(null);
     setCopied(false);
+    setNewPassword("");
+    setConfirmPassword("");
+    setNewPasswordErrors({});
+    setPasswordAlreadySet(false);
   }
 
   function backToStatus() {
@@ -123,11 +138,42 @@ export function TwoFactorPanel({ onClose, scrollRef }: TwoFactorPanelProps) {
     setIsLoading(false);
 
     if (!result.ok) {
+      if (result.passwordRequired) {
+        setStep("set-password");
+        return;
+      }
       setFormError(result.message);
       return;
     }
     setSetup(result.setup);
     setStep("setup");
+  }
+
+  async function handleSetPassword() {
+    const nextErrors = validateSetPassword({
+      password: newPassword,
+      confirmPassword,
+    });
+    setNewPasswordErrors(nextErrors);
+    if (hasErrors(nextErrors)) return;
+
+    setFormError(null);
+    setIsSubmitting(true);
+    const result = await setPasswordService(newPassword);
+    setIsSubmitting(false);
+
+    if (!result.ok) {
+      // Carrera entre pestañas/dispositivos: la cuenta ya consiguió una
+      // contraseña mientras se completaba este paso. No bloquea -- se puede
+      // seguir directo al QR.
+      if (result.alreadySet) {
+        setPasswordAlreadySet(true);
+      }
+      setFormError(result.message);
+      return;
+    }
+
+    void handleStartSetup();
   }
 
   async function handleActivate() {
@@ -220,6 +266,22 @@ export function TwoFactorPanel({ onClose, scrollRef }: TwoFactorPanelProps) {
           setStep("disable");
         }}
         onClose={onClose}
+      />
+    );
+  } else if (step === "set-password") {
+    content = (
+      <TwoFactorSetPasswordStep
+        password={newPassword}
+        confirmPassword={confirmPassword}
+        errors={newPasswordErrors}
+        formError={formError}
+        alreadySet={passwordAlreadySet}
+        isSubmitting={isSubmitting}
+        onPasswordChange={setNewPassword}
+        onConfirmPasswordChange={setConfirmPassword}
+        onSubmit={handleSetPassword}
+        onContinueAnyway={handleStartSetup}
+        onCancel={backToStatus}
       />
     );
   } else if (step === "setup" && setup) {
