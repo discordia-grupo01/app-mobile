@@ -9,6 +9,7 @@ import {
   INVALID_CREDENTIALS,
   INVALID_DATA_MESSAGE,
   INVALID_EMAIL_MESSAGE,
+  isTwoFactorChallenge,
   type LoginResultWithToken,
   type LoginValues,
   messageFor,
@@ -18,6 +19,7 @@ import {
   type RegisterResult,
   type RegisterValues,
   REQUEST_FAILED_MESSAGE,
+  type TwoFactorChallengePayload,
   type User,
 } from "@discordia/client-shared";
 
@@ -56,13 +58,16 @@ export async function registerService(
 export async function loginService(
   credentials: LoginValues,
 ): Promise<LoginResultWithToken> {
-  const result = await apiFetch<AuthResponse>("/v1/login", {
-    method: "POST",
-    body: JSON.stringify({
-      email: credentials.email.trim(),
-      password: credentials.password,
-    }),
-  });
+  const result = await apiFetch<AuthResponse | TwoFactorChallengePayload>(
+    "/v1/login",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        email: credentials.email.trim(),
+        password: credentials.password,
+      }),
+    },
+  );
 
   if (!result.ok) {
     if (result.status === 403 || result.code === "EMAIL_NOT_VERIFIED") {
@@ -74,6 +79,15 @@ export async function loginService(
     return {
       ok: false,
       message: messageFor(result, {}, REQUEST_FAILED_MESSAGE),
+    };
+  }
+
+  if (isTwoFactorChallenge(result.data)) {
+    return {
+      ok: true,
+      twoFactorRequired: true,
+      challengeToken: result.data.challenge_token,
+      expiresIn: result.data.expires_in,
     };
   }
 

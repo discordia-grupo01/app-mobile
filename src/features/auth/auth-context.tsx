@@ -4,6 +4,7 @@ import {
   type EmailConfirmationResult,
   type RegisterResult,
   type RegisterValues,
+  type TwoFactorVerifyResultWithToken,
   type User,
 } from "@discordia/client-shared";
 
@@ -33,6 +34,7 @@ import {
   registerService,
   requestEmailConfirmationService,
 } from "./service";
+import { verifyTwoFactorService } from "../two-factor/service";
 
 interface AuthContextValue {
   user: User | null;
@@ -42,6 +44,10 @@ interface AuthContextValue {
   login: (credentials: LoginValues) => Promise<LoginResultWithToken>;
   loginWithGoogle: (idToken: string) => Promise<LoginResultWithToken>;
   loginWithPin: (pin: string) => Promise<LoginResultWithToken>;
+  verifyTwoFactor: (
+    challengeToken: string,
+    code: string,
+  ) => Promise<TwoFactorVerifyResultWithToken>;
   register: (values: RegisterValues) => Promise<RegisterResult>;
   requestEmailConfirmation: (email: string) => Promise<EmailConfirmationResult>;
   logout: () => Promise<void>;
@@ -99,7 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (credentials: LoginValues): Promise<LoginResultWithToken> => {
       const result = await loginService(credentials);
 
-      if (result.ok) {
+      if (result.ok && !result.twoFactorRequired) {
         try {
           await setSession(result.token, result.user);
         } catch {}
@@ -117,7 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (idToken: string): Promise<LoginResultWithToken> => {
       const result = await loginWithGoogleService(idToken);
 
-      if (result.ok) {
+      if (result.ok && !result.twoFactorRequired) {
         try {
           await setSession(result.token, result.user);
         } catch {}
@@ -134,6 +140,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginWithPin = useCallback(
     async (pin: string): Promise<LoginResultWithToken> => {
       const result = await loginWithPinService(pin);
+
+      if (result.ok && !result.twoFactorRequired) {
+        try {
+          await setSession(result.token, result.user);
+        } catch {}
+
+        setToken(result.token);
+        setUser(result.user);
+      }
+
+      return result;
+    },
+    [],
+  );
+
+  const verifyTwoFactor = useCallback(
+    async (
+      challengeToken: string,
+      code: string,
+    ): Promise<TwoFactorVerifyResultWithToken> => {
+      const result = await verifyTwoFactorService(challengeToken, code);
 
       if (result.ok) {
         try {
@@ -186,6 +213,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       loginWithGoogle,
       loginWithPin,
+      verifyTwoFactor,
       register,
       requestEmailConfirmation,
       logout,
@@ -198,6 +226,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       loginWithGoogle,
       loginWithPin,
+      verifyTwoFactor,
       register,
       requestEmailConfirmation,
       logout,
