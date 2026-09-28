@@ -11,6 +11,7 @@ import {
 import { Feather } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import {
+  type GestureResponderHandlers,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -23,6 +24,7 @@ import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 
 import { ChannelOptionsSheet } from "../features/servers/components/channel/ChannelOptionsSheet";
 import { CreateCategoryModal } from "../features/servers/components/category/CreateCategoryModal";
+import { DraggableCategoryList } from "../features/servers/components/category/DraggableCategoryList";
 import { CreateChannelModal } from "../features/servers/components/channel/CreateChannelModal";
 import { DeleteChannelModal } from "../features/servers/components/channel/DeleteChannelModal";
 import { DraggableChannelList } from "../features/servers/components/channel/DraggableChannelList";
@@ -38,6 +40,7 @@ import { UserProfileBar } from "../features/servers/components/account/UserProfi
 import { useAuth } from "../features/auth/auth-context";
 import {
   getPendingOwnershipTransfer,
+  reorderCategories,
   reorderChannels,
   resolveServerBannerUrl,
 } from "../features/servers/api";
@@ -155,6 +158,7 @@ export function ServerChannelsScreen({
   const [deletingChannel, setDeletingChannel] = useState<Channel | null>(null);
   const [dragError, setDragError] = useState("");
   const [isChannelDragActive, setIsChannelDragActive] = useState(false);
+  const [isCategoryDragActive, setIsCategoryDragActive] = useState(false);
   const insets = useSafeAreaInsets();
 
   const bannerUrl = resolveServerBannerUrl(server.banner_url);
@@ -264,6 +268,25 @@ export function ServerChannelsScreen({
     }
   }
 
+  async function handleCategoriesReordered(orderedIds: string[]) {
+    const previousServer = server;
+    setDragError("");
+
+    const reorderedCategories = server.categories.map((category) => {
+      const newPosition = orderedIds.indexOf(category.id);
+      return newPosition === -1
+        ? category
+        : { ...category, position: newPosition };
+    });
+    onServerUpdated({ ...server, categories: reorderedCategories });
+
+    const result = await reorderCategories(server.id, orderedIds);
+    if (!result.ok) {
+      setDragError(result.message);
+      onServerUpdated(previousServer);
+    }
+  }
+
   function renderChannelList(channels: Channel[]) {
     return channels.map((channel) => (
       <ChannelRow
@@ -274,6 +297,76 @@ export function ServerChannelsScreen({
         onOptions={() => setChannelOptionsFor(channel)}
       />
     ));
+  }
+
+  function renderCategorySection(
+    category: Category,
+    panHandlers: GestureResponderHandlers = {},
+  ) {
+    const channels = channelsOfCategory(server.channels, category.id);
+    const collapsed = collapsedSectionIds.has(category.id);
+
+    return (
+      <View key={category.id} className="gap-0.5">
+        <View
+          className="flex-row items-center gap-1 px-2 mb-1"
+          {...panHandlers}
+        >
+          <TouchableOpacity
+            activeOpacity={0.7}
+            className="flex-1 flex-row items-center gap-[5px] py-0.5"
+            onPress={() => toggleCollapsed(category.id)}
+            accessibilityRole="button"
+          >
+            <Feather
+              name={collapsed ? "chevron-right" : "chevron-down"}
+              size={12}
+              color={colors.textSubtle}
+            />
+            <Text
+              className="flex-1 text-[13px] font-bold tracking-[0.6px] text-content-subtle"
+              numberOfLines={1}
+            >
+              {category.name}
+            </Text>
+          </TouchableOpacity>
+          {canManageChannels ? (
+            <TouchableOpacity
+              onPress={() => {
+                setCreateChannelDefaultCategoryId(category.id);
+                setIsCreateChannelVisible(true);
+              }}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityLabel="Añadir canal"
+              accessibilityRole="button"
+            >
+              <Feather name="plus" size={13} color={colors.textSubtle} />
+            </TouchableOpacity>
+          ) : null}
+        </View>
+        {!collapsed ? (
+          canManageChannels && channels.length > 1 ? (
+            <DraggableChannelList
+              channels={channels}
+              onReorder={(orderedIds) =>
+                handleChannelsReordered(category.id, orderedIds)
+              }
+              onDragActiveChange={setIsChannelDragActive}
+              renderChannel={(channel) => (
+                <ChannelRow
+                  channel={channel}
+                  canManage={canManageChannels}
+                  onPress={() => onSelectChannel(channel.id)}
+                  onOptions={() => setChannelOptionsFor(channel)}
+                />
+              )}
+            />
+          ) : (
+            <View className="gap-[1px]">{renderChannelList(channels)}</View>
+          )
+        ) : null}
+      </View>
+    );
   }
 
   return (
@@ -489,7 +582,7 @@ export function ServerChannelsScreen({
         <ScrollView
           className="flex-1"
           contentContainerClassName="px-2.5 pt-3.5 pb-3 gap-4.5"
-          scrollEnabled={!isChannelDragActive}
+          scrollEnabled={!isChannelDragActive && !isCategoryDragActive}
         >
           {uncategorized.length > 0 ? (
             <View className="gap-0.5">
@@ -538,75 +631,18 @@ export function ServerChannelsScreen({
             </View>
           ) : null}
 
-          {sortedCategories.map((category) => {
-            const channels = channelsOfCategory(server.channels, category.id);
-            const collapsed = collapsedSectionIds.has(category.id);
-
-            return (
-              <View key={category.id} className="gap-0.5">
-                <View className="flex-row items-center gap-1 px-2 mb-1">
-                  <TouchableOpacity
-                    activeOpacity={0.7}
-                    className="flex-1 flex-row items-center gap-[5px] py-0.5"
-                    onPress={() => toggleCollapsed(category.id)}
-                    accessibilityRole="button"
-                  >
-                    <Feather
-                      name={collapsed ? "chevron-right" : "chevron-down"}
-                      size={12}
-                      color={colors.textSubtle}
-                    />
-                    <Text
-                      className="flex-1 text-[13px] font-bold tracking-[0.6px] text-content-subtle"
-                      numberOfLines={1}
-                    >
-                      {category.name}
-                    </Text>
-                  </TouchableOpacity>
-                  {canManageChannels ? (
-                    <TouchableOpacity
-                      onPress={() => {
-                        setCreateChannelDefaultCategoryId(category.id);
-                        setIsCreateChannelVisible(true);
-                      }}
-                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                      accessibilityLabel="Añadir canal"
-                      accessibilityRole="button"
-                    >
-                      <Feather
-                        name="plus"
-                        size={13}
-                        color={colors.textSubtle}
-                      />
-                    </TouchableOpacity>
-                  ) : null}
-                </View>
-                {!collapsed ? (
-                  canManageChannels && channels.length > 1 ? (
-                    <DraggableChannelList
-                      channels={channels}
-                      onReorder={(orderedIds) =>
-                        handleChannelsReordered(category.id, orderedIds)
-                      }
-                      onDragActiveChange={setIsChannelDragActive}
-                      renderChannel={(channel) => (
-                        <ChannelRow
-                          channel={channel}
-                          canManage={canManageChannels}
-                          onPress={() => onSelectChannel(channel.id)}
-                          onOptions={() => setChannelOptionsFor(channel)}
-                        />
-                      )}
-                    />
-                  ) : (
-                    <View className="gap-[1px]">
-                      {renderChannelList(channels)}
-                    </View>
-                  )
-                ) : null}
-              </View>
-            );
-          })}
+          {canManageChannels && sortedCategories.length > 1 ? (
+            <DraggableCategoryList
+              categories={sortedCategories}
+              onReorder={handleCategoriesReordered}
+              onDragActiveChange={setIsCategoryDragActive}
+              renderCategory={(category, panHandlers) =>
+                renderCategorySection(category, panHandlers)
+              }
+            />
+          ) : (
+            sortedCategories.map((category) => renderCategorySection(category))
+          )}
 
           {uncategorized.length === 0 && sortedCategories.length === 0 ? (
             <Text className="px-2 pt-2 text-[13px] text-content-subtle">

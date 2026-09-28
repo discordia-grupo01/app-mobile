@@ -2,6 +2,7 @@ import {
   type Category,
   CATEGORY_CREATE_FAILED,
   CATEGORY_REASONS,
+  CATEGORY_REORDER_FAILED,
   type Channel,
   CHANNEL_CREATE_FAILED,
   CHANNEL_DELETE_FAILED,
@@ -17,9 +18,11 @@ import {
   OWNER_ONLY_CREATE_CATEGORY,
   OWNER_ONLY_CREATE_CHANNEL,
   OWNER_ONLY_DELETE_CHANNEL,
+  OWNER_ONLY_REORDER_CATEGORY,
   OWNER_ONLY_REORDER_CHANNEL,
   OWNER_ONLY_UPDATE_CHANNEL,
   reasonOf,
+  type ReorderCategoriesResult,
   type ReorderChannelsResult,
   SERVER_NOT_FOUND,
   SESSION_EXPIRED_MESSAGE,
@@ -240,4 +243,38 @@ export async function createCategory(
   }
 
   return { ok: true, category: result.data };
+}
+
+export async function reorderCategories(
+  serverId: string,
+  categoryIds: string[],
+): Promise<ReorderCategoriesResult> {
+  const result = await apiFetch<void>(
+    `/v1/servers/${serverId}/categories/reorder`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ category_ids: categoryIds }),
+    },
+  );
+
+  if (!result.ok) {
+    if (result.status === 401) {
+      return { ok: false, message: SESSION_EXPIRED_MESSAGE };
+    }
+    if (result.status === 403) {
+      return {
+        ok: false,
+        message: OWNER_ONLY_REORDER_CATEGORY,
+      };
+    }
+    if (result.status === 404) {
+      return { ok: false, message: SERVER_NOT_FOUND };
+    }
+    return {
+      ok: false,
+      message: messageFor(result, CATEGORY_REASONS, CATEGORY_REORDER_FAILED),
+    };
+  }
+
+  return { ok: true };
 }
