@@ -6,6 +6,7 @@ import {
   type Channel,
   CHANNEL_CREATE_FAILED,
   CHANNEL_DELETE_FAILED,
+  CHANNEL_MOVE_FAILED,
   CHANNEL_NOT_FOUND,
   CHANNEL_REASONS,
   CHANNEL_REORDER_FAILED,
@@ -15,6 +16,7 @@ import {
   type DeleteChannelResult,
   fieldOf,
   messageFor,
+  type MoveChannelResult,
   OWNER_ONLY_CREATE_CATEGORY,
   OWNER_ONLY_CREATE_CHANNEL,
   OWNER_ONLY_DELETE_CHANNEL,
@@ -158,6 +160,45 @@ export async function deleteChannel(
   }
 
   return { ok: true };
+}
+
+/**
+ * `PATCH /v1/channels/:id/category` contra el gateway. Solo el owner del
+ * server puede mover canales entre categorías (el back devuelve 403 si
+ * no). `categoryId: null` no deja el canal realmente "sin categoría": el
+ * back lo manda a la categoría nativa de su tipo ("Canales de texto" /
+ * "Canales de voz"), salvo que esa categoría nativa ya no exista -- ver
+ * `nativeCategoryID` en `channel_service.MoveChannelToCategory`.
+ */
+export async function moveChannelToCategory(
+  channelId: string,
+  categoryId: string | null,
+): Promise<MoveChannelResult> {
+  const result = await apiFetch<Channel>(`/v1/channels/${channelId}/category`, {
+    method: "PATCH",
+    body: JSON.stringify({ category_id: categoryId }),
+  });
+
+  if (!result.ok) {
+    if (result.status === 401) {
+      return { ok: false, message: SESSION_EXPIRED_MESSAGE };
+    }
+    if (result.status === 403) {
+      return {
+        ok: false,
+        message: OWNER_ONLY_UPDATE_CHANNEL,
+      };
+    }
+    if (result.status === 404) {
+      return { ok: false, message: CHANNEL_NOT_FOUND };
+    }
+    return {
+      ok: false,
+      message: messageFor(result, CHANNEL_REASONS, CHANNEL_MOVE_FAILED),
+    };
+  }
+
+  return { ok: true, channel: result.data };
 }
 
 /**
