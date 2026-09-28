@@ -66,6 +66,7 @@ interface ServerChannelsScreenProps {
   canManageChannels?: boolean;
   canManageRoles?: boolean;
   canManageServer?: boolean;
+  canInvite?: boolean;
   onPermissionsChanged?: () => void;
   onSelectChannel: (channelId: string) => void;
   onSelectHome: () => void;
@@ -130,6 +131,7 @@ export function ServerChannelsScreen({
   canManageChannels = false,
   canManageRoles = false,
   canManageServer = false,
+  canInvite = false,
   onPermissionsChanged,
   onSelectChannel,
   onSelectHome,
@@ -517,19 +519,21 @@ export function ServerChannelsScreen({
                 className="absolute top-[58px] left-2.5 right-2.5 z-20 rounded-xl border border-line-strong bg-surface-modal py-1.5"
                 style={[styles.serverMenu, { top: menuTop }]}
               >
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  className="flex-row items-center gap-2.5 rounded-lg mx-1 px-2.5 py-3"
-                  onPress={() => {
-                    setIsServerMenuOpen(false);
-                    setIsInviteModalVisible(true);
-                  }}
-                >
-                  <Feather name="user-plus" size={16} color={colors.info} />
-                  <Text className="text-[14px] font-semibold text-content">
-                    Invitar miembros
-                  </Text>
-                </TouchableOpacity>
+                {canInvite ? (
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    className="flex-row items-center gap-2.5 rounded-lg mx-1 px-2.5 py-3"
+                    onPress={() => {
+                      setIsServerMenuOpen(false);
+                      setIsInviteModalVisible(true);
+                    }}
+                  >
+                    <Feather name="user-plus" size={16} color={colors.info} />
+                    <Text className="text-[14px] font-semibold text-content">
+                      Invitar miembros
+                    </Text>
+                  </TouchableOpacity>
+                ) : null}
 
                 {canManageServer ? (
                   <TouchableOpacity
@@ -745,12 +749,14 @@ export function ServerChannelsScreen({
         onClose={() => setIsLeaveModalVisible(false)}
         onConfirm={() => onLeaveServer(server.id)}
       />
-      <InviteLinkModal
-        visible={isInviteModalVisible}
-        serverId={server.id}
-        serverName={server.name}
-        onClose={() => setIsInviteModalVisible(false)}
-      />
+      {canInvite ? (
+        <InviteLinkModal
+          visible={isInviteModalVisible}
+          serverId={server.id}
+          serverName={server.name}
+          onClose={() => setIsInviteModalVisible(false)}
+        />
+      ) : null}
       <TransferOwnershipModal
         visible={isTransferModalVisible}
         serverId={server.id}
