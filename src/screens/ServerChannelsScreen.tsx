@@ -2,10 +2,13 @@ import {
   type Category,
   type Channel,
   channelsOfCategory,
+  isUnassignedCategory,
   type LeaveServerResult,
   type OwnershipTransfer,
   type ServerSummary,
   sortByPosition,
+  topLevelChannels,
+  visibleCategories,
 } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
@@ -23,6 +26,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 
 import { ChannelOptionsSheet } from "../features/servers/components/channel/ChannelOptionsSheet";
+import {
+  ChannelDragProvider,
+  ChannelDropZone,
+} from "../features/servers/components/channel/ChannelDragContext";
 import { CreateCategoryModal } from "../features/servers/components/category/CreateCategoryModal";
 import { DraggableCategoryList } from "../features/servers/components/category/DraggableCategoryList";
 import { CreateChannelModal } from "../features/servers/components/channel/CreateChannelModal";
@@ -40,6 +47,7 @@ import { UserProfileBar } from "../features/servers/components/account/UserProfi
 import { useAuth } from "../features/auth/auth-context";
 import {
   getPendingOwnershipTransfer,
+  moveChannelToCategory,
   reorderCategories,
   reorderChannels,
   resolveServerBannerUrl,
@@ -58,6 +66,7 @@ interface ServerChannelsScreenProps {
   canManageChannels?: boolean;
   canManageRoles?: boolean;
   canManageServer?: boolean;
+  canInvite?: boolean;
   onPermissionsChanged?: () => void;
   onSelectChannel: (channelId: string) => void;
   onSelectHome: () => void;
@@ -122,6 +131,7 @@ export function ServerChannelsScreen({
   canManageChannels = false,
   canManageRoles = false,
   canManageServer = false,
+  canInvite = false,
   onPermissionsChanged,
   onSelectChannel,
   onSelectHome,
@@ -167,8 +177,10 @@ export function ServerChannelsScreen({
     insets.top + (bannerVisible ? BANNER_HEIGHT : HEADER_HEIGHT);
   const menuTop = headerHeight + 6;
 
-  const uncategorized = channelsOfCategory(server.channels, null);
-  const sortedCategories = sortByPosition(server.categories);
+  const uncategorized = topLevelChannels(server.channels, server.categories);
+  const sortedCategories = sortByPosition(visibleCategories(server.categories));
+  const unassignedCategory =
+    server.categories.find(isUnassignedCategory) ?? null;
 
   const [pendingTransferServerId, setPendingTransferServerId] = useState(
     server.id,
@@ -280,7 +292,44 @@ export function ServerChannelsScreen({
     });
     onServerUpdated({ ...server, categories: reorderedCategories });
 
-    const result = await reorderCategories(server.id, orderedIds);
+    const categoryIds = unassignedCategory
+      ? [...orderedIds, unassignedCategory.id]
+      : orderedIds;
+
+    const result = await reorderCategories(server.id, categoryIds);
+    if (!result.ok) {
+      setDragError(result.message);
+      onServerUpdated(previousServer);
+    }
+  }
+
+  async function handleChannelMovedToCategory(
+    channel: Channel,
+    targetCategoryId: string | null,
+  ) {
+    const previousServer = server;
+    setDragError("");
+
+    const siblingPositions = server.channels
+      .filter((existing) => existing.category_id === targetCategoryId)
+      .map((existing) => existing.position);
+    const nextPosition =
+      siblingPositions.length > 0 ? Math.max(...siblingPositions) + 1 : 0;
+
+    onServerUpdated({
+      ...server,
+      channels: server.channels.map((existing) =>
+        existing.id === channel.id
+          ? {
+              ...existing,
+              category_id: targetCategoryId,
+              position: nextPosition,
+            }
+          : existing,
+      ),
+    });
+
+    const result = await moveChannelToCategory(channel.id, targetCategoryId);
     if (!result.ok) {
       setDragError(result.message);
       onServerUpdated(previousServer);
@@ -307,65 +356,73 @@ export function ServerChannelsScreen({
     const collapsed = collapsedSectionIds.has(category.id);
 
     return (
-      <View key={category.id} className="gap-0.5">
-        <View
-          className="flex-row items-center gap-1 px-2 mb-1"
-          {...panHandlers}
-        >
-          <TouchableOpacity
-            activeOpacity={0.7}
-            className="flex-1 flex-row items-center gap-[5px] py-0.5"
-            onPress={() => toggleCollapsed(category.id)}
-            accessibilityRole="button"
+      <ChannelDropZone
+        key={category.id}
+        bucketKey={category.id}
+        categoryId={category.id}
+      >
+        <View className="gap-0.5">
+          <View
+            className="flex-row items-center gap-1 px-2 mb-1"
+            {...panHandlers}
           >
-            <Feather
-              name={collapsed ? "chevron-right" : "chevron-down"}
-              size={12}
-              color={colors.textSubtle}
-            />
-            <Text
-              className="flex-1 text-[13px] font-bold tracking-[0.6px] text-content-subtle"
-              numberOfLines={1}
-            >
-              {category.name}
-            </Text>
-          </TouchableOpacity>
-          {canManageChannels ? (
             <TouchableOpacity
-              onPress={() => {
-                setCreateChannelDefaultCategoryId(category.id);
-                setIsCreateChannelVisible(true);
-              }}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              accessibilityLabel="Añadir canal"
+              activeOpacity={0.7}
+              className="flex-1 flex-row items-center gap-[5px] py-0.5"
+              onPress={() => toggleCollapsed(category.id)}
               accessibilityRole="button"
             >
-              <Feather name="plus" size={13} color={colors.textSubtle} />
+              <Feather
+                name={collapsed ? "chevron-right" : "chevron-down"}
+                size={12}
+                color={colors.textSubtle}
+              />
+              <Text
+                className="flex-1 text-[13px] font-bold tracking-[0.6px] text-content-subtle"
+                numberOfLines={1}
+              >
+                {category.name}
+              </Text>
             </TouchableOpacity>
+            {canManageChannels ? (
+              <TouchableOpacity
+                onPress={() => {
+                  setCreateChannelDefaultCategoryId(category.id);
+                  setIsCreateChannelVisible(true);
+                }}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                accessibilityLabel="Añadir canal"
+                accessibilityRole="button"
+              >
+                <Feather name="plus" size={13} color={colors.textSubtle} />
+              </TouchableOpacity>
+            ) : null}
+          </View>
+          {!collapsed ? (
+            canManageChannels && channels.length > 0 ? (
+              <DraggableChannelList
+                channels={channels}
+                bucketKey={category.id}
+                onReorder={(orderedIds) =>
+                  handleChannelsReordered(category.id, orderedIds)
+                }
+                onMoveToOtherBucket={handleChannelMovedToCategory}
+                onDragActiveChange={setIsChannelDragActive}
+                renderChannel={(channel) => (
+                  <ChannelRow
+                    channel={channel}
+                    canManage={canManageChannels}
+                    onPress={() => onSelectChannel(channel.id)}
+                    onOptions={() => setChannelOptionsFor(channel)}
+                  />
+                )}
+              />
+            ) : (
+              <View className="gap-[1px]">{renderChannelList(channels)}</View>
+            )
           ) : null}
         </View>
-        {!collapsed ? (
-          canManageChannels && channels.length > 1 ? (
-            <DraggableChannelList
-              channels={channels}
-              onReorder={(orderedIds) =>
-                handleChannelsReordered(category.id, orderedIds)
-              }
-              onDragActiveChange={setIsChannelDragActive}
-              renderChannel={(channel) => (
-                <ChannelRow
-                  channel={channel}
-                  canManage={canManageChannels}
-                  onPress={() => onSelectChannel(channel.id)}
-                  onOptions={() => setChannelOptionsFor(channel)}
-                />
-              )}
-            />
-          ) : (
-            <View className="gap-[1px]">{renderChannelList(channels)}</View>
-          )
-        ) : null}
-      </View>
+      </ChannelDropZone>
     );
   }
 
@@ -379,239 +436,252 @@ export function ServerChannelsScreen({
         onAddServer={onAddServer}
       />
 
-      <View className="flex-1">
-        <TouchableOpacity
-          activeOpacity={0.85}
-          className="relative overflow-hidden border-b border-b-line"
-          style={{ height: headerHeight }}
-          onPress={() => setIsServerMenuOpen((prev) => !prev)}
-          accessibilityRole="button"
-          accessibilityLabel="Opciones del servidor"
-        >
-          {bannerVisible ? (
-            <>
-              <ServerBanner
-                uri={bannerUrl}
-                height={headerHeight}
-                style={StyleSheet.absoluteFill}
-              />
-              <Svg style={StyleSheet.absoluteFill} width="100%" height="100%">
-                <Defs>
-                  <LinearGradient id="bannerScrim" x1="0" y1="0" x2="0" y2="1">
-                    <Stop offset={0} stopColor="#000000" stopOpacity={0.05} />
-                    <Stop offset={1} stopColor="#000000" stopOpacity={0.55} />
-                  </LinearGradient>
-                </Defs>
-                <Rect
-                  x={0}
-                  y={0}
-                  width="100%"
-                  height="100%"
-                  fill="url(#bannerScrim)"
+      <ChannelDragProvider
+        renderChannel={(channel) => (
+          <ChannelRow
+            channel={channel}
+            canManage={false}
+            onPress={() => {}}
+            onOptions={() => {}}
+          />
+        )}
+      >
+        <View className="flex-1">
+          <TouchableOpacity
+            activeOpacity={0.85}
+            className="relative overflow-hidden border-b border-b-line"
+            style={{ height: headerHeight }}
+            onPress={() => setIsServerMenuOpen((prev) => !prev)}
+            accessibilityRole="button"
+            accessibilityLabel="Opciones del servidor"
+          >
+            {bannerVisible ? (
+              <>
+                <ServerBanner
+                  uri={bannerUrl}
+                  height={headerHeight}
+                  style={StyleSheet.absoluteFill}
                 />
-              </Svg>
+                <Svg style={StyleSheet.absoluteFill} width="100%" height="100%">
+                  <Defs>
+                    <LinearGradient
+                      id="bannerScrim"
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
+                      <Stop offset={0} stopColor="#000000" stopOpacity={0.05} />
+                      <Stop offset={1} stopColor="#000000" stopOpacity={0.55} />
+                    </LinearGradient>
+                  </Defs>
+                  <Rect
+                    x={0}
+                    y={0}
+                    width="100%"
+                    height="100%"
+                    fill="url(#bannerScrim)"
+                  />
+                </Svg>
+              </>
+            ) : null}
+
+            <View
+              className="absolute left-0 right-0 flex-row items-center gap-1.5 px-3.5"
+              style={
+                bannerVisible ? { bottom: 10 } : { top: insets.top, bottom: 0 }
+              }
+            >
+              <Text
+                className="shrink text-[17px] font-bold text-content"
+                style={bannerVisible ? styles.bannerServerName : null}
+                numberOfLines={1}
+              >
+                {server.name}
+              </Text>
+              <Feather
+                name={isServerMenuOpen ? "chevron-up" : "chevron-down"}
+                size={18}
+                color={
+                  bannerVisible ? "rgba(255,255,255,0.85)" : colors.textSubtle
+                }
+              />
+            </View>
+          </TouchableOpacity>
+
+          {isServerMenuOpen ? (
+            <>
+              <Pressable
+                style={StyleSheet.absoluteFill}
+                onPress={() => setIsServerMenuOpen(false)}
+              />
+              <View
+                className="absolute top-[58px] left-2.5 right-2.5 z-20 rounded-xl border border-line-strong bg-surface-modal py-1.5"
+                style={[styles.serverMenu, { top: menuTop }]}
+              >
+                {canInvite ? (
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    className="flex-row items-center gap-2.5 rounded-lg mx-1 px-2.5 py-3"
+                    onPress={() => {
+                      setIsServerMenuOpen(false);
+                      setIsInviteModalVisible(true);
+                    }}
+                  >
+                    <Feather name="user-plus" size={16} color={colors.info} />
+                    <Text className="text-[14px] font-semibold text-content">
+                      Invitar miembros
+                    </Text>
+                  </TouchableOpacity>
+                ) : null}
+
+                {canManageServer ? (
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    className="flex-row items-center gap-2.5 rounded-lg mx-1 px-2.5 py-3"
+                    onPress={() => {
+                      setIsServerMenuOpen(false);
+                      setIsServerSettingsVisible(true);
+                    }}
+                  >
+                    <Feather name="settings" size={16} color={colors.info} />
+                    <Text className="text-[14px] font-semibold text-content">
+                      Configuración del servidor
+                    </Text>
+                  </TouchableOpacity>
+                ) : null}
+
+                {canManageChannels ? (
+                  <>
+                    <TouchableOpacity
+                      activeOpacity={0.7}
+                      className="flex-row items-center gap-2.5 rounded-lg mx-1 px-2.5 py-3"
+                      onPress={() => {
+                        setIsServerMenuOpen(false);
+                        setCreateChannelDefaultCategoryId(null);
+                        setIsCreateChannelVisible(true);
+                      }}
+                    >
+                      <Feather name="plus" size={16} color={colors.info} />
+                      <Text className="text-[14px] font-semibold text-content">
+                        Crear canal
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      activeOpacity={0.7}
+                      className="flex-row items-center gap-2.5 rounded-lg mx-1 px-2.5 py-3"
+                      onPress={() => {
+                        setIsServerMenuOpen(false);
+                        setIsCreateCategoryVisible(true);
+                      }}
+                    >
+                      <Feather
+                        name="folder-plus"
+                        size={16}
+                        color={colors.info}
+                      />
+                      <Text className="text-[14px] font-semibold text-content">
+                        Crear categoría
+                      </Text>
+                    </TouchableOpacity>
+                  </>
+                ) : null}
+
+                {canManageRoles ? (
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    className="flex-row items-center gap-2.5 rounded-lg mx-1 px-2.5 py-3"
+                    onPress={() => {
+                      setIsServerMenuOpen(false);
+                      setIsRolesModalVisible(true);
+                    }}
+                  >
+                    <Feather name="shield" size={16} color={colors.info} />
+                    <Text className="text-[14px] font-semibold text-content">
+                      Gestionar roles
+                    </Text>
+                  </TouchableOpacity>
+                ) : null}
+
+                {showTransferMenuItem ? (
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    className="flex-row items-center gap-2.5 rounded-lg mx-1 px-2.5 py-3"
+                    onPress={() => {
+                      setIsServerMenuOpen(false);
+                      setIsTransferModalVisible(true);
+                    }}
+                  >
+                    <Feather name="repeat" size={16} color={colors.info} />
+                    <Text className="text-[14px] font-semibold text-content">
+                      {incomingTransfer
+                        ? "Responder transferencia de propiedad"
+                        : "Transferir propiedad"}
+                    </Text>
+                  </TouchableOpacity>
+                ) : null}
+
+                <View className="h-px bg-line my-1 mx-2" />
+
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  className="flex-row items-center gap-2.5 rounded-lg mx-1 px-2.5 py-3"
+                  onPress={() => {
+                    setIsServerMenuOpen(false);
+                    setIsLeaveModalVisible(true);
+                  }}
+                >
+                  <Feather name="log-out" size={16} color={colors.danger} />
+                  <Text className="text-[14px] font-semibold text-danger">
+                    Abandonar servidor
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </>
           ) : null}
 
-          <View
-            className="absolute left-0 right-0 flex-row items-center gap-1.5 px-3.5"
-            style={
-              bannerVisible ? { bottom: 10 } : { top: insets.top, bottom: 0 }
-            }
-          >
-            <Text
-              className="shrink text-[17px] font-bold text-content"
-              style={bannerVisible ? styles.bannerServerName : null}
-              numberOfLines={1}
-            >
-              {server.name}
-            </Text>
-            <Feather
-              name={isServerMenuOpen ? "chevron-up" : "chevron-down"}
-              size={18}
-              color={
-                bannerVisible ? "rgba(255,255,255,0.85)" : colors.textSubtle
-              }
-            />
-          </View>
-        </TouchableOpacity>
-
-        {isServerMenuOpen ? (
-          <>
-            <Pressable
-              style={StyleSheet.absoluteFill}
-              onPress={() => setIsServerMenuOpen(false)}
-            />
-            <View
-              className="absolute top-[58px] left-2.5 right-2.5 z-20 rounded-xl border border-line-strong bg-surface-modal py-1.5"
-              style={[styles.serverMenu, { top: menuTop }]}
-            >
-              <TouchableOpacity
-                activeOpacity={0.7}
-                className="flex-row items-center gap-2.5 rounded-lg mx-1 px-2.5 py-3"
-                onPress={() => {
-                  setIsServerMenuOpen(false);
-                  setIsInviteModalVisible(true);
-                }}
+          {dragError ? (
+            <View className="flex-row items-center gap-2 mx-3 mt-2.5 rounded-lg border border-[rgba(224,82,82,0.3)] bg-[rgba(224,82,82,0.1)] px-3 py-[9px]">
+              <Feather name="alert-circle" size={14} color={colors.danger} />
+              <Text
+                className="flex-1 text-[12px] text-danger"
+                numberOfLines={2}
               >
-                <Feather name="user-plus" size={16} color={colors.info} />
-                <Text className="text-[14px] font-semibold text-content">
-                  Invitar miembros
-                </Text>
-              </TouchableOpacity>
-
-              {canManageServer ? (
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  className="flex-row items-center gap-2.5 rounded-lg mx-1 px-2.5 py-3"
-                  onPress={() => {
-                    setIsServerMenuOpen(false);
-                    setIsServerSettingsVisible(true);
-                  }}
-                >
-                  <Feather name="settings" size={16} color={colors.info} />
-                  <Text className="text-[14px] font-semibold text-content">
-                    Configuración del servidor
-                  </Text>
-                </TouchableOpacity>
-              ) : null}
-
-              {canManageChannels ? (
-                <>
-                  <TouchableOpacity
-                    activeOpacity={0.7}
-                    className="flex-row items-center gap-2.5 rounded-lg mx-1 px-2.5 py-3"
-                    onPress={() => {
-                      setIsServerMenuOpen(false);
-                      setCreateChannelDefaultCategoryId(null);
-                      setIsCreateChannelVisible(true);
-                    }}
-                  >
-                    <Feather name="plus" size={16} color={colors.info} />
-                    <Text className="text-[14px] font-semibold text-content">
-                      Crear canal
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    activeOpacity={0.7}
-                    className="flex-row items-center gap-2.5 rounded-lg mx-1 px-2.5 py-3"
-                    onPress={() => {
-                      setIsServerMenuOpen(false);
-                      setIsCreateCategoryVisible(true);
-                    }}
-                  >
-                    <Feather name="folder-plus" size={16} color={colors.info} />
-                    <Text className="text-[14px] font-semibold text-content">
-                      Crear categoría
-                    </Text>
-                  </TouchableOpacity>
-                </>
-              ) : null}
-
-              {canManageRoles ? (
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  className="flex-row items-center gap-2.5 rounded-lg mx-1 px-2.5 py-3"
-                  onPress={() => {
-                    setIsServerMenuOpen(false);
-                    setIsRolesModalVisible(true);
-                  }}
-                >
-                  <Feather name="shield" size={16} color={colors.info} />
-                  <Text className="text-[14px] font-semibold text-content">
-                    Gestionar roles
-                  </Text>
-                </TouchableOpacity>
-              ) : null}
-
-              {showTransferMenuItem ? (
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  className="flex-row items-center gap-2.5 rounded-lg mx-1 px-2.5 py-3"
-                  onPress={() => {
-                    setIsServerMenuOpen(false);
-                    setIsTransferModalVisible(true);
-                  }}
-                >
-                  <Feather name="repeat" size={16} color={colors.info} />
-                  <Text className="text-[14px] font-semibold text-content">
-                    {incomingTransfer
-                      ? "Responder transferencia de propiedad"
-                      : "Transferir propiedad"}
-                  </Text>
-                </TouchableOpacity>
-              ) : null}
-
-              <View className="h-px bg-line my-1 mx-2" />
-
+                {dragError}
+              </Text>
               <TouchableOpacity
-                activeOpacity={0.7}
-                className="flex-row items-center gap-2.5 rounded-lg mx-1 px-2.5 py-3"
-                onPress={() => {
-                  setIsServerMenuOpen(false);
-                  setIsLeaveModalVisible(true);
-                }}
-              >
-                <Feather name="log-out" size={16} color={colors.danger} />
-                <Text className="text-[14px] font-semibold text-danger">
-                  Abandonar servidor
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </>
-        ) : null}
-
-        {dragError ? (
-          <View className="flex-row items-center gap-2 mx-3 mt-2.5 rounded-lg border border-[rgba(224,82,82,0.3)] bg-[rgba(224,82,82,0.1)] px-3 py-[9px]">
-            <Feather name="alert-circle" size={14} color={colors.danger} />
-            <Text className="flex-1 text-[12px] text-danger" numberOfLines={2}>
-              {dragError}
-            </Text>
-            <TouchableOpacity
-              onPress={() => setDragError("")}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              accessibilityLabel="Cerrar"
-              accessibilityRole="button"
-            >
-              <Feather name="x" size={14} color={colors.textSubtle} />
-            </TouchableOpacity>
-          </View>
-        ) : null}
-
-        <ScrollView
-          className="flex-1"
-          contentContainerClassName="px-2.5 pt-3.5 pb-3 gap-4.5"
-          scrollEnabled={!isChannelDragActive && !isCategoryDragActive}
-        >
-          {uncategorized.length > 0 ? (
-            <View className="gap-0.5">
-              <TouchableOpacity
-                activeOpacity={0.7}
-                className="flex-row items-center gap-1 px-2 mb-1"
-                onPress={() => toggleCollapsed(UNCATEGORIZED_KEY)}
+                onPress={() => setDragError("")}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                accessibilityLabel="Cerrar"
                 accessibilityRole="button"
               >
-                <Feather
-                  name={
-                    collapsedSectionIds.has(UNCATEGORIZED_KEY)
-                      ? "chevron-right"
-                      : "chevron-down"
-                  }
-                  size={12}
-                  color={colors.textSubtle}
-                />
-                <Text className="flex-1 text-[13px] font-bold tracking-[0.6px] text-content-subtle">
-                  Sin categoría
-                </Text>
+                <Feather name="x" size={14} color={colors.textSubtle} />
               </TouchableOpacity>
-              {!collapsedSectionIds.has(UNCATEGORIZED_KEY) ? (
-                canManageChannels && uncategorized.length > 1 ? (
+            </View>
+          ) : null}
+
+          <ScrollView
+            className="flex-1"
+            contentContainerClassName="px-2.5 pt-3.5 pb-3 gap-4.5"
+            scrollEnabled={!isChannelDragActive && !isCategoryDragActive}
+          >
+            {uncategorized.length > 0 ? (
+              <ChannelDropZone
+                bucketKey={UNCATEGORIZED_KEY}
+                categoryId={unassignedCategory?.id ?? null}
+              >
+                {canManageChannels ? (
                   <DraggableChannelList
                     channels={uncategorized}
+                    bucketKey={UNCATEGORIZED_KEY}
                     onReorder={(orderedIds) =>
-                      handleChannelsReordered(null, orderedIds)
+                      handleChannelsReordered(
+                        unassignedCategory?.id ?? null,
+                        orderedIds,
+                      )
                     }
+                    onMoveToOtherBucket={handleChannelMovedToCategory}
                     onDragActiveChange={setIsChannelDragActive}
                     renderChannel={(channel) => (
                       <ChannelRow
@@ -626,39 +696,41 @@ export function ServerChannelsScreen({
                   <View className="gap-[1px]">
                     {renderChannelList(uncategorized)}
                   </View>
-                )
-              ) : null}
-            </View>
-          ) : null}
+                )}
+              </ChannelDropZone>
+            ) : null}
 
-          {canManageChannels && sortedCategories.length > 1 ? (
-            <DraggableCategoryList
-              categories={sortedCategories}
-              onReorder={handleCategoriesReordered}
-              onDragActiveChange={setIsCategoryDragActive}
-              renderCategory={(category, panHandlers) =>
-                renderCategorySection(category, panHandlers)
-              }
-            />
-          ) : (
-            sortedCategories.map((category) => renderCategorySection(category))
-          )}
+            {canManageChannels && sortedCategories.length > 1 ? (
+              <DraggableCategoryList
+                categories={sortedCategories}
+                onReorder={handleCategoriesReordered}
+                onDragActiveChange={setIsCategoryDragActive}
+                renderCategory={(category, panHandlers) =>
+                  renderCategorySection(category, panHandlers)
+                }
+              />
+            ) : (
+              sortedCategories.map((category) =>
+                renderCategorySection(category),
+              )
+            )}
 
-          {uncategorized.length === 0 && sortedCategories.length === 0 ? (
-            <Text className="px-2 pt-2 text-[13px] text-content-subtle">
-              {canManageChannels
-                ? "Todavía no hay canales. Creá el primero."
-                : "Todavía no hay canales en este servidor."}
-            </Text>
-          ) : null}
-        </ScrollView>
+            {uncategorized.length === 0 && sortedCategories.length === 0 ? (
+              <Text className="px-2 pt-2 text-[13px] text-content-subtle">
+                {canManageChannels
+                  ? "Todavía no hay canales. Creá el primero."
+                  : "Todavía no hay canales en este servidor."}
+              </Text>
+            ) : null}
+          </ScrollView>
 
-        <UserProfileBar
-          userName={userName}
-          serverId={server.id}
-          onLogout={onLogout}
-        />
-      </View>
+          <UserProfileBar
+            userName={userName}
+            serverId={server.id}
+            onLogout={onLogout}
+          />
+        </View>
+      </ChannelDragProvider>
 
       {canManageServer ? (
         <ServerSettingsModal
@@ -677,12 +749,14 @@ export function ServerChannelsScreen({
         onClose={() => setIsLeaveModalVisible(false)}
         onConfirm={() => onLeaveServer(server.id)}
       />
-      <InviteLinkModal
-        visible={isInviteModalVisible}
-        serverId={server.id}
-        serverName={server.name}
-        onClose={() => setIsInviteModalVisible(false)}
-      />
+      {canInvite ? (
+        <InviteLinkModal
+          visible={isInviteModalVisible}
+          serverId={server.id}
+          serverName={server.name}
+          onClose={() => setIsInviteModalVisible(false)}
+        />
+      ) : null}
       <TransferOwnershipModal
         visible={isTransferModalVisible}
         serverId={server.id}
