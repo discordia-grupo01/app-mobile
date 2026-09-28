@@ -2,10 +2,13 @@ import {
   type Category,
   type Channel,
   channelsOfCategory,
+  isUnassignedCategory,
   type LeaveServerResult,
   type OwnershipTransfer,
   type ServerSummary,
   sortByPosition,
+  topLevelChannels,
+  visibleCategories,
 } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
@@ -174,8 +177,10 @@ export function ServerChannelsScreen({
     insets.top + (bannerVisible ? BANNER_HEIGHT : HEADER_HEIGHT);
   const menuTop = headerHeight + 6;
 
-  const uncategorized = channelsOfCategory(server.channels, null);
-  const sortedCategories = sortByPosition(server.categories);
+  const uncategorized = topLevelChannels(server.channels, server.categories);
+  const sortedCategories = sortByPosition(visibleCategories(server.categories));
+  const unassignedCategory =
+    server.categories.find(isUnassignedCategory) ?? null;
 
   const [pendingTransferServerId, setPendingTransferServerId] = useState(
     server.id,
@@ -287,7 +292,11 @@ export function ServerChannelsScreen({
     });
     onServerUpdated({ ...server, categories: reorderedCategories });
 
-    const result = await reorderCategories(server.id, orderedIds);
+    const categoryIds = unassignedCategory
+      ? [...orderedIds, unassignedCategory.id]
+      : orderedIds;
+
+    const result = await reorderCategories(server.id, categoryIds);
     if (!result.ok) {
       setDragError(result.message);
       onServerUpdated(previousServer);
@@ -658,53 +667,36 @@ export function ServerChannelsScreen({
             scrollEnabled={!isChannelDragActive && !isCategoryDragActive}
           >
             {uncategorized.length > 0 ? (
-              <ChannelDropZone bucketKey={UNCATEGORIZED_KEY} categoryId={null}>
-                <View className="gap-0.5">
-                  <TouchableOpacity
-                    activeOpacity={0.7}
-                    className="flex-row items-center gap-1 px-2 mb-1"
-                    onPress={() => toggleCollapsed(UNCATEGORIZED_KEY)}
-                    accessibilityRole="button"
-                  >
-                    <Feather
-                      name={
-                        collapsedSectionIds.has(UNCATEGORIZED_KEY)
-                          ? "chevron-right"
-                          : "chevron-down"
-                      }
-                      size={12}
-                      color={colors.textSubtle}
-                    />
-                    <Text className="flex-1 text-[13px] font-bold tracking-[0.6px] text-content-subtle">
-                      Sin categoría
-                    </Text>
-                  </TouchableOpacity>
-                  {!collapsedSectionIds.has(UNCATEGORIZED_KEY) ? (
-                    canManageChannels && uncategorized.length > 0 ? (
-                      <DraggableChannelList
-                        channels={uncategorized}
-                        bucketKey={UNCATEGORIZED_KEY}
-                        onReorder={(orderedIds) =>
-                          handleChannelsReordered(null, orderedIds)
-                        }
-                        onMoveToOtherBucket={handleChannelMovedToCategory}
-                        onDragActiveChange={setIsChannelDragActive}
-                        renderChannel={(channel) => (
-                          <ChannelRow
-                            channel={channel}
-                            canManage={canManageChannels}
-                            onPress={() => onSelectChannel(channel.id)}
-                            onOptions={() => setChannelOptionsFor(channel)}
-                          />
-                        )}
+              <ChannelDropZone
+                bucketKey={UNCATEGORIZED_KEY}
+                categoryId={unassignedCategory?.id ?? null}
+              >
+                {canManageChannels ? (
+                  <DraggableChannelList
+                    channels={uncategorized}
+                    bucketKey={UNCATEGORIZED_KEY}
+                    onReorder={(orderedIds) =>
+                      handleChannelsReordered(
+                        unassignedCategory?.id ?? null,
+                        orderedIds,
+                      )
+                    }
+                    onMoveToOtherBucket={handleChannelMovedToCategory}
+                    onDragActiveChange={setIsChannelDragActive}
+                    renderChannel={(channel) => (
+                      <ChannelRow
+                        channel={channel}
+                        canManage={canManageChannels}
+                        onPress={() => onSelectChannel(channel.id)}
+                        onOptions={() => setChannelOptionsFor(channel)}
                       />
-                    ) : (
-                      <View className="gap-[1px]">
-                        {renderChannelList(uncategorized)}
-                      </View>
-                    )
-                  ) : null}
-                </View>
+                    )}
+                  />
+                ) : (
+                  <View className="gap-[1px]">
+                    {renderChannelList(uncategorized)}
+                  </View>
+                )}
               </ChannelDropZone>
             ) : null}
 

@@ -1,6 +1,7 @@
 import {
   type Category,
   type Channel,
+  isUnassignedCategory,
   MAX_NAME,
   validateChannelName,
 } from "@discordia/client-shared";
@@ -45,7 +46,9 @@ export function CreateChannelModal({
   const colors = useThemeColors();
   const [kind, setKind] = useState<"text" | "voice">("text");
   const [name, setName] = useState("");
-  const [categoryId, setCategoryId] = useState(defaultCategoryId ?? "");
+  const [categoryId, setCategoryId] = useState(
+    defaultCategoryId ?? categories.find(isUnassignedCategory)?.id ?? "",
+  );
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
   const [nameError, setNameError] = useState("");
   const [globalError, setGlobalError] = useState("");
@@ -57,7 +60,9 @@ export function CreateChannelModal({
     if (visible) {
       setKind("text");
       setName("");
-      setCategoryId(defaultCategoryId ?? "");
+      setCategoryId(
+        defaultCategoryId ?? categories.find(isUnassignedCategory)?.id ?? "",
+      );
       setIsCategoryDropdownOpen(false);
       setNameError("");
       setGlobalError("");
@@ -272,30 +277,6 @@ export function CreateChannelModal({
                   className="mt-1.5 rounded-xl border border-line-strong bg-surface-modal py-1"
                   style={styles.categoryDropdown}
                 >
-                  <TouchableOpacity
-                    onPress={() => handleSelectCategory("")}
-                    className="flex-row items-center justify-between gap-2.5 px-3.5 py-3"
-                    accessibilityRole="button"
-                  >
-                    <Text
-                      className={cn(
-                        "flex-1 text-[14px]",
-                        categoryId === ""
-                          ? "text-accent-strong font-semibold"
-                          : "text-content",
-                      )}
-                      numberOfLines={1}
-                    >
-                      Sin categoría
-                    </Text>
-                    {categoryId === "" ? (
-                      <Feather
-                        name="check"
-                        size={16}
-                        color={colors.accentBright}
-                      />
-                    ) : null}
-                  </TouchableOpacity>
                   {categories.map((category) => (
                     <TouchableOpacity
                       key={category.id}
