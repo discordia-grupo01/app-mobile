@@ -3,7 +3,7 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, develop]
 
 jobs:
   test:
@@ -15,8 +15,51 @@ jobs:
           node-version: "20"
           cache: "npm"
 
+      # @discordia/client-shared vive en un repo privado y se instala por
+      # git+ssh. El runner arranca sin llaves SSH, asi que reescribimos esa
+      # URL a HTTPS con un token de solo lectura sobre ese unico repo.
+      - name: Acceso al repo client-shared (privado)
+        run: git config --global url."https://x-access-token:${{ secrets.SHARED_REPO_TOKEN }}@github.com/".insteadOf "ssh://git@github.com/"
+
       - run: npm ci
       - run: npm run format:check
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run test
+
+  # Despliega en discordia-mobile-vm (Oracle Cloud) cuando se mergea a
+  # develop, que es la rama que sirve el hosteo del dev server de Expo
+  # (ver claude/analisis-hosteo-app-mobile.md). A diferencia de
+  # identify-service/servers no hay imagen Docker que construir ni
+  # Artifact Registry: el contenedor monta el repo por bind mount, asi
+  # que "desplegar" es actualizar ese working copy y reiniciar. Entra por
+  # SSH directo (la VM ya expone el puerto 22 a internet para
+  # administracion manual, no hace falta tunel). La clave SSH del
+  # pipeline solo puede ejecutar ~/deploy.sh en la VM (ver
+  # deploy/update.sh), que valida el SHA, hace git reset --hard + restart
+  # del contenedor, corre un smoke test contra Metro y vuelve atras si
+  # falla.
+  deploy:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: deploy-app-mobile
+      cancel-in-progress: false
+    env:
+      VM_HOST: 132.226.244.29
+      VM_USER: opc
+      DEPLOY_SSH_KEY: ${{ secrets.MOBILE_DEPLOY_SSH_KEY }}
+      VM_SSH_HOST_KEY: ${{ vars.MOBILE_VM_SSH_HOST_KEY }}
+    steps:
+      - name: Desplegar en discordia-mobile-vm
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          echo "$VM_HOST $VM_SSH_HOST_KEY" > ~/.ssh/known_hosts
+
+          ssh -i ~/.ssh/deploy_key \
+            -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$HOME/.ssh/known_hosts" \
+            "$VM_USER@$VM_HOST" "${{ github.sha }}"
