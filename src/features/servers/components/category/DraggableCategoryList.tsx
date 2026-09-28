@@ -39,17 +39,16 @@ export function DraggableCategoryList({
     orderRef.current = order;
   }, [order]);
 
-  const heightsRef = useRef<Map<string, number>>(new Map());
-  const [, setHeightsVersion] = useState(0);
+  const [heights, setHeights] = useState<Record<string, number>>({});
 
   function heightOf(id: string): number {
-    return heightsRef.current.get(id) ?? FALLBACK_ROW_HEIGHT;
+    return heights[id] ?? FALLBACK_ROW_HEIGHT;
   }
 
   function handleMeasure(id: string, height: number) {
-    if (heightsRef.current.get(id) === height) return;
-    heightsRef.current.set(id, height);
-    setHeightsVersion((v) => v + 1);
+    setHeights((prev) =>
+      prev[id] === height ? prev : { ...prev, [id]: height },
+    );
   }
 
   function offsetsFor(ids: string[]): Map<string, number> {
