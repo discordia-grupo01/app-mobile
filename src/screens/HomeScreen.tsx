@@ -122,6 +122,7 @@ export function HomeScreen() {
     { isOwner, roles: myRoles },
     "MANAGE_SERVER",
   );
+  const canInvite = hasPermission({ isOwner, roles: myRoles }, "CREATE_INVITE");
 
   function handleSelectHome() {
     setSelectedServerId(null);
@@ -209,6 +210,7 @@ export function HomeScreen() {
           canManageChannels={canManageChannels}
           canManageRoles={canManageRoles}
           canManageServer={canManageServer}
+          canInvite={canInvite}
           onPermissionsChanged={fetchMyRoles}
           onSelectChannel={setSelectedChannelId}
           onSelectHome={handleSelectHome}
