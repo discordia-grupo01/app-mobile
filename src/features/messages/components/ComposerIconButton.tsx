@@ -9,6 +9,7 @@ interface ComposerIconButtonProps {
   color: string;
   onPress?: () => void;
   disabled?: boolean;
+  filled?: boolean;
 }
 
 export function ComposerIconButton({
@@ -17,6 +18,7 @@ export function ComposerIconButton({
   color,
   onPress,
   disabled = false,
+  filled = false,
 }: ComposerIconButtonProps) {
   return (
     <TouchableOpacity
@@ -24,7 +26,8 @@ export function ComposerIconButton({
       disabled={disabled}
       activeOpacity={0.6}
       className={cn(
-        "h-10 w-10 items-center justify-center",
+        "h-10 w-10 items-center justify-center rounded-lg",
+        filled && "bg-accent",
         disabled && "opacity-50",
       )}
       accessibilityRole="button"

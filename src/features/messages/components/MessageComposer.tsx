@@ -71,9 +71,10 @@ export function MessageComposer({
         <ComposerIconButton
           name="send"
           label={SEND_MESSAGE_LABEL}
-          color={canSend ? colors.accentBright : colors.textSubtle}
+          color={canSend ? colors.onAccent : colors.textSubtle}
           onPress={submit}
           disabled={!canSend}
+          filled={canSend}
         />
       </View>
 
