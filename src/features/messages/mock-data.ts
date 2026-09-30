@@ -32,7 +32,10 @@ export function createDemoMessages(
   channelId: string,
   channelName: string,
 ): Message[] {
-  const seed: Omit<Message, "id" | "channel_id">[] = [
+  const seed: Omit<
+    Message,
+    "id" | "channel_id" | "edited_at" | "deleted_at"
+  >[] = [
     {
       author_id: "demo-xeno",
       content: `¡Bienvenidos a #${channelName}! Recuerden leer las reglas antes de participar 🎮`,
@@ -68,5 +71,7 @@ export function createDemoMessages(
     ...message,
     id: `demo-${channelId}-${index}`,
     channel_id: channelId,
+    edited_at: null,
+    deleted_at: null,
   }));
 }

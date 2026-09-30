@@ -1,5 +1,7 @@
 import {
   type Channel,
+  deleteMessage as deleteMessageIn,
+  editMessageContent,
   type Message,
   type MessageAuthor,
   toggleReaction as toggleReactionIn,
@@ -20,6 +22,8 @@ interface ChannelMessages {
   authors: Record<string, MessageAuthor>;
   sendMessage: (content: string) => void;
   toggleReaction: (messageId: string, emoji: string) => void;
+  editMessage: (messageId: string, content: string) => void;
+  deleteMessage: (messageId: string) => void;
 }
 
 export function useChannelMessages(
@@ -64,5 +68,31 @@ export function useChannelMessages(
     );
   }, []);
 
-  return { messages, authors, sendMessage, toggleReaction };
+  const editMessage = useCallback((messageId: string, content: string) => {
+    if (validateMessageContent(content)) return;
+    setMessages((prev) =>
+      prev.map((message) =>
+        message.id === messageId
+          ? editMessageContent(message, content.trim())
+          : message,
+      ),
+    );
+  }, []);
+
+  const deleteMessage = useCallback((messageId: string) => {
+    setMessages((prev) =>
+      prev.map((message) =>
+        message.id === messageId ? deleteMessageIn(message) : message,
+      ),
+    );
+  }, []);
+
+  return {
+    messages,
+    authors,
+    sendMessage,
+    toggleReaction,
+    editMessage,
+    deleteMessage,
+  };
 }

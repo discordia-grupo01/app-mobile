@@ -1,4 +1,4 @@
-import type { Channel } from "@discordia/client-shared";
+import type { Channel, Role } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
 import { useMemo, useState } from "react";
@@ -25,6 +25,9 @@ interface ChannelScreenProps {
   currentUserId?: string | null;
   /** Owner, o miembro con el permiso MANAGE_ROLES via algún rol. */
   canManageRoles?: boolean;
+  canManageMessages?: boolean;
+  canMentionEveryone?: boolean;
+  serverRoles?: Role[];
   onBack: () => void;
 }
 
@@ -34,6 +37,9 @@ export function ChannelScreen({
   authToken,
   currentUserId,
   canManageRoles = false,
+  canManageMessages = false,
+  canMentionEveryone = false,
+  serverRoles = [],
   onBack,
 }: ChannelScreenProps) {
   const colors = useThemeColors();
@@ -98,6 +104,9 @@ export function ChannelScreen({
             key={channel.id}
             channel={channel}
             currentAuthor={currentAuthor}
+            serverRoles={serverRoles}
+            canManageMessages={canManageMessages}
+            canMentionEveryone={canMentionEveryone}
           />
         </KeyboardAvoidingView>
       ) : (

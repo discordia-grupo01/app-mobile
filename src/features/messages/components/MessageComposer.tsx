@@ -4,6 +4,7 @@ import {
   MAX_MESSAGE_LENGTH,
   messageInputPlaceholder,
   SEND_MESSAGE_LABEL,
+  validateMentionEveryone,
   validateMessageContent,
 } from "@discordia/client-shared";
 
@@ -22,22 +23,32 @@ interface MessageComposerProps {
   channelName: string;
   onSend: (content: string) => void;
   disabled?: boolean;
+  /** Puede usar `@everyone`/`@here`. Por defecto `false`. */
+  canMentionEveryone?: boolean;
 }
 
 export function MessageComposer({
   channelName,
   onSend,
   disabled = false,
+  canMentionEveryone = false,
 }: MessageComposerProps) {
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
   const [draft, setDraft] = useState("");
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
+  const [mentionError, setMentionError] = useState<string | undefined>();
   const canSend = !disabled && validateMessageContent(draft) === undefined;
   const length = [...draft].length;
 
   function submit() {
     if (!canSend) return;
+    const mentionIssue = validateMentionEveryone(draft, canMentionEveryone);
+    if (mentionIssue) {
+      setMentionError(mentionIssue);
+      return;
+    }
+    setMentionError(undefined);
     onSend(draft);
     setDraft("");
   }
@@ -53,7 +64,10 @@ export function MessageComposer({
         />
         <TextInput
           value={draft}
-          onChangeText={setDraft}
+          onChangeText={(text) => {
+            setDraft(text);
+            setMentionError(undefined);
+          }}
           editable={!disabled}
           multiline
           placeholder={messageInputPlaceholder(channelName)}
@@ -77,6 +91,10 @@ export function MessageComposer({
           filled={canSend}
         />
       </View>
+
+      {mentionError ? (
+        <Text className="mt-1.5 text-[12px] text-danger">{mentionError}</Text>
+      ) : null}
 
       {length >= COUNTER_THRESHOLD ? (
         <Text
