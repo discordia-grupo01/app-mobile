@@ -69,7 +69,8 @@ interface ServerChannelsScreenProps {
   canInvite?: boolean;
   onPermissionsChanged?: () => void;
   onSelectChannel: (channelId: string) => void;
-  onSelectHome: () => void;
+  onOpenDirectMessages: () => void;
+  unreadDmCount?: number;
   onSwitchServer: (serverId: string) => void;
   onAddServer: () => void;
   onLogout: () => void;
@@ -134,7 +135,8 @@ export function ServerChannelsScreen({
   canInvite = false,
   onPermissionsChanged,
   onSelectChannel,
-  onSelectHome,
+  onOpenDirectMessages,
+  unreadDmCount,
   onSwitchServer,
   onAddServer,
   onLogout,
@@ -431,7 +433,9 @@ export function ServerChannelsScreen({
       <ServerRail
         servers={servers}
         activeServerId={server.id}
-        onSelectHome={onSelectHome}
+        isDirectMessagesActive={false}
+        unreadDmCount={unreadDmCount}
+        onOpenDirectMessages={onOpenDirectMessages}
         onSelectServer={onSwitchServer}
         onAddServer={onAddServer}
       />
