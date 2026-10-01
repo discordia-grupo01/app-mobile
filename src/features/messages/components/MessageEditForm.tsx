@@ -42,7 +42,10 @@ export function MessageEditForm({
           className="rounded-md bg-accent px-3 py-1.5"
           style={!canSave ? { opacity: 0.5 } : undefined}
         >
-          <Text className="text-[13px] font-semibold" style={{ color: colors.onAccent }}>
+          <Text
+            className="text-[13px] font-semibold"
+            style={{ color: colors.onAccent }}
+          >
             Guardar
           </Text>
         </TouchableOpacity>

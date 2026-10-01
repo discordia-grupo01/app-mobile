@@ -1,4 +1,8 @@
-import { otherParticipantId, type Conversation, type DmMessage } from "@discordia/client-shared";
+import {
+  otherParticipantId,
+  type Conversation,
+  type DmMessage,
+} from "@discordia/client-shared";
 
 import { DEMO_AUTHORS } from "../messages/mock-data";
 

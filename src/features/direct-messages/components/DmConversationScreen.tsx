@@ -1,8 +1,18 @@
-import { canEditMessage, type DmMessage, type MessageAuthor } from "@discordia/client-shared";
+import {
+  canEditMessage,
+  type DmMessage,
+  type MessageAuthor,
+} from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
 import { useState } from "react";
-import { KeyboardAvoidingView, Platform, Text, TouchableOpacity, View } from "react-native";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { MessageActionsSheet } from "../../messages/components/MessageActionsSheet";
@@ -37,7 +47,8 @@ export function DmConversationScreen({
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const { partner, blockedByMe, blocksMe } = summary;
 
-  const actionsMessage = messages.find((m) => m.id === actionsMessageId) ?? null;
+  const actionsMessage =
+    messages.find((m) => m.id === actionsMessageId) ?? null;
   const canEditActions = actionsMessage
     ? canEditMessage(actionsMessage, currentAuthor.id)
     : false;
@@ -56,7 +67,10 @@ export function DmConversationScreen({
           <Feather name="arrow-left" size={22} color={colors.textMuted} />
         </TouchableOpacity>
         <ServerAvatar name={partner.name} uri={partner.avatarUrl} size={30} />
-        <Text className="flex-1 text-[17px] font-bold text-content" numberOfLines={1}>
+        <Text
+          className="flex-1 text-[17px] font-bold text-content"
+          numberOfLines={1}
+        >
           {partner.name}
         </Text>
         {blockedByMe || blocksMe ? (
@@ -84,7 +98,11 @@ export function DmConversationScreen({
           }}
           onCancelEdit={() => setEditingMessageId(null)}
         />
-        <DmComposer partnerName={partner.name} blockedByMe={blockedByMe} onSend={onSend} />
+        <DmComposer
+          partnerName={partner.name}
+          blockedByMe={blockedByMe}
+          onSend={onSend}
+        />
       </KeyboardAvoidingView>
 
       <MessageActionsSheet

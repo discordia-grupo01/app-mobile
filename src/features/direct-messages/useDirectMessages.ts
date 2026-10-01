@@ -163,7 +163,12 @@ export function useDirectMessages(currentAuthor: MessageAuthor | null) {
       ]);
       return "sent";
     },
-    [currentAuthor, activeConversationId, activeSummary, updateConversationMessages],
+    [
+      currentAuthor,
+      activeConversationId,
+      activeSummary,
+      updateConversationMessages,
+    ],
   );
 
   const editMessage = useCallback(
@@ -194,7 +199,9 @@ export function useDirectMessages(currentAuthor: MessageAuthor | null) {
 
   const knownPartners = useMemo(
     () =>
-      Object.values(DEMO_AUTHORS).filter((author) => author.id !== currentUserId),
+      Object.values(DEMO_AUTHORS).filter(
+        (author) => author.id !== currentUserId,
+      ),
     [currentUserId],
   );
 

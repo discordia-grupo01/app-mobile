@@ -1,7 +1,13 @@
 import { type ServerSummary } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { resolveServerIconUrl } from "../../api";
@@ -85,13 +91,17 @@ export function ServerRail({
           <Feather
             name="home"
             size={20}
-            color={isDirectMessagesActive ? colors.railActiveText : colors.onAccent}
+            color={
+              isDirectMessagesActive ? colors.railActiveText : colors.onAccent
+            }
             style={isDirectMessagesActive ? undefined : { opacity: 0.7 }}
           />
         </TouchableOpacity>
         {unreadDmCount > 0 && !isDirectMessagesActive ? (
           <View className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] rounded-full items-center justify-center bg-danger border-2 border-surface-servers px-1">
-            <Text className="text-[9px] font-bold text-white">{unreadDmCount}</Text>
+            <Text className="text-[9px] font-bold text-white">
+              {unreadDmCount}
+            </Text>
           </View>
         ) : null}
       </View>

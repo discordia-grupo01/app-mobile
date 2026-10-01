@@ -31,8 +31,14 @@ export function ChannelChat({
   canManageMessages,
   canMentionEveryone,
 }: ChannelChatProps) {
-  const { messages, authors, sendMessage, toggleReaction, editMessage, deleteMessage } =
-    useChannelMessages(channel, currentAuthor);
+  const {
+    messages,
+    authors,
+    sendMessage,
+    toggleReaction,
+    editMessage,
+    deleteMessage,
+  } = useChannelMessages(channel, currentAuthor);
   const [reactingToId, setReactingToId] = useState<string | null>(null);
   const [actionsMessageId, setActionsMessageId] = useState<string | null>(null);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
@@ -42,7 +48,8 @@ export function ChannelChat({
     [authors, serverRoles],
   );
 
-  const actionsMessage = messages.find((m) => m.id === actionsMessageId) ?? null;
+  const actionsMessage =
+    messages.find((m) => m.id === actionsMessageId) ?? null;
   const canEditActions =
     actionsMessage && currentAuthor
       ? canEditMessage(actionsMessage, currentAuthor.id)

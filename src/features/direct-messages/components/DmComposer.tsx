@@ -27,7 +27,11 @@ interface DmComposerProps {
 }
 
 /** Composer de una conversacion directa: sin @everyone, con estados de bloqueo. */
-export function DmComposer({ partnerName, blockedByMe, onSend }: DmComposerProps) {
+export function DmComposer({
+  partnerName,
+  blockedByMe,
+  onSend,
+}: DmComposerProps) {
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
   const [draft, setDraft] = useState("");
@@ -101,7 +105,10 @@ export function DmComposer({ partnerName, blockedByMe, onSend }: DmComposerProps
       {length >= COUNTER_THRESHOLD ? (
         <Text
           className="mt-1 self-end text-[12px]"
-          style={{ color: length > MAX_MESSAGE_LENGTH ? colors.danger : colors.highlight }}
+          style={{
+            color:
+              length > MAX_MESSAGE_LENGTH ? colors.danger : colors.highlight,
+          }}
         >
           {length}/{MAX_MESSAGE_LENGTH}
         </Text>

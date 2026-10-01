@@ -1,4 +1,7 @@
-import { DIRECT_MESSAGES_TITLE, NO_CONVERSATIONS_YET } from "@discordia/client-shared";
+import {
+  DIRECT_MESSAGES_TITLE,
+  NO_CONVERSATIONS_YET,
+} from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
@@ -50,43 +53,63 @@ export function DmConversationList({
             {NO_CONVERSATIONS_YET}
           </Text>
         ) : (
-          conversations.map(({ conversation, partner, lastMessage, isUnread, blockedByMe, blocksMe }) => {
-            const isActive = conversation.id === activeConversationId;
-            return (
-              <TouchableOpacity
-                key={conversation.id}
-                onPress={() => onSelect(conversation.id)}
-                activeOpacity={0.75}
-                className={cn(
-                  "mb-0.5 flex-row items-center gap-2.5 rounded-lg px-2 py-2.5",
-                  isActive && "bg-accent/20",
-                )}
-              >
-                <ServerAvatar name={partner.name} uri={partner.avatarUrl} size={38} />
-                <View className="min-w-0 flex-1">
-                  <View className="flex-row items-center justify-between gap-1">
-                    <Text
-                      className="flex-1 text-[15px] font-semibold text-content"
-                      numberOfLines={1}
-                    >
-                      {partner.name}
-                    </Text>
-                    {blockedByMe || blocksMe ? (
-                      <View className="rounded bg-danger/15 px-1 py-px">
-                        <Text className="text-[9px] text-danger">bloqueado</Text>
-                      </View>
+          conversations.map(
+            ({
+              conversation,
+              partner,
+              lastMessage,
+              isUnread,
+              blockedByMe,
+              blocksMe,
+            }) => {
+              const isActive = conversation.id === activeConversationId;
+              return (
+                <TouchableOpacity
+                  key={conversation.id}
+                  onPress={() => onSelect(conversation.id)}
+                  activeOpacity={0.75}
+                  className={cn(
+                    "mb-0.5 flex-row items-center gap-2.5 rounded-lg px-2 py-2.5",
+                    isActive && "bg-accent/20",
+                  )}
+                >
+                  <ServerAvatar
+                    name={partner.name}
+                    uri={partner.avatarUrl}
+                    size={38}
+                  />
+                  <View className="min-w-0 flex-1">
+                    <View className="flex-row items-center justify-between gap-1">
+                      <Text
+                        className="flex-1 text-[15px] font-semibold text-content"
+                        numberOfLines={1}
+                      >
+                        {partner.name}
+                      </Text>
+                      {blockedByMe || blocksMe ? (
+                        <View className="rounded bg-danger/15 px-1 py-px">
+                          <Text className="text-[9px] text-danger">
+                            bloqueado
+                          </Text>
+                        </View>
+                      ) : null}
+                    </View>
+                    {lastMessage && !lastMessage.deleted_at ? (
+                      <Text
+                        className="text-[12px] text-content-subtle"
+                        numberOfLines={1}
+                      >
+                        {lastMessage.content}
+                      </Text>
                     ) : null}
                   </View>
-                  {lastMessage && !lastMessage.deleted_at ? (
-                    <Text className="text-[12px] text-content-subtle" numberOfLines={1}>
-                      {lastMessage.content}
-                    </Text>
+                  {isUnread ? (
+                    <View className="h-2 w-2 rounded-full bg-danger" />
                   ) : null}
-                </View>
-                {isUnread ? <View className="h-2 w-2 rounded-full bg-danger" /> : null}
-              </TouchableOpacity>
-            );
-          })
+                </TouchableOpacity>
+              );
+            },
+          )
         )}
       </ScrollView>
 

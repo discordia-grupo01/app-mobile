@@ -1,4 +1,7 @@
-import { NEW_DIRECT_MESSAGE_LABEL, type MessageAuthor } from "@discordia/client-shared";
+import {
+  NEW_DIRECT_MESSAGE_LABEL,
+  type MessageAuthor,
+} from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
 import { useState } from "react";
@@ -35,7 +38,12 @@ export function StartDmSheet({
   );
 
   return (
-    <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
+    <Modal
+      transparent
+      visible={visible}
+      animationType="fade"
+      onRequestClose={onClose}
+    >
       <View className="flex-1 justify-end bg-[rgba(0,0,0,0.6)]">
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
 
@@ -68,7 +76,11 @@ export function StartDmSheet({
                 onPress={() => onStart(partner.id)}
                 className="flex-row items-center gap-3 rounded-lg px-2 py-2.5"
               >
-                <ServerAvatar name={partner.name} uri={partner.avatarUrl} size={34} />
+                <ServerAvatar
+                  name={partner.name}
+                  uri={partner.avatarUrl}
+                  size={34}
+                />
                 <Text className="text-[15px] font-medium text-content">
                   {partner.name}
                 </Text>

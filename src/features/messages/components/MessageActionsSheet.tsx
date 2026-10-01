@@ -5,7 +5,14 @@ import {
 } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
-import { Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  Modal,
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 import { useThemeColors } from "../../../theme/theme-context";
 
@@ -33,7 +40,12 @@ export function MessageActionsSheet({
   const colors = useThemeColors();
 
   return (
-    <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
+    <Modal
+      transparent
+      visible={visible}
+      animationType="fade"
+      onRequestClose={onClose}
+    >
       <View className="flex-1 justify-end bg-[rgba(0,0,0,0.6)]">
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
 
@@ -90,7 +102,9 @@ export function MessageActionsSheet({
             className="mt-2 items-center rounded-xl bg-surface-input py-3.5"
             onPress={onClose}
           >
-            <Text className="text-[14px] font-bold text-content-muted">Cancelar</Text>
+            <Text className="text-[14px] font-bold text-content-muted">
+              Cancelar
+            </Text>
           </TouchableOpacity>
         </View>
       </View>

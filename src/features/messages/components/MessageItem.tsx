@@ -1,4 +1,8 @@
-import { MESSAGE_EDITED_LABEL, type Message, type MessageAuthor } from "@discordia/client-shared";
+import {
+  MESSAGE_EDITED_LABEL,
+  type Message,
+  type MessageAuthor,
+} from "@discordia/client-shared";
 
 import { Pressable, Text, View } from "react-native";
 
@@ -13,8 +17,10 @@ import { MessageReactions } from "./MessageReactions";
 const AVATAR_SIZE = 40;
 
 /** Forma minima que necesita esta fila: sirve tanto para `Message` (canal) como para `DmMessage`. */
-export interface MessageItemMessage
-  extends Pick<Message, "id" | "author_id" | "content" | "created_at" | "edited_at" | "deleted_at"> {
+export interface MessageItemMessage extends Pick<
+  Message,
+  "id" | "author_id" | "content" | "created_at" | "edited_at" | "deleted_at"
+> {
   reactions?: Message["reactions"];
 }
 
@@ -55,10 +61,16 @@ export function MessageItem({
         "flex-row gap-3 px-4 py-0.5 active:bg-surface-hover",
         isGroupStart && "mt-4",
       )}
-      accessibilityHint={isDeleted ? undefined : "Mantené presionado para más acciones"}
+      accessibilityHint={
+        isDeleted ? undefined : "Mantené presionado para más acciones"
+      }
     >
       {isGroupStart ? (
-        <ServerAvatar name={author.name} uri={author.avatarUrl} size={AVATAR_SIZE} />
+        <ServerAvatar
+          name={author.name}
+          uri={author.avatarUrl}
+          size={AVATAR_SIZE}
+        />
       ) : (
         <View style={{ width: AVATAR_SIZE }} />
       )}
@@ -78,7 +90,10 @@ export function MessageItem({
           />
         ) : (
           <>
-            <MessageContent content={message.content} resolveMention={resolveMention} />
+            <MessageContent
+              content={message.content}
+              resolveMention={resolveMention}
+            />
             {message.edited_at ? (
               <Text className="text-[11px] text-content-subtle">
                 {MESSAGE_EDITED_LABEL}
@@ -87,7 +102,11 @@ export function MessageItem({
           </>
         )}
 
-        {!isDeleted && !isEditing && message.reactions && onToggleReaction && onRequestReaction ? (
+        {!isDeleted &&
+        !isEditing &&
+        message.reactions &&
+        onToggleReaction &&
+        onRequestReaction ? (
           <MessageReactions
             reactions={message.reactions}
             onToggle={onToggleReaction}

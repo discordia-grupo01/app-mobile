@@ -13,7 +13,10 @@ interface MessageContentProps {
   resolveMention?: MentionResolver;
 }
 
-export function MessageContent({ content, resolveMention }: MessageContentProps) {
+export function MessageContent({
+  content,
+  resolveMention,
+}: MessageContentProps) {
   return (
     <Text className="text-[15px] leading-[21px] text-content">
       {tokenizeMessageContent(content).map((token, index) => {
@@ -21,7 +24,10 @@ export function MessageContent({ content, resolveMention }: MessageContentProps)
 
         if (token.kind === "channel") {
           return (
-            <Text key={index} className="rounded bg-highlight/15 font-medium text-highlight">
+            <Text
+              key={index}
+              className="rounded bg-highlight/15 font-medium text-highlight"
+            >
               {token.value}
             </Text>
           );
@@ -30,7 +36,10 @@ export function MessageContent({ content, resolveMention }: MessageContentProps)
         const name = token.value.slice(1);
         if (EVERYONE_NAMES.has(name)) {
           return (
-            <Text key={index} className="rounded bg-highlight/15 font-bold text-highlight">
+            <Text
+              key={index}
+              className="rounded bg-highlight/15 font-bold text-highlight"
+            >
               {token.value}
             </Text>
           );
@@ -39,7 +48,10 @@ export function MessageContent({ content, resolveMention }: MessageContentProps)
         const resolved = resolveMention?.(name);
         if (!resolved) {
           return (
-            <Text key={index} className="rounded bg-highlight/15 font-medium text-highlight">
+            <Text
+              key={index}
+              className="rounded bg-highlight/15 font-medium text-highlight"
+            >
               {token.value}
             </Text>
           );
