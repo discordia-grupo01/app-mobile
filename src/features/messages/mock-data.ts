@@ -34,35 +34,35 @@ export function createDemoMessages(
 ): Message[] {
   const seed: Omit<
     Message,
-    "id" | "channel_id" | "edited_at" | "deleted_at"
+    "id" | "channel_id" | "server_id" | "edited_at" | "deleted_at"
   >[] = [
     {
-      author_id: "demo-xeno",
+      user_id: "demo-xeno",
       content: `¡Bienvenidos a #${channelName}! Recuerden leer las reglas antes de participar 🎮`,
-      created_at: minutesAgo(50),
+      inserted_at: minutesAgo(50),
       reactions: [
         { emoji: "👋", count: 8, reacted_by_me: false },
         { emoji: "🎉", count: 5, reacted_by_me: false },
       ],
     },
     {
-      author_id: "demo-pixel",
+      user_id: "demo-pixel",
       content:
         "¿Alguien quiere hacer una partida esta noche? Buscamos 2 más para completar el equipo",
-      created_at: minutesAgo(30),
+      inserted_at: minutesAgo(30),
       reactions: [{ emoji: "🎮", count: 3, reacted_by_me: false }],
     },
     {
-      author_id: "demo-night",
+      user_id: "demo-night",
       content:
         "¡Yo me apunto! @PixelHunter avisame a qué hora quedan y los encuentro en el canal de voz",
-      created_at: minutesAgo(28),
+      inserted_at: minutesAgo(28),
       reactions: [],
     },
     {
-      author_id: "demo-night",
+      user_id: "demo-night",
       content: "Llevo semanas entrenando para esto 💪",
-      created_at: minutesAgo(27),
+      inserted_at: minutesAgo(27),
       reactions: [],
     },
   ];
@@ -71,6 +71,7 @@ export function createDemoMessages(
     ...message,
     id: `demo-${channelId}-${index}`,
     channel_id: channelId,
+    server_id: "demo-server",
     edited_at: null,
     deleted_at: null,
   }));

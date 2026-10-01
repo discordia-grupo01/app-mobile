@@ -61,7 +61,7 @@ export function MessageList({
         return (
           <MessageItem
             message={item}
-            author={authors[item.author_id] ?? unknownAuthor(item.author_id)}
+            author={authors[item.user_id] ?? unknownAuthor(item.user_id)}
             isGroupStart={startsMessageGroup(previous, item)}
             isEditing={editingMessageId === item.id}
             resolveMention={resolveMention}
