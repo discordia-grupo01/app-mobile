@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.ts",
   "dependencies": {
-    "@discordia/client-shared": "github:discordia-grupo01/client-shared#v0.13.12",
+    "@discordia/client-shared": "github:discordia-grupo01/client-shared#v0.13.16",
     "@expo/vector-icons": "^15.1.1",
     "@react-native-async-storage/async-storage": "2.2.0",
     "expo": "~57.0.20",
