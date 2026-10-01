@@ -21,10 +21,6 @@ import * as ImagePicker from "expo-image-picker";
 import { useEffect, useRef, useState } from "react";
 import {
   Alert,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -46,6 +42,8 @@ import { materializePresetBanner } from "../../constants/preset-banners";
 import type { CreateServerIconInput } from "../../types";
 import { ServerAvatar } from "../ServerAvatar";
 import { ServerBanner } from "../ServerBanner";
+import { ModalShell } from "../../../../components/ui/ModalShell";
+import { ModalCloseButton } from "../../../../components/ui/ModalCloseButton";
 
 const BANNER_HEIGHT = 120;
 const ICON_SIZE = 84;
@@ -362,236 +360,199 @@ export function ServerSettingsModal({
   }
 
   return (
-    <Modal
-      transparent
-      visible={visible}
-      animationType="fade"
-      onRequestClose={onClose}
-    >
-      <KeyboardAvoidingView
-        className="flex-1 bg-[rgba(0,0,0,0.65)] items-center justify-center p-4"
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+    <ModalShell visible={visible} onClose={onClose} className="max-w-115">
+      <ModalCloseButton onPress={onClose} />
 
-        <View className="w-full max-w-115 max-h-[90%] rounded-[20px] border border-line-strong bg-surface-modal overflow-hidden">
+      <ScrollView
+        contentContainerClassName="pb-7"
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View className="px-7 pt-8 mb-1">
+          <Text className="text-[20px] font-bold text-content mb-1">
+            Configuración del servidor
+          </Text>
+          <Text className="text-[13px] leading-[19px] text-content-muted">
+            Tocá el banner o el ícono para cambiarlos.
+          </Text>
+        </View>
+
+        {globalError ? (
+          <View className="flex-row items-start gap-2.5 mx-7 rounded-xl border border-[rgba(224,82,82,0.3)] bg-[rgba(224,82,82,0.1)] px-3.5 py-3 mt-4">
+            <Feather name="alert-circle" size={16} color={colors.danger} />
+            <Text className="flex-1 text-danger text-[13px]">
+              {globalError}
+            </Text>
+          </View>
+        ) : null}
+
+        <View
+          className="mx-7 mt-6"
+          style={{ height: BANNER_HEIGHT + ICON_BOX / 2 }}
+        >
           <TouchableOpacity
-            onPress={onClose}
-            className="absolute top-4 right-4 z-10 w-8 h-8 rounded-2xl items-center justify-center bg-surface-input border border-line"
+            activeOpacity={0.85}
+            onPress={pickBanner}
+            className="w-full rounded-2xl bg-surface-raised overflow-hidden border border-line-strong"
+            style={{ height: BANNER_HEIGHT }}
             accessibilityRole="button"
-            accessibilityLabel="Cerrar"
+            accessibilityLabel={CHANGE_BANNER_LABEL}
           >
-            <Feather name="x" size={14} color={colors.textSubtle} />
+            {selectedPresetBanner ? (
+              <PresetGradientFill
+                preset={selectedPresetBanner}
+                idPrefix="preview"
+              />
+            ) : previewBannerUri ? (
+              <ServerBanner uri={previewBannerUri} height={BANNER_HEIGHT} />
+            ) : (
+              <View className="flex-1 items-center justify-center">
+                <Feather name="image" size={20} color={colors.textSubtle} />
+                <Text className="text-[11px] text-content-subtle mt-1.5">
+                  {ADD_BANNER_LABEL}
+                </Text>
+              </View>
+            )}
           </TouchableOpacity>
 
-          <ScrollView
-            contentContainerClassName="pb-7"
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
+          <View
+            pointerEvents="none"
+            className="absolute right-2.5 top-2.5 w-7 h-7 rounded-2xl items-center justify-center bg-[rgba(0,0,0,0.55)]"
           >
-            <View className="px-7 pt-8 mb-1">
-              <Text className="text-[20px] font-bold text-content mb-1">
-                Configuración del servidor
-              </Text>
-              <Text className="text-[13px] leading-[19px] text-content-muted">
-                Tocá el banner o el ícono para cambiarlos.
-              </Text>
-            </View>
+            <Feather name="camera" size={13} color="#ffffff" />
+          </View>
 
-            {globalError ? (
-              <View className="flex-row items-start gap-2.5 mx-7 rounded-xl border border-[rgba(224,82,82,0.3)] bg-[rgba(224,82,82,0.1)] px-3.5 py-3 mt-4">
-                <Feather name="alert-circle" size={16} color={colors.danger} />
-                <Text className="flex-1 text-danger text-[13px]">
-                  {globalError}
-                </Text>
-              </View>
-            ) : null}
-
-            <View
-              className="mx-7 mt-6"
-              style={{ height: BANNER_HEIGHT + ICON_BOX / 2 }}
+          {previewBannerUri ? (
+            <TouchableOpacity
+              onPress={handleRemoveBanner}
+              className="absolute left-2.5 top-2.5 w-7 h-7 rounded-2xl items-center justify-center bg-[rgba(0,0,0,0.55)]"
+              accessibilityRole="button"
+              accessibilityLabel={REMOVE_BANNER_LABEL}
             >
-              <TouchableOpacity
-                activeOpacity={0.85}
-                onPress={pickBanner}
-                className="w-full rounded-2xl bg-surface-raised overflow-hidden border border-line-strong"
-                style={{ height: BANNER_HEIGHT }}
-                accessibilityRole="button"
-                accessibilityLabel={CHANGE_BANNER_LABEL}
-              >
-                {selectedPresetBanner ? (
-                  <PresetGradientFill
-                    preset={selectedPresetBanner}
-                    idPrefix="preview"
-                  />
-                ) : previewBannerUri ? (
-                  <ServerBanner uri={previewBannerUri} height={BANNER_HEIGHT} />
-                ) : (
-                  <View className="flex-1 items-center justify-center">
-                    <Feather name="image" size={20} color={colors.textSubtle} />
-                    <Text className="text-[11px] text-content-subtle mt-1.5">
-                      {ADD_BANNER_LABEL}
-                    </Text>
-                  </View>
-                )}
-              </TouchableOpacity>
+              <Feather name="x" size={13} color="#ffffff" />
+            </TouchableOpacity>
+          ) : null}
 
-              <View
-                pointerEvents="none"
-                className="absolute right-2.5 top-2.5 w-7 h-7 rounded-2xl items-center justify-center bg-[rgba(0,0,0,0.55)]"
-              >
-                <Feather name="camera" size={13} color="#ffffff" />
-              </View>
-
-              {previewBannerUri ? (
-                <TouchableOpacity
-                  onPress={handleRemoveBanner}
-                  className="absolute left-2.5 top-2.5 w-7 h-7 rounded-2xl items-center justify-center bg-[rgba(0,0,0,0.55)]"
-                  accessibilityRole="button"
-                  accessibilityLabel={REMOVE_BANNER_LABEL}
-                >
-                  <Feather name="x" size={13} color="#ffffff" />
-                </TouchableOpacity>
-              ) : null}
-
-              <View
-                className="absolute left-4 bottom-0"
-                style={{ width: ICON_BOX, height: ICON_BOX }}
-              >
-                <TouchableOpacity
-                  activeOpacity={0.85}
-                  onPress={pickIcon}
-                  className="bg-surface-modal rounded-full items-center justify-center"
-                  style={{ width: ICON_BOX, height: ICON_BOX }}
-                  accessibilityRole="button"
-                  accessibilityLabel={CHANGE_SERVER_ICON_LABEL}
-                >
-                  <ServerAvatar
-                    name={name || server.name}
-                    uri={previewIconUri}
-                    size={ICON_SIZE}
-                  />
-                </TouchableOpacity>
-                <View
-                  pointerEvents="none"
-                  className="absolute right-0 bottom-0 w-6 h-6 rounded-xl items-center justify-center bg-[rgba(0,0,0,0.65)] border-2 border-surface-modal"
-                >
-                  <Feather name="camera" size={11} color="#ffffff" />
-                </View>
-              </View>
+          <View
+            className="absolute left-4 bottom-0"
+            style={{ width: ICON_BOX, height: ICON_BOX }}
+          >
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={pickIcon}
+              className="bg-surface-modal rounded-full items-center justify-center"
+              style={{ width: ICON_BOX, height: ICON_BOX }}
+              accessibilityRole="button"
+              accessibilityLabel={CHANGE_SERVER_ICON_LABEL}
+            >
+              <ServerAvatar
+                name={name || server.name}
+                uri={previewIconUri}
+                size={ICON_SIZE}
+              />
+            </TouchableOpacity>
+            <View
+              pointerEvents="none"
+              className="absolute right-0 bottom-0 w-6 h-6 rounded-xl items-center justify-center bg-[rgba(0,0,0,0.65)] border-2 border-surface-modal"
+            >
+              <Feather name="camera" size={11} color="#ffffff" />
             </View>
+          </View>
+        </View>
 
-            {iconError || bannerError ? (
-              <View className="mx-7 mt-2 gap-1">
-                {iconError ? (
-                  <View className="flex-row items-center gap-1.5">
-                    <Feather
-                      name="alert-circle"
-                      size={13}
-                      color={colors.danger}
-                    />
-                    <Text className="text-danger text-[12px]">{iconError}</Text>
-                  </View>
-                ) : null}
-                {bannerError ? (
-                  <View className="flex-row items-center gap-1.5">
-                    <Feather
-                      name="alert-circle"
-                      size={13}
-                      color={colors.danger}
-                    />
-                    <Text className="text-danger text-[12px]">
-                      {bannerError}
-                    </Text>
-                  </View>
-                ) : null}
+        {iconError || bannerError ? (
+          <View className="mx-7 mt-2 gap-1">
+            {iconError ? (
+              <View className="flex-row items-center gap-1.5">
+                <Feather name="alert-circle" size={13} color={colors.danger} />
+                <Text className="text-danger text-[12px]">{iconError}</Text>
               </View>
             ) : null}
+            {bannerError ? (
+              <View className="flex-row items-center gap-1.5">
+                <Feather name="alert-circle" size={13} color={colors.danger} />
+                <Text className="text-danger text-[12px]">{bannerError}</Text>
+              </View>
+            ) : null}
+          </View>
+        ) : null}
 
-            <View className="px-7 mt-5">
-              <Text className="text-[11px] font-bold tracking-[1.1px] text-content-subtle mb-2 uppercase">
-                {BANNER_PRESETS_LABEL}
-              </Text>
-              <View className="gap-2.5">
-                {chunk(PRESET_BANNERS, PRESET_COLUMNS).map((row, index) => (
-                  <View key={index} className="flex-row gap-2.5">
-                    {row.map((preset) => (
-                      <PresetSwatch
-                        key={preset.id}
-                        preset={preset}
-                        isSelected={selectedPresetId === preset.id}
-                        onPress={() => handlePickPreset(preset)}
-                      />
-                    ))}
-                  </View>
+        <View className="px-7 mt-5">
+          <Text className="text-[11px] font-bold tracking-[1.1px] text-content-subtle mb-2 uppercase">
+            {BANNER_PRESETS_LABEL}
+          </Text>
+          <View className="gap-2.5">
+            {chunk(PRESET_BANNERS, PRESET_COLUMNS).map((row, index) => (
+              <View key={index} className="flex-row gap-2.5">
+                {row.map((preset) => (
+                  <PresetSwatch
+                    key={preset.id}
+                    preset={preset}
+                    isSelected={selectedPresetId === preset.id}
+                    onPress={() => handlePickPreset(preset)}
+                  />
                 ))}
               </View>
-            </View>
-
-            <View className="px-7 mt-7">
-              <View className="flex-row items-center justify-between mb-1.5">
-                <Text className="text-[11px] font-bold tracking-[1.1px] text-content-subtle uppercase">
-                  {SERVER_NAME_LABEL}{" "}
-                  <Text style={{ color: colors.danger }}>*</Text>
-                </Text>
-                <Text
-                  className="text-[11px] text-content-subtle"
-                  style={
-                    nameLength > MAX_NAME ? { color: colors.danger } : null
-                  }
-                >
-                  {nameLength}/{MAX_NAME}
-                </Text>
-              </View>
-              <View
-                className={cn(
-                  "rounded-xl border bg-surface-input px-3.5 min-h-12 justify-center",
-                  nameError ? "border-danger" : "border-line",
-                )}
-              >
-                <TextInput
-                  value={name}
-                  onChangeText={(text) => {
-                    setName(text);
-                    setNameError("");
-                    setGlobalError("");
-                  }}
-                  placeholder={SERVER_NAME_PLACEHOLDER}
-                  placeholderTextColor={colors.textSubtle}
-                  maxLength={110}
-                  className="text-content text-[14px]"
-                />
-              </View>
-              {nameError ? (
-                <View className="flex-row items-center gap-1.5 mt-1.5">
-                  <Feather
-                    name="alert-circle"
-                    size={13}
-                    color={colors.danger}
-                  />
-                  <Text className="text-danger text-[12px]">{nameError}</Text>
-                </View>
-              ) : null}
-            </View>
-
-            <View className="flex-row gap-3 px-7 mt-7 pt-5 border-t border-t-line">
-              <Button
-                title="Cancelar"
-                variant="secondary"
-                onPress={onClose}
-                style={{ flex: 1, width: undefined }}
-              />
-              <Button
-                title="Guardar cambios"
-                onPress={handleSubmit}
-                disabled={!canSubmit}
-                isLoading={isSubmitting}
-                style={{ flex: 1, width: undefined }}
-              />
-            </View>
-          </ScrollView>
+            ))}
+          </View>
         </View>
-      </KeyboardAvoidingView>
-    </Modal>
+
+        <View className="px-7 mt-7">
+          <View className="flex-row items-center justify-between mb-1.5">
+            <Text className="text-[11px] font-bold tracking-[1.1px] text-content-subtle uppercase">
+              {SERVER_NAME_LABEL}{" "}
+              <Text style={{ color: colors.danger }}>*</Text>
+            </Text>
+            <Text
+              className="text-[11px] text-content-subtle"
+              style={nameLength > MAX_NAME ? { color: colors.danger } : null}
+            >
+              {nameLength}/{MAX_NAME}
+            </Text>
+          </View>
+          <View
+            className={cn(
+              "rounded-xl border bg-surface-input px-3.5 min-h-12 justify-center",
+              nameError ? "border-danger" : "border-line",
+            )}
+          >
+            <TextInput
+              value={name}
+              onChangeText={(text) => {
+                setName(text);
+                setNameError("");
+                setGlobalError("");
+              }}
+              placeholder={SERVER_NAME_PLACEHOLDER}
+              placeholderTextColor={colors.textSubtle}
+              maxLength={110}
+              className="text-content text-[14px]"
+            />
+          </View>
+          {nameError ? (
+            <View className="flex-row items-center gap-1.5 mt-1.5">
+              <Feather name="alert-circle" size={13} color={colors.danger} />
+              <Text className="text-danger text-[12px]">{nameError}</Text>
+            </View>
+          ) : null}
+        </View>
+
+        <View className="flex-row gap-3 px-7 mt-7 pt-5 border-t border-t-line">
+          <Button
+            title="Cancelar"
+            variant="secondary"
+            onPress={onClose}
+            style={{ flex: 1, width: undefined }}
+          />
+          <Button
+            title="Guardar cambios"
+            onPress={handleSubmit}
+            disabled={!canSubmit}
+            isLoading={isSubmitting}
+            style={{ flex: 1, width: undefined }}
+          />
+        </View>
+      </ScrollView>
+    </ModalShell>
   );
 }
