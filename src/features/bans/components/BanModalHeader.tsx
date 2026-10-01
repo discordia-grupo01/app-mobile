@@ -1,8 +1,8 @@
-import { Feather } from "@expo/vector-icons";
 import { Text, View } from "react-native";
 
 import { withAlpha } from "../../../lib/color";
 import { useThemeColors } from "../../../theme/theme-context";
+import { BanIcon } from "./BanIcon";
 
 interface BanModalHeaderProps {
   title: string;
@@ -19,7 +19,7 @@ export function BanModalHeader({ title, subtitle }: BanModalHeaderProps) {
         className="size-10 shrink-0 items-center justify-center rounded-xl"
         style={{ backgroundColor: withAlpha(colors.danger, 0.15) }}
       >
-        <Feather name="shield-off" size={19} color={colors.danger} />
+        <BanIcon size={19} color={colors.danger} />
       </View>
       <View className="min-w-0 flex-1">
         <Text

@@ -8,7 +8,6 @@ import {
   displayNameOf,
   unbanSuccessNotice,
   type UserListItem,
-  VIEW_PROFILE_LABEL,
 } from "@discordia/client-shared";
 
 import { useState } from "react";
@@ -23,6 +22,7 @@ import { useThemeColors } from "../../../theme/theme-context";
 import { PublicProfileModal } from "../../profile/components/PublicProfileModal";
 import { type BansTab, type BanTarget } from "../types";
 import { useBansListView } from "../useBansListView";
+import { BanIcon } from "./BanIcon";
 import { BanMemberModal } from "./BanMemberModal";
 import { BanModalHeader } from "./BanModalHeader";
 import { BansToolbar } from "./BansToolbar";
@@ -80,6 +80,10 @@ export function BansModal({
     setNotice(unbanSuccessNotice(displayNameOf(profile)));
   }
 
+  function handleSelect({ userId }: UserListItem) {
+    setViewingUserId(userId);
+  }
+
   function actionsFor(item: UserListItem): UserRowAction[] {
     const { userId, profile } = item;
     if (view.isBans) {
@@ -92,10 +96,10 @@ export function BansModal({
       ];
     }
     return [
-      { label: VIEW_PROFILE_LABEL, onPress: () => setViewingUserId(userId) },
       {
         label: BAN_ACTION_LABEL,
         tone: "danger",
+        icon: <BanIcon size={17} color={colors.danger} />,
         onPress: () =>
           setBanTarget({
             userId,
@@ -151,6 +155,7 @@ export function BansModal({
             items={pagination.pageItems}
             emptyMessage={view.emptyMessage}
             actionsFor={actionsFor}
+            onSelect={view.isBans ? undefined : handleSelect}
             disableActions={revokingUserId !== null}
           />
         )}

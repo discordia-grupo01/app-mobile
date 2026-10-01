@@ -1,3 +1,4 @@
+import { type ReactNode } from "react";
 import { ActivityIndicator, Text, TouchableOpacity } from "react-native";
 
 import { cn } from "../../../lib/cn";
@@ -9,6 +10,12 @@ export interface UserRowAction {
   /** `danger` para las acciones destructivas (banear). */
   tone?: "default" | "danger";
   isLoading?: boolean;
+  /**
+   * Muestra solo este icono (el `label` queda como etiqueta de accesibilidad).
+   * Mide siempre lo mismo, asi no le quita lugar al nombre en pantallas
+   * angostas o con la letra agrandada.
+   */
+  icon?: ReactNode;
 }
 
 interface RowActionButtonProps {
@@ -16,7 +23,7 @@ interface RowActionButtonProps {
   isDisabled: boolean;
 }
 
-/** Boton compacto de una fila de usuario. */
+/** Boton compacto de una fila de usuario: nunca crece mas de lo que necesita. */
 export function RowActionButton({ action, isDisabled }: RowActionButtonProps) {
   const colors = useThemeColors();
   const isInert = isDisabled || action.isLoading;
@@ -27,8 +34,10 @@ export function RowActionButton({ action, isDisabled }: RowActionButtonProps) {
       onPress={action.onPress}
       disabled={isInert}
       accessibilityRole="button"
+      accessibilityLabel={action.label}
       className={cn(
-        "min-h-9 min-w-16 items-center justify-center rounded-xl border border-line bg-surface-input px-3 py-2",
+        "h-10 items-center justify-center rounded-xl border border-line bg-surface-input",
+        action.icon ? "w-10" : "px-3",
         isInert && "opacity-50",
       )}
     >
@@ -38,15 +47,17 @@ export function RowActionButton({ action, isDisabled }: RowActionButtonProps) {
           color={isDanger ? colors.danger : colors.accentBright}
         />
       ) : (
-        <Text
-          numberOfLines={1}
-          className={cn(
-            "text-xs font-bold",
-            isDanger ? "text-danger" : "text-accent-strong",
-          )}
-        >
-          {action.label}
-        </Text>
+        (action.icon ?? (
+          <Text
+            numberOfLines={1}
+            className={cn(
+              "text-xs font-bold",
+              isDanger ? "text-danger" : "text-accent-strong",
+            )}
+          >
+            {action.label}
+          </Text>
+        ))
       )}
     </TouchableOpacity>
   );

@@ -1,14 +1,8 @@
-import { BAN_ACTION_LABEL, type PublicUser } from "@discordia/client-shared";
+import { type PublicUser } from "@discordia/client-shared";
 
-import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 
 import { avatarUriOf } from "../../../lib/userProfile";
 import { BanMemberModal } from "../../bans/components/BanMemberModal";
@@ -18,6 +12,7 @@ import { MemberRoleBadges } from "../../roles/components/MemberRoleBadges";
 import { getPublicProfile } from "../service";
 import { MutualServersList } from "./MutualServersList";
 import { ProfileBanner } from "./ProfileBanner";
+import { ModeratorActions } from "../../bans/components/ModeratorActions";
 import { ModalShell } from "../../../components/ui/ModalShell";
 
 interface PublicProfileModalProps {
@@ -96,26 +91,7 @@ export function PublicProfileModal({
 
   return (
     <ModalShell visible={visible} onClose={onClose} className="max-w-100">
-      <ProfileBanner
-        onClose={onClose}
-        dimmed={profile?.is_suspended}
-        action={
-          canBan && profile ? (
-            <TouchableOpacity
-              onPress={() => setIsBanOpen(true)}
-              className="h-[30px] w-[30px] items-center justify-center rounded-[15px] bg-[rgba(0,0,0,0.3)]"
-              accessibilityRole="button"
-              accessibilityLabel={BAN_ACTION_LABEL}
-            >
-              <MaterialCommunityIcons
-                name="gavel"
-                size={15}
-                color={colors.danger}
-              />
-            </TouchableOpacity>
-          ) : null
-        }
-      />
+      <ProfileBanner onClose={onClose} dimmed={profile?.is_suspended} />
 
       {profile?.is_suspended ? (
         <View className="items-center gap-2.5 px-6 py-8">
@@ -189,6 +165,10 @@ export function PublicProfileModal({
                 canManage={canManageRoles}
               />
             </View>
+
+            {canBan ? (
+              <ModeratorActions onBan={() => setIsBanOpen(true)} />
+            ) : null}
           </ScrollView>
 
           <View className="absolute top-18 left-5.5 z-10">

@@ -41,6 +41,7 @@ import { InviteLinkModal } from "../features/servers/components/server/InviteLin
 import { LeaveServerModal } from "../features/servers/components/server/LeaveServerModal";
 import { ServerSettingsModal } from "../features/servers/components/server/ServerSettingsModal";
 import { TransferOwnershipModal } from "../features/servers/components/server/TransferOwnershipModal";
+import { BanIcon } from "../features/bans/components/BanIcon";
 import { BansModal } from "../features/bans/components/BansModal";
 import { RolesModal } from "../features/roles/RolesModal";
 import { ServerMenuItem } from "../features/servers/components/server/ServerMenuItem";
@@ -585,7 +586,7 @@ export function ServerChannelsScreen({
 
                 {canBanMembers ? (
                   <ServerMenuItem
-                    icon="shield-off"
+                    icon={<BanIcon size={16} color={colors.info} />}
                     label={BANS_TITLE}
                     onPress={runFromMenu(() => setIsBansModalVisible(true))}
                   />

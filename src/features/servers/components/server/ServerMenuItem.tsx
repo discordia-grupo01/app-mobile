@@ -1,11 +1,13 @@
 import { Feather } from "@expo/vector-icons";
+import { type ReactElement } from "react";
 import { Text, TouchableOpacity } from "react-native";
 
 import { cn } from "../../../../lib/cn";
 import { useThemeColors } from "../../../../theme/theme-context";
 
 interface ServerMenuItemProps {
-  icon: keyof typeof Feather.glyphMap;
+  /** Nombre de un icono de Feather, o un icono propio ya dibujado. */
+  icon: keyof typeof Feather.glyphMap | ReactElement;
   label: string;
   onPress: () => void;
   /** `danger` para las acciones destructivas (abandonar el servidor). */
@@ -21,6 +23,7 @@ export function ServerMenuItem({
 }: ServerMenuItemProps) {
   const colors = useThemeColors();
   const isDanger = tone === "danger";
+  const iconColor = isDanger ? colors.danger : colors.info;
 
   return (
     <TouchableOpacity
@@ -28,11 +31,11 @@ export function ServerMenuItem({
       className="flex-row items-center gap-2.5 rounded-lg mx-1 px-2.5 py-3"
       onPress={onPress}
     >
-      <Feather
-        name={icon}
-        size={16}
-        color={isDanger ? colors.danger : colors.info}
-      />
+      {typeof icon === "string" ? (
+        <Feather name={icon} size={16} color={iconColor} />
+      ) : (
+        icon
+      )}
       <Text
         className={cn(
           "text-[14px] font-semibold",
