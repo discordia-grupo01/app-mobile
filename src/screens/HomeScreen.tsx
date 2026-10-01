@@ -157,6 +157,10 @@ export function HomeScreen() {
     { isOwner, roles: myRoles },
     "MANAGE_SERVER",
   );
+  const canBanMembers = hasPermission(
+    { isOwner, roles: myRoles },
+    "BAN_MEMBERS",
+  );
   const canInvite = hasPermission({ isOwner, roles: myRoles }, "CREATE_INVITE");
   const canManageMessages = hasPermission(
     { isOwner, roles: myRoles },
@@ -281,6 +285,7 @@ export function HomeScreen() {
           authToken={token}
           currentUserId={user ? String(user.id) : null}
           canManageRoles={canManageRoles}
+          canBanMembers={canBanMembers}
           canManageMessages={canManageMessages}
           canMentionEveryone={canMentionEveryone}
           serverRoles={serverRoles}
@@ -302,6 +307,7 @@ export function HomeScreen() {
           canManageChannels={canManageChannels}
           canManageRoles={canManageRoles}
           canManageServer={canManageServer}
+          canBanMembers={canBanMembers}
           canInvite={canInvite}
           onPermissionsChanged={fetchMyRoles}
           onSelectChannel={setSelectedChannelId}

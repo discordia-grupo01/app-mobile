@@ -1,4 +1,5 @@
 import { Feather } from "@expo/vector-icons";
+import { type ReactNode } from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 
@@ -6,12 +7,15 @@ interface ProfileBannerProps {
   onClose: () => void;
   height?: number;
   dimmed?: boolean;
+  /** Boton extra (por ejemplo banear) que se dibuja a la izquierda del de cerrar. */
+  action?: ReactNode;
 }
 
 export function ProfileBanner({
   onClose,
   height = 100,
   dimmed = false,
+  action,
 }: ProfileBannerProps) {
   return (
     <View style={[styles.banner, { height }]}>
@@ -28,6 +32,8 @@ export function ProfileBanner({
       </Svg>
 
       {dimmed ? <View style={styles.dimOverlay} /> : null}
+
+      {action ? <View style={styles.actionSlot}>{action}</View> : null}
 
       <TouchableOpacity
         onPress={onClose}
@@ -49,6 +55,12 @@ const styles = StyleSheet.create({
   dimOverlay: {
     ...StyleSheet.absoluteFill,
     backgroundColor: "rgba(0,0,0,0.45)",
+  },
+  actionSlot: {
+    position: "absolute",
+    top: 12,
+    right: 50,
+    zIndex: 10,
   },
   closeButton: {
     position: "absolute",
