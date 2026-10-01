@@ -10,12 +10,7 @@ import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
 import {
   Alert,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
@@ -27,6 +22,8 @@ import { useThemeColors } from "../../../../theme/theme-context";
 import { createServer } from "../../api";
 import { Button } from "../../../../components/ui/Button";
 import { ServerAvatar } from "../ServerAvatar";
+import { ModalShell } from "../../../../components/ui/ModalShell";
+import { ModalCloseButton } from "../../../../components/ui/ModalCloseButton";
 
 interface PickedIcon {
   uri: string;
@@ -153,229 +150,191 @@ export function CreateServerModal({
   }
 
   return (
-    <Modal
-      transparent
-      visible={visible}
-      animationType="fade"
-      onRequestClose={onClose}
-    >
-      <KeyboardAvoidingView
-        className="flex-1 bg-[rgba(0,0,0,0.65)] items-center justify-center p-4"
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+    <ModalShell visible={visible} onClose={onClose} className="max-w-115">
+      <ModalCloseButton onPress={onClose} />
+
+      <ScrollView
+        contentContainerClassName="p-7 pt-8"
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-
-        <View className="w-full max-w-115 max-h-[90%] rounded-[20px] border border-line-strong bg-surface-modal overflow-hidden">
-          <TouchableOpacity
-            onPress={onClose}
-            className="absolute top-4 right-4 z-10 w-8 h-8 rounded-2xl items-center justify-center bg-surface-input border border-line"
-            accessibilityRole="button"
-            accessibilityLabel="Cerrar"
-          >
-            <Feather name="x" size={14} color={colors.textSubtle} />
-          </TouchableOpacity>
-
-          <ScrollView
-            contentContainerClassName="p-7 pt-8"
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-          >
-            {step === "success" && created ? (
-              <View className="items-center gap-6">
-                <View className="w-full rounded-2xl border border-line-strong bg-surface-raised overflow-hidden">
-                  <View className="flex-row items-center gap-2.5 px-4 py-3 border-b border-b-line">
-                    <ServerAvatar
-                      name={created.name}
-                      uri={icon?.uri}
-                      size={36}
-                      borderRadius={18}
+        {step === "success" && created ? (
+          <View className="items-center gap-6">
+            <View className="w-full rounded-2xl border border-line-strong bg-surface-raised overflow-hidden">
+              <View className="flex-row items-center gap-2.5 px-4 py-3 border-b border-b-line">
+                <ServerAvatar
+                  name={created.name}
+                  uri={icon?.uri}
+                  size={36}
+                  borderRadius={18}
+                />
+                <Text
+                  className="flex-1 text-[14px] font-bold text-content"
+                  numberOfLines={1}
+                >
+                  {created.name}
+                </Text>
+              </View>
+              <View className="px-3 py-2.5 gap-1">
+                {created.channels.map((channel) => (
+                  <View
+                    key={channel.id}
+                    className="flex-row items-center gap-2 rounded-lg bg-surface-input px-2 py-[7px]"
+                  >
+                    <Feather
+                      name={channel.kind === "text" ? "hash" : "volume-2"}
+                      size={15}
+                      color={colors.textSubtle}
                     />
-                    <Text
-                      className="flex-1 text-[14px] font-bold text-content"
-                      numberOfLines={1}
-                    >
-                      {created.name}
+                    <Text className="text-[13px] text-content-muted">
+                      {channel.name}
                     </Text>
                   </View>
-                  <View className="px-3 py-2.5 gap-1">
-                    {created.channels.map((channel) => (
-                      <View
-                        key={channel.id}
-                        className="flex-row items-center gap-2 rounded-lg bg-surface-input px-2 py-[7px]"
-                      >
-                        <Feather
-                          name={channel.kind === "text" ? "hash" : "volume-2"}
-                          size={15}
-                          color={colors.textSubtle}
-                        />
-                        <Text className="text-[13px] text-content-muted">
-                          {channel.name}
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
-                </View>
+                ))}
+              </View>
+            </View>
 
-                <View className="items-center gap-1.5">
-                  <View className="w-12 h-12 rounded-2xl items-center justify-center bg-[rgba(56,161,105,0.15)] mb-1">
-                    <Feather name="check" size={26} color={colors.success} />
-                  </View>
-                  <Text className="text-[16px] font-bold text-content">
-                    ¡Servidor creado!
-                  </Text>
-                  <Text className="text-[13px] leading-[19px] text-content-muted text-center max-w-65">
-                    <Text className="text-content font-bold">
-                      {created.name}
-                    </Text>{" "}
-                    ya está listo. Encontrás tus canales en la barra lateral.
-                  </Text>
-                </View>
+            <View className="items-center gap-1.5">
+              <View className="w-12 h-12 rounded-2xl items-center justify-center bg-[rgba(56,161,105,0.15)] mb-1">
+                <Feather name="check" size={26} color={colors.success} />
+              </View>
+              <Text className="text-[16px] font-bold text-content">
+                ¡Servidor creado!
+              </Text>
+              <Text className="text-[13px] leading-[19px] text-content-muted text-center max-w-65">
+                <Text className="text-content font-bold">{created.name}</Text>{" "}
+                ya está listo. Encontrás tus canales en la barra lateral.
+              </Text>
+            </View>
 
-                <Button
-                  title="Ir al servidor"
-                  onPress={() => onCreated(created)}
+            <Button title="Ir al servidor" onPress={() => onCreated(created)} />
+          </View>
+        ) : (
+          <View>
+            <View className="items-center mb-5">
+              <Text className="text-[20px] font-bold text-content mb-1">
+                Crear un servidor
+              </Text>
+              <Text className="text-[13px] leading-[19px] text-content-muted text-center">
+                Personalizá tu servidor con un nombre e ícono.{"\n"}Siempre
+                podés cambiarlo después.
+              </Text>
+            </View>
+
+            {globalError ? (
+              <View className="flex-row items-start gap-2.5 rounded-xl border border-[rgba(224,82,82,0.3)] bg-[rgba(224,82,82,0.1)] px-3.5 py-3 mb-5">
+                <Feather name="alert-circle" size={16} color={colors.danger} />
+                <Text className="flex-1 text-danger text-[13px]">
+                  {globalError}
+                </Text>
+              </View>
+            ) : null}
+
+            <View className="items-center gap-2.5 mb-6">
+              <TouchableOpacity activeOpacity={0.85} onPress={pickIcon}>
+                <ServerAvatar name={name} uri={icon?.uri} size={96} />
+              </TouchableOpacity>
+
+              <View className="flex-row items-center gap-2.5">
+                <TouchableOpacity
+                  className="flex-row items-center gap-1.5 rounded-lg border border-line bg-surface-input px-3 py-[7px]"
+                  onPress={pickIcon}
+                >
+                  <Feather name="edit-2" size={11} color={colors.textMuted} />
+                  <Text className="text-[12px] font-semibold text-content-muted">
+                    {icon ? "Cambiar imagen" : "Subir imagen"}
+                  </Text>
+                </TouchableOpacity>
+                {icon ? (
+                  <TouchableOpacity onPress={removeIcon}>
+                    <Text className="text-[12px] font-semibold text-danger">
+                      Quitar
+                    </Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+
+              {iconError ? (
+                <View className="flex-row items-center gap-1.5 mt-1.5">
+                  <Feather
+                    name="alert-circle"
+                    size={13}
+                    color={colors.danger}
+                  />
+                  <Text className="text-danger text-[12px]">{iconError}</Text>
+                </View>
+              ) : null}
+
+              <Text className="text-[11px] text-content-subtle text-center">
+                PNG, JPG o WEBP · Máx. 20 MB
+              </Text>
+            </View>
+
+            <View className="mb-1">
+              <View className="flex-row items-center justify-between mb-1.5">
+                <Text className="text-[11px] font-bold tracking-[1.1px] text-content-subtle">
+                  NOMBRE DEL SERVIDOR{" "}
+                  <Text style={{ color: colors.danger }}>*</Text>
+                </Text>
+                <Text
+                  className="text-[11px] text-content-subtle"
+                  style={
+                    nameLength > MAX_NAME ? { color: colors.danger } : null
+                  }
+                >
+                  {nameLength}/{MAX_NAME}
+                </Text>
+              </View>
+              <View
+                className={cn(
+                  "rounded-xl border bg-surface-input px-3.5 min-h-12 justify-center",
+                  nameError ? "border-danger" : "border-line",
+                )}
+              >
+                <TextInput
+                  value={name}
+                  onChangeText={(text) => {
+                    setName(text);
+                    setNameError("");
+                    setGlobalError("");
+                  }}
+                  placeholder="Mi servidor épico"
+                  placeholderTextColor={colors.textSubtle}
+                  maxLength={110}
+                  autoFocus
+                  className="text-content text-[14px]"
                 />
               </View>
-            ) : (
-              <View>
-                <View className="items-center mb-5">
-                  <Text className="text-[20px] font-bold text-content mb-1">
-                    Crear un servidor
-                  </Text>
-                  <Text className="text-[13px] leading-[19px] text-content-muted text-center">
-                    Personalizá tu servidor con un nombre e ícono.{"\n"}Siempre
-                    podés cambiarlo después.
-                  </Text>
-                </View>
-
-                {globalError ? (
-                  <View className="flex-row items-start gap-2.5 rounded-xl border border-[rgba(224,82,82,0.3)] bg-[rgba(224,82,82,0.1)] px-3.5 py-3 mb-5">
-                    <Feather
-                      name="alert-circle"
-                      size={16}
-                      color={colors.danger}
-                    />
-                    <Text className="flex-1 text-danger text-[13px]">
-                      {globalError}
-                    </Text>
-                  </View>
-                ) : null}
-
-                <View className="items-center gap-2.5 mb-6">
-                  <TouchableOpacity activeOpacity={0.85} onPress={pickIcon}>
-                    <ServerAvatar name={name} uri={icon?.uri} size={96} />
-                  </TouchableOpacity>
-
-                  <View className="flex-row items-center gap-2.5">
-                    <TouchableOpacity
-                      className="flex-row items-center gap-1.5 rounded-lg border border-line bg-surface-input px-3 py-[7px]"
-                      onPress={pickIcon}
-                    >
-                      <Feather
-                        name="edit-2"
-                        size={11}
-                        color={colors.textMuted}
-                      />
-                      <Text className="text-[12px] font-semibold text-content-muted">
-                        {icon ? "Cambiar imagen" : "Subir imagen"}
-                      </Text>
-                    </TouchableOpacity>
-                    {icon ? (
-                      <TouchableOpacity onPress={removeIcon}>
-                        <Text className="text-[12px] font-semibold text-danger">
-                          Quitar
-                        </Text>
-                      </TouchableOpacity>
-                    ) : null}
-                  </View>
-
-                  {iconError ? (
-                    <View className="flex-row items-center gap-1.5 mt-1.5">
-                      <Feather
-                        name="alert-circle"
-                        size={13}
-                        color={colors.danger}
-                      />
-                      <Text className="text-danger text-[12px]">
-                        {iconError}
-                      </Text>
-                    </View>
-                  ) : null}
-
-                  <Text className="text-[11px] text-content-subtle text-center">
-                    PNG, JPG o WEBP · Máx. 20 MB
-                  </Text>
-                </View>
-
-                <View className="mb-1">
-                  <View className="flex-row items-center justify-between mb-1.5">
-                    <Text className="text-[11px] font-bold tracking-[1.1px] text-content-subtle">
-                      NOMBRE DEL SERVIDOR{" "}
-                      <Text style={{ color: colors.danger }}>*</Text>
-                    </Text>
-                    <Text
-                      className="text-[11px] text-content-subtle"
-                      style={
-                        nameLength > MAX_NAME ? { color: colors.danger } : null
-                      }
-                    >
-                      {nameLength}/{MAX_NAME}
-                    </Text>
-                  </View>
-                  <View
-                    className={cn(
-                      "rounded-xl border bg-surface-input px-3.5 min-h-12 justify-center",
-                      nameError ? "border-danger" : "border-line",
-                    )}
-                  >
-                    <TextInput
-                      value={name}
-                      onChangeText={(text) => {
-                        setName(text);
-                        setNameError("");
-                        setGlobalError("");
-                      }}
-                      placeholder="Mi servidor épico"
-                      placeholderTextColor={colors.textSubtle}
-                      maxLength={110}
-                      autoFocus
-                      className="text-content text-[14px]"
-                    />
-                  </View>
-                  {nameError ? (
-                    <View className="flex-row items-center gap-1.5 mt-1.5">
-                      <Feather
-                        name="alert-circle"
-                        size={13}
-                        color={colors.danger}
-                      />
-                      <Text className="text-danger text-[12px]">
-                        {nameError}
-                      </Text>
-                    </View>
-                  ) : null}
-                </View>
-
-                <View className="flex-row gap-3 mt-6 pt-5 border-t border-t-line">
-                  <Button
-                    title="Cancelar"
-                    variant="secondary"
-                    onPress={onClose}
-                    style={{ flex: 1, width: undefined }}
+              {nameError ? (
+                <View className="flex-row items-center gap-1.5 mt-1.5">
+                  <Feather
+                    name="alert-circle"
+                    size={13}
+                    color={colors.danger}
                   />
-                  <Button
-                    title="Crear servidor"
-                    onPress={handleSubmit}
-                    disabled={!canSubmit}
-                    isLoading={isSubmitting}
-                    style={{ flex: 1, width: undefined }}
-                  />
+                  <Text className="text-danger text-[12px]">{nameError}</Text>
                 </View>
-              </View>
-            )}
-          </ScrollView>
-        </View>
-      </KeyboardAvoidingView>
-    </Modal>
+              ) : null}
+            </View>
+
+            <View className="flex-row gap-3 mt-6 pt-5 border-t border-t-line">
+              <Button
+                title="Cancelar"
+                variant="secondary"
+                onPress={onClose}
+                style={{ flex: 1, width: undefined }}
+              />
+              <Button
+                title="Crear servidor"
+                onPress={handleSubmit}
+                disabled={!canSubmit}
+                isLoading={isSubmitting}
+                style={{ flex: 1, width: undefined }}
+              />
+            </View>
+          </View>
+        )}
+      </ScrollView>
+    </ModalShell>
   );
 }

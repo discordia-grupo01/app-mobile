@@ -1,4 +1,5 @@
 import {
+  BANS_TITLE,
   type Category,
   type Channel,
   channelsOfCategory,
@@ -40,7 +41,10 @@ import { InviteLinkModal } from "../features/servers/components/server/InviteLin
 import { LeaveServerModal } from "../features/servers/components/server/LeaveServerModal";
 import { ServerSettingsModal } from "../features/servers/components/server/ServerSettingsModal";
 import { TransferOwnershipModal } from "../features/servers/components/server/TransferOwnershipModal";
+import { BanIcon } from "../features/bans/components/BanIcon";
+import { BansModal } from "../features/bans/components/BansModal";
 import { RolesModal } from "../features/roles/RolesModal";
+import { ServerMenuItem } from "../features/servers/components/server/ServerMenuItem";
 import { ServerBanner } from "../features/servers/components/ServerBanner";
 import { ServerRail } from "../features/servers/components/rail/ServerRail";
 import { UserProfileBar } from "../features/servers/components/account/UserProfileBar";
@@ -66,10 +70,12 @@ interface ServerChannelsScreenProps {
   canManageChannels?: boolean;
   canManageRoles?: boolean;
   canManageServer?: boolean;
+  canBanMembers?: boolean;
   canInvite?: boolean;
   onPermissionsChanged?: () => void;
   onSelectChannel: (channelId: string) => void;
-  onSelectHome: () => void;
+  onOpenDirectMessages: () => void;
+  unreadDmCount?: number;
   onSwitchServer: (serverId: string) => void;
   onAddServer: () => void;
   onLogout: () => void;
@@ -131,10 +137,12 @@ export function ServerChannelsScreen({
   canManageChannels = false,
   canManageRoles = false,
   canManageServer = false,
+  canBanMembers = false,
   canInvite = false,
   onPermissionsChanged,
   onSelectChannel,
-  onSelectHome,
+  onOpenDirectMessages,
+  unreadDmCount,
   onSwitchServer,
   onAddServer,
   onLogout,
@@ -153,6 +161,7 @@ export function ServerChannelsScreen({
     useState<string | null>(null);
   const [isCreateCategoryVisible, setIsCreateCategoryVisible] = useState(false);
   const [isRolesModalVisible, setIsRolesModalVisible] = useState(false);
+  const [isBansModalVisible, setIsBansModalVisible] = useState(false);
   const [isTransferModalVisible, setIsTransferModalVisible] = useState(false);
   const [pendingTransfer, setPendingTransfer] =
     useState<OwnershipTransfer | null>(null);
@@ -211,6 +220,14 @@ export function ServerChannelsScreen({
       : null;
   const showTransferMenuItem =
     isOwner || (!isLoadingPendingTransfer && incomingTransfer !== null);
+
+  /** Cierra el menu del servidor y despues hace lo que pidio el item. */
+  function runFromMenu(action: () => void) {
+    return () => {
+      setIsServerMenuOpen(false);
+      action();
+    };
+  }
 
   function toggleCollapsed(id: string) {
     setCollapsedSectionIds((prev) => {
@@ -431,7 +448,9 @@ export function ServerChannelsScreen({
       <ServerRail
         servers={servers}
         activeServerId={server.id}
-        onSelectHome={onSelectHome}
+        isDirectMessagesActive={false}
+        unreadDmCount={unreadDmCount}
+        onOpenDirectMessages={onOpenDirectMessages}
         onSelectServer={onSwitchServer}
         onAddServer={onAddServer}
       />
@@ -520,123 +539,79 @@ export function ServerChannelsScreen({
                 style={[styles.serverMenu, { top: menuTop }]}
               >
                 {canInvite ? (
-                  <TouchableOpacity
-                    activeOpacity={0.7}
-                    className="flex-row items-center gap-2.5 rounded-lg mx-1 px-2.5 py-3"
-                    onPress={() => {
-                      setIsServerMenuOpen(false);
-                      setIsInviteModalVisible(true);
-                    }}
-                  >
-                    <Feather name="user-plus" size={16} color={colors.info} />
-                    <Text className="text-[14px] font-semibold text-content">
-                      Invitar miembros
-                    </Text>
-                  </TouchableOpacity>
+                  <ServerMenuItem
+                    icon="user-plus"
+                    label="Invitar miembros"
+                    onPress={runFromMenu(() => setIsInviteModalVisible(true))}
+                  />
                 ) : null}
 
                 {canManageServer ? (
-                  <TouchableOpacity
-                    activeOpacity={0.7}
-                    className="flex-row items-center gap-2.5 rounded-lg mx-1 px-2.5 py-3"
-                    onPress={() => {
-                      setIsServerMenuOpen(false);
-                      setIsServerSettingsVisible(true);
-                    }}
-                  >
-                    <Feather name="settings" size={16} color={colors.info} />
-                    <Text className="text-[14px] font-semibold text-content">
-                      Configuración del servidor
-                    </Text>
-                  </TouchableOpacity>
+                  <ServerMenuItem
+                    icon="settings"
+                    label="Configuración del servidor"
+                    onPress={runFromMenu(() =>
+                      setIsServerSettingsVisible(true),
+                    )}
+                  />
                 ) : null}
 
                 {canManageChannels ? (
                   <>
-                    <TouchableOpacity
-                      activeOpacity={0.7}
-                      className="flex-row items-center gap-2.5 rounded-lg mx-1 px-2.5 py-3"
-                      onPress={() => {
-                        setIsServerMenuOpen(false);
+                    <ServerMenuItem
+                      icon="plus"
+                      label="Crear canal"
+                      onPress={runFromMenu(() => {
                         setCreateChannelDefaultCategoryId(null);
                         setIsCreateChannelVisible(true);
-                      }}
-                    >
-                      <Feather name="plus" size={16} color={colors.info} />
-                      <Text className="text-[14px] font-semibold text-content">
-                        Crear canal
-                      </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      activeOpacity={0.7}
-                      className="flex-row items-center gap-2.5 rounded-lg mx-1 px-2.5 py-3"
-                      onPress={() => {
-                        setIsServerMenuOpen(false);
-                        setIsCreateCategoryVisible(true);
-                      }}
-                    >
-                      <Feather
-                        name="folder-plus"
-                        size={16}
-                        color={colors.info}
-                      />
-                      <Text className="text-[14px] font-semibold text-content">
-                        Crear categoría
-                      </Text>
-                    </TouchableOpacity>
+                      })}
+                    />
+                    <ServerMenuItem
+                      icon="folder-plus"
+                      label="Crear categoría"
+                      onPress={runFromMenu(() =>
+                        setIsCreateCategoryVisible(true),
+                      )}
+                    />
                   </>
                 ) : null}
 
                 {canManageRoles ? (
-                  <TouchableOpacity
-                    activeOpacity={0.7}
-                    className="flex-row items-center gap-2.5 rounded-lg mx-1 px-2.5 py-3"
-                    onPress={() => {
-                      setIsServerMenuOpen(false);
-                      setIsRolesModalVisible(true);
-                    }}
-                  >
-                    <Feather name="shield" size={16} color={colors.info} />
-                    <Text className="text-[14px] font-semibold text-content">
-                      Gestionar roles
-                    </Text>
-                  </TouchableOpacity>
+                  <ServerMenuItem
+                    icon="shield"
+                    label="Gestionar roles"
+                    onPress={runFromMenu(() => setIsRolesModalVisible(true))}
+                  />
+                ) : null}
+
+                {canBanMembers ? (
+                  <ServerMenuItem
+                    icon={<BanIcon size={16} color={colors.info} />}
+                    label={BANS_TITLE}
+                    onPress={runFromMenu(() => setIsBansModalVisible(true))}
+                  />
                 ) : null}
 
                 {showTransferMenuItem ? (
-                  <TouchableOpacity
-                    activeOpacity={0.7}
-                    className="flex-row items-center gap-2.5 rounded-lg mx-1 px-2.5 py-3"
-                    onPress={() => {
-                      setIsServerMenuOpen(false);
-                      setIsTransferModalVisible(true);
-                    }}
-                  >
-                    <Feather name="repeat" size={16} color={colors.info} />
-                    <Text className="text-[14px] font-semibold text-content">
-                      {incomingTransfer
+                  <ServerMenuItem
+                    icon="repeat"
+                    label={
+                      incomingTransfer
                         ? "Responder transferencia de propiedad"
-                        : "Transferir propiedad"}
-                    </Text>
-                  </TouchableOpacity>
+                        : "Transferir propiedad"
+                    }
+                    onPress={runFromMenu(() => setIsTransferModalVisible(true))}
+                  />
                 ) : null}
 
                 <View className="h-px bg-line my-1 mx-2" />
 
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  className="flex-row items-center gap-2.5 rounded-lg mx-1 px-2.5 py-3"
-                  onPress={() => {
-                    setIsServerMenuOpen(false);
-                    setIsLeaveModalVisible(true);
-                  }}
-                >
-                  <Feather name="log-out" size={16} color={colors.danger} />
-                  <Text className="text-[14px] font-semibold text-danger">
-                    Abandonar servidor
-                  </Text>
-                </TouchableOpacity>
+                <ServerMenuItem
+                  icon="log-out"
+                  label="Abandonar servidor"
+                  tone="danger"
+                  onPress={runFromMenu(() => setIsLeaveModalVisible(true))}
+                />
               </View>
             </>
           ) : null}
@@ -804,6 +779,15 @@ export function ServerChannelsScreen({
             setIsRolesModalVisible(false);
             onPermissionsChanged?.();
           }}
+        />
+      ) : null}
+      {canBanMembers && isBansModalVisible ? (
+        <BansModal
+          serverId={server.id}
+          ownerId={server.owner_id}
+          currentUserId={currentUserId}
+          canManageRoles={canManageRoles}
+          onClose={() => setIsBansModalVisible(false)}
         />
       ) : null}
       {canManageChannels ? (

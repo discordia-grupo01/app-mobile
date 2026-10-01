@@ -10,7 +10,9 @@ import { useThemeColors } from "../theme/theme-context";
 interface ServerPickerScreenProps {
   servers: ServerSummary[];
   userName?: string | null;
+  unreadDmCount?: number;
   onSelectServer: (serverId: string) => void;
+  onOpenDirectMessages: () => void;
   onAddServer: () => void;
   onLogout: () => void;
 }
@@ -18,7 +20,9 @@ interface ServerPickerScreenProps {
 export function ServerPickerScreen({
   servers,
   userName,
+  unreadDmCount,
   onSelectServer,
+  onOpenDirectMessages,
   onAddServer,
   onLogout,
 }: ServerPickerScreenProps) {
@@ -28,7 +32,9 @@ export function ServerPickerScreen({
       <ServerRail
         servers={servers}
         activeServerId={null}
-        onSelectHome={() => {}}
+        isDirectMessagesActive={false}
+        unreadDmCount={unreadDmCount}
+        onOpenDirectMessages={onOpenDirectMessages}
         onSelectServer={onSelectServer}
         onAddServer={onAddServer}
       />

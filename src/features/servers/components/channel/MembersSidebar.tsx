@@ -38,6 +38,8 @@ interface MembersSidebarProps {
   authToken?: string | null;
   /** Owner, o miembro con el permiso MANAGE_ROLES via algún rol. */
   canManageRoles?: boolean;
+  /** Owner, o miembro con el permiso BAN_MEMBERS via algún rol. */
+  canBanMembers?: boolean;
   onClose: () => void;
 }
 
@@ -47,6 +49,7 @@ export function MembersSidebar({
   currentUserId,
   authToken,
   canManageRoles = false,
+  canBanMembers = false,
   onClose,
 }: MembersSidebarProps) {
   const colors = useThemeColors();
@@ -133,6 +136,10 @@ export function MembersSidebar({
 
   const owners = members.filter((m) => m.isOwner);
   const others = members.filter((m) => !m.isOwner);
+  const canBanViewed =
+    canBanMembers &&
+    viewingUserId !== currentUserId &&
+    !owners.some((owner) => owner.userId === viewingUserId);
 
   function handleSelectMember(member: ResolvedMember) {
     if (member.userId === currentUserId) {
@@ -288,6 +295,8 @@ export function MembersSidebar({
         authToken={authToken ?? null}
         serverId={serverId}
         canManageRoles={canManageRoles}
+        canBan={canBanViewed}
+        onBanned={fetchMembers}
         onClose={() => setViewingUserId(null)}
       />
     </>

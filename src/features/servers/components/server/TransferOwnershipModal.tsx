@@ -13,10 +13,6 @@ import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -37,6 +33,8 @@ import { cn } from "../../../../lib/cn";
 import { useThemeColors } from "../../../../theme/theme-context";
 import { Button } from "../../../../components/ui/Button";
 import { ServerAvatar } from "../ServerAvatar";
+import { ModalShell } from "../../../../components/ui/ModalShell";
+import { ModalCloseButton } from "../../../../components/ui/ModalCloseButton";
 
 interface TransferOwnershipModalProps {
   visible: boolean;
@@ -542,52 +540,31 @@ export function TransferOwnershipModal({
   }
 
   return (
-    <Modal
-      transparent
-      visible={visible}
-      animationType="fade"
-      onRequestClose={onClose}
-    >
-      <KeyboardAvoidingView
-        className="flex-1 bg-[rgba(0,0,0,0.65)] items-center justify-center p-4"
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+    <ModalShell visible={visible} onClose={onClose} className="max-w-110">
+      <ModalCloseButton onPress={onClose} />
 
-        <View className="w-full max-w-110 max-h-[90%] rounded-[20px] border border-line-strong bg-surface-modal overflow-hidden">
-          <TouchableOpacity
-            onPress={onClose}
-            className="absolute top-4 right-4 z-10 w-8 h-8 rounded-2xl items-center justify-center bg-surface-input border border-line"
-            accessibilityRole="button"
-            accessibilityLabel="Cerrar"
-          >
-            <Feather name="x" size={13} color={colors.textSubtle} />
-          </TouchableOpacity>
-
-          <View className="p-7 pt-8 pb-0">
-            <View className="flex-row items-center gap-3 mb-5 pr-6">
-              <View className="w-9 h-9 rounded-xl items-center justify-center bg-[rgba(107,149,189,0.15)]">
-                <MaterialCommunityIcons
-                  name="swap-horizontal"
-                  size={19}
-                  color={colors.info}
-                />
-              </View>
-              <View className="flex-1">
-                <Text
-                  className="text-[17px] font-bold text-content"
-                  numberOfLines={1}
-                >
-                  Transferir propiedad
-                </Text>
-              </View>
-            </View>
+      <View className="p-7 pt-8 pb-0">
+        <View className="flex-row items-center gap-3 mb-5 pr-6">
+          <View className="w-9 h-9 rounded-xl items-center justify-center bg-[rgba(107,149,189,0.15)]">
+            <MaterialCommunityIcons
+              name="swap-horizontal"
+              size={19}
+              color={colors.info}
+            />
           </View>
-
-          {renderContent()}
+          <View className="flex-1">
+            <Text
+              className="text-[17px] font-bold text-content"
+              numberOfLines={1}
+            >
+              Transferir propiedad
+            </Text>
+          </View>
         </View>
-      </KeyboardAvoidingView>
-    </Modal>
+      </View>
+
+      {renderContent()}
+    </ModalShell>
   );
 }
 

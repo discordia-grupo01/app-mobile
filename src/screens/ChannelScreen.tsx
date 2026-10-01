@@ -1,15 +1,21 @@
-import {
-  type Channel,
-  CHANNEL_START_NOTICE,
-  VOICE_NOT_IMPLEMENTED,
-} from "@discordia/client-shared";
+import type { Channel, Role } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
-import { useState } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { useMemo, useState } from "react";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { useAuth } from "../features/auth/auth-context";
+import { authorFromProfile } from "../features/messages/author";
+import { ChannelChat } from "../features/messages/components/ChannelChat";
 import { MembersSidebar } from "../features/servers/components/channel/MembersSidebar";
+import { VoiceChannelPlaceholder } from "../features/servers/components/channel/VoiceChannelPlaceholder";
 import { useThemeColors } from "../theme/theme-context";
 
 interface ChannelScreenProps {
@@ -19,6 +25,11 @@ interface ChannelScreenProps {
   currentUserId?: string | null;
   /** Owner, o miembro con el permiso MANAGE_ROLES via algún rol. */
   canManageRoles?: boolean;
+  /** Owner, o miembro con el permiso BAN_MEMBERS via algún rol. */
+  canBanMembers?: boolean;
+  canManageMessages?: boolean;
+  canMentionEveryone?: boolean;
+  serverRoles?: Role[];
   onBack: () => void;
 }
 
@@ -28,12 +39,21 @@ export function ChannelScreen({
   authToken,
   currentUserId,
   canManageRoles = false,
+  canBanMembers = false,
+  canManageMessages = false,
+  canMentionEveryone = false,
+  serverRoles = [],
   onBack,
 }: ChannelScreenProps) {
   const colors = useThemeColors();
   const isText = channel.kind === "text";
   const insets = useSafeAreaInsets();
   const [isMembersVisible, setIsMembersVisible] = useState(false);
+  const { user } = useAuth();
+  const currentAuthor = useMemo(
+    () => (user ? authorFromProfile(user) : null),
+    [user],
+  );
 
   return (
     <View className="flex-1 bg-surface">
@@ -75,34 +95,27 @@ export function ChannelScreen({
         currentUserId={currentUserId}
         authToken={authToken}
         canManageRoles={canManageRoles}
+        canBanMembers={canBanMembers}
         onClose={() => setIsMembersVisible(false)}
       />
 
-      <View className="flex-1 items-center justify-center gap-3.5 px-7">
-        <View className="w-16 h-16 rounded-[32px] items-center justify-center bg-accent">
-          <Feather
-            name={isText ? "hash" : "volume-2"}
-            size={30}
-            color="#ffffff"
-          />
-        </View>
-        <Text className="text-[20px] font-bold text-content text-center">
-          {isText
-            ? `Bienvenido a #${channel.name}`
-            : `Canal de voz: ${channel.name}`}
-        </Text>
-        <Text className="text-[15px] leading-[21px] text-content-muted text-center max-w-80">
-          {isText ? CHANNEL_START_NOTICE : VOICE_NOT_IMPLEMENTED}
-        </Text>
-      </View>
-
       {isText ? (
-        <View className="m-4 mt-0 rounded-[10px] border border-line bg-surface-input px-4 py-[15px]">
-          <Text className="text-[14px] text-content-subtle">
-            El chat todavía no está disponible
-          </Text>
-        </View>
-      ) : null}
+        <KeyboardAvoidingView
+          className="flex-1"
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+        >
+          <ChannelChat
+            key={channel.id}
+            channel={channel}
+            currentAuthor={currentAuthor}
+            serverRoles={serverRoles}
+            canManageMessages={canManageMessages}
+            canMentionEveryone={canMentionEveryone}
+          />
+        </KeyboardAvoidingView>
+      ) : (
+        <VoiceChannelPlaceholder name={channel.name} />
+      )}
     </View>
   );
 }
