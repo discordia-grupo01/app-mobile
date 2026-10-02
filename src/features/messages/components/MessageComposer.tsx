@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { cn } from "../../../lib/cn";
 import { useThemeColors } from "../../../theme/theme-context";
+import type { SendMessageResult } from "../use-channel-messages";
 import { ComposerIconButton } from "./ComposerIconButton";
 import { EmojiPickerSheet } from "./EmojiPickerSheet";
 
@@ -21,7 +22,12 @@ const COUNTER_THRESHOLD = MAX_MESSAGE_LENGTH - 200;
 
 interface MessageComposerProps {
   channelName: string;
-  onSend: (content: string) => void;
+  /**
+   * Si devuelve una promesa, el borrador se conserva hasta que el envio sale
+   * bien (un fallo lo deja para reintentar). Si devuelve `void`, se limpia al
+   * instante.
+   */
+  onSend: (content: string) => void | Promise<SendMessageResult>;
   disabled?: boolean;
   /** Puede usar `@everyone`/`@here`. Por defecto `false`. */
   canMentionEveryone?: boolean;
@@ -38,10 +44,13 @@ export function MessageComposer({
   const [draft, setDraft] = useState("");
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [mentionError, setMentionError] = useState<string | undefined>();
-  const canSend = !disabled && validateMessageContent(draft) === undefined;
+  const [sendError, setSendError] = useState<string | undefined>();
+  const [isSending, setIsSending] = useState(false);
+  const canSend =
+    !disabled && !isSending && validateMessageContent(draft) === undefined;
   const length = [...draft].length;
 
-  function submit() {
+  async function submit() {
     if (!canSend) return;
     const mentionIssue = validateMentionEveryone(draft, canMentionEveryone);
     if (mentionIssue) {
@@ -49,8 +58,19 @@ export function MessageComposer({
       return;
     }
     setMentionError(undefined);
-    onSend(draft);
-    setDraft("");
+    setSendError(undefined);
+
+    const outcome = onSend(draft);
+    if (outcome === undefined) {
+      setDraft("");
+      return;
+    }
+
+    setIsSending(true);
+    const result = await outcome;
+    setIsSending(false);
+    if (result.ok) setDraft("");
+    else setSendError(result.message);
   }
 
   return (
@@ -67,8 +87,9 @@ export function MessageComposer({
           onChangeText={(text) => {
             setDraft(text);
             setMentionError(undefined);
+            setSendError(undefined);
           }}
-          editable={!disabled}
+          editable={!disabled && !isSending}
           multiline
           placeholder={messageInputPlaceholder(channelName)}
           placeholderTextColor={colors.textSubtle}
@@ -92,8 +113,10 @@ export function MessageComposer({
         />
       </View>
 
-      {mentionError ? (
-        <Text className="mt-1.5 text-[12px] text-danger">{mentionError}</Text>
+      {mentionError || sendError ? (
+        <Text className="mt-1.5 text-[12px] text-danger">
+          {mentionError ?? sendError}
+        </Text>
       ) : null}
 
       {length >= COUNTER_THRESHOLD ? (

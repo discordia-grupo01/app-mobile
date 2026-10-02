@@ -1,11 +1,13 @@
 import {
+  LOAD_OLDER_MESSAGES_LABEL,
+  LOADING_MESSAGES_LABEL,
   type Message,
   type MessageAuthor,
   startsMessageGroup,
 } from "@discordia/client-shared";
 
 import { useMemo } from "react";
-import { FlatList } from "react-native";
+import { FlatList, Text, TouchableOpacity } from "react-native";
 
 import { ChannelWelcome } from "./ChannelWelcome";
 import { MessageItem } from "./MessageItem";
@@ -16,6 +18,9 @@ interface MessageListProps {
   messages: Message[];
   authors: Record<string, MessageAuthor>;
   editingMessageId: string | null;
+  hasMore: boolean;
+  isLoadingOlder: boolean;
+  onLoadOlder: () => void;
   resolveMention?: MentionResolver;
   onToggleReaction: (messageId: string, emoji: string) => void;
   onRequestReaction: (messageId: string) => void;
@@ -39,6 +44,9 @@ export function MessageList({
   messages,
   authors,
   editingMessageId,
+  hasMore,
+  isLoadingOlder,
+  onLoadOlder,
   resolveMention,
   onToggleReaction,
   onRequestReaction,
@@ -55,7 +63,26 @@ export function MessageList({
       keyExtractor={(message) => message.id}
       keyboardShouldPersistTaps="handled"
       contentContainerClassName="pt-3"
-      ListFooterComponent={<ChannelWelcome channelName={channelName} />}
+      onEndReached={hasMore ? onLoadOlder : undefined}
+      onEndReachedThreshold={0.5}
+      ListFooterComponent={
+        hasMore ? (
+          <TouchableOpacity
+            onPress={onLoadOlder}
+            disabled={isLoadingOlder}
+            accessibilityRole="button"
+            className="items-center py-3"
+          >
+            <Text className="text-[12px] text-content-muted">
+              {isLoadingOlder
+                ? LOADING_MESSAGES_LABEL
+                : LOAD_OLDER_MESSAGES_LABEL}
+            </Text>
+          </TouchableOpacity>
+        ) : (
+          <ChannelWelcome channelName={channelName} />
+        )
+      }
       renderItem={({ item, index }) => {
         const previous = newestFirst[index + 1];
         return (
