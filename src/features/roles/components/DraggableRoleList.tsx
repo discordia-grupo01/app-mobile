@@ -46,10 +46,23 @@ export function DraggableRoleList({
   }
 
   function handleMeasure(id: string, height: number) {
-    setHeights((prev) =>
-      prev[id] === height ? prev : { ...prev, [id]: height },
-    );
+    setHeights((prev) => {
+      const previousHeight = prev[id];
+      if (
+        previousHeight !== undefined &&
+        Math.abs(previousHeight - height) < 0.5
+      ) {
+        return prev;
+      }
+      return { ...prev, [id]: height };
+    });
   }
+
+  const allMeasured = order.every((id) => id in heights);
+  const [canAnimate, setCanAnimate] = useState(false);
+  useEffect(() => {
+    if (allMeasured) setCanAnimate(true);
+  }, [allMeasured]);
 
   function offsetsFor(ids: string[]): Map<string, number> {
     const map = new Map<string, number>();
@@ -124,6 +137,7 @@ export function DraggableRoleList({
             key={id}
             top={offsets.get(id) ?? 0}
             isDragging={draggingId === id}
+            canAnimate={canAnimate}
             onDragStart={() => handleDragStart(id)}
             onDragMove={(dy) => handleDragMove(id, dy)}
             onDragEnd={() => handleDragEnd(id)}
@@ -140,6 +154,7 @@ export function DraggableRoleList({
 function DraggableRoleRow({
   top,
   isDragging,
+  canAnimate,
   onDragStart,
   onDragMove,
   onDragEnd,
@@ -148,13 +163,14 @@ function DraggableRoleRow({
 }: {
   top: number;
   isDragging: boolean;
+  canAnimate: boolean;
   onDragStart: () => void;
   onDragMove: (dy: number) => void;
   onDragEnd: () => void;
   onMeasure: (height: number) => void;
   children: (panHandlers: GestureResponderHandlers) => React.ReactNode;
 }) {
-  const topAnim = useMemo(() => new Animated.Value(top), []); // eslint-disable-line react-hooks/exhaustive-deps
+  const topAnim = useMemo(() => new Animated.Value(top), []); // eslint-disable-line react-hooks/exhaustive-deps -- valor inicial nada mas
 
   const topRef = useRef(top);
   useEffect(() => {
@@ -163,12 +179,16 @@ function DraggableRoleRow({
 
   useEffect(() => {
     if (isDragging) return;
+    if (!canAnimate) {
+      topAnim.setValue(top);
+      return;
+    }
     Animated.timing(topAnim, {
       toValue: top,
       duration: 150,
       useNativeDriver: false,
     }).start();
-  }, [top, isDragging, topAnim]);
+  }, [top, isDragging, canAnimate, topAnim]);
 
   const callbacksRef = useRef({ onDragStart, onDragMove, onDragEnd });
   useEffect(() => {
