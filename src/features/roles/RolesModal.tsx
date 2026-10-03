@@ -1,5 +1,6 @@
 import {
   COLOR_PALETTE,
+  displayNameOf,
   MAX_NAME,
   MEMBER_PAGE_LIMIT,
   type MemberInfo,
@@ -26,7 +27,6 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { getPublicUser } from "../auth/service";
 import { Button } from "../../components/ui/Button";
 import { useThemeColors } from "../../theme/theme-context";
 import { listMembers } from "../servers/api";
@@ -289,14 +289,14 @@ export function RolesModal({
       }
       Promise.all(
         result.members.map(async (member) => {
-          const [profile, memberRolesResult] = await Promise.all([
-            getPublicUser(member.user_id),
-            listMemberRoles(serverId, member.user_id),
-          ]);
+          const memberRolesResult = await listMemberRoles(
+            serverId,
+            member.user_id,
+          );
           return {
             userId: member.user_id,
-            name: profile?.name ?? member.user_id,
-            avatarUrl: profile?.avatar_url ?? null,
+            name: displayNameOf(member.profile),
+            avatarUrl: member.profile?.avatar_url ?? null,
             roleIds: memberRolesResult.ok
               ? memberRolesResult.roles.map((r) => r.id)
               : [],

@@ -1,4 +1,9 @@
-import { MEMBER_PAGE_LIMIT, resolveImageUrl } from "@discordia/client-shared";
+import {
+  displayNameOf,
+  type Member,
+  MEMBER_PAGE_LIMIT,
+  resolveImageUrl,
+} from "@discordia/client-shared";
 
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useCallback, useEffect, useState } from "react";
@@ -14,22 +19,13 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { getPublicUser } from "../../../auth/service";
+import { useProfileFallback } from "../../../../hooks/useProfileFallback";
 import { env } from "../../../../lib/env";
 import { useThemeColors } from "../../../../theme/theme-context";
 import { OwnProfileModal } from "../../../profile/components/OwnProfileModal";
 import { PublicProfileModal } from "../../../profile/components/PublicProfileModal";
 import { listMembers } from "../../api";
 import { ServerAvatar } from "../ServerAvatar";
-
-interface ResolvedMember {
-  userId: string;
-  isOwner: boolean;
-  name: string | null;
-  avatarUrl: string | null;
-  statusText: string | null;
-  statusEmoji: string | null;
-}
 
 interface MembersSidebarProps {
   visible: boolean;
@@ -53,18 +49,19 @@ export function MembersSidebar({
   onClose,
 }: MembersSidebarProps) {
   const colors = useThemeColors();
-  const [members, setMembers] = useState<ResolvedMember[]>([]);
+  const [members, setMembers] = useState<Member[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [isOwnProfileVisible, setIsOwnProfileVisible] = useState(false);
   const [viewingUserId, setViewingUserId] = useState<string | null>(null);
   const [wasVisible, setWasVisible] = useState(visible);
   const insets = useSafeAreaInsets();
+  const resolvedMembers = useProfileFallback(members);
 
   if (visible !== wasVisible) {
     setWasVisible(visible);
     if (visible) {
-      setMembers([]);
+      setMembers(null);
       setIsLoading(true);
       setErrorMessage("");
     }
@@ -81,35 +78,7 @@ export function MembersSidebar({
         return;
       }
 
-      setMembers(
-        result.members.map((m) => ({
-          userId: m.user_id,
-          isOwner: m.is_owner,
-          name: null,
-          avatarUrl: null,
-          statusText: null,
-          statusEmoji: null,
-        })),
-      );
-
-      result.members.forEach((m) => {
-        getPublicUser(m.user_id).then((profile) => {
-          if (cancelled || !profile) return;
-          setMembers((prev) =>
-            prev.map((item) =>
-              item.userId === m.user_id
-                ? {
-                    ...item,
-                    name: profile.name,
-                    avatarUrl: profile.avatar_url,
-                    statusText: profile.status_text,
-                    statusEmoji: profile.status_emoji,
-                  }
-                : item,
-            ),
-          );
-        });
-      });
+      setMembers(result.members);
     });
 
     return () => {
@@ -134,37 +103,38 @@ export function MembersSidebar({
     return () => subscription.remove();
   }, [visible, onClose]);
 
-  const owners = members.filter((m) => m.isOwner);
-  const others = members.filter((m) => !m.isOwner);
+  const owners = (resolvedMembers ?? []).filter((m) => m.is_owner);
+  const others = (resolvedMembers ?? []).filter((m) => !m.is_owner);
   const canBanViewed =
     canBanMembers &&
     viewingUserId !== currentUserId &&
-    !owners.some((owner) => owner.userId === viewingUserId);
+    !owners.some((owner) => owner.user_id === viewingUserId);
 
-  function handleSelectMember(member: ResolvedMember) {
-    if (member.userId === currentUserId) {
+  function handleSelectMember(member: Member) {
+    if (member.user_id === currentUserId) {
       setIsOwnProfileVisible(true);
       return;
     }
-    setViewingUserId(member.userId);
+    setViewingUserId(member.user_id);
   }
 
-  function renderMemberRow(member: ResolvedMember) {
-    const avatarSrc = resolveImageUrl(member.avatarUrl, env.apiUrl);
-    const isSelf = member.userId === currentUserId;
+  function renderMemberRow(member: Member) {
+    const name = displayNameOf(member.profile);
+    const avatarSrc = resolveImageUrl(member.profile?.avatar_url, env.apiUrl);
+    const isSelf = member.user_id === currentUserId;
 
     return (
       <TouchableOpacity
-        key={member.userId}
+        key={member.user_id}
         className="flex-row items-center gap-2.5"
         activeOpacity={0.7}
         onPress={() => handleSelectMember(member)}
         accessibilityRole="button"
-        accessibilityLabel={`Ver perfil de ${member.name ?? "usuario"}`}
+        accessibilityLabel={`Ver perfil de ${name}`}
       >
         <View className="relative">
           <ServerAvatar
-            name={member.name ?? "?"}
+            name={name}
             uri={avatarSrc}
             size={36}
             borderRadius={18}
@@ -178,7 +148,7 @@ export function MembersSidebar({
             className="text-[14px] font-semibold text-content"
             numberOfLines={1}
           >
-            {member.name ?? "Cargando..."}
+            {name}
             {isSelf ? (
               <Text className="text-[13px] font-normal text-content-subtle">
                 {" "}
@@ -186,17 +156,19 @@ export function MembersSidebar({
               </Text>
             ) : null}
           </Text>
-          {member.statusText ? (
+          {member.profile?.status_text ? (
             <Text
               className="text-[12px] text-content-subtle mt-[1px]"
               numberOfLines={1}
             >
-              {member.statusEmoji ? `${member.statusEmoji} ` : ""}
-              {member.statusText}
+              {member.profile.status_emoji
+                ? `${member.profile.status_emoji} `
+                : ""}
+              {member.profile.status_text}
             </Text>
           ) : null}
         </View>
-        {member.isOwner ? (
+        {member.is_owner ? (
           <MaterialCommunityIcons
             name="crown"
             size={18}
@@ -240,7 +212,7 @@ export function MembersSidebar({
                 contentContainerClassName="px-4 pb-6 gap-5"
                 showsVerticalScrollIndicator={false}
               >
-                {isLoading && members.length === 0 ? (
+                {isLoading && members === null ? (
                   <ActivityIndicator
                     size="small"
                     color={colors.accentBright}
