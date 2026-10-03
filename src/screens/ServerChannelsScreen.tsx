@@ -6,6 +6,7 @@ import {
   isUnassignedCategory,
   type LeaveServerResult,
   type OwnershipTransfer,
+  type Role,
   type ServerSummary,
   sortByPosition,
   topLevelChannels,
@@ -67,6 +68,7 @@ interface ServerChannelsScreenProps {
   servers: ServerSummary[];
   userName?: string | null;
   isOwner?: boolean;
+  myRoles?: Role[];
   canManageChannels?: boolean;
   canManageRoles?: boolean;
   canManageServer?: boolean;
@@ -134,6 +136,7 @@ export function ServerChannelsScreen({
   servers,
   userName,
   isOwner = false,
+  myRoles = [],
   canManageChannels = false,
   canManageRoles = false,
   canManageServer = false,
@@ -775,6 +778,8 @@ export function ServerChannelsScreen({
           visible={isRolesModalVisible}
           serverId={server.id}
           serverName={server.name}
+          isOwner={isOwner}
+          myRoles={myRoles}
           onClose={() => {
             setIsRolesModalVisible(false);
             onPermissionsChanged?.();
