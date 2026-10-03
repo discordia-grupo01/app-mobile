@@ -304,6 +304,7 @@ export function HomeScreen() {
           servers={servers}
           userName={user?.name}
           isOwner={isOwner}
+          myRoles={myRoles}
           canManageChannels={canManageChannels}
           canManageRoles={canManageRoles}
           canManageServer={canManageServer}
