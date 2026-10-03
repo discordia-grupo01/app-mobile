@@ -2,17 +2,12 @@ import { type LeaveServerResult } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
 import { useState } from "react";
-import {
-  Modal,
-  Pressable,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Text, View } from "react-native";
 
 import { useThemeColors } from "../../../../theme/theme-context";
 import { Button } from "../../../../components/ui/Button";
+import { ModalShell } from "../../../../components/ui/ModalShell";
+import { ModalCloseButton } from "../../../../components/ui/ModalCloseButton";
 
 interface LeaveServerModalProps {
   visible: boolean;
@@ -80,91 +75,65 @@ export function LeaveServerModal({
   }
 
   return (
-    <Modal
-      transparent
+    <ModalShell
       visible={visible}
-      animationType="fade"
-      onRequestClose={onClose}
+      onClose={onClose}
+      className="max-w-80 p-7 pt-6 items-center"
     >
-      <View className="flex-1 bg-[rgba(0,0,0,0.65)] items-center justify-center p-4">
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+      <ModalCloseButton variant="subtle" onPress={onClose} />
 
-        <View className="w-full max-w-80 rounded-[20px] border border-line-strong bg-surface-modal p-7 pt-6 items-center">
-          <TouchableOpacity
-            className="absolute top-3 right-3 w-8 h-8 rounded-2xl items-center justify-center bg-[rgba(255,255,255,0.06)]"
-            onPress={onClose}
-            accessibilityRole="button"
-            accessibilityLabel="Cerrar"
-          >
-            <Feather name="x" size={16} color={colors.textMuted} />
-          </TouchableOpacity>
+      {view === "blocked" ? (
+        <>
+          <View className="w-16 h-16 rounded-[18px] items-center justify-center bg-[rgba(107,149,189,0.15)] mt-2 mb-5">
+            <Feather name="shield" size={26} color={colors.info} />
+          </View>
+          <Text className="text-[19px] font-bold text-content text-center">
+            No podés abandonar tu servidor
+          </Text>
+          <Text className="text-[14px] leading-5 text-content-muted text-center mt-2.5 mb-2">
+            Sos el propietario de{" "}
+            <Text className="text-content font-bold">{serverName}</Text>. Para
+            salir, primero tenés que transferir la propiedad a otro miembro del
+            servidor.
+          </Text>
 
-          {view === "blocked" ? (
-            <>
-              <View className="w-16 h-16 rounded-[18px] items-center justify-center bg-[rgba(107,149,189,0.15)] mt-2 mb-5">
-                <Feather name="shield" size={26} color={colors.info} />
-              </View>
-              <Text className="text-[19px] font-bold text-content text-center">
-                No podés abandonar tu servidor
+          <View className="flex-col gap-2.5 w-full mt-5">
+            <Button title="Entendido" variant="secondary" onPress={onClose} />
+          </View>
+        </>
+      ) : (
+        <>
+          <View className="w-16 h-16 rounded-[18px] items-center justify-center bg-[rgba(224,82,82,0.14)] mt-2 mb-5">
+            <Feather name="log-out" size={26} color={colors.danger} />
+          </View>
+          <Text className="text-[19px] font-bold text-content text-center">
+            ¿Abandonar {serverName}?
+          </Text>
+          <Text className="text-[14px] leading-5 text-content-muted text-center mt-2.5 mb-2">
+            Vas a perder acceso a todos sus canales de texto y voz. Para volver
+            a entrar vas a necesitar una nueva invitación.
+          </Text>
+
+          {error ? (
+            <View className="flex-row items-start gap-2 w-full rounded-xl border border-[rgba(224,82,82,0.3)] bg-[rgba(224,82,82,0.1)] px-3 py-2.5 mt-2.5">
+              <Feather name="alert-circle" size={15} color={colors.danger} />
+              <Text className="flex-1 text-danger text-[12px] leading-[17px]">
+                {error}
               </Text>
-              <Text className="text-[14px] leading-5 text-content-muted text-center mt-2.5 mb-2">
-                Sos el propietario de{" "}
-                <Text className="text-content font-bold">{serverName}</Text>.
-                Para salir, primero tenés que transferir la propiedad a otro
-                miembro del servidor.
-              </Text>
+            </View>
+          ) : null}
 
-              <View className="flex-col gap-2.5 w-full mt-5">
-                <Button
-                  title="Entendido"
-                  variant="secondary"
-                  onPress={onClose}
-                />
-              </View>
-            </>
-          ) : (
-            <>
-              <View className="w-16 h-16 rounded-[18px] items-center justify-center bg-[rgba(224,82,82,0.14)] mt-2 mb-5">
-                <Feather name="log-out" size={26} color={colors.danger} />
-              </View>
-              <Text className="text-[19px] font-bold text-content text-center">
-                ¿Abandonar {serverName}?
-              </Text>
-              <Text className="text-[14px] leading-5 text-content-muted text-center mt-2.5 mb-2">
-                Vas a perder acceso a todos sus canales de texto y voz. Para
-                volver a entrar vas a necesitar una nueva invitación.
-              </Text>
-
-              {error ? (
-                <View className="flex-row items-start gap-2 w-full rounded-xl border border-[rgba(224,82,82,0.3)] bg-[rgba(224,82,82,0.1)] px-3 py-2.5 mt-2.5">
-                  <Feather
-                    name="alert-circle"
-                    size={15}
-                    color={colors.danger}
-                  />
-                  <Text className="flex-1 text-danger text-[12px] leading-[17px]">
-                    {error}
-                  </Text>
-                </View>
-              ) : null}
-
-              <View className="flex-col gap-2.5 w-full mt-5">
-                <Button
-                  title="Cancelar"
-                  variant="secondary"
-                  onPress={onClose}
-                />
-                <Button
-                  title="Abandonar servidor"
-                  variant="danger"
-                  onPress={handleConfirm}
-                  isLoading={isSubmitting}
-                />
-              </View>
-            </>
-          )}
-        </View>
-      </View>
-    </Modal>
+          <View className="flex-col gap-2.5 w-full mt-5">
+            <Button title="Cancelar" variant="secondary" onPress={onClose} />
+            <Button
+              title="Abandonar servidor"
+              variant="danger"
+              onPress={handleConfirm}
+              isLoading={isSubmitting}
+            />
+          </View>
+        </>
+      )}
+    </ModalShell>
   );
 }

@@ -8,7 +8,7 @@ import {
 
 import { Feather } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -18,18 +18,23 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { useDirectMessages } from "../features/direct-messages/useDirectMessages";
 import { AddServerSheet } from "../features/servers/components/rail/AddServerSheet";
 import { CreateServerModal } from "../features/servers/components/server/CreateServerModal";
 import { EmptyState } from "../features/servers/components/home/EmptyState";
 import { JoinServerModal } from "../features/servers/components/server/JoinServerModal";
 import { useAuth } from "../features/auth/auth-context";
+import { authorFromProfile } from "../features/messages/author";
 import { getOwnProfile } from "../features/profile/service";
-import { listMemberRoles } from "../features/roles/api";
+import { listMemberRoles, listRoles } from "../features/roles/api";
 import { leaveServer, listMyServers } from "../features/servers/api";
 import { useStatusBarStyle, useThemeColors } from "../theme/theme-context";
 import { ChannelScreen } from "./ChannelScreen";
+import { DirectMessagesScreen } from "./DirectMessagesScreen";
 import { ServerChannelsScreen } from "./ServerChannelsScreen";
 import { ServerPickerScreen } from "./ServerPickerScreen";
+
+type MainView = "servers" | "dm";
 
 export function HomeScreen() {
   const colors = useThemeColors();
@@ -42,10 +47,12 @@ export function HomeScreen() {
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(
     null,
   );
+  const [view, setView] = useState<MainView>("servers");
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
   const [isJoinModalVisible, setIsJoinModalVisible] = useState(false);
   const [isAddServerSheetVisible, setIsAddServerSheetVisible] = useState(false);
   const [myRoles, setMyRoles] = useState<Role[]>([]);
+  const [serverRoles, setServerRoles] = useState<Role[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -93,6 +100,17 @@ export function HomeScreen() {
     selectedServer != null &&
     String(user.id) === selectedServer.owner_id;
 
+  // Se pide una sola vez y sobrevive a cambiar de vista, asi el contador de
+  // no leidos del riel no se resetea al entrar y salir de Mensajes Directos.
+  const currentAuthor = useMemo(
+    () => (user ? authorFromProfile(user) : null),
+    [user],
+  );
+  const directMessages = useDirectMessages(currentAuthor);
+  const unreadDmCount = directMessages.conversations.filter(
+    (c) => c.isUnread,
+  ).length;
+
   /**
    * Roles asignados al usuario actual en `selectedServer`
    */
@@ -110,6 +128,23 @@ export function HomeScreen() {
 
   useEffect(() => fetchMyRoles(), [fetchMyRoles]);
 
+  /**
+   * Catalogo completo de roles del server, para colorear menciones a `@Rol`.
+   * Sin servidor seleccionado no hay nada que buscar (y sin `setState` en ese
+   * caso: `serverRoles` queda con el valor anterior, que no se usa hasta que
+   * haya un canal de texto abierto).
+   */
+  useEffect(() => {
+    if (!selectedServer) return;
+    let cancelled = false;
+    listRoles(selectedServer.id).then((result) => {
+      if (!cancelled && result.ok) setServerRoles(result.roles);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedServer]);
+
   const canManageChannels = hasPermission(
     { isOwner, roles: myRoles },
     "MANAGE_CHANNELS",
@@ -122,10 +157,27 @@ export function HomeScreen() {
     { isOwner, roles: myRoles },
     "MANAGE_SERVER",
   );
+  const canBanMembers = hasPermission(
+    { isOwner, roles: myRoles },
+    "BAN_MEMBERS",
+  );
   const canInvite = hasPermission({ isOwner, roles: myRoles }, "CREATE_INVITE");
+  const canManageMessages = hasPermission(
+    { isOwner, roles: myRoles },
+    "MANAGE_MESSAGES",
+  );
+  const canMentionEveryone = hasPermission(
+    { isOwner, roles: myRoles },
+    "MENTION_EVERYONE",
+  );
 
-  function handleSelectHome() {
-    setSelectedServerId(null);
+  function handleOpenDirectMessages() {
+    setView("dm");
+  }
+
+  function selectServer(serverId: string) {
+    setView("servers");
+    setSelectedServerId(serverId);
     setSelectedChannelId(null);
   }
 
@@ -136,6 +188,7 @@ export function HomeScreen() {
       );
       return [...withoutDuplicate, server];
     });
+    setView("servers");
     setSelectedServerId(server.id);
     setSelectedChannelId(null);
     setIsCreateModalVisible(false);
@@ -182,6 +235,46 @@ export function HomeScreen() {
     );
   }
 
+  if (view === "dm") {
+    return (
+      <View className="flex-1">
+        <StatusBar style={statusBarStyle} />
+        <DirectMessagesScreen
+          servers={servers}
+          userName={user?.name}
+          currentAuthor={currentAuthor}
+          directMessages={directMessages}
+          onSwitchServer={selectServer}
+          onAddServer={handleAddServer}
+          onLogout={logout}
+        />
+
+        <AddServerSheet
+          visible={isAddServerSheetVisible}
+          onClose={() => setIsAddServerSheetVisible(false)}
+          onCreatePress={() => {
+            setIsAddServerSheetVisible(false);
+            setIsCreateModalVisible(true);
+          }}
+          onJoinPress={() => {
+            setIsAddServerSheetVisible(false);
+            setIsJoinModalVisible(true);
+          }}
+        />
+        <CreateServerModal
+          visible={isCreateModalVisible}
+          onClose={() => setIsCreateModalVisible(false)}
+          onCreated={addAndSelect}
+        />
+        <JoinServerModal
+          visible={isJoinModalVisible}
+          onClose={() => setIsJoinModalVisible(false)}
+          onJoined={addAndSelect}
+        />
+      </View>
+    );
+  }
+
   if (selectedServer && selectedChannel) {
     return (
       <View className="flex-1">
@@ -192,6 +285,10 @@ export function HomeScreen() {
           authToken={token}
           currentUserId={user ? String(user.id) : null}
           canManageRoles={canManageRoles}
+          canBanMembers={canBanMembers}
+          canManageMessages={canManageMessages}
+          canMentionEveryone={canMentionEveryone}
+          serverRoles={serverRoles}
           onBack={() => setSelectedChannelId(null)}
         />
       </View>
@@ -210,14 +307,13 @@ export function HomeScreen() {
           canManageChannels={canManageChannels}
           canManageRoles={canManageRoles}
           canManageServer={canManageServer}
+          canBanMembers={canBanMembers}
           canInvite={canInvite}
           onPermissionsChanged={fetchMyRoles}
           onSelectChannel={setSelectedChannelId}
-          onSelectHome={handleSelectHome}
-          onSwitchServer={(id) => {
-            setSelectedServerId(id);
-            setSelectedChannelId(null);
-          }}
+          onOpenDirectMessages={handleOpenDirectMessages}
+          unreadDmCount={unreadDmCount}
+          onSwitchServer={selectServer}
           onAddServer={handleAddServer}
           onLogout={logout}
           onLeaveServer={handleLeaveServer}
@@ -257,10 +353,9 @@ export function HomeScreen() {
         <ServerPickerScreen
           servers={servers}
           userName={user?.name}
-          onSelectServer={(id) => {
-            setSelectedServerId(id);
-            setSelectedChannelId(null);
-          }}
+          unreadDmCount={unreadDmCount}
+          onSelectServer={selectServer}
+          onOpenDirectMessages={handleOpenDirectMessages}
           onAddServer={handleAddServer}
           onLogout={logout}
         />

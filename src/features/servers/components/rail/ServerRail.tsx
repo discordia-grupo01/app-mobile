@@ -1,7 +1,13 @@
 import { type ServerSummary } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
-import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { resolveServerIconUrl } from "../../api";
@@ -14,7 +20,10 @@ export const RAIL_WIDTH = 72;
 interface ServerRailProps {
   servers: ServerSummary[];
   activeServerId: string | null;
-  onSelectHome: () => void;
+  /** El botón "Inicio" abre Mensajes Directos: se resalta cuando esa vista está activa. */
+  isDirectMessagesActive: boolean;
+  unreadDmCount?: number;
+  onOpenDirectMessages: () => void;
   onSelectServer: (serverId: string) => void;
   onAddServer: () => void;
 }
@@ -51,12 +60,13 @@ function ServerRailIcon({
 export function ServerRail({
   servers,
   activeServerId,
-  onSelectHome,
+  isDirectMessagesActive,
+  unreadDmCount = 0,
+  onOpenDirectMessages,
   onSelectServer,
   onAddServer,
 }: ServerRailProps) {
   const colors = useThemeColors();
-  const isHomeActive = activeServerId === null;
   const insets = useSafeAreaInsets();
 
   return (
@@ -67,23 +77,34 @@ export function ServerRail({
       contentContainerStyle={{ paddingTop: insets.top + 12 }}
       showsVerticalScrollIndicator={false}
     >
-      <TouchableOpacity
-        onPress={onSelectHome}
-        className={cn(
-          "w-12 h-12 items-center justify-center",
-          isHomeActive
-            ? "bg-rail-active-bg rounded-2xl"
-            : "bg-rail-surface rounded-3xl",
-        )}
-        accessibilityLabel="Inicio"
-      >
-        <Feather
-          name="home"
-          size={20}
-          color={isHomeActive ? colors.railActiveText : colors.onAccent}
-          style={isHomeActive ? undefined : { opacity: 0.7 }}
-        />
-      </TouchableOpacity>
+      <View className="relative">
+        <TouchableOpacity
+          onPress={onOpenDirectMessages}
+          className={cn(
+            "w-12 h-12 items-center justify-center",
+            isDirectMessagesActive
+              ? "bg-rail-active-bg rounded-2xl"
+              : "bg-rail-surface rounded-3xl",
+          )}
+          accessibilityLabel="Mensajes directos"
+        >
+          <Feather
+            name="home"
+            size={20}
+            color={
+              isDirectMessagesActive ? colors.railActiveText : colors.onAccent
+            }
+            style={isDirectMessagesActive ? undefined : { opacity: 0.7 }}
+          />
+        </TouchableOpacity>
+        {unreadDmCount > 0 && !isDirectMessagesActive ? (
+          <View className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] rounded-full items-center justify-center bg-danger border-2 border-surface-servers px-1">
+            <Text className="text-[9px] font-bold text-white">
+              {unreadDmCount}
+            </Text>
+          </View>
+        ) : null}
+      </View>
 
       <View className="w-8 h-px bg-line-strong my-0.5" />
 

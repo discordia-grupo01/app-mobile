@@ -46,7 +46,21 @@ function resolveWebUrl(): string | null {
   return process.env.EXPO_PUBLIC_WEB_URL ?? null;
 }
 
+/**
+ * Base del socket de Phoenix (el cliente le agrega `/websocket`). Sale por el
+ * mismo gateway que la API: `http(s)://host` -> `ws(s)://host/socket`.
+ * `EXPO_PUBLIC_WS_URL` pisa el valor si el socket vive en otra direccion.
+ */
+function resolveWsUrl(apiUrl: string): string {
+  return (
+    process.env.EXPO_PUBLIC_WS_URL ?? `${apiUrl.replace(/^http/, "ws")}/socket`
+  );
+}
+
+const apiUrl = resolveApiUrl();
+
 export const env = {
-  apiUrl: resolveApiUrl(),
+  apiUrl,
+  wsUrl: resolveWsUrl(apiUrl),
   webUrl: resolveWebUrl(),
 };
