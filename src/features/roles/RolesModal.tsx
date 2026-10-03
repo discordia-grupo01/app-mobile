@@ -34,6 +34,7 @@ import { listMembers } from "../servers/api";
 import { ColorGrid } from "./components/ColorGrid";
 import { DraggableRoleList } from "./components/DraggableRoleList";
 import { FieldError } from "./components/FieldError";
+import { GripIcon } from "./components/GripIcon";
 import { MemberRoleRow } from "./components/MemberRoleRow";
 import { PermissionToggle } from "./components/PermissionToggle";
 import { RolePreviewBadge } from "./components/RolePreviewBadge";
@@ -202,14 +203,14 @@ export function RolesModal({
       >
         {sortedRoles.length > 1 ? (
           <View
-            className="px-1.5 py-3"
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            className="items-center justify-center py-3"
+            style={{ width: 26 }}
+            onStartShouldSetResponder={() => true}
           >
-            <Feather
-              name="menu"
+            <GripIcon
               size={14}
               color={colors.textSubtle}
-              style={{ opacity: canDrag ? 1 : 0.3 }}
+              opacity={canDrag ? 1 : 0.35}
             />
           </View>
         ) : null}
