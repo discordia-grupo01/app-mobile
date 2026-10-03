@@ -53,7 +53,7 @@ export function DmMessageList({
       }
       renderItem={({ item, index }) => {
         const previous = newestFirst[index + 1];
-        const isOwn = item.author_id === currentAuthor.id;
+        const isOwn = item.user_id === currentAuthor.id;
         return (
           <MessageItem
             message={item}

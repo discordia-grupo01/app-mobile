@@ -106,6 +106,7 @@ export function ChannelScreen({
         >
           <ChannelChat
             key={channel.id}
+            serverId={serverId}
             channel={channel}
             currentAuthor={currentAuthor}
             serverRoles={serverRoles}

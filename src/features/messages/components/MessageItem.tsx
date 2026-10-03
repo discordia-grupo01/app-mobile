@@ -19,7 +19,7 @@ const AVATAR_SIZE = 40;
 /** Forma minima que necesita esta fila: sirve tanto para `Message` (canal) como para `DmMessage`. */
 export interface MessageItemMessage extends Pick<
   Message,
-  "id" | "author_id" | "content" | "created_at" | "edited_at" | "deleted_at"
+  "id" | "user_id" | "content" | "inserted_at" | "edited_at" | "deleted_at"
 > {
   reactions?: Message["reactions"];
 }
@@ -51,7 +51,7 @@ export function MessageItem({
   onSaveEdit,
   onCancelEdit,
 }: MessageItemProps) {
-  const isDeleted = message.deleted_at !== null;
+  const isDeleted = Boolean(message.deleted_at);
 
   return (
     <Pressable
@@ -77,7 +77,7 @@ export function MessageItem({
 
       <View className="min-w-0 flex-1">
         {isGroupStart ? (
-          <MessageHeader author={author} createdAt={message.created_at} />
+          <MessageHeader author={author} createdAt={message.inserted_at} />
         ) : null}
 
         {isDeleted ? (
