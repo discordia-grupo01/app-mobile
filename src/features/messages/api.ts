@@ -28,16 +28,18 @@ export async function fetchSocketTicket(): Promise<SocketTicketResult> {
 }
 
 /**
- * Una pagina del historial del canal (mas nuevos primero). Para la pagina
- * anterior se pasa el `nextCursor` de la respuesta como `before`.
+ * Una pagina del historial del canal (de mas viejo a mas nuevo). Para la pagina
+ * anterior se pasa el `nextCursor` de la respuesta como `before`; para traer lo
+ * posterior a un mensaje, su id como `after`.
  */
 export async function fetchMessages(
   channelId: string,
-  options: { limit?: number; before?: string } = {},
+  options: { limit?: number; before?: string; after?: string } = {},
 ): Promise<ListMessagesResult> {
   const query = new URLSearchParams();
   if (options.limit !== undefined) query.set("limit", String(options.limit));
   if (options.before) query.set("before", options.before);
+  if (options.after) query.set("after", options.after);
   const qs = query.toString();
 
   const result = await apiFetch<MessageHistory>(
