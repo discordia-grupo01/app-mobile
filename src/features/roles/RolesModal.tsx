@@ -4,9 +4,11 @@ import {
   MEMBER_PAGE_LIMIT,
   type MemberInfo,
   NO_ROLES_YET,
+  outranksRole,
   type Role,
   ROLE_PERMISSIONS,
   type RolePermission,
+  sortByPosition,
   validateRole,
 } from "@discordia/client-shared";
 
@@ -14,6 +16,7 @@ import { Feather } from "@expo/vector-icons";
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  type GestureResponderHandlers,
   ScrollView,
   Text,
   TextInput,
@@ -29,6 +32,7 @@ import { useThemeColors } from "../../theme/theme-context";
 import { listMembers } from "../servers/api";
 
 import { ColorGrid } from "./components/ColorGrid";
+import { DraggableRoleList } from "./components/DraggableRoleList";
 import { FieldError } from "./components/FieldError";
 import { MemberRoleRow } from "./components/MemberRoleRow";
 import { PermissionToggle } from "./components/PermissionToggle";
@@ -40,6 +44,7 @@ import {
   listMemberRoles,
   listRoles,
   removeRole,
+  reorderRoles,
   setDefaultRole,
   updateRole,
 } from "./api";
@@ -51,6 +56,9 @@ interface RolesModalProps {
   visible: boolean;
   serverId: string;
   serverName: string;
+  /** Rango jerárquico del usuario actual (#56): decide qué roles puede arrastrar. */
+  isOwner: boolean;
+  myRoles: Role[];
   onClose: () => void;
 }
 
@@ -58,6 +66,8 @@ export function RolesModal({
   visible,
   serverId,
   serverName,
+  isOwner,
+  myRoles,
   onClose,
 }: RolesModalProps) {
   const colors = useThemeColors();
@@ -70,6 +80,7 @@ export function RolesModal({
   const [loadError, setLoadError] = useState("");
   const [selectedId, setSelectedId] = useState("");
   const [defaultRoleId, setDefaultRoleId] = useState<string | null>(null);
+  const [isRoleDragActive, setIsRoleDragActive] = useState(false);
 
   // Edit form
   const [editName, setEditName] = useState("");
@@ -156,6 +167,86 @@ export function RolesModal({
   const membersWithoutRole = (membersInfo ?? []).filter(
     (m) => !m.roleIds.includes(selectedId),
   );
+
+  const hierarchyCtx = { isOwner, roles: myRoles };
+  const sortedRoles = sortByPosition(roles ?? []);
+
+  async function handleRolesReordered(orderedIds: string[]) {
+    const previousRoles = roles ?? [];
+    const byId = new Map(previousRoles.map((role) => [role.id, role]));
+    const reordered = orderedIds
+      .map((id, index) => {
+        const role = byId.get(id);
+        return role ? { ...role, position: index + 1 } : null;
+      })
+      .filter((role): role is Role => role !== null);
+
+    setRoles(reordered);
+
+    const result = await reorderRoles(serverId, orderedIds);
+    if (!result.ok) {
+      showToast(result.message);
+      setRoles(previousRoles);
+      return;
+    }
+    setRoles(result.roles);
+  }
+
+  function renderRoleRow(role: Role, panHandlers: GestureResponderHandlers) {
+    const canDrag =
+      sortedRoles.length > 1 && outranksRole(hierarchyCtx, role.position);
+    return (
+      <View
+        className="mb-1 flex-row items-center gap-1 rounded-xl"
+        {...(canDrag ? panHandlers : {})}
+      >
+        {sortedRoles.length > 1 ? (
+          <View
+            className="px-1.5 py-3"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Feather
+              name="menu"
+              size={14}
+              color={colors.textSubtle}
+              style={{ opacity: canDrag ? 1 : 0.3 }}
+            />
+          </View>
+        ) : null}
+        <TouchableOpacity
+          activeOpacity={0.75}
+          className="flex-1 flex-row items-center gap-2.5 rounded-xl px-2 py-3"
+          onPress={() => openRoleForEdit(role)}
+        >
+          <View
+            className="w-3 h-3 rounded-md"
+            style={{ backgroundColor: role.color }}
+          />
+          <Text
+            className="flex-1 text-[14px] font-semibold text-content"
+            numberOfLines={1}
+          >
+            {role.name}
+          </Text>
+          <Text
+            className="text-[10px] text-content-subtle"
+            accessibilityLabel="Posición en la jerarquía"
+          >
+            #{role.position}
+          </Text>
+          {role.id === defaultRoleId ? (
+            <Feather
+              name="star"
+              size={12}
+              color={colors.highlight}
+              style={{ marginRight: 2 }}
+            />
+          ) : null}
+          <Feather name="chevron-right" size={16} color={colors.textSubtle} />
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   function openRoleForEdit(role: Role) {
     setSelectedId(role.id);
@@ -504,8 +595,9 @@ export function RolesModal({
           </View>
           <ScrollView
             className="shrink"
-            contentContainerClassName="px-3 pt-2.5 pb-5 gap-1"
+            contentContainerClassName="px-3 pt-2.5 pb-5"
             showsVerticalScrollIndicator={false}
+            scrollEnabled={!isRoleDragActive}
           >
             {isLoadingRoles ? (
               <ActivityIndicator
@@ -517,42 +609,20 @@ export function RolesModal({
               <Text className="text-danger text-[13px] text-center mt-4">
                 {loadError}
               </Text>
-            ) : (roles ?? []).length === 0 ? (
+            ) : sortedRoles.length === 0 ? (
               <Text className="text-content-subtle text-[13px] mt-2">
                 {NO_ROLES_YET}
               </Text>
+            ) : sortedRoles.length > 1 ? (
+              <DraggableRoleList
+                roles={sortedRoles}
+                onReorder={handleRolesReordered}
+                onDragActiveChange={setIsRoleDragActive}
+                renderRole={renderRoleRow}
+              />
             ) : (
-              (roles ?? []).map((role) => (
-                <TouchableOpacity
-                  key={role.id}
-                  activeOpacity={0.75}
-                  className="flex-row items-center gap-2.5 rounded-xl px-2.5 py-3"
-                  onPress={() => openRoleForEdit(role)}
-                >
-                  <View
-                    className="w-3 h-3 rounded-md"
-                    style={{ backgroundColor: role.color }}
-                  />
-                  <Text
-                    className="flex-1 text-[14px] font-semibold text-content"
-                    numberOfLines={1}
-                  >
-                    {role.name}
-                  </Text>
-                  {role.id === defaultRoleId ? (
-                    <Feather
-                      name="star"
-                      size={12}
-                      color={colors.highlight}
-                      style={{ marginRight: 2 }}
-                    />
-                  ) : null}
-                  <Feather
-                    name="chevron-right"
-                    size={16}
-                    color={colors.textSubtle}
-                  />
-                </TouchableOpacity>
+              sortedRoles.map((role) => (
+                <View key={role.id}>{renderRoleRow(role, {})}</View>
               ))
             )}
           </ScrollView>
