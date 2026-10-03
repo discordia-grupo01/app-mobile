@@ -60,9 +60,9 @@ export function DraggableRoleList({
 
   const allMeasured = order.every((id) => id in heights);
   const [canAnimate, setCanAnimate] = useState(false);
-  useEffect(() => {
-    if (allMeasured) setCanAnimate(true);
-  }, [allMeasured]);
+  if (allMeasured && !canAnimate) {
+    setCanAnimate(true);
+  }
 
   function offsetsFor(ids: string[]): Map<string, number> {
     const map = new Map<string, number>();
