@@ -121,6 +121,9 @@ export function useRoleEditForm(
     if (!result.ok) {
       if (result.fieldErrors?.name) setNameError(result.fieldErrors.name);
       if (result.fieldErrors?.color) setColorError(result.fieldErrors.color);
+      if (result.fieldErrors?.permissions) {
+        onToast(result.fieldErrors.permissions);
+      }
       if (!result.fieldErrors) onToast(result.message);
       return;
     }
