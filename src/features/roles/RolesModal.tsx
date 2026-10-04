@@ -9,7 +9,7 @@ import {
   type Role,
   ROLE_PERMISSIONS,
   type RolePermission,
-  sortByPosition,
+  sortRolesByPosition,
   validateRole,
 } from "@discordia/client-shared";
 
@@ -162,6 +162,7 @@ export function RolesModal({
   }, [visible, serverId]);
 
   const selectedRole = (roles ?? []).find((role) => role.id === selectedId);
+  const isEveryoneSelected = selectedRole?.is_everyone ?? false;
   const membersWithRole = (membersInfo ?? []).filter((m) =>
     m.roleIds.includes(selectedId),
   );
@@ -170,7 +171,12 @@ export function RolesModal({
   );
 
   const hierarchyCtx = { isOwner, roles: myRoles };
-  const sortedRoles = sortByPosition(roles ?? []);
+  const canManageSelected = selectedRole
+    ? outranksRole(hierarchyCtx, selectedRole.position)
+    : false;
+  const sortedRoles = sortRolesByPosition(roles ?? []);
+  const draggableRoles = sortedRoles.filter((role) => !role.is_everyone);
+  const everyoneRole = sortedRoles.find((role) => role.is_everyone);
 
   async function handleRolesReordered(orderedIds: string[]) {
     const previousRoles = roles ?? [];
@@ -194,14 +200,14 @@ export function RolesModal({
   }
 
   function renderRoleRow(role: Role, panHandlers: GestureResponderHandlers) {
-    const canDrag =
-      sortedRoles.length > 1 && outranksRole(hierarchyCtx, role.position);
+    const showGripColumn = !role.is_everyone && draggableRoles.length > 1;
+    const canDrag = showGripColumn && outranksRole(hierarchyCtx, role.position);
     return (
       <View
         className="mb-1 flex-row items-center gap-1 rounded-xl"
         {...(canDrag ? panHandlers : {})}
       >
-        {sortedRoles.length > 1 ? (
+        {showGripColumn ? (
           <View
             className="items-center justify-center py-3"
             style={{ width: 26 }}
@@ -218,6 +224,11 @@ export function RolesModal({
           activeOpacity={0.75}
           className="flex-1 flex-row items-center gap-2.5 rounded-xl px-2 py-3"
           onPress={() => openRoleForEdit(role)}
+          accessibilityHint={
+            role.is_everyone
+              ? "@everyone lo tiene todo el mundo: siempre queda al final y no se puede reordenar"
+              : undefined
+          }
         >
           <View
             className="w-3 h-3 rounded-md"
@@ -229,12 +240,14 @@ export function RolesModal({
           >
             {role.name}
           </Text>
-          <Text
-            className="text-[10px] text-content-subtle"
-            accessibilityLabel="Posición en la jerarquía"
-          >
-            #{role.position}
-          </Text>
+          {!role.is_everyone ? (
+            <Text
+              className="text-[10px] text-content-subtle"
+              accessibilityLabel="Posición en la jerarquía"
+            >
+              #{role.position}
+            </Text>
+          ) : null}
           {role.id === defaultRoleId ? (
             <Feather
               name="star"
@@ -266,10 +279,34 @@ export function RolesModal({
   function openCreateForm() {
     setNewName("");
     setNewColor(COLOR_PALETTE[0]);
-    setNewPerms([]);
+    setNewPerms(everyoneRole ? [...everyoneRole.permissions] : []);
     setNewNameError("");
     setNewColorError("");
     setStep("create");
+  }
+
+  function goBack() {
+    if (step === "create-permissions") {
+      setStep("create");
+      return;
+    }
+    setStep("list");
+  }
+
+  function handleContinueToPermissions() {
+    setNewNameError("");
+    setNewColorError("");
+    const trimmed = newName.trim();
+    const errors = validateRole(
+      { name: trimmed, color: newColor },
+      { existingRoles: roles ?? [] },
+    );
+    if (errors.name || errors.color) {
+      setNewNameError(errors.name ?? "");
+      setNewColorError(errors.color ?? "");
+      return;
+    }
+    setStep("create-permissions");
   }
 
   function handleToggleNewPerm(perm: RolePermission, on: boolean) {
@@ -307,7 +344,7 @@ export function RolesModal({
   }
 
   function goToTab(tab: "edit" | "members") {
-    if (tab === "members") loadMembers();
+    if (tab === "members" && !isEveryoneSelected) loadMembers();
     setStep(tab);
   }
 
@@ -347,6 +384,7 @@ export function RolesModal({
     setIsDirty(true);
   }
   function handleTogglePerm(perm: RolePermission, on: boolean) {
+    if (!canManageSelected) return;
     setEditPerms((prev) =>
       on ? [...prev, perm] : prev.filter((p) => p !== perm),
     );
@@ -366,6 +404,28 @@ export function RolesModal({
   async function handleSave() {
     setNameError("");
     setColorError("");
+
+    if (isEveryoneSelected) {
+      setSaving(true);
+      const result = await updateRole(selectedId, { permissions: editPerms });
+      setSaving(false);
+
+      if (!result.ok) {
+        showToast(result.message);
+        return;
+      }
+
+      setRoles(
+        (prev) =>
+          prev?.map((r) => (r.id === result.role.id ? result.role : r)) ?? null,
+      );
+      setIsDirty(false);
+      setSavedOk(true);
+      showToast(`Permisos de "${result.role.name}" actualizados`);
+      setTimeout(() => setSavedOk(false), 2000);
+      return;
+    }
+
     const trimmed = editName.trim();
     const errors = validateRole(
       { name: trimmed, color: editColor },
@@ -403,7 +463,7 @@ export function RolesModal({
   }
 
   async function handleSetDefault() {
-    if (!selectedRole) return;
+    if (!selectedRole || !canManageSelected) return;
     setSettingDefault(true);
     const result = await setDefaultRole(serverId, selectedRole.id);
     setSettingDefault(false);
@@ -416,7 +476,7 @@ export function RolesModal({
   }
 
   async function handleDelete() {
-    if (!selectedRole) return;
+    if (!selectedRole || !canManageSelected) return;
     setDeleting(true);
     const result = await deleteRole(selectedRole.id);
     setDeleting(false);
@@ -445,6 +505,7 @@ export function RolesModal({
     if (errors.name || errors.color) {
       setNewNameError(errors.name ?? "");
       setNewColorError(errors.color ?? "");
+      setStep("create");
       return;
     }
 
@@ -458,6 +519,7 @@ export function RolesModal({
       setCreating(false);
       if (result.fieldErrors?.name) setNewNameError(result.fieldErrors.name);
       if (result.fieldErrors?.color) setNewColorError(result.fieldErrors.color);
+      if (result.fieldErrors) setStep("create");
       if (!result.fieldErrors) showToast(result.message);
       return;
     }
@@ -510,10 +572,10 @@ export function RolesModal({
       <View className="flex-row items-center gap-2 px-3 py-3 border-b border-b-line">
         {step !== "list" ? (
           <TouchableOpacity
-            onPress={() => setStep("list")}
+            onPress={goBack}
             className="w-8 h-8 rounded-2xl items-center justify-center"
             accessibilityRole="button"
-            accessibilityLabel="Volver a la lista de roles"
+            accessibilityLabel="Volver"
           >
             <Feather name="chevron-left" size={20} color={colors.textMuted} />
           </TouchableOpacity>
@@ -530,7 +592,9 @@ export function RolesModal({
             ? "Roles"
             : step === "create"
               ? "Crear rol"
-              : (selectedRole?.name ?? "Rol")}
+              : step === "create-permissions"
+                ? "Permisos del rol"
+                : (selectedRole?.name ?? "Rol")}
         </Text>
         <TouchableOpacity
           onPress={onClose}
@@ -614,23 +678,31 @@ export function RolesModal({
               <Text className="text-content-subtle text-[13px] mt-2">
                 {NO_ROLES_YET}
               </Text>
-            ) : sortedRoles.length > 1 ? (
-              <DraggableRoleList
-                roles={sortedRoles}
-                onReorder={handleRolesReordered}
-                onDragActiveChange={setIsRoleDragActive}
-                renderRole={renderRoleRow}
-              />
             ) : (
-              sortedRoles.map((role) => (
-                <View key={role.id}>{renderRoleRow(role, {})}</View>
-              ))
+              <>
+                {draggableRoles.length > 1 ? (
+                  <DraggableRoleList
+                    roles={draggableRoles}
+                    onReorder={handleRolesReordered}
+                    onDragActiveChange={setIsRoleDragActive}
+                    renderRole={renderRoleRow}
+                  />
+                ) : (
+                  draggableRoles.map((role) => (
+                    <View key={role.id}>{renderRoleRow(role, {})}</View>
+                  ))
+                )}
+                {everyoneRole ? (
+                  <View key={everyoneRole.id}>
+                    {renderRoleRow(everyoneRole, {})}
+                  </View>
+                ) : null}
+              </>
             )}
           </ScrollView>
         </View>
       ) : null}
 
-      {/* ── CREAR ROL ──────────────────────────────── */}
       {step === "create" ? (
         <View className="shrink">
           <ScrollView
@@ -640,8 +712,9 @@ export function RolesModal({
             showsVerticalScrollIndicator={false}
           >
             <Text className="text-[12px] text-content-subtle leading-[17px] -mt-1.5">
-              Elegí un nombre, un color y, si querés, los permisos iniciales del
-              rol. Podés cambiar todo esto después desde &quot;Editar rol&quot;.
+              Elegí un nombre y un color para el rol. Los permisos se eligen en
+              el siguiente paso -- todo esto se puede cambiar después desde
+              &quot;Editar rol&quot;.
             </Text>
 
             <View className="gap-0">
@@ -694,6 +767,39 @@ export function RolesModal({
               />
               <FieldError message={newColorError} />
             </View>
+          </ScrollView>
+
+          <View className="flex-row gap-3 p-4 border-t border-t-line">
+            <Button
+              title="Cancelar"
+              variant="secondary"
+              onPress={() => setStep("list")}
+              style={{ flex: 1, width: undefined }}
+            />
+            <Button
+              title="Continuar"
+              onPress={handleContinueToPermissions}
+              style={{ flex: 1, width: undefined }}
+            />
+          </View>
+        </View>
+      ) : null}
+
+      {/* ── CREAR ROL (paso 2: permisos) ───────────── */}
+      {step === "create-permissions" ? (
+        <View className="shrink">
+          <ScrollView
+            className="shrink"
+            contentContainerClassName="p-5 gap-5.5"
+            showsVerticalScrollIndicator={false}
+          >
+            <View className="flex-row items-center gap-2.5 -mt-1.5">
+              <RolePreviewBadge name={newName} color={newColor} />
+            </View>
+            <Text className="text-[12px] text-content-subtle leading-[17px] -mt-3">
+              Arranca con los mismos permisos que @everyone. Podés ajustarlos
+              acá o después desde &quot;Editar rol&quot;.
+            </Text>
 
             <View className="gap-0">
               <Text
@@ -719,9 +825,9 @@ export function RolesModal({
 
           <View className="flex-row gap-3 p-4 border-t border-t-line">
             <Button
-              title="Cancelar"
+              title="Atrás"
               variant="secondary"
-              onPress={() => setStep("list")}
+              onPress={() => setStep("create")}
               style={{ flex: 1, width: undefined }}
             />
             <Button
@@ -758,8 +864,14 @@ export function RolesModal({
                   </View>
                 ) : null}
                 <Text className="text-[12px] text-content-subtle">
-                  {membersWithRole.length}{" "}
-                  {membersWithRole.length === 1 ? "miembro" : "miembros"}
+                  {isEveryoneSelected ? (
+                    "Todos los miembros"
+                  ) : (
+                    <>
+                      {membersWithRole.length}{" "}
+                      {membersWithRole.length === 1 ? "miembro" : "miembros"}
+                    </>
+                  )}
                 </Text>
               </View>
             </View>
@@ -777,17 +889,25 @@ export function RolesModal({
                 className={cn(
                   "flex-row items-center rounded-xl border bg-surface-input px-3.5 min-h-12",
                   nameError ? "border-danger" : "border-line",
+                  isEveryoneSelected ? "opacity-70" : null,
                 )}
               >
                 <TextInput
                   value={editName}
                   onChangeText={handleEditName}
                   maxLength={MAX_NAME + 10}
+                  editable={!isEveryoneSelected}
                   className="flex-1 text-content text-[14px]"
                 />
                 <RolePreviewBadge name={editName} color={editColor} />
               </View>
               <FieldError message={nameError} />
+              {isEveryoneSelected ? (
+                <Text className="text-[12px] text-content-subtle mt-1.5">
+                  @everyone es automático: lo tiene todo el mundo y no se puede
+                  renombrar.
+                </Text>
+              ) : null}
             </View>
 
             <View className="gap-0">
@@ -799,8 +919,27 @@ export function RolesModal({
               >
                 Color <Text className="text-danger">*</Text>
               </Text>
-              <ColorGrid value={editColor} onChange={handleEditColor} />
-              <FieldError message={colorError} />
+              {isEveryoneSelected ? (
+                <View className="flex-row items-center gap-3 rounded-xl border border-line bg-surface-input px-3.5 py-3">
+                  <View
+                    className="w-8 h-8 rounded-lg border border-line"
+                    style={{ backgroundColor: selectedRole.color }}
+                  />
+                  <View className="flex-1">
+                    <Text className="text-[13px] font-medium text-content">
+                      Color por defecto
+                    </Text>
+                    <Text className="text-[12px] text-content-subtle">
+                      No se puede personalizar.
+                    </Text>
+                  </View>
+                </View>
+              ) : (
+                <>
+                  <ColorGrid value={editColor} onChange={handleEditColor} />
+                  <FieldError message={colorError} />
+                </>
+              )}
             </View>
 
             <View className="gap-0">
@@ -818,100 +957,122 @@ export function RolesModal({
                     key={perm}
                     perm={perm}
                     enabled={editPerms.includes(perm)}
+                    disabled={!canManageSelected}
                     onChange={(on) => handleTogglePerm(perm, on)}
                   />
                 ))}
               </View>
+              {!canManageSelected ? (
+                <Text className="text-[12px] text-content-subtle mt-2">
+                  No tenés jerarquía suficiente para gestionar los permisos de
+                  este rol.
+                </Text>
+              ) : null}
             </View>
 
-            <View className="rounded-[14px] border border-[rgba(224,82,82,0.2)] bg-[rgba(224,82,82,0.06)] p-3.5 gap-3">
-              <Text className="text-[10px] font-bold tracking-[1px] uppercase text-danger">
-                Zona peligrosa
-              </Text>
+            {!isEveryoneSelected && (
+              <View className="rounded-[14px] border border-[rgba(224,82,82,0.2)] bg-[rgba(224,82,82,0.06)] p-3.5 gap-3">
+                <Text className="text-[10px] font-bold tracking-[1px] uppercase text-danger">
+                  Zona peligrosa
+                </Text>
+                {!canManageSelected ? (
+                  <Text className="text-[12px] text-content-subtle">
+                    No tenés jerarquía suficiente para gestionar este rol.
+                  </Text>
+                ) : null}
 
-              {selectedRole.id !== defaultRoleId ? (
-                <View className="flex-row items-center gap-2.5">
-                  <View className="flex-1">
-                    <Text className="text-[13px] font-semibold text-content">
-                      Definir como rol por defecto
-                    </Text>
-                    <Text className="text-[12px] text-content-subtle mt-[1px]">
-                      Se asigna automáticamente a los nuevos miembros.
-                    </Text>
-                  </View>
-                  <TouchableOpacity
-                    onPress={handleSetDefault}
-                    disabled={settingDefault}
-                    className="flex-row items-center gap-1.5 rounded-[10px] border border-[rgba(252,227,164,0.3)] bg-[rgba(252,227,164,0.12)] px-3 py-[9px]"
-                  >
-                    <Feather name="star" size={11} color={colors.highlight} />
-                    <Text className="text-[12px] font-bold text-highlight">
-                      {settingDefault ? "Definiendo..." : "Definir"}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <View className="flex-row items-start gap-2">
-                  <Feather name="star" size={11} color={colors.textSubtle} />
-                  <Text className="flex-1 text-[12px] leading-[17px] text-content-subtle">
-                    Este es el rol por defecto. Para eliminarlo, primero definí
-                    otro rol como predeterminado.
-                  </Text>
-                </View>
-              )}
-
-              {!deleteConfirm ? (
-                <TouchableOpacity
-                  onPress={() => {
-                    setDeleteError("");
-                    setDeleteConfirm(true);
-                  }}
-                  className="flex-row items-center justify-center gap-1.5 self-start rounded-[10px] border border-[rgba(224,82,82,0.25)] bg-[rgba(224,82,82,0.1)] px-3 py-[9px]"
-                >
-                  <Feather name="trash-2" size={12} color={colors.danger} />
-                  <Text className="text-[12px] font-bold text-danger">
-                    Eliminar rol
-                  </Text>
-                </TouchableOpacity>
-              ) : (
-                <View className="gap-2">
-                  <Text className="text-[13px] font-semibold text-danger">
-                    ¿Confirmar eliminación de &quot;{selectedRole.name}
-                    &quot;?
-                  </Text>
-                  {deleteError ? (
-                    <View className="flex-row items-start gap-2 rounded-[10px] border border-[rgba(224,82,82,0.2)] bg-[rgba(224,82,82,0.1)] px-2.5 py-2">
-                      <Feather
-                        name="alert-circle"
-                        size={13}
-                        color={colors.danger}
-                      />
-                      <Text className="flex-1 text-[12px] text-danger">
-                        {deleteError}
+                {selectedRole.id !== defaultRoleId ? (
+                  <View className="flex-row items-center gap-2.5">
+                    <View className="flex-1">
+                      <Text className="text-[13px] font-semibold text-content">
+                        Definir como rol por defecto
+                      </Text>
+                      <Text className="text-[12px] text-content-subtle mt-[1px]">
+                        Se asigna automáticamente a los nuevos miembros.
                       </Text>
                     </View>
-                  ) : null}
-                  <View className="flex-row gap-2.5">
-                    <Button
-                      title="Cancelar"
-                      variant="secondary"
-                      onPress={() => {
-                        setDeleteConfirm(false);
-                        setDeleteError("");
-                      }}
-                      style={{ flex: 1, width: undefined }}
-                    />
-                    <Button
-                      title="Eliminar"
-                      variant="danger"
-                      onPress={handleDelete}
-                      isLoading={deleting}
-                      style={{ flex: 1, width: undefined }}
-                    />
+                    <TouchableOpacity
+                      onPress={handleSetDefault}
+                      disabled={settingDefault || !canManageSelected}
+                      className={cn(
+                        "flex-row items-center gap-1.5 rounded-[10px] border border-[rgba(252,227,164,0.3)] bg-[rgba(252,227,164,0.12)] px-3 py-[9px]",
+                        !canManageSelected && "opacity-50",
+                      )}
+                    >
+                      <Feather name="star" size={11} color={colors.highlight} />
+                      <Text className="text-[12px] font-bold text-highlight">
+                        {settingDefault ? "Definiendo..." : "Definir"}
+                      </Text>
+                    </TouchableOpacity>
                   </View>
-                </View>
-              )}
-            </View>
+                ) : (
+                  <View className="flex-row items-start gap-2">
+                    <Feather name="star" size={11} color={colors.textSubtle} />
+                    <Text className="flex-1 text-[12px] leading-[17px] text-content-subtle">
+                      Este es el rol por defecto. Para eliminarlo, primero
+                      definí otro rol como predeterminado.
+                    </Text>
+                  </View>
+                )}
+
+                {!deleteConfirm ? (
+                  <TouchableOpacity
+                    onPress={() => {
+                      setDeleteError("");
+                      setDeleteConfirm(true);
+                    }}
+                    disabled={!canManageSelected}
+                    className={cn(
+                      "flex-row items-center justify-center gap-1.5 self-start rounded-[10px] border border-[rgba(224,82,82,0.25)] bg-[rgba(224,82,82,0.1)] px-3 py-[9px]",
+                      !canManageSelected && "opacity-50",
+                    )}
+                  >
+                    <Feather name="trash-2" size={12} color={colors.danger} />
+                    <Text className="text-[12px] font-bold text-danger">
+                      Eliminar rol
+                    </Text>
+                  </TouchableOpacity>
+                ) : (
+                  <View className="gap-2">
+                    <Text className="text-[13px] font-semibold text-danger">
+                      ¿Confirmar eliminación de &quot;{selectedRole.name}
+                      &quot;?
+                    </Text>
+                    {deleteError ? (
+                      <View className="flex-row items-start gap-2 rounded-[10px] border border-[rgba(224,82,82,0.2)] bg-[rgba(224,82,82,0.1)] px-2.5 py-2">
+                        <Feather
+                          name="alert-circle"
+                          size={13}
+                          color={colors.danger}
+                        />
+                        <Text className="flex-1 text-[12px] text-danger">
+                          {deleteError}
+                        </Text>
+                      </View>
+                    ) : null}
+                    <View className="flex-row gap-2.5">
+                      <Button
+                        title="Cancelar"
+                        variant="secondary"
+                        onPress={() => {
+                          setDeleteConfirm(false);
+                          setDeleteError("");
+                        }}
+                        style={{ flex: 1, width: undefined }}
+                      />
+                      <Button
+                        title="Eliminar"
+                        variant="danger"
+                        onPress={handleDelete}
+                        isLoading={deleting}
+                        disabled={!canManageSelected}
+                        style={{ flex: 1, width: undefined }}
+                      />
+                    </View>
+                  </View>
+                )}
+              </View>
+            )}
 
             {savedOk ? (
               <View className="flex-row items-center gap-2 rounded-xl border border-[rgba(56,161,105,0.3)] bg-[rgba(56,161,105,0.12)] px-3.5 py-[11px]">
@@ -949,7 +1110,11 @@ export function RolesModal({
           contentContainerClassName="p-5 gap-5.5"
           showsVerticalScrollIndicator={false}
         >
-          {membersError ? (
+          {isEveryoneSelected ? (
+            <Text className="text-content-subtle text-[13px]">
+              Todos los miembros del servidor tienen este rol automáticamente.
+            </Text>
+          ) : membersError ? (
             <Text className="text-danger text-[13px] text-center mt-4">
               {membersError}
             </Text>
