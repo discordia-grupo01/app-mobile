@@ -143,6 +143,12 @@ export async function deleteRole(roleId: string): Promise<DeleteRoleResult> {
 
   if (!result.ok) {
     if (result.status === 409) {
+      if (reasonOf(result.details) === "everyone_role_is_automatic") {
+        return {
+          ok: false,
+          message: messageFor(result, ROLE_REASONS, ROLE_DELETE_FAILED),
+        };
+      }
       return {
         ok: false,
         isDefaultRole: true,
@@ -267,7 +273,7 @@ export async function assignRole(
     }
     return {
       ok: false,
-      message: messageFor(result, {}, MEMBER_ROLE_ASSIGN_FAILED),
+      message: messageFor(result, ROLE_REASONS, MEMBER_ROLE_ASSIGN_FAILED),
     };
   }
 
@@ -296,7 +302,7 @@ export async function removeRole(
     }
     return {
       ok: false,
-      message: messageFor(result, {}, MEMBER_ROLE_REMOVE_FAILED),
+      message: messageFor(result, ROLE_REASONS, MEMBER_ROLE_REMOVE_FAILED),
     };
   }
 

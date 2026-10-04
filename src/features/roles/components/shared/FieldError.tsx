@@ -1,7 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import { Text, View } from "react-native";
 
-import { useThemeColors } from "../../../theme/theme-context";
+import { useThemeColors } from "../../../../theme/theme-context";
 
 export function FieldError({ message }: { message?: string }) {
   const colors = useThemeColors();
