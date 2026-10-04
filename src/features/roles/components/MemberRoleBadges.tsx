@@ -124,10 +124,13 @@ export function MemberRoleBadges({
     );
   }
 
+  const visibleAssignedRoles = assignedRoles.filter(
+    (role) => !role.is_everyone,
+  );
   const assignedIds = new Set(assignedRoles.map((role) => role.id));
   const query = search.trim().toLowerCase();
   const addableRoles = availableRoles
-    .filter((role) => !assignedIds.has(role.id))
+    .filter((role) => !role.is_everyone && !assignedIds.has(role.id))
     .filter((role) => !query || role.name.toLowerCase().includes(query));
 
   return (
@@ -140,7 +143,7 @@ export function MemberRoleBadges({
       ) : null}
 
       <View className="flex-row flex-wrap items-center gap-1.5">
-        {assignedRoles.map((role) => (
+        {visibleAssignedRoles.map((role) => (
           <View
             key={role.id}
             className="flex-row items-center gap-1.5 rounded-full border px-2.5 py-1.5 max-w-45"
@@ -175,7 +178,7 @@ export function MemberRoleBadges({
           </View>
         ))}
 
-        {assignedRoles.length === 0 ? (
+        {visibleAssignedRoles.length === 0 ? (
           <Text className="text-content-subtle text-[12px]">
             Sin roles asignados.
           </Text>
