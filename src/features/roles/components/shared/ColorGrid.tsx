@@ -4,8 +4,8 @@ import { Feather } from "@expo/vector-icons";
 import { useState } from "react";
 import { TextInput, TouchableOpacity, View } from "react-native";
 
-import { useThemeColors } from "../../../theme/theme-context";
-import { cn } from "../../../lib/cn";
+import { useThemeColors } from "../../../../theme/theme-context";
+import { cn } from "../../../../lib/cn";
 
 interface ColorGridProps {
   value: string;

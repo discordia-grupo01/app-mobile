@@ -1,4 +1,6 @@
 import {
+  displayNameOf,
+  type Member,
   MEMBER_PAGE_LIMIT,
   type OwnershipTransfer,
   resolveImageUrl,
@@ -21,6 +23,7 @@ import {
 } from "react-native";
 
 import { getPublicUser } from "../../../../features/auth/service";
+import { useProfileFallback } from "../../../../hooks/useProfileFallback";
 import {
   acceptOwnershipTransfer,
   cancelOwnershipTransfer,
@@ -51,12 +54,6 @@ interface TransferOwnershipModalProps {
 
 type InitiateStep = "loading-members" | "members-error" | "form" | "confirm";
 
-interface PickerMember {
-  userId: string;
-  name: string | null;
-  avatarUrl: string | null;
-}
-
 export function TransferOwnershipModal({
   visible,
   serverId,
@@ -72,7 +69,8 @@ export function TransferOwnershipModal({
   const colors = useThemeColors();
   const [initiateStep, setInitiateStep] =
     useState<InitiateStep>("loading-members");
-  const [members, setMembers] = useState<PickerMember[]>([]);
+  const [rawCandidates, setRawCandidates] = useState<Member[]>([]);
+  const members = useProfileFallback(rawCandidates) ?? [];
   const [membersError, setMembersError] = useState("");
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -99,7 +97,7 @@ export function TransferOwnershipModal({
     setWasVisible(visible);
     if (visible) {
       setInitiateStep("loading-members");
-      setMembers([]);
+      setRawCandidates([]);
       setMembersError("");
       setSelectedUserId(null);
       setErrorMessage("");
@@ -121,27 +119,8 @@ export function TransferOwnershipModal({
       const candidates = result.members.filter(
         (m) => !m.is_owner && m.user_id !== currentUserId,
       );
-      setMembers(
-        candidates.map((m) => ({
-          userId: m.user_id,
-          name: null,
-          avatarUrl: null,
-        })),
-      );
+      setRawCandidates(candidates);
       setInitiateStep("form");
-
-      candidates.forEach((m) => {
-        getPublicUser(m.user_id).then((profile) => {
-          if (cancelled || !profile) return;
-          setMembers((prev) =>
-            prev.map((item) =>
-              item.userId === m.user_id
-                ? { ...item, name: profile.name, avatarUrl: profile.avatar_url }
-                : item,
-            ),
-          );
-        });
-      });
     });
 
     return () => {
@@ -248,8 +227,8 @@ export function TransferOwnershipModal({
   }
 
   const selectedMember =
-    members.find((m) => m.userId === selectedUserId) ?? null;
-  const selectedDisplayName = selectedMember?.name ?? selectedUserId ?? "";
+    members.find((m) => m.user_id === selectedUserId) ?? null;
+  const selectedDisplayName = displayNameOf(selectedMember?.profile);
 
   const errorBanner = errorMessage ? (
     <View className="flex-row items-start gap-2.5 rounded-xl border border-[rgba(224,82,82,0.3)] bg-[rgba(224,82,82,0.1)] px-3.5 py-3 mb-4">
@@ -412,16 +391,17 @@ export function TransferOwnershipModal({
           ) : (
             <FlatList
               data={members}
-              keyExtractor={(item) => item.userId}
+              keyExtractor={(item) => item.user_id}
               style={styles.list}
               contentContainerStyle={styles.listContent}
               showsVerticalScrollIndicator={false}
               renderItem={({ item }) => {
-                const selected = item.userId === selectedUserId;
+                const name = displayNameOf(item.profile);
+                const selected = item.user_id === selectedUserId;
                 return (
                   <TouchableOpacity
                     activeOpacity={0.7}
-                    onPress={() => setSelectedUserId(item.userId)}
+                    onPress={() => setSelectedUserId(item.user_id)}
                     className={cn(
                       "flex-row items-center gap-3 rounded-xl border px-2 py-2",
                       selected
@@ -430,8 +410,11 @@ export function TransferOwnershipModal({
                     )}
                   >
                     <ServerAvatar
-                      name={item.name ?? item.userId}
-                      uri={resolveImageUrl(item.avatarUrl, env.apiUrl)}
+                      name={name}
+                      uri={resolveImageUrl(
+                        item.profile?.avatar_url,
+                        env.apiUrl,
+                      )}
                       size={36}
                     />
                     <View className="flex-1">
@@ -439,7 +422,7 @@ export function TransferOwnershipModal({
                         className="text-[14px] font-semibold text-content"
                         numberOfLines={1}
                       >
-                        {item.name ?? "Cargando..."}
+                        {name}
                       </Text>
                     </View>
                     <View
@@ -489,7 +472,10 @@ export function TransferOwnershipModal({
         <View className="flex-row items-center gap-3 rounded-2xl border border-line-strong bg-surface-raised p-3.5 mb-4">
           <ServerAvatar
             name={selectedDisplayName}
-            uri={resolveImageUrl(selectedMember?.avatarUrl, env.apiUrl)}
+            uri={resolveImageUrl(
+              selectedMember?.profile?.avatar_url,
+              env.apiUrl,
+            )}
             size={40}
           />
           <View className="flex-1">

@@ -3,10 +3,10 @@ import { type MemberInfo, resolveImageUrl } from "@discordia/client-shared";
 import { Feather } from "@expo/vector-icons";
 import { Text, TouchableOpacity, View } from "react-native";
 
-import { env } from "../../../lib/env";
-import { useThemeColors } from "../../../theme/theme-context";
-import { ServerAvatar } from "../../servers/components/ServerAvatar";
-import { cn } from "../../../lib/cn";
+import { env } from "../../../../lib/env";
+import { useThemeColors } from "../../../../theme/theme-context";
+import { ServerAvatar } from "../../../servers/components/ServerAvatar";
+import { cn } from "../../../../lib/cn";
 
 interface MemberRoleRowProps {
   member: MemberInfo;

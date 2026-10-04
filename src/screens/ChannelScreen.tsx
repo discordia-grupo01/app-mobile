@@ -16,7 +16,7 @@ import { authorFromProfile } from "../features/messages/author";
 import { ChannelChat } from "../features/messages/components/ChannelChat";
 import { MembersSidebar } from "../features/servers/components/channel/MembersSidebar";
 import { VoiceChannelPlaceholder } from "../features/servers/components/channel/VoiceChannelPlaceholder";
-import { useThemeColors } from "../theme/theme-context";
+import { useTheme, useThemeColors } from "../theme/theme-context";
 
 interface ChannelScreenProps {
   channel: Channel;
@@ -46,6 +46,7 @@ export function ChannelScreen({
   onBack,
 }: ChannelScreenProps) {
   const colors = useThemeColors();
+  const { theme, setTheme } = useTheme();
   const isText = channel.kind === "text";
   const insets = useSafeAreaInsets();
   const [isMembersVisible, setIsMembersVisible] = useState(false);
@@ -79,6 +80,20 @@ export function ChannelScreen({
         >
           {channel.name}
         </Text>
+        <TouchableOpacity
+          onPress={() => setTheme(theme === "dark" ? "light" : "dark")}
+          className="w-8.5 h-8.5 items-center justify-center"
+          accessibilityLabel={
+            theme === "dark" ? "Cambiar a tema claro" : "Cambiar a tema oscuro"
+          }
+          accessibilityRole="button"
+        >
+          <Feather
+            name={theme === "dark" ? "sun" : "moon"}
+            size={20}
+            color={colors.textMuted}
+          />
+        </TouchableOpacity>
         <TouchableOpacity
           onPress={() => setIsMembersVisible(true)}
           className="w-8.5 h-8.5 items-center justify-center"

@@ -21,12 +21,14 @@ import {
   OWNER_ONLY_UPDATE_ROLE,
   reasonOf,
   type RemoveRoleResult,
+  type ReorderRolesResult,
   type Role,
   ROLE_CREATE_FAILED,
   ROLE_DELETE_FAILED,
   ROLE_IS_DEFAULT,
   ROLE_NOT_FOUND,
   ROLE_REASONS,
+  ROLE_REORDER_FAILED,
   ROLE_UPDATE_FAILED,
   type RolePermission,
   ROLES_LOAD_FAILED,
@@ -141,6 +143,12 @@ export async function deleteRole(roleId: string): Promise<DeleteRoleResult> {
 
   if (!result.ok) {
     if (result.status === 409) {
+      if (reasonOf(result.details) === "everyone_role_is_automatic") {
+        return {
+          ok: false,
+          message: messageFor(result, ROLE_REASONS, ROLE_DELETE_FAILED),
+        };
+      }
       return {
         ok: false,
         isDefaultRole: true,
@@ -199,6 +207,28 @@ export async function setDefaultRole(
   return { ok: true };
 }
 
+export async function reorderRoles(
+  serverId: string,
+  roleIds: string[],
+): Promise<ReorderRolesResult> {
+  const result = await apiFetch<Role[]>(
+    `/v1/servers/${serverId}/roles/reorder`,
+    { method: "PATCH", body: JSON.stringify({ role_ids: roleIds }) },
+  );
+
+  if (!result.ok) {
+    if (result.status === 401) {
+      return { ok: false, message: SESSION_EXPIRED_MESSAGE };
+    }
+    return {
+      ok: false,
+      message: messageFor(result, ROLE_REASONS, ROLE_REORDER_FAILED),
+    };
+  }
+
+  return { ok: true, roles: result.data };
+}
+
 export async function listMemberRoles(
   serverId: string,
   userId: string,
@@ -243,7 +273,7 @@ export async function assignRole(
     }
     return {
       ok: false,
-      message: messageFor(result, {}, MEMBER_ROLE_ASSIGN_FAILED),
+      message: messageFor(result, ROLE_REASONS, MEMBER_ROLE_ASSIGN_FAILED),
     };
   }
 
@@ -272,7 +302,7 @@ export async function removeRole(
     }
     return {
       ok: false,
-      message: messageFor(result, {}, MEMBER_ROLE_REMOVE_FAILED),
+      message: messageFor(result, ROLE_REASONS, MEMBER_ROLE_REMOVE_FAILED),
     };
   }
 

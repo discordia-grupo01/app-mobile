@@ -1,29 +1,33 @@
 import { PERMISSION_COPY, type RolePermission } from "@discordia/client-shared";
 
 import { Text, TouchableOpacity, View } from "react-native";
-import { cn } from "../../../lib/cn";
+import { cn } from "../../../../lib/cn";
 
 interface PermissionToggleProps {
   perm: RolePermission;
   enabled: boolean;
+  disabled?: boolean;
   onChange: (value: boolean) => void;
 }
 
 export function PermissionToggle({
   perm,
   enabled,
+  disabled = false,
   onChange,
 }: PermissionToggleProps) {
   const copy = PERMISSION_COPY[perm];
   return (
     <TouchableOpacity
-      activeOpacity={0.75}
+      activeOpacity={disabled ? 1 : 0.75}
+      disabled={disabled}
       onPress={() => onChange(!enabled)}
       className={cn(
         "flex-row items-center justify-between gap-3 rounded-xl border px-3.5 py-3",
         enabled
           ? "border-[rgba(36,92,107,0.4)] bg-[rgba(36,92,107,0.12)]"
           : "border-line bg-surface-input",
+        disabled && "opacity-50",
       )}
     >
       <View className="flex-1">
