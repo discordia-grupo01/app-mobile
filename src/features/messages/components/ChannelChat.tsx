@@ -95,6 +95,8 @@ export function ChannelChat({
       ? canDeleteMessage(actionsMessage, currentAuthor.id, canManageMessages)
       : false;
 
+  const editingMessage =
+    messages?.find((m) => m.id === editingMessageId) ?? null;
   const deletingMessage =
     messages?.find((m) => m.id === deletingMessageId) ?? null;
 
@@ -115,12 +117,6 @@ export function ChannelChat({
           onToggleReaction={toggleReaction}
           onRequestReaction={setReactingToId}
           onRequestActions={setActionsMessageId}
-          onSaveEdit={async (id, content) => {
-            const result = await editMessage(id, content);
-            if (result.ok) setEditingMessageId(null);
-            return result;
-          }}
-          onCancelEdit={() => setEditingMessageId(null)}
         />
       )}
       {deleteError ? (
@@ -144,6 +140,20 @@ export function ChannelChat({
         onSend={sendMessage}
         disabled={!currentAuthor || status !== "ready"}
         canMentionEveryone={canMentionEveryone}
+        editing={
+          editingMessage
+            ? {
+                id: editingMessage.id,
+                content: editingMessage.content,
+                onSave: async (content) => {
+                  const result = await editMessage(editingMessage.id, content);
+                  if (result.ok) setEditingMessageId(null);
+                  return result;
+                },
+                onCancel: () => setEditingMessageId(null),
+              }
+            : null
+        }
       />
 
       <MessageActionsSheet
