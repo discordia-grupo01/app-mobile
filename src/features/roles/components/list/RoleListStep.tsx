@@ -80,6 +80,20 @@ export function RoleListStep({
 }: RoleListStepProps) {
   const colors = useThemeColors();
 
+  const protectedRoles = draggableRoles.filter(
+    (role) => !canManageRole(role.position),
+  );
+  const manageableRoles = draggableRoles.filter((role) =>
+    canManageRole(role.position),
+  );
+
+  function handleManageableReorder(orderedManageableIds: string[]) {
+    onReorder([
+      ...protectedRoles.map((role) => role.id),
+      ...orderedManageableIds,
+    ]);
+  }
+
   function renderRole(role: Role, panHandlers: GestureResponderHandlers) {
     const showGripColumn = !role.is_everyone && draggableRoles.length > 1;
     const canDrag = showGripColumn && canManageRole(role.position);
@@ -175,15 +189,18 @@ export function RoleListStep({
           </Text>
         ) : (
           <>
-            {draggableRoles.length > 1 ? (
+            {protectedRoles.map((role) => (
+              <View key={role.id}>{renderRole(role, {})}</View>
+            ))}
+            {manageableRoles.length > 1 ? (
               <DraggableRoleList
-                roles={draggableRoles}
-                onReorder={onReorder}
+                roles={manageableRoles}
+                onReorder={handleManageableReorder}
                 onDragActiveChange={onDragActiveChange}
                 renderRole={renderRole}
               />
             ) : (
-              draggableRoles.map((role) => (
+              manageableRoles.map((role) => (
                 <View key={role.id}>{renderRole(role, {})}</View>
               ))
             )}

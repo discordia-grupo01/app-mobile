@@ -19,6 +19,7 @@ import {
   OWNER_ONLY_REMOVE_ROLE,
   OWNER_ONLY_SET_DEFAULT_ROLE,
   OWNER_ONLY_UPDATE_ROLE,
+  permissionNotHeldMessage,
   reasonOf,
   type RemoveRoleResult,
   type ReorderRolesResult,
@@ -121,6 +122,15 @@ export async function updateRole(
     if (result.status === 401) {
       return { ok: false, message: SESSION_EXPIRED_MESSAGE };
     }
+
+    if (reason === "permission_not_held") {
+      const message = permissionNotHeldMessage(result.details?.permissions);
+      return { ok: false, message, fieldErrors: { permissions: message } };
+    }
+
+    if (friendly) {
+      return { ok: false, message: friendly };
+    }
     if (result.status === 403) {
       return { ok: false, message: OWNER_ONLY_UPDATE_ROLE };
     }
@@ -159,6 +169,11 @@ export async function deleteRole(roleId: string): Promise<DeleteRoleResult> {
       return { ok: false, message: SESSION_EXPIRED_MESSAGE };
     }
     if (result.status === 403) {
+      const reason = reasonOf(result.details);
+      const friendly = reason ? ROLE_REASONS[reason] : undefined;
+      if (friendly) {
+        return { ok: false, message: friendly };
+      }
       return {
         ok: false,
         message: OWNER_ONLY_DELETE_ROLE,
@@ -262,8 +277,19 @@ export async function assignRole(
   );
 
   if (!result.ok) {
+    const reason = reasonOf(result.details);
+
     if (result.status === 401) {
       return { ok: false, message: SESSION_EXPIRED_MESSAGE };
+    }
+
+    if (reason === "permission_not_held") {
+      const message = permissionNotHeldMessage(result.details?.permissions);
+      return { ok: false, message };
+    }
+    const friendly = reason ? ROLE_REASONS[reason] : undefined;
+    if (friendly) {
+      return { ok: false, message: friendly };
     }
     if (result.status === 403) {
       return { ok: false, message: OWNER_ONLY_ASSIGN_ROLE };
@@ -295,6 +321,11 @@ export async function removeRole(
       return { ok: false, message: SESSION_EXPIRED_MESSAGE };
     }
     if (result.status === 403) {
+      const reason = reasonOf(result.details);
+      const friendly = reason ? ROLE_REASONS[reason] : undefined;
+      if (friendly) {
+        return { ok: false, message: friendly };
+      }
       return { ok: false, message: OWNER_ONLY_REMOVE_ROLE };
     }
     if (result.status === 404) {

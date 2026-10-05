@@ -9,8 +9,6 @@ import { Pressable, Text, View } from "react-native";
 import { cn } from "../../../lib/cn";
 import { ServerAvatar } from "../../servers/components/ServerAvatar";
 import { MessageContent, type MentionResolver } from "./MessageContent";
-import { MessageDeletedNotice } from "./MessageDeletedNotice";
-import { MessageEditForm } from "./MessageEditForm";
 import { MessageHeader } from "./MessageHeader";
 import { MessageReactions } from "./MessageReactions";
 
@@ -19,7 +17,7 @@ const AVATAR_SIZE = 40;
 /** Forma minima que necesita esta fila: sirve tanto para `Message` (canal) como para `DmMessage`. */
 export interface MessageItemMessage extends Pick<
   Message,
-  "id" | "user_id" | "content" | "inserted_at" | "edited_at" | "deleted_at"
+  "id" | "user_id" | "content" | "inserted_at" | "edited_at"
 > {
   reactions?: Message["reactions"];
 }
@@ -28,6 +26,7 @@ interface MessageItemProps {
   message: MessageItemMessage;
   author: MessageAuthor;
   isGroupStart: boolean;
+  /** Es el mensaje que se esta editando en el composer: se resalta. */
   isEditing: boolean;
   resolveMention?: MentionResolver;
   onToggleReaction?: (emoji: string) => void;
@@ -35,8 +34,6 @@ interface MessageItemProps {
   onRequestReaction?: () => void;
   /** Mantener presionado: abre el menu de reaccionar/editar/eliminar. */
   onRequestActions: () => void;
-  onSaveEdit: (content: string) => void;
-  onCancelEdit: () => void;
 }
 
 export function MessageItem({
@@ -48,22 +45,17 @@ export function MessageItem({
   onToggleReaction,
   onRequestReaction,
   onRequestActions,
-  onSaveEdit,
-  onCancelEdit,
 }: MessageItemProps) {
-  const isDeleted = Boolean(message.deleted_at);
-
   return (
     <Pressable
-      onLongPress={isDeleted || isEditing ? undefined : onRequestActions}
+      onLongPress={isEditing ? undefined : onRequestActions}
       delayLongPress={300}
       className={cn(
         "flex-row gap-3 px-4 py-0.5 active:bg-surface-hover",
         isGroupStart && "mt-4",
+        isEditing && "bg-surface-hover",
       )}
-      accessibilityHint={
-        isDeleted ? undefined : "Mantené presionado para más acciones"
-      }
+      accessibilityHint="Mantené presionado para más acciones"
     >
       {isGroupStart ? (
         <ServerAvatar
@@ -80,33 +72,20 @@ export function MessageItem({
           <MessageHeader author={author} createdAt={message.inserted_at} />
         ) : null}
 
-        {isDeleted ? (
-          <MessageDeletedNotice />
-        ) : isEditing ? (
-          <MessageEditForm
-            initialContent={message.content}
-            onSave={onSaveEdit}
-            onCancel={onCancelEdit}
-          />
-        ) : (
-          <>
-            <MessageContent
-              content={message.content}
-              resolveMention={resolveMention}
-            />
-            {message.edited_at ? (
+        <MessageContent
+          content={message.content}
+          resolveMention={resolveMention}
+          suffix={
+            message.edited_at ? (
               <Text className="text-[11px] text-content-subtle">
+                {" "}
                 {MESSAGE_EDITED_LABEL}
               </Text>
-            ) : null}
-          </>
-        )}
+            ) : null
+          }
+        />
 
-        {!isDeleted &&
-        !isEditing &&
-        message.reactions &&
-        onToggleReaction &&
-        onRequestReaction ? (
+        {message.reactions && onToggleReaction && onRequestReaction ? (
           <MessageReactions
             reactions={message.reactions}
             onToggle={onToggleReaction}

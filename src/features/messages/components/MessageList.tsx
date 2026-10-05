@@ -25,8 +25,6 @@ interface MessageListProps {
   onToggleReaction: (messageId: string, emoji: string) => void;
   onRequestReaction: (messageId: string) => void;
   onRequestActions: (messageId: string) => void;
-  onSaveEdit: (messageId: string, content: string) => void;
-  onCancelEdit: () => void;
 }
 
 function unknownAuthor(id: string): MessageAuthor {
@@ -51,8 +49,6 @@ export function MessageList({
   onToggleReaction,
   onRequestReaction,
   onRequestActions,
-  onSaveEdit,
-  onCancelEdit,
 }: MessageListProps) {
   const newestFirst = useMemo(() => [...messages].reverse(), [messages]);
 
@@ -95,8 +91,6 @@ export function MessageList({
             onToggleReaction={(emoji) => onToggleReaction(item.id, emoji)}
             onRequestReaction={() => onRequestReaction(item.id)}
             onRequestActions={() => onRequestActions(item.id)}
-            onSaveEdit={(content) => onSaveEdit(item.id, content)}
-            onCancelEdit={onCancelEdit}
           />
         );
       }}

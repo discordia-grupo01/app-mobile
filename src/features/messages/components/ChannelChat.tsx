@@ -16,6 +16,7 @@ import { buildMentionResolver } from "../message-mentions";
 import { useChannelMessages } from "../use-channel-messages";
 import { useMessageAuthors } from "../use-message-authors";
 import { ChatStatusNotice } from "./ChatStatusNotice";
+import { DeleteMessageModal } from "./DeleteMessageModal";
 import { EmojiPickerSheet } from "./EmojiPickerSheet";
 import { MessageActionsSheet } from "./MessageActionsSheet";
 import { MessageComposer } from "./MessageComposer";
@@ -27,6 +28,7 @@ interface ChannelChatProps {
   currentAuthor: MessageAuthor | null;
   serverRoles: Role[];
   canManageMessages: boolean;
+  canSendMessages: boolean;
   canMentionEveryone: boolean;
 }
 
@@ -36,6 +38,7 @@ export function ChannelChat({
   currentAuthor,
   serverRoles,
   canManageMessages,
+  canSendMessages,
   canMentionEveryone,
 }: ChannelChatProps) {
   const {
@@ -55,6 +58,16 @@ export function ChannelChat({
   const [reactingToId, setReactingToId] = useState<string | null>(null);
   const [actionsMessageId, setActionsMessageId] = useState<string | null>(null);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [deletingMessageId, setDeletingMessageId] = useState<string | null>(
+    null,
+  );
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  async function handleDelete(messageId: string) {
+    setDeleteError(null);
+    const result = await deleteMessage(messageId);
+    if (!result.ok) setDeleteError(result.message);
+  }
 
   const resolveMention = useMemo(
     () => buildMentionResolver(authors, serverRoles),
@@ -75,12 +88,17 @@ export function ChannelChat({
     messages?.find((m) => m.id === actionsMessageId) ?? null;
   const canEditActions =
     actionsMessage && currentAuthor
-      ? canEditMessage(actionsMessage, currentAuthor.id)
+      ? canEditMessage(actionsMessage, currentAuthor.id, canSendMessages)
       : false;
   const canDeleteActions =
     actionsMessage && currentAuthor
       ? canDeleteMessage(actionsMessage, currentAuthor.id, canManageMessages)
       : false;
+
+  const editingMessage =
+    messages?.find((m) => m.id === editingMessageId) ?? null;
+  const deletingMessage =
+    messages?.find((m) => m.id === deletingMessageId) ?? null;
 
   return (
     <>
@@ -99,13 +117,16 @@ export function ChannelChat({
           onToggleReaction={toggleReaction}
           onRequestReaction={setReactingToId}
           onRequestActions={setActionsMessageId}
-          onSaveEdit={(id, content) => {
-            editMessage(id, content);
-            setEditingMessageId(null);
-          }}
-          onCancelEdit={() => setEditingMessageId(null)}
         />
       )}
+      {deleteError ? (
+        <Text
+          accessibilityRole="alert"
+          className="bg-danger/10 px-4 py-1 text-center text-[12px] text-danger"
+        >
+          {deleteError}
+        </Text>
+      ) : null}
       {status === "reconnecting" ? (
         <Text
           accessibilityRole="alert"
@@ -119,6 +140,20 @@ export function ChannelChat({
         onSend={sendMessage}
         disabled={!currentAuthor || status !== "ready"}
         canMentionEveryone={canMentionEveryone}
+        editing={
+          editingMessage
+            ? {
+                id: editingMessage.id,
+                content: editingMessage.content,
+                onSave: async (content) => {
+                  const result = await editMessage(editingMessage.id, content);
+                  if (result.ok) setEditingMessageId(null);
+                  return result;
+                },
+                onCancel: () => setEditingMessageId(null),
+              }
+            : null
+        }
       />
 
       <MessageActionsSheet
@@ -134,10 +169,24 @@ export function ChannelChat({
           setActionsMessageId(null);
         }}
         onDelete={() => {
-          if (actionsMessageId) deleteMessage(actionsMessageId);
+          setDeletingMessageId(actionsMessageId);
           setActionsMessageId(null);
         }}
         onClose={() => setActionsMessageId(null)}
+      />
+
+      <DeleteMessageModal
+        visible={deletingMessageId !== null}
+        message={deletingMessage}
+        author={
+          deletingMessage ? (authors[deletingMessage.user_id] ?? null) : null
+        }
+        resolveMention={resolveMention}
+        onConfirm={() => {
+          if (deletingMessageId) void handleDelete(deletingMessageId);
+          setDeletingMessageId(null);
+        }}
+        onCancel={() => setDeletingMessageId(null)}
       />
 
       <EmojiPickerSheet

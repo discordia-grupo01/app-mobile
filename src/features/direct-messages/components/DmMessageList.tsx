@@ -17,8 +17,6 @@ interface DmMessageListProps {
   messages: DmMessage[];
   editingMessageId: string | null;
   onRequestActions: (messageId: string) => void;
-  onSaveEdit: (messageId: string, content: string) => void;
-  onCancelEdit: () => void;
 }
 
 /** Historial de una conversacion directa. Sin reacciones ni moderacion. */
@@ -28,8 +26,6 @@ export function DmMessageList({
   messages,
   editingMessageId,
   onRequestActions,
-  onSaveEdit,
-  onCancelEdit,
 }: DmMessageListProps) {
   const newestFirst = useMemo(() => [...messages].reverse(), [messages]);
 
@@ -61,8 +57,6 @@ export function DmMessageList({
             isGroupStart={startsMessageGroup(previous, item)}
             isEditing={editingMessageId === item.id}
             onRequestActions={() => onRequestActions(item.id)}
-            onSaveEdit={(content) => onSaveEdit(item.id, content)}
-            onCancelEdit={onCancelEdit}
           />
         );
       }}

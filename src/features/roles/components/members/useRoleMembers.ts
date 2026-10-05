@@ -14,18 +14,6 @@ interface UseRoleMembersOptions {
   onToast: (message: string) => void;
 }
 
-/**
- * Miembros del server + sus roles, para la pestaña "Miembros".
- *
- * Se llama desde el orquestador (no desde `RoleMembersStep`): el usuario
- * tiene que poder ir y volver entre "Editar rol" y "Miembros" del mismo rol
- * sin perder lo ya cargado, y esos dos pasos son componentes hermanos que
- * se desmontan al cambiar de `step`. El reset se dispara por `role?.id`
- * (cambio de rol o cierre/reapertura del modal), ajustado durante el
- * render (no en un `useEffect`): no hay nada externo que sincronizar, asi
- * que no corresponde un efecto, y hacerlo igual dispara el lint
- * `react-hooks/set-state-in-effect`.
- */
 export function useRoleMembers(
   serverId: string,
   role: Role | undefined,

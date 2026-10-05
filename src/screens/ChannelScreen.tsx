@@ -28,6 +28,7 @@ interface ChannelScreenProps {
   /** Owner, o miembro con el permiso BAN_MEMBERS via algún rol. */
   canBanMembers?: boolean;
   canManageMessages?: boolean;
+  canSendMessages?: boolean;
   canMentionEveryone?: boolean;
   serverRoles?: Role[];
   onBack: () => void;
@@ -41,6 +42,7 @@ export function ChannelScreen({
   canManageRoles = false,
   canBanMembers = false,
   canManageMessages = false,
+  canSendMessages = false,
   canMentionEveryone = false,
   serverRoles = [],
   onBack,
@@ -126,6 +128,7 @@ export function ChannelScreen({
             currentAuthor={currentAuthor}
             serverRoles={serverRoles}
             canManageMessages={canManageMessages}
+            canSendMessages={canSendMessages}
             canMentionEveryone={canMentionEveryone}
           />
         </KeyboardAvoidingView>

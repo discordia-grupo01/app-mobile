@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { DeleteMessageModal } from "../../messages/components/DeleteMessageModal";
 import { MessageActionsSheet } from "../../messages/components/MessageActionsSheet";
 import { ServerAvatar } from "../../servers/components/ServerAvatar";
 import { useThemeColors } from "../../../theme/theme-context";
@@ -45,6 +46,9 @@ export function DmConversationScreen({
   const insets = useSafeAreaInsets();
   const [actionsMessageId, setActionsMessageId] = useState<string | null>(null);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [deletingMessageId, setDeletingMessageId] = useState<string | null>(
+    null,
+  );
   const { partner, blockedByMe, blocksMe } = summary;
 
   const actionsMessage =
@@ -52,6 +56,11 @@ export function DmConversationScreen({
   const canEditActions = actionsMessage
     ? canEditMessage(actionsMessage, currentAuthor.id)
     : false;
+
+  const editingMessage =
+    messages.find((m) => m.id === editingMessageId) ?? null;
+  const deletingMessage =
+    messages.find((m) => m.id === deletingMessageId) ?? null;
 
   return (
     <View className="flex-1 bg-surface">
@@ -92,16 +101,24 @@ export function DmConversationScreen({
           messages={messages}
           editingMessageId={editingMessageId}
           onRequestActions={setActionsMessageId}
-          onSaveEdit={(id, content) => {
-            onEditMessage(id, content);
-            setEditingMessageId(null);
-          }}
-          onCancelEdit={() => setEditingMessageId(null)}
         />
         <DmComposer
           partnerName={partner.name}
           blockedByMe={blockedByMe}
           onSend={onSend}
+          editing={
+            editingMessage
+              ? {
+                  id: editingMessage.id,
+                  content: editingMessage.content,
+                  onSave: (content) => {
+                    onEditMessage(editingMessage.id, content);
+                    setEditingMessageId(null);
+                  },
+                  onCancel: () => setEditingMessageId(null),
+                }
+              : null
+          }
         />
       </KeyboardAvoidingView>
 
@@ -114,10 +131,27 @@ export function DmConversationScreen({
           setActionsMessageId(null);
         }}
         onDelete={() => {
-          if (actionsMessageId) onDeleteMessage(actionsMessageId);
+          setDeletingMessageId(actionsMessageId);
           setActionsMessageId(null);
         }}
         onClose={() => setActionsMessageId(null)}
+      />
+
+      <DeleteMessageModal
+        visible={deletingMessageId !== null}
+        message={deletingMessage}
+        author={
+          deletingMessage
+            ? deletingMessage.user_id === currentAuthor.id
+              ? currentAuthor
+              : partner
+            : null
+        }
+        onConfirm={() => {
+          if (deletingMessageId) onDeleteMessage(deletingMessageId);
+          setDeletingMessageId(null);
+        }}
+        onCancel={() => setDeletingMessageId(null)}
       />
     </View>
   );
