@@ -166,6 +166,10 @@ export function HomeScreen() {
     { isOwner, roles: myRoles },
     "MANAGE_MESSAGES",
   );
+  const canSendMessages = hasPermission(
+    { isOwner, roles: myRoles },
+    "SEND_MESSAGES",
+  );
   const canMentionEveryone = hasPermission(
     { isOwner, roles: myRoles },
     "MENTION_EVERYONE",
@@ -287,6 +291,7 @@ export function HomeScreen() {
           canManageRoles={canManageRoles}
           canBanMembers={canBanMembers}
           canManageMessages={canManageMessages}
+          canSendMessages={canSendMessages}
           canMentionEveryone={canMentionEveryone}
           serverRoles={serverRoles}
           onBack={() => setSelectedChannelId(null)}

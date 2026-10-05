@@ -4,6 +4,7 @@ import {
   type MessageAuthor,
 } from "@discordia/client-shared";
 
+import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 
 import { cn } from "../../../lib/cn";
@@ -23,6 +24,9 @@ export interface MessageItemMessage extends Pick<
   reactions?: Message["reactions"];
 }
 
+/** `void` en los mensajes directos (maqueta local, no puede fallar). */
+export type MessageEditOutcome = { ok: true } | { ok: false; message: string };
+
 interface MessageItemProps {
   message: MessageItemMessage;
   author: MessageAuthor;
@@ -34,7 +38,8 @@ interface MessageItemProps {
   onRequestReaction?: () => void;
   /** Mantener presionado: abre el menu de reaccionar/editar/eliminar. */
   onRequestActions: () => void;
-  onSaveEdit: (content: string) => void;
+  /** Si devuelve un fallo, el formulario sigue abierto mostrando el motivo. */
+  onSaveEdit: (content: string) => void | Promise<MessageEditOutcome>;
   onCancelEdit: () => void;
 }
 
@@ -50,6 +55,23 @@ export function MessageItem({
   onSaveEdit,
   onCancelEdit,
 }: MessageItemProps) {
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+
+  async function saveEdit(content: string) {
+    if (content === message.content) return cancelEdit();
+    setIsSavingEdit(true);
+    const result = await onSaveEdit(content);
+    setIsSavingEdit(false);
+    if (result && !result.ok) return setEditError(result.message);
+    setEditError(null);
+  }
+
+  function cancelEdit() {
+    setEditError(null);
+    onCancelEdit();
+  }
+
   return (
     <Pressable
       onLongPress={isEditing ? undefined : onRequestActions}
@@ -78,8 +100,10 @@ export function MessageItem({
         {isEditing ? (
           <MessageEditForm
             initialContent={message.content}
-            onSave={onSaveEdit}
-            onCancel={onCancelEdit}
+            onSave={saveEdit}
+            onCancel={cancelEdit}
+            isSaving={isSavingEdit}
+            error={editError}
           />
         ) : (
           <>

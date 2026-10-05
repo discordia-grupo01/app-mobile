@@ -10,7 +10,7 @@ import { useMemo } from "react";
 import { FlatList, Text, TouchableOpacity } from "react-native";
 
 import { ChannelWelcome } from "./ChannelWelcome";
-import { MessageItem } from "./MessageItem";
+import { MessageItem, type MessageEditOutcome } from "./MessageItem";
 import type { MentionResolver } from "./MessageContent";
 
 interface MessageListProps {
@@ -25,7 +25,10 @@ interface MessageListProps {
   onToggleReaction: (messageId: string, emoji: string) => void;
   onRequestReaction: (messageId: string) => void;
   onRequestActions: (messageId: string) => void;
-  onSaveEdit: (messageId: string, content: string) => void;
+  onSaveEdit: (
+    messageId: string,
+    content: string,
+  ) => void | Promise<MessageEditOutcome>;
   onCancelEdit: () => void;
 }
 
