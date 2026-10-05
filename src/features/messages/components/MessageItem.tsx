@@ -106,17 +106,18 @@ export function MessageItem({
             error={editError}
           />
         ) : (
-          <>
-            <MessageContent
-              content={message.content}
-              resolveMention={resolveMention}
-            />
-            {message.edited_at ? (
-              <Text className="text-[11px] text-content-subtle">
-                {MESSAGE_EDITED_LABEL}
-              </Text>
-            ) : null}
-          </>
+          <MessageContent
+            content={message.content}
+            resolveMention={resolveMention}
+            suffix={
+              message.edited_at ? (
+                <Text className="text-[11px] text-content-subtle">
+                  {" "}
+                  {MESSAGE_EDITED_LABEL}
+                </Text>
+              ) : null
+            }
+          />
         )}
 
         {!isEditing &&
