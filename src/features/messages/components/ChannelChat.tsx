@@ -28,6 +28,7 @@ interface ChannelChatProps {
   currentAuthor: MessageAuthor | null;
   serverRoles: Role[];
   canManageMessages: boolean;
+  canSendMessages: boolean;
   canMentionEveryone: boolean;
 }
 
@@ -37,6 +38,7 @@ export function ChannelChat({
   currentAuthor,
   serverRoles,
   canManageMessages,
+  canSendMessages,
   canMentionEveryone,
 }: ChannelChatProps) {
   const {
@@ -86,13 +88,15 @@ export function ChannelChat({
     messages?.find((m) => m.id === actionsMessageId) ?? null;
   const canEditActions =
     actionsMessage && currentAuthor
-      ? canEditMessage(actionsMessage, currentAuthor.id)
+      ? canEditMessage(actionsMessage, currentAuthor.id, canSendMessages)
       : false;
   const canDeleteActions =
     actionsMessage && currentAuthor
       ? canDeleteMessage(actionsMessage, currentAuthor.id, canManageMessages)
       : false;
 
+  const editingMessage =
+    messages?.find((m) => m.id === editingMessageId) ?? null;
   const deletingMessage =
     messages?.find((m) => m.id === deletingMessageId) ?? null;
 
@@ -113,11 +117,6 @@ export function ChannelChat({
           onToggleReaction={toggleReaction}
           onRequestReaction={setReactingToId}
           onRequestActions={setActionsMessageId}
-          onSaveEdit={(id, content) => {
-            editMessage(id, content);
-            setEditingMessageId(null);
-          }}
-          onCancelEdit={() => setEditingMessageId(null)}
         />
       )}
       {deleteError ? (
@@ -141,6 +140,20 @@ export function ChannelChat({
         onSend={sendMessage}
         disabled={!currentAuthor || status !== "ready"}
         canMentionEveryone={canMentionEveryone}
+        editing={
+          editingMessage
+            ? {
+                id: editingMessage.id,
+                content: editingMessage.content,
+                onSave: async (content) => {
+                  const result = await editMessage(editingMessage.id, content);
+                  if (result.ok) setEditingMessageId(null);
+                  return result;
+                },
+                onCancel: () => setEditingMessageId(null),
+              }
+            : null
+        }
       />
 
       <MessageActionsSheet

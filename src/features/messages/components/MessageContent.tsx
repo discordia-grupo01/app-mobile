@@ -1,5 +1,6 @@
 import { hexToRgba, tokenizeMessageContent } from "@discordia/client-shared";
 
+import type { ReactNode } from "react";
 import { Text } from "react-native";
 
 /** Color a usar para un `@usuario` o `@rol` mencionado, o `null` si no se reconoce. */
@@ -11,11 +12,14 @@ interface MessageContentProps {
   content: string;
   /** Resuelve el color de `@usuario`/`@rol` por nombre. Ausente en DMs (sin roles de server). */
   resolveMention?: MentionResolver;
+  /** Va pegado al final del texto, en el mismo renglon si entra (ej. "(editado)"). */
+  suffix?: ReactNode;
 }
 
 export function MessageContent({
   content,
   resolveMention,
+  suffix,
 }: MessageContentProps) {
   return (
     <Text className="text-[15px] leading-[21px] text-content">
@@ -69,6 +73,7 @@ export function MessageContent({
           </Text>
         );
       })}
+      {suffix}
     </Text>
   );
 }

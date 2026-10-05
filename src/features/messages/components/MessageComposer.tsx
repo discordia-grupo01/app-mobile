@@ -8,7 +8,7 @@ import {
   validateMessageContent,
 } from "@discordia/client-shared";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -16,6 +16,7 @@ import { cn } from "../../../lib/cn";
 import { useThemeColors } from "../../../theme/theme-context";
 import type { SendMessageResult } from "../use-channel-messages";
 import { ComposerIconButton } from "./ComposerIconButton";
+import { EditingBanner, type ComposerEditing } from "./EditingBanner";
 import { EmojiPickerSheet } from "./EmojiPickerSheet";
 
 const COUNTER_THRESHOLD = MAX_MESSAGE_LENGTH - 200;
@@ -31,6 +32,8 @@ interface MessageComposerProps {
   disabled?: boolean;
   /** Puede usar `@everyone`/`@here`. Por defecto `false`. */
   canMentionEveryone?: boolean;
+  /** Mientras hay un mensaje en edicion, el composer lo carga y guarda en lugar de enviar uno nuevo. */
+  editing?: ComposerEditing | null;
 }
 
 export function MessageComposer({
@@ -38,6 +41,7 @@ export function MessageComposer({
   onSend,
   disabled = false,
   canMentionEveryone = false,
+  editing = null,
 }: MessageComposerProps) {
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
@@ -46,6 +50,24 @@ export function MessageComposer({
   const [mentionError, setMentionError] = useState<string | undefined>();
   const [sendError, setSendError] = useState<string | undefined>();
   const [isSending, setIsSending] = useState(false);
+  const inputRef = useRef<TextInput>(null);
+
+  // Al empezar o terminar una edicion el borrador pasa a ser el del mensaje (o
+  // vuelve a vacio). Se ajusta durante el render, no en un efecto, para no
+  // mostrar un cuadro con el borrador viejo.
+  const editingId = editing?.id ?? null;
+  const [syncedEditingId, setSyncedEditingId] = useState<string | null>(null);
+  if (editingId !== syncedEditingId) {
+    setSyncedEditingId(editingId);
+    setDraft(editing?.content ?? "");
+    setMentionError(undefined);
+    setSendError(undefined);
+  }
+
+  // El input ya estaba montado, asi que el foco (y el teclado) es inmediato.
+  useEffect(() => {
+    if (editingId) inputRef.current?.focus();
+  }, [editingId]);
   const canSend =
     !disabled && !isSending && validateMessageContent(draft) === undefined;
   const length = [...draft].length;
@@ -60,7 +82,12 @@ export function MessageComposer({
     setMentionError(undefined);
     setSendError(undefined);
 
-    const outcome = onSend(draft);
+    if (editing && draft.trim() === editing.content) {
+      editing.onCancel();
+      return;
+    }
+
+    const outcome = editing ? editing.onSave(draft) : onSend(draft);
     if (outcome === undefined) {
       setDraft("");
       return;
@@ -75,6 +102,7 @@ export function MessageComposer({
 
   return (
     <View className="px-3 pt-1" style={{ paddingBottom: insets.bottom + 12 }}>
+      {editing ? <EditingBanner onCancel={editing.onCancel} /> : null}
       <View className="flex-row items-end rounded-[10px] border border-line bg-surface-input px-1">
         <ComposerIconButton
           name="paperclip"
@@ -83,6 +111,7 @@ export function MessageComposer({
           disabled
         />
         <TextInput
+          ref={inputRef}
           value={draft}
           onChangeText={(text) => {
             setDraft(text);

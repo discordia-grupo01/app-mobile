@@ -57,6 +57,8 @@ export function DmConversationScreen({
     ? canEditMessage(actionsMessage, currentAuthor.id)
     : false;
 
+  const editingMessage =
+    messages.find((m) => m.id === editingMessageId) ?? null;
   const deletingMessage =
     messages.find((m) => m.id === deletingMessageId) ?? null;
 
@@ -99,16 +101,24 @@ export function DmConversationScreen({
           messages={messages}
           editingMessageId={editingMessageId}
           onRequestActions={setActionsMessageId}
-          onSaveEdit={(id, content) => {
-            onEditMessage(id, content);
-            setEditingMessageId(null);
-          }}
-          onCancelEdit={() => setEditingMessageId(null)}
         />
         <DmComposer
           partnerName={partner.name}
           blockedByMe={blockedByMe}
           onSend={onSend}
+          editing={
+            editingMessage
+              ? {
+                  id: editingMessage.id,
+                  content: editingMessage.content,
+                  onSave: (content) => {
+                    onEditMessage(editingMessage.id, content);
+                    setEditingMessageId(null);
+                  },
+                  onCancel: () => setEditingMessageId(null),
+                }
+              : null
+          }
         />
       </KeyboardAvoidingView>
 

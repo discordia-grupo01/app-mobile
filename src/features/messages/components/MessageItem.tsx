@@ -9,7 +9,6 @@ import { Pressable, Text, View } from "react-native";
 import { cn } from "../../../lib/cn";
 import { ServerAvatar } from "../../servers/components/ServerAvatar";
 import { MessageContent, type MentionResolver } from "./MessageContent";
-import { MessageEditForm } from "./MessageEditForm";
 import { MessageHeader } from "./MessageHeader";
 import { MessageReactions } from "./MessageReactions";
 
@@ -27,6 +26,7 @@ interface MessageItemProps {
   message: MessageItemMessage;
   author: MessageAuthor;
   isGroupStart: boolean;
+  /** Es el mensaje que se esta editando en el composer: se resalta. */
   isEditing: boolean;
   resolveMention?: MentionResolver;
   onToggleReaction?: (emoji: string) => void;
@@ -34,8 +34,6 @@ interface MessageItemProps {
   onRequestReaction?: () => void;
   /** Mantener presionado: abre el menu de reaccionar/editar/eliminar. */
   onRequestActions: () => void;
-  onSaveEdit: (content: string) => void;
-  onCancelEdit: () => void;
 }
 
 export function MessageItem({
@@ -47,8 +45,6 @@ export function MessageItem({
   onToggleReaction,
   onRequestReaction,
   onRequestActions,
-  onSaveEdit,
-  onCancelEdit,
 }: MessageItemProps) {
   return (
     <Pressable
@@ -57,6 +53,7 @@ export function MessageItem({
       className={cn(
         "flex-row gap-3 px-4 py-0.5 active:bg-surface-hover",
         isGroupStart && "mt-4",
+        isEditing && "bg-surface-hover",
       )}
       accessibilityHint="Mantené presionado para más acciones"
     >
@@ -75,30 +72,20 @@ export function MessageItem({
           <MessageHeader author={author} createdAt={message.inserted_at} />
         ) : null}
 
-        {isEditing ? (
-          <MessageEditForm
-            initialContent={message.content}
-            onSave={onSaveEdit}
-            onCancel={onCancelEdit}
-          />
-        ) : (
-          <>
-            <MessageContent
-              content={message.content}
-              resolveMention={resolveMention}
-            />
-            {message.edited_at ? (
+        <MessageContent
+          content={message.content}
+          resolveMention={resolveMention}
+          suffix={
+            message.edited_at ? (
               <Text className="text-[11px] text-content-subtle">
+                {" "}
                 {MESSAGE_EDITED_LABEL}
               </Text>
-            ) : null}
-          </>
-        )}
+            ) : null
+          }
+        />
 
-        {!isEditing &&
-        message.reactions &&
-        onToggleReaction &&
-        onRequestReaction ? (
+        {message.reactions && onToggleReaction && onRequestReaction ? (
           <MessageReactions
             reactions={message.reactions}
             onToggle={onToggleReaction}
