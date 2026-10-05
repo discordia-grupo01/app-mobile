@@ -1,7 +1,7 @@
 import {
-  deleteMessage as deleteMessageIn,
   editMessageContent,
   otherParticipantId,
+  removeMessages,
   validateMessageContent,
   type Conversation,
   type DmMessage,
@@ -189,9 +189,7 @@ export function useDirectMessages(currentAuthor: MessageAuthor | null) {
     (messageId: string) => {
       if (!activeConversationId) return;
       updateConversationMessages(activeConversationId, (messages) =>
-        messages.map((message) =>
-          message.id === messageId ? deleteMessageIn(message) : message,
-        ),
+        removeMessages(messages, [messageId]),
       );
     },
     [activeConversationId, updateConversationMessages],

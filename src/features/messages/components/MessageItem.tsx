@@ -9,7 +9,6 @@ import { Pressable, Text, View } from "react-native";
 import { cn } from "../../../lib/cn";
 import { ServerAvatar } from "../../servers/components/ServerAvatar";
 import { MessageContent, type MentionResolver } from "./MessageContent";
-import { MessageDeletedNotice } from "./MessageDeletedNotice";
 import { MessageEditForm } from "./MessageEditForm";
 import { MessageHeader } from "./MessageHeader";
 import { MessageReactions } from "./MessageReactions";
@@ -19,7 +18,7 @@ const AVATAR_SIZE = 40;
 /** Forma minima que necesita esta fila: sirve tanto para `Message` (canal) como para `DmMessage`. */
 export interface MessageItemMessage extends Pick<
   Message,
-  "id" | "user_id" | "content" | "inserted_at" | "edited_at" | "deleted_at"
+  "id" | "user_id" | "content" | "inserted_at" | "edited_at"
 > {
   reactions?: Message["reactions"];
 }
@@ -51,19 +50,15 @@ export function MessageItem({
   onSaveEdit,
   onCancelEdit,
 }: MessageItemProps) {
-  const isDeleted = Boolean(message.deleted_at);
-
   return (
     <Pressable
-      onLongPress={isDeleted || isEditing ? undefined : onRequestActions}
+      onLongPress={isEditing ? undefined : onRequestActions}
       delayLongPress={300}
       className={cn(
         "flex-row gap-3 px-4 py-0.5 active:bg-surface-hover",
         isGroupStart && "mt-4",
       )}
-      accessibilityHint={
-        isDeleted ? undefined : "Mantené presionado para más acciones"
-      }
+      accessibilityHint="Mantené presionado para más acciones"
     >
       {isGroupStart ? (
         <ServerAvatar
@@ -80,9 +75,7 @@ export function MessageItem({
           <MessageHeader author={author} createdAt={message.inserted_at} />
         ) : null}
 
-        {isDeleted ? (
-          <MessageDeletedNotice />
-        ) : isEditing ? (
+        {isEditing ? (
           <MessageEditForm
             initialContent={message.content}
             onSave={onSaveEdit}
@@ -102,8 +95,7 @@ export function MessageItem({
           </>
         )}
 
-        {!isDeleted &&
-        !isEditing &&
+        {!isEditing &&
         message.reactions &&
         onToggleReaction &&
         onRequestReaction ? (

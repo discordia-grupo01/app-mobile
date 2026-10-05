@@ -94,7 +94,7 @@ export function DmConversationList({
                         </View>
                       ) : null}
                     </View>
-                    {lastMessage && !lastMessage.deleted_at ? (
+                    {lastMessage ? (
                       <Text
                         className="text-[12px] text-content-subtle"
                         numberOfLines={1}
