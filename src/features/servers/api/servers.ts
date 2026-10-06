@@ -1,5 +1,6 @@
 import {
   type CreateServerResult,
+  type DeleteServerResult,
   detailsOf,
   fieldOf,
   type GetServerResult,
@@ -12,6 +13,8 @@ import {
   reasonOf,
   REQUEST_FAILED_MESSAGE,
   resolveImageUrl,
+  SERVER_DELETE_FAILED,
+  SERVER_DELETE_FORBIDDEN,
   SERVER_LEAVE_FAILED,
   SERVER_LOAD_FAILED,
   SERVER_REASONS,
@@ -351,6 +354,42 @@ export async function leaveServer(
     return {
       ok: false,
       message: messageFor(result, {}, SERVER_LEAVE_FAILED),
+    };
+  }
+
+  return { ok: true };
+}
+
+export async function deleteServer(
+  serverId: string,
+  confirmName: string,
+): Promise<DeleteServerResult> {
+  const result = await apiFetch<void>(`/v1/servers/${serverId}`, {
+    method: "DELETE",
+    body: JSON.stringify({ confirm_name: confirmName }),
+  });
+
+  if (!result.ok) {
+    const reason = reasonOf(result.details);
+    const field = fieldOf(result.details);
+    const friendly = reason ? SERVER_REASONS[reason] : undefined;
+
+    if (field === "confirm_name" && friendly) {
+      return {
+        ok: false,
+        message: friendly,
+        fieldErrors: { [field]: friendly },
+      };
+    }
+    if (result.status === 401) {
+      return { ok: false, message: SESSION_EXPIRED_MESSAGE };
+    }
+    if (result.status === 403) {
+      return { ok: false, message: SERVER_DELETE_FORBIDDEN };
+    }
+    return {
+      ok: false,
+      message: messageFor(result, {}, SERVER_DELETE_FAILED),
     };
   }
 
