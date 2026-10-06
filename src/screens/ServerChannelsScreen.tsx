@@ -3,6 +3,7 @@ import {
   type Category,
   type Channel,
   channelsOfCategory,
+  type DeleteServerResult,
   isUnassignedCategory,
   type LeaveServerResult,
   type OwnershipTransfer,
@@ -82,6 +83,10 @@ interface ServerChannelsScreenProps {
   onAddServer: () => void;
   onLogout: () => void;
   onLeaveServer: (serverId: string) => Promise<LeaveServerResult>;
+  onDeleteServer: (
+    serverId: string,
+    confirmName: string,
+  ) => Promise<DeleteServerResult>;
   onServerUpdated: (server: ServerSummary) => void;
 }
 
@@ -150,6 +155,7 @@ export function ServerChannelsScreen({
   onAddServer,
   onLogout,
   onLeaveServer,
+  onDeleteServer,
   onServerUpdated,
 }: ServerChannelsScreenProps) {
   const colors = useThemeColors();
@@ -714,11 +720,15 @@ export function ServerChannelsScreen({
         <ServerSettingsModal
           visible={isServerSettingsVisible}
           server={server}
+          isOwner={isOwner}
           onClose={() => setIsServerSettingsVisible(false)}
           onUpdated={(updated) => {
             setIsServerSettingsVisible(false);
             onServerUpdated(updated);
           }}
+          onConfirmDelete={(confirmName) =>
+            onDeleteServer(server.id, confirmName)
+          }
         />
       ) : null}
       <LeaveServerModal
