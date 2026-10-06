@@ -1,4 +1,5 @@
 import {
+  type DeleteServerResult,
   hasPermission,
   type LeaveServerResult,
   type Role,
@@ -27,7 +28,11 @@ import { useAuth } from "../features/auth/auth-context";
 import { authorFromProfile } from "../features/messages/author";
 import { getOwnProfile } from "../features/profile/service";
 import { listMemberRoles, listRoles } from "../features/roles/api";
-import { leaveServer, listMyServers } from "../features/servers/api";
+import {
+  deleteServer,
+  leaveServer,
+  listMyServers,
+} from "../features/servers/api";
 import { useStatusBarStyle, useThemeColors } from "../theme/theme-context";
 import { ChannelScreen } from "./ChannelScreen";
 import { DirectMessagesScreen } from "./DirectMessagesScreen";
@@ -223,6 +228,22 @@ export function HomeScreen() {
     [user],
   );
 
+  const handleDeleteServer = useCallback(
+    async (
+      serverId: string,
+      confirmName: string,
+    ): Promise<DeleteServerResult> => {
+      const result = await deleteServer(serverId, confirmName);
+      if (result.ok) {
+        setServers((prev) => prev.filter((server) => server.id !== serverId));
+        setSelectedServerId((prev) => (prev === serverId ? null : prev));
+        setSelectedChannelId(null);
+      }
+      return result;
+    },
+    [],
+  );
+
   /** El servidor cambió localmente (se creó un canal o una categoría). */
   const handleServerUpdated = useCallback((updated: ServerSummary) => {
     setServers((prev) =>
@@ -323,6 +344,7 @@ export function HomeScreen() {
           onAddServer={handleAddServer}
           onLogout={logout}
           onLeaveServer={handleLeaveServer}
+          onDeleteServer={handleDeleteServer}
           onServerUpdated={handleServerUpdated}
         />
 
