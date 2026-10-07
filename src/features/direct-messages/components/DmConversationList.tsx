@@ -1,4 +1,5 @@
 import {
+  BLOCKED_BADGE_LABEL,
   DIRECT_MESSAGES_TITLE,
   NO_CONVERSATIONS_YET,
 } from "@discordia/client-shared";
@@ -89,7 +90,7 @@ export function DmConversationList({
                       {blockedByMe || blocksMe ? (
                         <View className="rounded bg-danger/15 px-1 py-px">
                           <Text className="text-[9px] text-danger">
-                            bloqueado
+                            {BLOCKED_BADGE_LABEL}
                           </Text>
                         </View>
                       ) : null}

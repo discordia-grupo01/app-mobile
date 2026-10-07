@@ -268,6 +268,7 @@ export function MembersSidebar({
         serverId={serverId}
         canManageRoles={canManageRoles}
         canBan={canBanViewed}
+        canBlock={viewingUserId !== currentUserId}
         onBanned={fetchMembers}
         onClose={() => setViewingUserId(null)}
       />

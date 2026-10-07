@@ -12,6 +12,9 @@ import { MemberRoleBadges } from "../../roles/components/MemberRoleBadges";
 import { getPublicProfile } from "../service";
 import { MutualServersList } from "./MutualServersList";
 import { ProfileBanner } from "./ProfileBanner";
+import { useBlockedUsersContext } from "../../blocks/blocked-users-context";
+import { BlockUserAction } from "./BlockUserAction";
+import { BlockUserModal } from "./BlockUserModal";
 import { ModeratorActions } from "../../bans/components/ModeratorActions";
 import { ModalShell } from "../../../components/ui/ModalShell";
 
@@ -19,11 +22,11 @@ interface PublicProfileModalProps {
   visible: boolean;
   userId: string | null;
   authToken?: string | null;
-  serverId: string;
-  canManageRoles: boolean;
-  /** Muestra el boton de banear: quien lo abre decide si puede (permiso, no es el dueño ni uno mismo). */
+  /** Sin servidor (perfil abierto desde un mensaje directo) no hay roles que mostrar. */
+  serverId?: string;
+  canManageRoles?: boolean;
   canBan?: boolean;
-  /** Se dispara apenas el back confirma el baneo de este usuario. */
+  canBlock?: boolean;
   onBanned?: () => void;
   onClose: () => void;
 }
@@ -33,8 +36,9 @@ export function PublicProfileModal({
   userId,
   authToken,
   serverId,
-  canManageRoles,
+  canManageRoles = false,
   canBan = false,
+  canBlock = false,
   onBanned,
   onClose,
 }: PublicProfileModalProps) {
@@ -44,6 +48,8 @@ export function PublicProfileModal({
   const [isLoading, setIsLoading] = useState(false);
   const [isBanOpen, setIsBanOpen] = useState(false);
   const [wasBanned, setWasBanned] = useState(false);
+  const [isBlockOpen, setIsBlockOpen] = useState(false);
+  const { blockedIds, blockUser, unblockUser } = useBlockedUsersContext();
 
   const key = `${visible}::${userId}`;
   const [lastKey, setLastKey] = useState(key);
@@ -54,6 +60,7 @@ export function PublicProfileModal({
       setErrorMessage("");
       setIsLoading(true);
       setIsBanOpen(false);
+      setIsBlockOpen(false);
       setWasBanned(false);
     }
   }
@@ -158,16 +165,27 @@ export function PublicProfileModal({
               <MutualServersList serverIds={profile.mutual_server_ids} />
             </View>
 
-            <View className="mb-4">
-              <MemberRoleBadges
-                serverId={serverId}
-                userId={profile.id}
-                canManage={canManageRoles}
-              />
-            </View>
+            {serverId ? (
+              <View className="mb-4">
+                <MemberRoleBadges
+                  serverId={serverId}
+                  userId={profile.id}
+                  canManage={canManageRoles}
+                />
+              </View>
+            ) : null}
 
-            {canBan ? (
+            {canBan && serverId ? (
               <ModeratorActions onBan={() => setIsBanOpen(true)} />
+            ) : null}
+
+            {canBlock ? (
+              <View className={canBan && serverId ? "mt-3" : undefined}>
+                <BlockUserAction
+                  isBlocked={blockedIds.has(profile.id)}
+                  onPress={() => setIsBlockOpen(true)}
+                />
+              </View>
             ) : null}
           </ScrollView>
 
@@ -188,7 +206,21 @@ export function PublicProfileModal({
         </>
       )}
 
-      {isBanOpen && profile ? (
+      {isBlockOpen && profile ? (
+        <BlockUserModal
+          visible
+          userName={profile.name}
+          isBlocked={blockedIds.has(profile.id)}
+          onConfirm={() =>
+            blockedIds.has(profile.id)
+              ? unblockUser(profile.id)
+              : blockUser(profile.id)
+          }
+          onClose={() => setIsBlockOpen(false)}
+        />
+      ) : null}
+
+      {isBanOpen && profile && serverId ? (
         <BanMemberModal
           serverId={serverId}
           target={{
