@@ -6,6 +6,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import type { AuthMode } from "./src/features/auth/components/AuthTabs";
 import { AuthProvider, useAuth } from "./src/features/auth/auth-context";
+import { BlockedUsersProvider } from "./src/features/blocks/blocked-users-context";
 import { useEmailConfirmation } from "./src/features/auth/use-email-confirmation";
 
 import { ForgotPasswordScreen } from "./src/screens/ForgotPasswordScreen";
@@ -75,7 +76,11 @@ function AppContent() {
   }
 
   if (isAuthenticated) {
-    return <HomeScreen />;
+    return (
+      <BlockedUsersProvider>
+        <HomeScreen />
+      </BlockedUsersProvider>
+    );
   }
 
   if (isPinEnabled && !skipPinEntry) {
