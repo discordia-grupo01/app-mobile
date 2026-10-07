@@ -1,4 +1,5 @@
 import {
+  BLOCKED_BADGE_LABEL,
   canEditMessage,
   type DmMessage,
   type MessageAuthor,
@@ -15,6 +16,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { PublicProfileModal } from "../../profile/components/PublicProfileModal";
 import { DeleteMessageModal } from "../../messages/components/DeleteMessageModal";
 import { MessageActionsSheet } from "../../messages/components/MessageActionsSheet";
 import { ServerAvatar } from "../../servers/components/ServerAvatar";
@@ -46,6 +48,7 @@ export function DmConversationScreen({
   const insets = useSafeAreaInsets();
   const [actionsMessageId, setActionsMessageId] = useState<string | null>(null);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [isProfileVisible, setIsProfileVisible] = useState(false);
   const [deletingMessageId, setDeletingMessageId] = useState<string | null>(
     null,
   );
@@ -75,17 +78,24 @@ export function DmConversationScreen({
         >
           <Feather name="arrow-left" size={22} color={colors.textMuted} />
         </TouchableOpacity>
-        <ServerAvatar name={partner.name} uri={partner.avatarUrl} size={30} />
-        <Text
-          className="flex-1 text-[17px] font-bold text-content"
-          numberOfLines={1}
+        <TouchableOpacity
+          onPress={() => setIsProfileVisible(true)}
+          className="flex-1 flex-row items-center gap-3"
+          accessibilityRole="button"
+          accessibilityLabel={`Ver perfil de ${partner.name}`}
         >
-          {partner.name}
-        </Text>
+          <ServerAvatar name={partner.name} uri={partner.avatarUrl} size={30} />
+          <Text
+            className="flex-1 text-[17px] font-bold text-content"
+            numberOfLines={1}
+          >
+            {partner.name}
+          </Text>
+        </TouchableOpacity>
         {blockedByMe || blocksMe ? (
           <View className="rounded-full bg-danger/15 px-2 py-1">
             <Text className="text-[10px] text-danger">
-              {blockedByMe ? "bloqueado" : "te bloqueó"}
+              {blockedByMe ? BLOCKED_BADGE_LABEL : "te bloqueó"}
             </Text>
           </View>
         ) : null}
@@ -135,6 +145,13 @@ export function DmConversationScreen({
           setActionsMessageId(null);
         }}
         onClose={() => setActionsMessageId(null)}
+      />
+
+      <PublicProfileModal
+        visible={isProfileVisible}
+        userId={partner.id}
+        canBlock
+        onClose={() => setIsProfileVisible(false)}
       />
 
       <DeleteMessageModal

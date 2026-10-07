@@ -11,11 +11,8 @@ import {
 import { useCallback, useMemo, useState } from "react";
 
 import { DEMO_AUTHORS } from "../messages/mock-data";
-import {
-  BLOCKED_BY_ME,
-  BLOCKS_ME,
-  INITIALLY_UNREAD_CONVERSATION_IDS,
-} from "./mock-data";
+import { useBlockedUsersContext } from "../blocks/blocked-users-context";
+import { BLOCKS_ME, INITIALLY_UNREAD_CONVERSATION_IDS } from "./mock-data";
 import {
   createLocalDmMessage,
   findOrCreateConversationWith,
@@ -47,18 +44,9 @@ function unknownAuthor(id: string): MessageAuthor {
   };
 }
 
-/**
- * Mensajes directos de la sesion actual: lista de conversaciones + la activa.
- *
- * `conversations` se deriva con `useMemo` en vez de copiarse a state (y
- * `storeVersion` fuerza recalcularla cuando `startConversationWith` crea una
- * nueva): `mock-store` ya cachea por usuario, así que no hace falta un
- * `useEffect` que dispare `setState` al cargar -- alcanza con leerlo al
- * renderizar. Los mensajes de cada conversacion se leen igual (del store) y
- * solo se pisan en `overrides` cuando el usuario envia/edita/borra algo.
- */
 export function useDirectMessages(currentAuthor: MessageAuthor | null) {
   const currentUserId = currentAuthor?.id ?? null;
+  const { blockedIds } = useBlockedUsersContext();
   const [storeVersion, setStoreVersion] = useState(0);
   const [overrides, setOverrides] = useState<Record<string, DmMessage[]>>({});
   const [unreadIds, setUnreadIds] = useState<Set<string>>(
@@ -90,11 +78,11 @@ export function useDirectMessages(currentAuthor: MessageAuthor | null) {
         partner: DEMO_AUTHORS[partnerId] ?? unknownAuthor(partnerId),
         lastMessage: messages[messages.length - 1] ?? null,
         isUnread: unreadIds.has(conversation.id),
-        blockedByMe: BLOCKED_BY_ME.has(partnerId),
+        blockedByMe: blockedIds.has(partnerId),
         blocksMe: BLOCKS_ME.has(partnerId),
       };
     });
-  }, [conversations, messagesFor, currentUserId, unreadIds]);
+  }, [conversations, messagesFor, currentUserId, unreadIds, blockedIds]);
 
   const activeMessages = activeConversationId
     ? messagesFor(activeConversationId)
@@ -112,7 +100,6 @@ export function useDirectMessages(currentAuthor: MessageAuthor | null) {
     });
   }
 
-  /** Mobile navega por pantallas: "volver" de una conversacion a la lista. */
   function closeConversation() {
     setActiveConversationId(null);
   }
