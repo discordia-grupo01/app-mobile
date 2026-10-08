@@ -5,16 +5,17 @@ import {
   type MessageAuthor,
   startsMessageGroup,
   type MentionResolver,
+  unknownAuthor,
 } from "@discordia/client-shared";
 
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import { FlatList, Text, TouchableOpacity } from "react-native";
 
-import { ChannelWelcome } from "./ChannelWelcome";
 import { MessageItem } from "./MessageItem";
 
 interface MessageListProps {
-  channelName: string;
+  /** Encabezado del comienzo del historial (se muestra cuando no hay mas mensajes anteriores). */
+  welcome: ReactNode;
   messages: Message[];
   authors: Record<string, MessageAuthor>;
   editingMessageId: string | null;
@@ -22,23 +23,14 @@ interface MessageListProps {
   isLoadingOlder: boolean;
   onLoadOlder: () => void;
   resolveMention?: MentionResolver;
-  onToggleReaction: (messageId: string, emoji: string) => void;
-  onRequestReaction: (messageId: string) => void;
+  /** Sin estas dos no se muestran reacciones (ej. en mensajes directos). */
+  onToggleReaction?: (messageId: string, emoji: string) => void;
+  onRequestReaction?: (messageId: string) => void;
   onRequestActions: (messageId: string) => void;
 }
 
-function unknownAuthor(id: string): MessageAuthor {
-  return {
-    id,
-    name: "Usuario desconocido",
-    avatarUrl: null,
-    roleName: null,
-    roleColor: null,
-  };
-}
-
 export function MessageList({
-  channelName,
+  welcome,
   messages,
   authors,
   editingMessageId,
@@ -76,7 +68,7 @@ export function MessageList({
             </Text>
           </TouchableOpacity>
         ) : (
-          <ChannelWelcome channelName={channelName} />
+          <>{welcome}</>
         )
       }
       renderItem={({ item, index }) => {
@@ -88,8 +80,12 @@ export function MessageList({
             isGroupStart={startsMessageGroup(previous, item)}
             isEditing={editingMessageId === item.id}
             resolveMention={resolveMention}
-            onToggleReaction={(emoji) => onToggleReaction(item.id, emoji)}
-            onRequestReaction={() => onRequestReaction(item.id)}
+            onToggleReaction={
+              onToggleReaction && ((emoji) => onToggleReaction(item.id, emoji))
+            }
+            onRequestReaction={
+              onRequestReaction && (() => onRequestReaction(item.id))
+            }
             onRequestActions={() => onRequestActions(item.id)}
           />
         );

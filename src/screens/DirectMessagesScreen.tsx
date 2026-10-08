@@ -6,6 +6,7 @@ import { View } from "react-native";
 import { DmConversationList } from "../features/direct-messages/components/DmConversationList";
 import { DmConversationScreen } from "../features/direct-messages/components/DmConversationScreen";
 import { StartDmSheet } from "../features/direct-messages/components/StartDmSheet";
+import { useDmCandidates } from "../features/direct-messages/useDmCandidates";
 import type { useDirectMessages } from "../features/direct-messages/useDirectMessages";
 import { ServerRail } from "../features/servers/components/rail/ServerRail";
 
@@ -32,27 +33,23 @@ export function DirectMessagesScreen({
   const [isStartSheetVisible, setIsStartSheetVisible] = useState(false);
   const {
     conversations,
-    activeConversationId,
-    activeMessages,
     activeSummary,
-    knownPartners,
     openConversation,
     closeConversation,
-    startConversationWith,
     sendMessage,
-    editMessage,
-    deleteMessage,
   } = directMessages;
+  const { candidates, isLoading: isLoadingCandidates } = useDmCandidates(
+    servers,
+    currentAuthor?.id ?? null,
+    isStartSheetVisible,
+  );
 
-  if (currentAuthor && activeConversationId && activeSummary) {
+  if (currentAuthor && activeSummary) {
     return (
       <DmConversationScreen
         currentAuthor={currentAuthor}
         summary={activeSummary}
-        messages={activeMessages}
         onSend={sendMessage}
-        onEditMessage={editMessage}
-        onDeleteMessage={deleteMessage}
         onBack={closeConversation}
       />
     );
@@ -71,7 +68,7 @@ export function DirectMessagesScreen({
 
       <DmConversationList
         conversations={conversations}
-        activeConversationId={activeConversationId}
+        activePartnerId={activeSummary?.partner.id ?? null}
         userName={userName}
         onSelect={openConversation}
         onStartNew={() => setIsStartSheetVisible(true)}
@@ -80,10 +77,11 @@ export function DirectMessagesScreen({
 
       <StartDmSheet
         visible={isStartSheetVisible}
-        partners={knownPartners}
+        partners={candidates}
+        isLoading={isLoadingCandidates}
         onClose={() => setIsStartSheetVisible(false)}
-        onStart={(partnerId) => {
-          startConversationWith(partnerId);
+        onStart={(partner) => {
+          openConversation(partner.id, partner);
           setIsStartSheetVisible(false);
         }}
       />

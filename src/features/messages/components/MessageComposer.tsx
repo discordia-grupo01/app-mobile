@@ -2,7 +2,6 @@ import {
   ATTACH_FILE_LABEL,
   EMOJI_PICKER_LABEL,
   MAX_MESSAGE_LENGTH,
-  messageInputPlaceholder,
   SEND_MESSAGE_LABEL,
   validateMentionEveryone,
   validateMessageContent,
@@ -22,7 +21,8 @@ import { EmojiPickerSheet } from "./EmojiPickerSheet";
 const COUNTER_THRESHOLD = MAX_MESSAGE_LENGTH - 200;
 
 interface MessageComposerProps {
-  channelName: string;
+  /** Texto del campo vacio (ej. `messageInputPlaceholder(canal)` o `dmInputPlaceholder(nombre)`). */
+  placeholder: string;
   /**
    * Si devuelve una promesa, el borrador se conserva hasta que el envio sale
    * bien (un fallo lo deja para reintentar). Si devuelve `void`, se limpia al
@@ -37,7 +37,7 @@ interface MessageComposerProps {
 }
 
 export function MessageComposer({
-  channelName,
+  placeholder,
   onSend,
   disabled = false,
   canMentionEveryone = false,
@@ -120,9 +120,9 @@ export function MessageComposer({
           }}
           editable={!disabled && !isSending}
           multiline
-          placeholder={messageInputPlaceholder(channelName)}
+          placeholder={placeholder}
           placeholderTextColor={colors.textSubtle}
-          accessibilityLabel={messageInputPlaceholder(channelName)}
+          accessibilityLabel={placeholder}
           className="max-h-32 min-h-10 flex-1 py-2.5 text-[15px] text-content"
         />
         <ComposerIconButton

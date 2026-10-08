@@ -111,7 +111,7 @@ export function HomeScreen() {
     () => (user ? authorFromProfile(user) : null),
     [user],
   );
-  const directMessages = useDirectMessages(currentAuthor);
+  const directMessages = useDirectMessages(currentAuthor, view === "dm");
   const unreadDmCount = directMessages.conversations.filter(
     (c) => c.isUnread,
   ).length;

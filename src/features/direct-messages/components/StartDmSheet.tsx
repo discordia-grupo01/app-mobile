@@ -1,4 +1,5 @@
 import {
+  LOADING_DM_CANDIDATES_LABEL,
   NEW_DIRECT_MESSAGE_LABEL,
   type MessageAuthor,
 } from "@discordia/client-shared";
@@ -21,13 +22,15 @@ import { useThemeColors } from "../../../theme/theme-context";
 interface StartDmSheetProps {
   visible: boolean;
   partners: MessageAuthor[];
+  isLoading?: boolean;
   onClose: () => void;
-  onStart: (partnerId: string) => void;
+  onStart: (partner: MessageAuthor) => void;
 }
 
 export function StartDmSheet({
   visible,
   partners,
+  isLoading = false,
   onClose,
   onStart,
 }: StartDmSheetProps) {
@@ -64,7 +67,11 @@ export function StartDmSheet({
             />
           </View>
 
-          {filtered.length === 0 ? (
+          {isLoading ? (
+            <Text className="px-2 py-4 text-center text-[13px] text-content-subtle">
+              {LOADING_DM_CANDIDATES_LABEL}
+            </Text>
+          ) : filtered.length === 0 ? (
             <Text className="px-2 py-4 text-center text-[13px] text-content-subtle">
               Sin resultados
             </Text>
@@ -73,7 +80,7 @@ export function StartDmSheet({
               <TouchableOpacity
                 key={partner.id}
                 activeOpacity={0.75}
-                onPress={() => onStart(partner.id)}
+                onPress={() => onStart(partner)}
                 className="flex-row items-center gap-3 rounded-lg px-2 py-2.5"
               >
                 <ServerAvatar

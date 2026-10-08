@@ -1,6 +1,7 @@
 import {
   BLOCKED_BADGE_LABEL,
   DIRECT_MESSAGES_TITLE,
+  type ConversationSummary,
   NO_CONVERSATIONS_YET,
 } from "@discordia/client-shared";
 
@@ -11,20 +12,19 @@ import { UserProfileBar } from "../../servers/components/account/UserProfileBar"
 import { ServerAvatar } from "../../servers/components/ServerAvatar";
 import { useThemeColors } from "../../../theme/theme-context";
 import { cn } from "../../../lib/cn";
-import type { ConversationSummary } from "../useDirectMessages";
 
 interface DmConversationListProps {
   conversations: ConversationSummary[];
-  activeConversationId: string | null;
+  activePartnerId: string | null;
   userName?: string | null;
-  onSelect: (conversationId: string) => void;
+  onSelect: (partnerId: string) => void;
   onStartNew: () => void;
   onLogout: () => void;
 }
 
 export function DmConversationList({
   conversations,
-  activeConversationId,
+  activePartnerId,
   userName,
   onSelect,
   onStartNew,
@@ -56,18 +56,17 @@ export function DmConversationList({
         ) : (
           conversations.map(
             ({
-              conversation,
+              conversationId,
               partner,
               lastMessage,
               isUnread,
               blockedByMe,
-              blocksMe,
             }) => {
-              const isActive = conversation.id === activeConversationId;
+              const isActive = partner.id === activePartnerId;
               return (
                 <TouchableOpacity
-                  key={conversation.id}
-                  onPress={() => onSelect(conversation.id)}
+                  key={conversationId}
+                  onPress={() => onSelect(partner.id)}
                   activeOpacity={0.75}
                   className={cn(
                     "mb-0.5 flex-row items-center gap-2.5 rounded-lg px-2 py-2.5",
@@ -87,7 +86,7 @@ export function DmConversationList({
                       >
                         {partner.name}
                       </Text>
-                      {blockedByMe || blocksMe ? (
+                      {blockedByMe ? (
                         <View className="rounded bg-danger/15 px-1 py-px">
                           <Text className="text-[9px] text-danger">
                             {BLOCKED_BADGE_LABEL}

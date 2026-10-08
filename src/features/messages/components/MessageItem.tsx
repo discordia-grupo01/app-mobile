@@ -15,7 +15,7 @@ import { MessageReactions } from "./MessageReactions";
 
 const AVATAR_SIZE = 40;
 
-/** Forma minima que necesita esta fila: sirve tanto para `Message` (canal) como para `DmMessage`. */
+/** Forma minima que necesita esta fila: sirve para los mensajes de un canal y de un DM. */
 export interface MessageItemMessage extends Pick<
   Message,
   "id" | "user_id" | "content" | "inserted_at" | "edited_at"
