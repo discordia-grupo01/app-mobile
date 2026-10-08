@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Text, View } from "react-native";
 
 import { listMyServers, resolveServerIconUrl } from "../../servers/api";
-import { ServerAvatar } from "../../servers/components/ServerAvatar";
+import { Avatar } from "../../../components/ui/Avatar";
 
 interface MutualServersListProps {
   serverIds: string[];
@@ -43,7 +43,7 @@ export function MutualServersList({ serverIds }: MutualServersListProps) {
               key={server.id}
               className="flex-row items-center gap-2.5 py-0.5"
             >
-              <ServerAvatar
+              <Avatar
                 name={server.name}
                 uri={resolveServerIconUrl(server.icon_url)}
                 size={32}

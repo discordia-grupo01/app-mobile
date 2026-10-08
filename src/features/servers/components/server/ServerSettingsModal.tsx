@@ -42,7 +42,7 @@ import {
 } from "../../api";
 import { materializePresetBanner } from "../../constants/preset-banners";
 import type { CreateServerIconInput } from "../../types";
-import { ServerAvatar } from "../ServerAvatar";
+import { Avatar } from "../../../../components/ui/Avatar";
 import { ServerBanner } from "../ServerBanner";
 import { ModalShell } from "../../../../components/ui/ModalShell";
 import { DeleteServerFields } from "./DeleteServerModal";
@@ -252,7 +252,7 @@ function SettingsRow({
 function SettingsIdentityHeader({ server }: { server: ServerSummary }) {
   return (
     <View className="items-center pt-6 pb-4">
-      <ServerAvatar
+      <Avatar
         name={server.name}
         uri={resolveServerIconUrl(server.icon_url)}
         size={56}
@@ -649,7 +649,7 @@ export function ServerSettingsModal({
                 accessibilityRole="button"
                 accessibilityLabel={CHANGE_SERVER_ICON_LABEL}
               >
-                <ServerAvatar
+                <Avatar
                   name={name || server.name}
                   uri={previewIconUri}
                   size={ICON_SIZE}

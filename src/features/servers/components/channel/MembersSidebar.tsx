@@ -25,7 +25,7 @@ import { useThemeColors } from "../../../../theme/theme-context";
 import { OwnProfileModal } from "../../../profile/components/OwnProfileModal";
 import { PublicProfileModal } from "../../../profile/components/PublicProfileModal";
 import { listMembers } from "../../api";
-import { ServerAvatar } from "../ServerAvatar";
+import { Avatar } from "../../../../components/ui/Avatar";
 
 interface MembersSidebarProps {
   visible: boolean;
@@ -133,12 +133,7 @@ export function MembersSidebar({
         accessibilityLabel={`Ver perfil de ${name}`}
       >
         <View className="relative">
-          <ServerAvatar
-            name={name}
-            uri={avatarSrc}
-            size={36}
-            borderRadius={18}
-          />
+          <Avatar name={name} uri={avatarSrc} size={36} borderRadius={18} />
           {/* Estado de actividad mock ("en línea"): todavía no hay presencia
               real en identify-service */}
           <View className="absolute -right-[1px] -bottom-[1px] w-3 h-3 rounded-md bg-success border-2 border-surface-sunken" />

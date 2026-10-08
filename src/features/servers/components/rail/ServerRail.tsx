@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { resolveServerIconUrl } from "../../api";
 import { cn } from "../../../../lib/cn";
 import { useThemeColors } from "../../../../theme/theme-context";
-import { ServerAvatar } from "../ServerAvatar";
+import { Avatar } from "../../../../components/ui/Avatar";
 
 export const RAIL_WIDTH = 72;
 
@@ -47,7 +47,7 @@ function ServerRailIcon({
       {active ? (
         <View className="absolute left-0 top-[50%] -mt-3 w-1 h-6 rounded-xs bg-server-pill" />
       ) : null}
-      <ServerAvatar
+      <Avatar
         name={item.name}
         uri={resolveServerIconUrl(item.icon_url)}
         size={48}

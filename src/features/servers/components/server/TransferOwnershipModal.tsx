@@ -35,7 +35,7 @@ import { env } from "../../../../lib/env";
 import { cn } from "../../../../lib/cn";
 import { useThemeColors } from "../../../../theme/theme-context";
 import { Button } from "../../../../components/ui/Button";
-import { ServerAvatar } from "../ServerAvatar";
+import { Avatar } from "../../../../components/ui/Avatar";
 import { ModalShell } from "../../../../components/ui/ModalShell";
 import { ModalCloseButton } from "../../../../components/ui/ModalCloseButton";
 
@@ -409,7 +409,7 @@ export function TransferOwnershipModal({
                         : "border-transparent",
                     )}
                   >
-                    <ServerAvatar
+                    <Avatar
                       name={name}
                       uri={resolveImageUrl(
                         item.profile?.avatar_url,
@@ -470,7 +470,7 @@ export function TransferOwnershipModal({
       >
         {errorBanner}
         <View className="flex-row items-center gap-3 rounded-2xl border border-line-strong bg-surface-raised p-3.5 mb-4">
-          <ServerAvatar
+          <Avatar
             name={selectedDisplayName}
             uri={resolveImageUrl(
               selectedMember?.profile?.avatar_url,

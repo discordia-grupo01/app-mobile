@@ -5,16 +5,18 @@ import {
   CHAT_RECONNECTING_NOTICE,
   type Channel,
   LOADING_MESSAGES_LABEL,
+  messageInputPlaceholder,
   type MessageAuthor,
   type Role,
+  buildMentionResolver,
 } from "@discordia/client-shared";
 
 import { useMemo, useState } from "react";
 import { Text } from "react-native";
 
-import { buildMentionResolver } from "../message-mentions";
 import { useChannelMessages } from "../use-channel-messages";
 import { useMessageAuthors } from "../use-message-authors";
+import { ChannelWelcome } from "./ChannelWelcome";
 import { ChatStatusNotice } from "./ChatStatusNotice";
 import { DeleteMessageModal } from "./DeleteMessageModal";
 import { EmojiPickerSheet } from "./EmojiPickerSheet";
@@ -106,7 +108,7 @@ export function ChannelChat({
         <ChatStatusNotice message={LOADING_MESSAGES_LABEL} />
       ) : (
         <MessageList
-          channelName={channel.name}
+          welcome={<ChannelWelcome channelName={channel.name} />}
           messages={messages}
           authors={authors}
           editingMessageId={editingMessageId}
@@ -136,7 +138,7 @@ export function ChannelChat({
         </Text>
       ) : null}
       <MessageComposer
-        channelName={channel.name}
+        placeholder={messageInputPlaceholder(channel.name)}
         onSend={sendMessage}
         disabled={!currentAuthor || status !== "ready"}
         canMentionEveryone={canMentionEveryone}

@@ -5,7 +5,7 @@ import { Text, TouchableOpacity, View } from "react-native";
 
 import { avatarUriOf } from "../../../lib/userProfile";
 import { useThemeColors } from "../../../theme/theme-context";
-import { ServerAvatar } from "../../servers/components/ServerAvatar";
+import { Avatar } from "../../../components/ui/Avatar";
 import { RowActionButton, type UserRowAction } from "./RowActionButton";
 
 interface UserRowProps {
@@ -41,7 +41,7 @@ export function UserRow({
         accessibilityLabel={onSelect ? `Ver perfil de ${name}` : undefined}
         className="min-w-0 flex-1 flex-row items-center gap-3"
       >
-        <ServerAvatar name={name} uri={avatarUriOf(item.profile)} size={40} />
+        <Avatar name={name} uri={avatarUriOf(item.profile)} size={40} />
         <View className="min-w-0 flex-1">
           <Text
             numberOfLines={1}

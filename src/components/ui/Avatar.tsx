@@ -4,21 +4,16 @@ import { useState } from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
 import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 
-import { useThemeColors } from "../../../theme/theme-context";
+import { useThemeColors } from "../../theme/theme-context";
 
-interface ServerAvatarProps {
+interface AvatarProps {
   name: string;
   uri?: string | null;
   size?: number;
   borderRadius?: number;
 }
 
-export function ServerAvatar({
-  name,
-  uri,
-  size = 48,
-  borderRadius,
-}: ServerAvatarProps) {
+export function Avatar({ name, uri, size = 48, borderRadius }: AvatarProps) {
   const colors = useThemeColors();
   const radius = borderRadius ?? size / 2;
   const [failed, setFailed] = useState(false);
@@ -48,7 +43,7 @@ export function ServerAvatar({
     >
       <Svg style={StyleSheet.absoluteFill} width="100%" height="100%">
         <Defs>
-          <LinearGradient id="serverAvatarGradient" x1="0" y1="0" x2="1" y2="1">
+          <LinearGradient id="avatarGradient" x1="0" y1="0" x2="1" y2="1">
             <Stop offset="0" stopColor={colors.accentGradientStart} />
             <Stop offset="1" stopColor={colors.accentGradientEnd} />
           </LinearGradient>
@@ -58,7 +53,7 @@ export function ServerAvatar({
           y={0}
           width="100%"
           height="100%"
-          fill="url(#serverAvatarGradient)"
+          fill="url(#avatarGradient)"
         />
       </Svg>
       <Text

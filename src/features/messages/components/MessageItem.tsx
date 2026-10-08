@@ -2,19 +2,20 @@ import {
   MESSAGE_EDITED_LABEL,
   type Message,
   type MessageAuthor,
+  type MentionResolver,
 } from "@discordia/client-shared";
 
 import { Pressable, Text, View } from "react-native";
 
 import { cn } from "../../../lib/cn";
-import { ServerAvatar } from "../../servers/components/ServerAvatar";
-import { MessageContent, type MentionResolver } from "./MessageContent";
+import { Avatar } from "../../../components/ui/Avatar";
+import { MessageContent } from "./MessageContent";
 import { MessageHeader } from "./MessageHeader";
 import { MessageReactions } from "./MessageReactions";
 
 const AVATAR_SIZE = 40;
 
-/** Forma minima que necesita esta fila: sirve tanto para `Message` (canal) como para `DmMessage`. */
+/** Forma minima que necesita esta fila: sirve para los mensajes de un canal y de un DM. */
 export interface MessageItemMessage extends Pick<
   Message,
   "id" | "user_id" | "content" | "inserted_at" | "edited_at"
@@ -58,11 +59,7 @@ export function MessageItem({
       accessibilityHint="Mantené presionado para más acciones"
     >
       {isGroupStart ? (
-        <ServerAvatar
-          name={author.name}
-          uri={author.avatarUrl}
-          size={AVATAR_SIZE}
-        />
+        <Avatar name={author.name} uri={author.avatarUrl} size={AVATAR_SIZE} />
       ) : (
         <View style={{ width: AVATAR_SIZE }} />
       )}
