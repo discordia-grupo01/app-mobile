@@ -7,12 +7,12 @@ import {
   LOADING_MESSAGES_LABEL,
   type MessageAuthor,
   type Role,
+  buildMentionResolver,
 } from "@discordia/client-shared";
 
 import { useMemo, useState } from "react";
 import { Text } from "react-native";
 
-import { buildMentionResolver } from "../message-mentions";
 import { useChannelMessages } from "../use-channel-messages";
 import { useMessageAuthors } from "../use-message-authors";
 import { ChatStatusNotice } from "./ChatStatusNotice";

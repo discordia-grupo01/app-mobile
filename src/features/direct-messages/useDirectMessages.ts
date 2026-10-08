@@ -6,11 +6,11 @@ import {
   type Conversation,
   type DmMessage,
   type MessageAuthor,
+  DEMO_AUTHORS,
 } from "@discordia/client-shared";
 
 import { useCallback, useMemo, useState } from "react";
 
-import { DEMO_AUTHORS } from "../messages/mock-data";
 import { useBlockedUsersContext } from "../blocks/blocked-users-context";
 import { BLOCKS_ME, INITIALLY_UNREAD_CONVERSATION_IDS } from "./mock-data";
 import {

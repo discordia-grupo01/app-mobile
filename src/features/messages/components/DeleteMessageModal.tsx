@@ -4,6 +4,7 @@ import {
   DELETE_MESSAGE_CONFIRM_BODY,
   DELETE_MESSAGE_CONFIRM_TITLE,
   type MessageAuthor,
+  type MentionResolver,
 } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
@@ -13,7 +14,7 @@ import { Button } from "../../../components/ui/Button";
 import { ModalShell } from "../../../components/ui/ModalShell";
 import { useThemeColors } from "../../../theme/theme-context";
 import { ServerAvatar } from "../../servers/components/ServerAvatar";
-import { MessageContent, type MentionResolver } from "./MessageContent";
+import { MessageContent } from "./MessageContent";
 import { MessageHeader } from "./MessageHeader";
 
 interface DeleteMessageModalProps {

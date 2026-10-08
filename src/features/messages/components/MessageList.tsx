@@ -4,6 +4,7 @@ import {
   type Message,
   type MessageAuthor,
   startsMessageGroup,
+  type MentionResolver,
 } from "@discordia/client-shared";
 
 import { useMemo } from "react";
@@ -11,7 +12,6 @@ import { FlatList, Text, TouchableOpacity } from "react-native";
 
 import { ChannelWelcome } from "./ChannelWelcome";
 import { MessageItem } from "./MessageItem";
-import type { MentionResolver } from "./MessageContent";
 
 interface MessageListProps {
   channelName: string;

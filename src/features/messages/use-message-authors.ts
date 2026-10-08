@@ -1,9 +1,11 @@
 import {
+  authorFromMember,
   type Member,
   type Message,
   type MessageAuthor,
+  messageAuthorOf,
+  PROFILE_FALLBACK_CONCURRENCY,
   resolveImageUrl,
-  UNKNOWN_USER_NAME,
 } from "@discordia/client-shared";
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -12,23 +14,6 @@ import { useProfileFallback } from "../../hooks/useProfileFallback";
 import { env } from "../../lib/env";
 import { getPublicProfile } from "../profile/service";
 import { listMembers } from "../servers/api/members";
-
-/** Perfiles pedidos en paralelo: el back no tiene endpoint batch. */
-const CONCURRENCY = 6;
-
-/**
- * TODO: sin etiqueta ni color de rol por ahora (los roles del miembro no se
- * cruzan todavia). Cuando se resuelvan, se completan aca para todos por igual.
- */
-function authorFromMember(member: Member): MessageAuthor {
-  return {
-    id: member.user_id,
-    name: member.profile?.name ?? UNKNOWN_USER_NAME,
-    avatarUrl: resolveImageUrl(member.profile?.avatar_url, env.apiUrl),
-    roleName: null,
-    roleColor: null,
-  };
-}
 
 /**
  * `user_id` -> autor listo para pintar. El mensaje solo trae el `user_id`, asi
@@ -71,7 +56,10 @@ export function useMessageAuthors(
   const base = useMemo(() => {
     const byId: Record<string, MessageAuthor> = { ...extra };
     for (const member of members ?? []) {
-      byId[member.user_id] = authorFromMember(member);
+      byId[member.user_id] = authorFromMember(
+        member,
+        resolveImageUrl(member.profile?.avatar_url, env.apiUrl),
+      );
     }
     if (currentAuthor) byId[currentAuthor.id] = currentAuthor;
     return byId;
@@ -94,18 +82,18 @@ export function useMessageAuthors(
           const { id, name, avatar_url } = result.user;
           setExtra((prev) => ({
             ...prev,
-            [id]: {
+            [id]: messageAuthorOf(
               id,
               name,
-              avatarUrl: resolveImageUrl(avatar_url, env.apiUrl),
-              roleName: null,
-              roleColor: null,
-            },
+              resolveImageUrl(avatar_url, env.apiUrl),
+            ),
           }));
         }
       }
     }
-    void Promise.all(Array.from({ length: CONCURRENCY }, worker));
+    void Promise.all(
+      Array.from({ length: PROFILE_FALLBACK_CONCURRENCY }, worker),
+    );
   }, [messages, loadedMembers, base]);
 
   return base;

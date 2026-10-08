@@ -2,13 +2,14 @@ import {
   MESSAGE_EDITED_LABEL,
   type Message,
   type MessageAuthor,
+  type MentionResolver,
 } from "@discordia/client-shared";
 
 import { Pressable, Text, View } from "react-native";
 
 import { cn } from "../../../lib/cn";
 import { ServerAvatar } from "../../servers/components/ServerAvatar";
-import { MessageContent, type MentionResolver } from "./MessageContent";
+import { MessageContent } from "./MessageContent";
 import { MessageHeader } from "./MessageHeader";
 import { MessageReactions } from "./MessageReactions";
 
