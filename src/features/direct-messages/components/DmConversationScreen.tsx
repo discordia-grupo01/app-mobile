@@ -17,7 +17,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { PublicProfileModal } from "../../profile/components/PublicProfileModal";
-import { ServerAvatar } from "../../servers/components/ServerAvatar";
+import { Avatar } from "../../../components/ui/Avatar";
 import { useThemeColors } from "../../../theme/theme-context";
 import { DmThread } from "./DmThread";
 
@@ -58,7 +58,7 @@ export function DmConversationScreen({
           accessibilityRole="button"
           accessibilityLabel={`Ver perfil de ${partner.name}`}
         >
-          <ServerAvatar name={partner.name} uri={partner.avatarUrl} size={30} />
+          <Avatar name={partner.name} uri={partner.avatarUrl} size={30} />
           <Text
             className="flex-1 text-[17px] font-bold text-content"
             numberOfLines={1}

@@ -9,7 +9,7 @@ import { useThemeColors, useTheme } from "../../../../theme/theme-context";
 import { Button } from "../../../../components/ui/Button";
 import { useAuth } from "../../../auth/auth-context";
 import { OwnProfileModal } from "../../../profile/components/OwnProfileModal";
-import { ServerAvatar } from "../ServerAvatar";
+import { Avatar } from "../../../../components/ui/Avatar";
 import { AccountSettingsSheet } from "./AccountSettingsSheet";
 import { ModalShell } from "../../../../components/ui/ModalShell";
 import { ModalCloseButton } from "../../../../components/ui/ModalCloseButton";
@@ -54,7 +54,7 @@ export function UserProfileBar({
           accessibilityLabel="Ver mi perfil"
         >
           <View className="relative">
-            <ServerAvatar name={displayName} uri={avatarSrc} size={44} />
+            <Avatar name={displayName} uri={avatarSrc} size={44} />
             <View className="absolute -right-[1px] -bottom-[1px] w-[13px] h-[13px] rounded-[7px] bg-success border-2 border-surface-panel" />
           </View>
           <View className="flex-1 mr-1">

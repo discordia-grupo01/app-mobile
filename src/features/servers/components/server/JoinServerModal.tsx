@@ -14,7 +14,7 @@ import { cn } from "../../../../lib/cn";
 import { useThemeColors } from "../../../../theme/theme-context";
 import { joinServerByCode, resolveServerIconUrl } from "../../api";
 import { Button } from "../../../../components/ui/Button";
-import { ServerAvatar } from "../ServerAvatar";
+import { Avatar } from "../../../../components/ui/Avatar";
 import { ModalShell } from "../../../../components/ui/ModalShell";
 import { ModalCloseButton } from "../../../../components/ui/ModalCloseButton";
 
@@ -85,7 +85,7 @@ export function JoinServerModal({
       >
         {joined ? (
           <View className="items-center gap-5">
-            <ServerAvatar
+            <Avatar
               name={joined.server.name}
               uri={resolveServerIconUrl(joined.server.icon_url)}
               size={64}

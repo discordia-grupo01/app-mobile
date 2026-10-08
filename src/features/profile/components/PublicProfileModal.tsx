@@ -7,7 +7,7 @@ import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 import { avatarUriOf } from "../../../lib/userProfile";
 import { BanMemberModal } from "../../bans/components/BanMemberModal";
 import { useThemeColors } from "../../../theme/theme-context";
-import { ServerAvatar } from "../../servers/components/ServerAvatar";
+import { Avatar } from "../../../components/ui/Avatar";
 import { MemberRoleBadges } from "../../roles/components/MemberRoleBadges";
 import { getPublicProfile } from "../service";
 import { MutualServersList } from "./MutualServersList";
@@ -193,7 +193,7 @@ export function PublicProfileModal({
             <View className="w-20 h-20">
               <View className="absolute top-0 left-0 w-20 h-20 rounded-[40px] bg-surface-modal" />
               <View className="absolute top-1 left-1 w-18 h-18">
-                <ServerAvatar
+                <Avatar
                   name={profile.name}
                   uri={avatarSrc}
                   size={72}

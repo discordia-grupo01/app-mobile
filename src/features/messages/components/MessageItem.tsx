@@ -8,7 +8,7 @@ import {
 import { Pressable, Text, View } from "react-native";
 
 import { cn } from "../../../lib/cn";
-import { ServerAvatar } from "../../servers/components/ServerAvatar";
+import { Avatar } from "../../../components/ui/Avatar";
 import { MessageContent } from "./MessageContent";
 import { MessageHeader } from "./MessageHeader";
 import { MessageReactions } from "./MessageReactions";
@@ -59,11 +59,7 @@ export function MessageItem({
       accessibilityHint="Mantené presionado para más acciones"
     >
       {isGroupStart ? (
-        <ServerAvatar
-          name={author.name}
-          uri={author.avatarUrl}
-          size={AVATAR_SIZE}
-        />
+        <Avatar name={author.name} uri={author.avatarUrl} size={AVATAR_SIZE} />
       ) : (
         <View style={{ width: AVATAR_SIZE }} />
       )}

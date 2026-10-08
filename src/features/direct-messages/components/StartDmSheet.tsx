@@ -16,7 +16,7 @@ import {
   View,
 } from "react-native";
 
-import { ServerAvatar } from "../../servers/components/ServerAvatar";
+import { Avatar } from "../../../components/ui/Avatar";
 import { useThemeColors } from "../../../theme/theme-context";
 
 interface StartDmSheetProps {
@@ -83,11 +83,7 @@ export function StartDmSheet({
                 onPress={() => onStart(partner)}
                 className="flex-row items-center gap-3 rounded-lg px-2 py-2.5"
               >
-                <ServerAvatar
-                  name={partner.name}
-                  uri={partner.avatarUrl}
-                  size={34}
-                />
+                <Avatar name={partner.name} uri={partner.avatarUrl} size={34} />
                 <Text className="text-[15px] font-medium text-content">
                   {partner.name}
                 </Text>

@@ -5,7 +5,7 @@ import { Text, TouchableOpacity, View } from "react-native";
 
 import { env } from "../../../../lib/env";
 import { useThemeColors } from "../../../../theme/theme-context";
-import { ServerAvatar } from "../../../servers/components/ServerAvatar";
+import { Avatar } from "../../../../components/ui/Avatar";
 import { cn } from "../../../../lib/cn";
 
 interface MemberRoleRowProps {
@@ -26,7 +26,7 @@ export function MemberRoleRow({
 
   return (
     <View className="flex-row items-center gap-2.5 rounded-xl border border-line bg-surface-input px-2.5 py-2">
-      <ServerAvatar name={member.name} uri={avatarUri} size={32} />
+      <Avatar name={member.name} uri={avatarUri} size={32} />
       <Text
         className="flex-1 text-[13px] font-semibold text-content"
         numberOfLines={1}

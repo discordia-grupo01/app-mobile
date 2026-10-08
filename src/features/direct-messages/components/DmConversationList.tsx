@@ -9,7 +9,7 @@ import { Feather } from "@expo/vector-icons";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 import { UserProfileBar } from "../../servers/components/account/UserProfileBar";
-import { ServerAvatar } from "../../servers/components/ServerAvatar";
+import { Avatar } from "../../../components/ui/Avatar";
 import { useThemeColors } from "../../../theme/theme-context";
 import { cn } from "../../../lib/cn";
 
@@ -73,7 +73,7 @@ export function DmConversationList({
                     isActive && "bg-accent/20",
                   )}
                 >
-                  <ServerAvatar
+                  <Avatar
                     name={partner.name}
                     uri={partner.avatarUrl}
                     size={38}

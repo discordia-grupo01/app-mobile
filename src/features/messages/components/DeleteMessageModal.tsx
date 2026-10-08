@@ -13,7 +13,7 @@ import { ScrollView, Text, View } from "react-native";
 import { Button } from "../../../components/ui/Button";
 import { ModalShell } from "../../../components/ui/ModalShell";
 import { useThemeColors } from "../../../theme/theme-context";
-import { ServerAvatar } from "../../servers/components/ServerAvatar";
+import { Avatar } from "../../../components/ui/Avatar";
 import { MessageContent } from "./MessageContent";
 import { MessageHeader } from "./MessageHeader";
 
@@ -58,7 +58,7 @@ export function DeleteMessageModal({
           className="mt-3 max-h-48 w-full rounded-xl border border-line bg-surface-input"
           contentContainerClassName="flex-row gap-3 px-3 py-2.5"
         >
-          <ServerAvatar name={author.name} uri={author.avatarUrl} size={32} />
+          <Avatar name={author.name} uri={author.avatarUrl} size={32} />
           <View className="min-w-0 flex-1">
             <MessageHeader author={author} createdAt={message.inserted_at} />
             <MessageContent
