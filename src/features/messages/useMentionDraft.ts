@@ -1,6 +1,8 @@
 import {
   applyMentionCandidate,
   createMentionDraft,
+  type DraftSegment,
+  draftSegments,
   type MentionCandidate,
   mentionDraftReducer,
   mentionDraftView,
@@ -72,8 +74,18 @@ export function useMentionDraft({ sources }: UseMentionDraftOptions) {
     [],
   );
 
+  // Sin selector (DMs) no hay menciones que resaltar.
+  const segments = useMemo<DraftSegment[] | null>(
+    () =>
+      sources
+        ? draftSegments(state.text, state.picked, sources.canMentionEveryone)
+        : null,
+    [state.text, state.picked, sources],
+  );
+
   return {
     text: state.text,
+    segments,
     encoded: view.encoded,
     isOpen: view.isOpen,
     query: view.active?.query ?? "",

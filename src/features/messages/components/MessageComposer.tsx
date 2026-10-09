@@ -18,6 +18,7 @@ import { useMentionDraft } from "../useMentionDraft";
 import { ComposerIconButton } from "./ComposerIconButton";
 import { EditingBanner, type ComposerEditing } from "./EditingBanner";
 import { EmojiPickerSheet } from "./EmojiPickerSheet";
+import { useMentionDraftChildren } from "./useMentionDraftChildren";
 import { MentionSuggestions } from "./MentionSuggestions";
 import { useMessageMentions } from "./MentionsContext";
 
@@ -72,6 +73,7 @@ export function MessageComposer({
     !isSending &&
     validateMessageContent(draft.encoded) === undefined;
   const length = [...draft.encoded].length;
+  const draftChildren = useMentionDraftChildren(draft.segments ?? []);
 
   async function submit() {
     if (!canSend) return;
@@ -116,7 +118,8 @@ export function MessageComposer({
         />
         <TextInput
           ref={inputRef}
-          value={draft.text}
+          // Con menciones el texto va como hijos (cada tramo con su estilo); sin ellas, como `value`.
+          value={draft.segments ? undefined : draft.text}
           onChangeText={(text) => {
             draft.handleChangeText(text);
             setSendError(undefined);
@@ -129,7 +132,9 @@ export function MessageComposer({
           placeholderTextColor={colors.textSubtle}
           accessibilityLabel={placeholder}
           className="max-h-32 min-h-10 flex-1 py-2.5 text-[15px] text-content"
-        />
+        >
+          {draft.segments ? draftChildren : null}
+        </TextInput>
         <ComposerIconButton
           name="smile"
           label={EMOJI_PICKER_LABEL}
