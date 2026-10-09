@@ -7,6 +7,7 @@ import {
   validateMessageContent,
 } from "@discordia/client-shared";
 
+import * as DocumentPicker from "expo-document-picker";
 import { useEffect, useRef, useState } from "react";
 import { Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -15,6 +16,7 @@ import { cn } from "../../../lib/cn";
 import { useThemeColors } from "../../../theme/theme-context";
 import type { SendMessageResult } from "../use-channel-messages";
 import { useMentionDraft } from "../useMentionDraft";
+import { AttachmentChips } from "./AttachmentChips";
 import { ComposerIconButton } from "./ComposerIconButton";
 import { EditingBanner, type ComposerEditing } from "./EditingBanner";
 import { EmojiPickerSheet } from "./EmojiPickerSheet";
@@ -45,6 +47,9 @@ export function MessageComposer({
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [sendError, setSendError] = useState<string | undefined>();
   const [isSending, setIsSending] = useState(false);
+  const [attachments, setAttachments] = useState<
+    DocumentPicker.DocumentPickerAsset[]
+  >([]);
   const inputRef = useRef<TextInput>(null);
 
   // Al empezar o terminar una edicion el borrador pasa a ser el del mensaje (o
@@ -89,14 +94,29 @@ export function MessageComposer({
       : onSend(draft.encoded);
     if (outcome === undefined) {
       draft.reset();
+      setAttachments([]);
       return;
     }
 
     setIsSending(true);
     const result = await outcome;
     setIsSending(false);
-    if (result.ok) draft.reset();
-    else setSendError(result.message);
+    if (result.ok) {
+      draft.reset();
+      setAttachments([]);
+    } else setSendError(result.message);
+  }
+
+  async function pickFiles() {
+    const result = await DocumentPicker.getDocumentAsync({
+      multiple: true,
+      copyToCacheDirectory: false,
+    });
+    if (result.canceled) return;
+    setAttachments((prev) => {
+      const known = new Set(prev.map((file) => file.uri));
+      return [...prev, ...result.assets.filter((f) => !known.has(f.uri))];
+    });
   }
 
   return (
@@ -109,12 +129,19 @@ export function MessageComposer({
         />
       ) : null}
       {editing ? <EditingBanner onCancel={editing.onCancel} /> : null}
+      <AttachmentChips
+        attachments={attachments}
+        onRemove={(uri) =>
+          setAttachments((prev) => prev.filter((file) => file.uri !== uri))
+        }
+      />
       <View className="flex-row items-end rounded-[10px] border border-line bg-surface-input px-1">
         <ComposerIconButton
           name="paperclip"
           label={ATTACH_FILE_LABEL}
           color={colors.textSubtle}
-          disabled
+          onPress={pickFiles}
+          disabled={disabled || isSending}
         />
         <TextInput
           ref={inputRef}
