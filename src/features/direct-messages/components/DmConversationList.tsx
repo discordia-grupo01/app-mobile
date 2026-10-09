@@ -6,7 +6,13 @@ import {
 } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 import { UserProfileBar } from "../../servers/components/account/UserProfileBar";
 import { Avatar } from "../../../components/ui/Avatar";
@@ -15,6 +21,7 @@ import { cn } from "../../../lib/cn";
 
 interface DmConversationListProps {
   conversations: ConversationSummary[];
+  isLoading: boolean;
   activePartnerId: string | null;
   userName?: string | null;
   onSelect: (partnerId: string) => void;
@@ -24,6 +31,7 @@ interface DmConversationListProps {
 
 export function DmConversationList({
   conversations,
+  isLoading,
   activePartnerId,
   userName,
   onSelect,
@@ -49,7 +57,11 @@ export function DmConversationList({
       </View>
 
       <ScrollView contentContainerClassName="px-2 py-2">
-        {conversations.length === 0 ? (
+        {isLoading ? (
+          <View className="items-center py-6">
+            <ActivityIndicator color={colors.accentBright} />
+          </View>
+        ) : conversations.length === 0 ? (
           <Text className="px-2 py-3 text-[13px] text-content-subtle">
             {NO_CONVERSATIONS_YET}
           </Text>

@@ -34,6 +34,7 @@ export function DirectMessagesScreen({
   const [isStartSheetVisible, setIsStartSheetVisible] = useState(false);
   const {
     conversations,
+    isLoading,
     activeSummary,
     openConversation,
     closeConversation,
@@ -70,6 +71,7 @@ export function DirectMessagesScreen({
 
       <DmConversationList
         conversations={conversations}
+        isLoading={isLoading}
         activePartnerId={activeSummary?.partner.id ?? null}
         userName={userName}
         onSelect={openConversation}

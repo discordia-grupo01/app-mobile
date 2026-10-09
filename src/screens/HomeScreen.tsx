@@ -34,6 +34,7 @@ import {
   leaveServer,
   listMyServers,
 } from "../features/servers/api";
+import { getLastLocation, setLastLocation } from "../lib/storage";
 import { useStatusBarStyle, useThemeColors } from "../theme/theme-context";
 import { ChannelScreen } from "./ChannelScreen";
 import { DirectMessagesScreen } from "./DirectMessagesScreen";
@@ -53,7 +54,10 @@ export function HomeScreen() {
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(
     null,
   );
-  const [view, setView] = useState<MainView>("servers");
+  // Se abre en Mensajes Directos: asi lo primero que se ve tras loguearse es la
+  // lista de conversaciones y no un servidor.
+  const [view, setView] = useState<MainView>("dm");
+  const [isRestored, setIsRestored] = useState(false);
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
   const [isJoinModalVisible, setIsJoinModalVisible] = useState(false);
   const [isAddServerSheetVisible, setIsAddServerSheetVisible] = useState(false);
@@ -120,6 +124,51 @@ export function HomeScreen() {
   const unreadDmCount = directMessages.conversations.filter(
     (c) => c.isUnread,
   ).length;
+
+  // Al reabrir la app se vuelve a donde se estaba (servidor + canal, o un DM).
+  const userId = user ? String(user.id) : null;
+  const { openConversation } = directMessages;
+  useEffect(() => {
+    if (isRestored || isLoadingServers || !userId) return;
+    let cancelled = false;
+    getLastLocation(userId).then((stored) => {
+      if (cancelled) return;
+      const server = servers.find((item) => item.id === stored?.serverId);
+      if (stored?.view === "servers" && server) {
+        setView("servers");
+        setSelectedServerId(server.id);
+        setSelectedChannelId(
+          server.channels.find((channel) => channel.id === stored.channelId)
+            ?.id ?? null,
+        );
+      } else if (stored?.partnerId) {
+        openConversation(stored.partnerId);
+      }
+      setIsRestored(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isRestored, isLoadingServers, userId, servers, openConversation]);
+
+  const activePartnerId = directMessages.activeSummary?.partner.id ?? null;
+  useEffect(() => {
+    if (!isRestored || !userId) return;
+    void setLastLocation({
+      userId,
+      view,
+      serverId: selectedServerId,
+      channelId: selectedChannelId,
+      partnerId: activePartnerId,
+    });
+  }, [
+    isRestored,
+    userId,
+    view,
+    selectedServerId,
+    selectedChannelId,
+    activePartnerId,
+  ]);
 
   /**
    * Roles asignados al usuario actual en `selectedServer`
@@ -267,7 +316,7 @@ export function HomeScreen() {
     );
   }, []);
 
-  if (isLoadingServers) {
+  if (isLoadingServers || !isRestored) {
     return (
       <View className="flex-1 bg-surface-servers items-center justify-center">
         <StatusBar style={statusBarStyle} />
