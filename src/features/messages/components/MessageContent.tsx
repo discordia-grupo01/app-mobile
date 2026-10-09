@@ -1,77 +1,52 @@
 import {
-  hexToRgba,
+  isActiveMention,
+  MENTION_DELETED_ROLE_NAME,
+  type MessageMentions,
   tokenizeMessageContent,
-  type MentionResolver,
+  UNKNOWN_USER_NAME,
 } from "@discordia/client-shared";
 
 import type { ReactNode } from "react";
 import { Text } from "react-native";
 
-const EVERYONE_NAMES = new Set(["everyone", "here"]);
+import { MentionChip } from "./MentionChip";
+import { useMessageMentions } from "./MentionsContext";
 
 interface MessageContentProps {
   content: string;
-  /** Resuelve el color de `@usuario`/`@rol` por nombre. Ausente en DMs (sin roles de server). */
-  resolveMention?: MentionResolver;
+  mentions?: MessageMentions;
   /** Va pegado al final del texto, en el mismo renglon si entra (ej. "(editado)"). */
   suffix?: ReactNode;
 }
 
 export function MessageContent({
   content,
-  resolveMention,
+  mentions = {},
   suffix,
 }: MessageContentProps) {
+  const { resolveMention } = useMessageMentions();
+
   return (
     <Text className="text-[15px] leading-[21px] text-content">
       {tokenizeMessageContent(content).map((token, index) => {
         if (token.kind === "text") return token.value;
-
         if (token.kind === "channel") {
-          return (
-            <Text
-              key={index}
-              className="rounded bg-highlight/15 font-medium text-highlight"
-            >
-              {token.value}
-            </Text>
-          );
+          return <MentionChip key={index} text={token.value} />;
+        }
+        if (!isActiveMention(token, mentions)) return token.value;
+        if (token.kind === "everyone") {
+          return <MentionChip key={index} text={token.value} isStrong />;
         }
 
-        const name = token.value.slice(1);
-        if (EVERYONE_NAMES.has(name)) {
-          return (
-            <Text
-              key={index}
-              className="rounded bg-highlight/15 font-bold text-highlight"
-            >
-              {token.value}
-            </Text>
-          );
-        }
-
-        const resolved = resolveMention?.(name);
-        if (!resolved) {
-          return (
-            <Text
-              key={index}
-              className="rounded bg-highlight/15 font-medium text-highlight"
-            >
-              {token.value}
-            </Text>
-          );
-        }
+        const resolved = resolveMention?.(token.kind, token.id);
+        const fallbackName =
+          token.kind === "role" ? MENTION_DELETED_ROLE_NAME : UNKNOWN_USER_NAME;
         return (
-          <Text
+          <MentionChip
             key={index}
-            className="rounded font-medium"
-            style={{
-              backgroundColor: hexToRgba(resolved.color, 0.16),
-              color: resolved.color,
-            }}
-          >
-            {token.value}
-          </Text>
+            text={`@${resolved?.name ?? fallbackName}`}
+            color={resolved?.color}
+          />
         );
       })}
       {suffix}

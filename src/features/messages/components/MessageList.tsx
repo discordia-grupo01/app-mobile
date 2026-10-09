@@ -4,7 +4,6 @@ import {
   type Message,
   type MessageAuthor,
   startsMessageGroup,
-  type MentionResolver,
   unknownAuthor,
 } from "@discordia/client-shared";
 
@@ -14,7 +13,6 @@ import { FlatList, Text, TouchableOpacity } from "react-native";
 import { MessageItem } from "./MessageItem";
 
 interface MessageListProps {
-  /** Encabezado del comienzo del historial (se muestra cuando no hay mas mensajes anteriores). */
   welcome: ReactNode;
   messages: Message[];
   authors: Record<string, MessageAuthor>;
@@ -22,7 +20,6 @@ interface MessageListProps {
   hasMore: boolean;
   isLoadingOlder: boolean;
   onLoadOlder: () => void;
-  resolveMention?: MentionResolver;
   /** Sin estas dos no se muestran reacciones (ej. en mensajes directos). */
   onToggleReaction?: (messageId: string, emoji: string) => void;
   onRequestReaction?: (messageId: string) => void;
@@ -37,7 +34,6 @@ export function MessageList({
   hasMore,
   isLoadingOlder,
   onLoadOlder,
-  resolveMention,
   onToggleReaction,
   onRequestReaction,
   onRequestActions,
@@ -79,7 +75,6 @@ export function MessageList({
             author={authors[item.user_id] ?? unknownAuthor(item.user_id)}
             isGroupStart={startsMessageGroup(previous, item)}
             isEditing={editingMessageId === item.id}
-            resolveMention={resolveMention}
             onToggleReaction={
               onToggleReaction && ((emoji) => onToggleReaction(item.id, emoji))
             }

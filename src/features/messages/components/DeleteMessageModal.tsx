@@ -4,7 +4,7 @@ import {
   DELETE_MESSAGE_CONFIRM_BODY,
   DELETE_MESSAGE_CONFIRM_TITLE,
   type MessageAuthor,
-  type MentionResolver,
+  type MessageMentions,
 } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
@@ -19,10 +19,8 @@ import { MessageHeader } from "./MessageHeader";
 
 interface DeleteMessageModalProps {
   visible: boolean;
-  /** El mensaje que se va a eliminar, completo, para que se vea cual es. */
-  message: { content: string; inserted_at: string } | null;
+  message: ({ content: string; inserted_at: string } & MessageMentions) | null;
   author: MessageAuthor | null;
-  resolveMention?: MentionResolver;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -32,7 +30,6 @@ export function DeleteMessageModal({
   visible,
   message,
   author,
-  resolveMention,
   onConfirm,
   onCancel,
 }: DeleteMessageModalProps) {
@@ -61,10 +58,7 @@ export function DeleteMessageModal({
           <Avatar name={author.name} uri={author.avatarUrl} size={32} />
           <View className="min-w-0 flex-1">
             <MessageHeader author={author} createdAt={message.inserted_at} />
-            <MessageContent
-              content={message.content}
-              resolveMention={resolveMention}
-            />
+            <MessageContent content={message.content} mentions={message} />
           </View>
         </ScrollView>
       ) : null}

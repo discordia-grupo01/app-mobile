@@ -1,9 +1,9 @@
 import {
   ATTACH_FILE_LABEL,
+  decodeMentions,
   EMOJI_PICKER_LABEL,
   MAX_MESSAGE_LENGTH,
   SEND_MESSAGE_LABEL,
-  validateMentionEveryone,
   validateMessageContent,
 } from "@discordia/client-shared";
 
@@ -14,24 +14,19 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { cn } from "../../../lib/cn";
 import { useThemeColors } from "../../../theme/theme-context";
 import type { SendMessageResult } from "../use-channel-messages";
+import { useMentionDraft } from "../useMentionDraft";
 import { ComposerIconButton } from "./ComposerIconButton";
 import { EditingBanner, type ComposerEditing } from "./EditingBanner";
 import { EmojiPickerSheet } from "./EmojiPickerSheet";
+import { MentionSuggestions } from "./MentionSuggestions";
+import { useMessageMentions } from "./MentionsContext";
 
 const COUNTER_THRESHOLD = MAX_MESSAGE_LENGTH - 200;
 
 interface MessageComposerProps {
-  /** Texto del campo vacio (ej. `messageInputPlaceholder(canal)` o `dmInputPlaceholder(nombre)`). */
   placeholder: string;
-  /**
-   * Si devuelve una promesa, el borrador se conserva hasta que el envio sale
-   * bien (un fallo lo deja para reintentar). Si devuelve `void`, se limpia al
-   * instante.
-   */
   onSend: (content: string) => void | Promise<SendMessageResult>;
   disabled?: boolean;
-  /** Puede usar `@everyone`/`@here`. Por defecto `false`. */
-  canMentionEveryone?: boolean;
   /** Mientras hay un mensaje en edicion, el composer lo carga y guarda en lugar de enviar uno nuevo. */
   editing?: ComposerEditing | null;
 }
@@ -40,27 +35,30 @@ export function MessageComposer({
   placeholder,
   onSend,
   disabled = false,
-  canMentionEveryone = false,
   editing = null,
 }: MessageComposerProps) {
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
-  const [draft, setDraft] = useState("");
+  const { sources, resolveMention } = useMessageMentions();
+  const draft = useMentionDraft({ sources });
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
-  const [mentionError, setMentionError] = useState<string | undefined>();
   const [sendError, setSendError] = useState<string | undefined>();
   const [isSending, setIsSending] = useState(false);
   const inputRef = useRef<TextInput>(null);
 
   // Al empezar o terminar una edicion el borrador pasa a ser el del mensaje (o
   // vuelve a vacio). Se ajusta durante el render, no en un efecto, para no
-  // mostrar un cuadro con el borrador viejo.
+  // mostrar un cuadro con el borrador viejo. El mensaje trae `<@id>`: se edita
+  // como `@Nombre` y se vuelve a codificar al guardar.
   const editingId = editing?.id ?? null;
   const [syncedEditingId, setSyncedEditingId] = useState<string | null>(null);
   if (editingId !== syncedEditingId) {
     setSyncedEditingId(editingId);
-    setDraft(editing?.content ?? "");
-    setMentionError(undefined);
+    const decoded = decodeMentions(
+      editing?.content ?? "",
+      (kind, id) => resolveMention?.(kind, id)?.name ?? null,
+    );
+    draft.load(decoded.text, decoded.picked);
     setSendError(undefined);
   }
 
@@ -68,40 +66,46 @@ export function MessageComposer({
   useEffect(() => {
     if (editingId) inputRef.current?.focus();
   }, [editingId]);
+  // El limite del back cuenta el texto con los tokens `<@id>`, no lo visible.
   const canSend =
-    !disabled && !isSending && validateMessageContent(draft) === undefined;
-  const length = [...draft].length;
+    !disabled &&
+    !isSending &&
+    validateMessageContent(draft.encoded) === undefined;
+  const length = [...draft.encoded].length;
 
   async function submit() {
     if (!canSend) return;
-    const mentionIssue = validateMentionEveryone(draft, canMentionEveryone);
-    if (mentionIssue) {
-      setMentionError(mentionIssue);
-      return;
-    }
-    setMentionError(undefined);
     setSendError(undefined);
 
-    if (editing && draft.trim() === editing.content) {
+    if (editing && draft.encoded.trim() === editing.content) {
       editing.onCancel();
       return;
     }
 
-    const outcome = editing ? editing.onSave(draft) : onSend(draft);
+    const outcome = editing
+      ? editing.onSave(draft.encoded)
+      : onSend(draft.encoded);
     if (outcome === undefined) {
-      setDraft("");
+      draft.reset();
       return;
     }
 
     setIsSending(true);
     const result = await outcome;
     setIsSending(false);
-    if (result.ok) setDraft("");
+    if (result.ok) draft.reset();
     else setSendError(result.message);
   }
 
   return (
     <View className="px-3 pt-1" style={{ paddingBottom: insets.bottom + 12 }}>
+      {draft.isOpen ? (
+        <MentionSuggestions
+          query={draft.query}
+          candidates={draft.candidates}
+          onPick={draft.pick}
+        />
+      ) : null}
       {editing ? <EditingBanner onCancel={editing.onCancel} /> : null}
       <View className="flex-row items-end rounded-[10px] border border-line bg-surface-input px-1">
         <ComposerIconButton
@@ -112,12 +116,13 @@ export function MessageComposer({
         />
         <TextInput
           ref={inputRef}
-          value={draft}
+          value={draft.text}
           onChangeText={(text) => {
-            setDraft(text);
-            setMentionError(undefined);
+            draft.handleChangeText(text);
             setSendError(undefined);
           }}
+          onSelectionChange={draft.handleSelectionChange}
+          selection={draft.selection}
           editable={!disabled && !isSending}
           multiline
           placeholder={placeholder}
@@ -142,10 +147,8 @@ export function MessageComposer({
         />
       </View>
 
-      {mentionError || sendError ? (
-        <Text className="mt-1.5 text-[12px] text-danger">
-          {mentionError ?? sendError}
-        </Text>
+      {sendError ? (
+        <Text className="mt-1.5 text-[12px] text-danger">{sendError}</Text>
       ) : null}
 
       {length >= COUNTER_THRESHOLD ? (
@@ -162,7 +165,7 @@ export function MessageComposer({
       <EmojiPickerSheet
         visible={isEmojiPickerOpen}
         title={EMOJI_PICKER_LABEL}
-        onPick={(emoji) => setDraft((prev) => prev + emoji)}
+        onPick={draft.append}
         onClose={() => setIsEmojiPickerOpen(false)}
       />
     </View>

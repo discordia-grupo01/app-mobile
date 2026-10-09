@@ -11,6 +11,7 @@ interface ServerPickerScreenProps {
   servers: ServerSummary[];
   userName?: string | null;
   unreadDmCount?: number;
+  unreadMentionsByServer?: Record<string, number>;
   onSelectServer: (serverId: string) => void;
   onOpenDirectMessages: () => void;
   onAddServer: () => void;
@@ -21,6 +22,7 @@ export function ServerPickerScreen({
   servers,
   userName,
   unreadDmCount,
+  unreadMentionsByServer,
   onSelectServer,
   onOpenDirectMessages,
   onAddServer,
@@ -34,6 +36,7 @@ export function ServerPickerScreen({
         activeServerId={null}
         isDirectMessagesActive={false}
         unreadDmCount={unreadDmCount}
+        unreadMentionsByServer={unreadMentionsByServer}
         onOpenDirectMessages={onOpenDirectMessages}
         onSelectServer={onSelectServer}
         onAddServer={onAddServer}
