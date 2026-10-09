@@ -31,6 +31,7 @@ interface ChannelScreenProps {
   canSendMessages?: boolean;
   canMentionEveryone?: boolean;
   serverRoles?: Role[];
+  myRoleIds?: string[];
   onBack: () => void;
 }
 
@@ -45,6 +46,7 @@ export function ChannelScreen({
   canSendMessages = false,
   canMentionEveryone = false,
   serverRoles = [],
+  myRoleIds = [],
   onBack,
 }: ChannelScreenProps) {
   const colors = useThemeColors();
@@ -127,6 +129,7 @@ export function ChannelScreen({
             channel={channel}
             currentAuthor={currentAuthor}
             serverRoles={serverRoles}
+            myRoleIds={myRoleIds}
             canManageMessages={canManageMessages}
             canSendMessages={canSendMessages}
             canMentionEveryone={canMentionEveryone}

@@ -17,15 +17,16 @@ interface DirectMessagesScreenProps {
   directMessages: ReturnType<typeof useDirectMessages>;
   onSwitchServer: (serverId: string) => void;
   onAddServer: () => void;
+  unreadMentionsByServer?: Record<string, number>;
   onLogout: () => void;
 }
 
-/** Puramente presentacional: el estado de los DMs vive en `HomeScreen` (`useDirectMessages`), para que sobreviva a cambiar de vista. */
 export function DirectMessagesScreen({
   servers,
   userName,
   currentAuthor,
   directMessages,
+  unreadMentionsByServer,
   onSwitchServer,
   onAddServer,
   onLogout,
@@ -61,6 +62,7 @@ export function DirectMessagesScreen({
         servers={servers}
         activeServerId={null}
         isDirectMessagesActive
+        unreadMentionsByServer={unreadMentionsByServer}
         onOpenDirectMessages={() => {}}
         onSelectServer={onSwitchServer}
         onAddServer={onAddServer}

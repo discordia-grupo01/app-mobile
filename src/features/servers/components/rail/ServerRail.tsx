@@ -1,28 +1,23 @@
 import { type ServerSummary } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
-import {
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { resolveServerIconUrl } from "../../api";
 import { cn } from "../../../../lib/cn";
 import { useThemeColors } from "../../../../theme/theme-context";
 import { Avatar } from "../../../../components/ui/Avatar";
+import { CountBadge } from "../../../../components/ui/CountBadge";
 
 export const RAIL_WIDTH = 72;
 
 interface ServerRailProps {
   servers: ServerSummary[];
   activeServerId: string | null;
-  /** El botón "Inicio" abre Mensajes Directos: se resalta cuando esa vista está activa. */
   isDirectMessagesActive: boolean;
   unreadDmCount?: number;
+  unreadMentionsByServer?: Record<string, number>;
   onOpenDirectMessages: () => void;
   onSelectServer: (serverId: string) => void;
   onAddServer: () => void;
@@ -31,10 +26,12 @@ interface ServerRailProps {
 function ServerRailIcon({
   item,
   active,
+  unreadMentions,
   onPress,
 }: {
   item: ServerSummary;
   active: boolean;
+  unreadMentions: number;
   onPress: () => void;
 }) {
   return (
@@ -53,6 +50,13 @@ function ServerRailIcon({
         size={48}
         borderRadius={active ? 16 : 24}
       />
+      {unreadMentions > 0 ? (
+        <CountBadge
+          count={unreadMentions}
+          label={`${unreadMentions} menciones sin leer en ${item.name}`}
+          className="absolute bottom-0 right-2 border-2 border-surface-servers"
+        />
+      ) : null}
     </TouchableOpacity>
   );
 }
@@ -62,6 +66,7 @@ export function ServerRail({
   activeServerId,
   isDirectMessagesActive,
   unreadDmCount = 0,
+  unreadMentionsByServer = {},
   onOpenDirectMessages,
   onSelectServer,
   onAddServer,
@@ -98,11 +103,11 @@ export function ServerRail({
           />
         </TouchableOpacity>
         {unreadDmCount > 0 && !isDirectMessagesActive ? (
-          <View className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] rounded-full items-center justify-center bg-danger border-2 border-surface-servers px-1">
-            <Text className="text-[9px] font-bold text-white">
-              {unreadDmCount}
-            </Text>
-          </View>
+          <CountBadge
+            count={unreadDmCount}
+            label={`${unreadDmCount} conversaciones sin leer`}
+            className="absolute -right-0.5 -top-0.5 border-2 border-surface-servers"
+          />
         ) : null}
       </View>
 
@@ -113,6 +118,7 @@ export function ServerRail({
           key={item.id}
           item={item}
           active={item.id === activeServerId}
+          unreadMentions={unreadMentionsByServer[item.id] ?? 0}
           onPress={() => onSelectServer(item.id)}
         />
       ))}

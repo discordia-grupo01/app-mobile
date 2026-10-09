@@ -14,6 +14,7 @@ import {
   resolveImageUrl,
   sendDirectMessage,
   type SendDmResult,
+  type UserRoomCallbacks,
   withLocalReads,
 } from "@discordia/client-shared";
 
@@ -46,10 +47,15 @@ export type {
  *
  * `isViewActive`: solo con la vista de mensajes directos a la vista se marca
  * como leida la conversacion abierta.
+ *
+ * Esta es la unica sala `user:<id>` de la sesion, asi que tambien le entrega a
+ * quien lo pida los eventos `mention` y avisa cuando se vuelve a unir tras un
+ * corte (`callbacks`).
  */
 export function useDirectMessages(
   currentAuthor: MessageAuthor | null,
   isViewActive: boolean,
+  callbacks: UserRoomCallbacks = {},
 ) {
   const currentUserId = currentAuthor?.id ?? null;
   const { blockedIds } = useBlockedUsersContext();
@@ -62,6 +68,10 @@ export function useDirectMessages(
   const userRoom = useRef<PhoenixChannel | null>(null);
   const isJoined = useRef(false);
   const requestedProfiles = useRef(new Set<string>());
+  const callbacksRef = useRef(callbacks);
+  useEffect(() => {
+    callbacksRef.current = callbacks;
+  });
 
   const applyList = useCallback((result: ListConversationsResult) => {
     if (result.ok) setConversations(result.conversations);
@@ -102,13 +112,17 @@ export function useDirectMessages(
       userRoom.current = room;
       joinUserChannel(room, {
         newDm: applyDm,
+        mention: (payload) => callbacksRef.current.onMention?.(payload),
         connectionLost: () => {
           isJoined.current = false;
         },
         // La primera carga ya se pidio arriba; las siguientes son re-uniones.
         joined: (isFirstJoin) => {
           isJoined.current = true;
-          if (!isFirstJoin) void reload();
+          if (!isFirstJoin) {
+            void reload();
+            callbacksRef.current.onRejoined?.();
+          }
         },
       });
     }

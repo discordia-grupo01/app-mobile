@@ -20,6 +20,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useDirectMessages } from "../features/direct-messages/useDirectMessages";
+import { useMentions } from "../features/mentions/useMentions";
 import { AddServerSheet } from "../features/servers/components/rail/AddServerSheet";
 import { CreateServerModal } from "../features/servers/components/server/CreateServerModal";
 import { EmptyState } from "../features/servers/components/home/EmptyState";
@@ -111,7 +112,11 @@ export function HomeScreen() {
     () => (user ? authorFromProfile(user) : null),
     [user],
   );
-  const directMessages = useDirectMessages(currentAuthor, view === "dm");
+  const mentions = useMentions(currentAuthor?.id ?? null);
+  const directMessages = useDirectMessages(currentAuthor, view === "dm", {
+    onMention: mentions.receive,
+    onRejoined: mentions.reload,
+  });
   const unreadDmCount = directMessages.conversations.filter(
     (c) => c.isUnread,
   ).length;
@@ -179,6 +184,17 @@ export function HomeScreen() {
     { isOwner, roles: myRoles },
     "MENTION_EVERYONE",
   );
+
+  const myRoleIds = useMemo(() => myRoles.map((role) => role.id), [myRoles]);
+
+  const openChannelId = selectedChannel?.id ?? null;
+  const openChannelUnread = openChannelId
+    ? (mentions.byChannel[openChannelId] ?? 0)
+    : 0;
+  const { markChannelRead } = mentions;
+  useEffect(() => {
+    if (openChannelId && openChannelUnread > 0) markChannelRead(openChannelId);
+  }, [openChannelId, openChannelUnread, markChannelRead]);
 
   function handleOpenDirectMessages() {
     setView("dm");
@@ -265,6 +281,7 @@ export function HomeScreen() {
       <View className="flex-1">
         <StatusBar style={statusBarStyle} />
         <DirectMessagesScreen
+          unreadMentionsByServer={mentions.byServer}
           servers={servers}
           userName={user?.name}
           currentAuthor={currentAuthor}
@@ -315,6 +332,7 @@ export function HomeScreen() {
           canSendMessages={canSendMessages}
           canMentionEveryone={canMentionEveryone}
           serverRoles={serverRoles}
+          myRoleIds={myRoleIds}
           onBack={() => setSelectedChannelId(null)}
         />
       </View>
@@ -340,6 +358,8 @@ export function HomeScreen() {
           onSelectChannel={setSelectedChannelId}
           onOpenDirectMessages={handleOpenDirectMessages}
           unreadDmCount={unreadDmCount}
+          unreadMentionsByChannel={mentions.byChannel}
+          unreadMentionsByServer={mentions.byServer}
           onSwitchServer={selectServer}
           onAddServer={handleAddServer}
           onLogout={logout}
@@ -382,6 +402,7 @@ export function HomeScreen() {
           servers={servers}
           userName={user?.name}
           unreadDmCount={unreadDmCount}
+          unreadMentionsByServer={mentions.byServer}
           onSelectServer={selectServer}
           onOpenDirectMessages={handleOpenDirectMessages}
           onAddServer={handleAddServer}

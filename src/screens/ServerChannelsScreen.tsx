@@ -37,6 +37,7 @@ import { CreateCategoryModal } from "../features/servers/components/category/Cre
 import { DraggableCategoryList } from "../features/servers/components/category/DraggableCategoryList";
 import { CreateChannelModal } from "../features/servers/components/channel/CreateChannelModal";
 import { DeleteChannelModal } from "../features/servers/components/channel/DeleteChannelModal";
+import { ChannelRow } from "../features/servers/components/channel/ChannelRow";
 import { DraggableChannelList } from "../features/servers/components/channel/DraggableChannelList";
 import { EditChannelModal } from "../features/servers/components/channel/EditChannelModal";
 import { InviteLinkModal } from "../features/servers/components/server/InviteLinkModal";
@@ -79,6 +80,9 @@ interface ServerChannelsScreenProps {
   onSelectChannel: (channelId: string) => void;
   onOpenDirectMessages: () => void;
   unreadDmCount?: number;
+  /** Menciones sin leer por canal y por servidor. */
+  unreadMentionsByChannel?: Record<string, number>;
+  unreadMentionsByServer?: Record<string, number>;
   onSwitchServer: (serverId: string) => void;
   onAddServer: () => void;
   onLogout: () => void;
@@ -88,52 +92,6 @@ interface ServerChannelsScreenProps {
     confirmName: string,
   ) => Promise<DeleteServerResult>;
   onServerUpdated: (server: ServerSummary) => void;
-}
-
-function ChannelRow({
-  channel,
-  canManage,
-  onPress,
-  onOptions,
-}: {
-  channel: Channel;
-  canManage: boolean;
-  onPress: () => void;
-  onOptions: () => void;
-}) {
-  const colors = useThemeColors();
-  return (
-    <View className="flex-row items-center">
-      <TouchableOpacity
-        activeOpacity={0.7}
-        onPress={onPress}
-        className="flex-1 flex-row items-center gap-2.5 rounded-lg px-2.5 py-[11px]"
-      >
-        <Feather
-          name={channel.kind === "text" ? "hash" : "volume-2"}
-          size={20}
-          color={colors.textMuted}
-        />
-        <Text
-          className="flex-1 text-[16px] font-medium text-content-muted"
-          numberOfLines={1}
-        >
-          {channel.name}
-        </Text>
-      </TouchableOpacity>
-      {canManage ? (
-        <TouchableOpacity
-          onPress={onOptions}
-          className="px-2 py-2"
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          accessibilityLabel="Opciones del canal"
-          accessibilityRole="button"
-        >
-          <Feather name="more-vertical" size={16} color={colors.textSubtle} />
-        </TouchableOpacity>
-      ) : null}
-    </View>
-  );
 }
 
 export function ServerChannelsScreen({
@@ -151,6 +109,8 @@ export function ServerChannelsScreen({
   onSelectChannel,
   onOpenDirectMessages,
   unreadDmCount,
+  unreadMentionsByChannel = {},
+  unreadMentionsByServer = {},
   onSwitchServer,
   onAddServer,
   onLogout,
@@ -368,6 +328,7 @@ export function ServerChannelsScreen({
         key={channel.id}
         channel={channel}
         canManage={canManageChannels}
+        unreadMentions={unreadMentionsByChannel[channel.id]}
         onPress={() => onSelectChannel(channel.id)}
         onOptions={() => setChannelOptionsFor(channel)}
       />
@@ -438,6 +399,7 @@ export function ServerChannelsScreen({
                   <ChannelRow
                     channel={channel}
                     canManage={canManageChannels}
+                    unreadMentions={unreadMentionsByChannel[channel.id]}
                     onPress={() => onSelectChannel(channel.id)}
                     onOptions={() => setChannelOptionsFor(channel)}
                   />
@@ -459,6 +421,7 @@ export function ServerChannelsScreen({
         activeServerId={server.id}
         isDirectMessagesActive={false}
         unreadDmCount={unreadDmCount}
+        unreadMentionsByServer={unreadMentionsByServer}
         onOpenDirectMessages={onOpenDirectMessages}
         onSelectServer={onSwitchServer}
         onAddServer={onAddServer}
@@ -671,6 +634,7 @@ export function ServerChannelsScreen({
                       <ChannelRow
                         channel={channel}
                         canManage={canManageChannels}
+                        unreadMentions={unreadMentionsByChannel[channel.id]}
                         onPress={() => onSelectChannel(channel.id)}
                         onOptions={() => setChannelOptionsFor(channel)}
                       />
