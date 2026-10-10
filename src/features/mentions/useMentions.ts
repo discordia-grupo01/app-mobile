@@ -15,14 +15,17 @@ import { listUnreadMentions, markChannelMentionsRead } from "./api";
 
 export function useMentions(currentUserId: string | null) {
   const [unread, setUnread] = useState<UnreadMentions>(NO_UNREAD_MENTIONS);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   const reload = useCallback(
     () =>
-      listUnreadMentions().then((result) => {
-        if (result.ok) {
-          setUnread((prev) => mergeUnreadMentions(prev, result.mentions));
-        }
-      }),
+      listUnreadMentions()
+        .then((result) => {
+          if (result.ok) {
+            setUnread((prev) => mergeUnreadMentions(prev, result.mentions));
+          }
+        })
+        .finally(() => setIsLoaded(true)),
     [],
   );
 
@@ -44,5 +47,5 @@ export function useMentions(currentUserId: string | null) {
   const byChannel = useMemo(() => unreadByChannel(unread), [unread]);
   const byServer = useMemo(() => unreadByServer(unread), [unread]);
 
-  return { byChannel, byServer, receive, reload, markChannelRead };
+  return { byChannel, byServer, isLoaded, receive, reload, markChannelRead };
 }

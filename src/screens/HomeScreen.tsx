@@ -10,15 +10,11 @@ import {
 import { Feather } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  ActivityIndicator,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { LoadingScreen } from "../components/ui/LoadingScreen";
+import { useLoadingGate } from "../hooks/useLoadingGate";
 import { useDirectMessages } from "../features/direct-messages/useDirectMessages";
 import { useMentions } from "../features/mentions/useMentions";
 import { AddServerSheet } from "../features/servers/components/rail/AddServerSheet";
@@ -50,6 +46,7 @@ export function HomeScreen() {
   const insets = useSafeAreaInsets();
   const [servers, setServers] = useState<ServerSummary[]>([]);
   const [isLoadingServers, setIsLoadingServers] = useState(true);
+  const [isProfileLoaded, setIsProfileLoaded] = useState(false);
   const [selectedServerId, setSelectedServerId] = useState<string | null>(null);
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(
     null,
@@ -90,8 +87,9 @@ export function HomeScreen() {
     if (!token) return;
     let cancelled = false;
     getOwnProfile().then((result) => {
-      if (cancelled || !result.ok) return;
-      updateUser(result.user);
+      if (cancelled) return;
+      if (result.ok) updateUser(result.user);
+      setIsProfileLoaded(true);
     });
     return () => {
       cancelled = true;
@@ -316,11 +314,19 @@ export function HomeScreen() {
     );
   }, []);
 
-  if (isLoadingServers || !isRestored) {
+  const isReady =
+    !isLoadingServers &&
+    isRestored &&
+    isProfileLoaded &&
+    (!currentAuthor || (mentions.isLoaded && !directMessages.isLoading));
+  const gate = useLoadingGate(isReady);
+  if (gate === "waiting" || gate === "loading" || gate === "leaving") {
     return (
-      <View className="flex-1 bg-surface-servers items-center justify-center">
+      <View className="flex-1 bg-surface-servers">
         <StatusBar style={statusBarStyle} />
-        <ActivityIndicator size="large" color={colors.accentBright} />
+        {gate === "waiting" ? null : (
+          <LoadingScreen isLeaving={gate === "leaving"} />
+        )}
       </View>
     );
   }
