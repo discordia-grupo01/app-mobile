@@ -74,18 +74,6 @@ export function MessageList({
         const newDay = startsNewDay(previous?.inserted_at, item.inserted_at);
         return (
           <>
-            {newDay ? (
-              <View
-                accessibilityRole="header"
-                className="my-3 flex-row items-center gap-3 px-4"
-              >
-                <View className="h-px flex-1 bg-line" />
-                <Text className="text-[12px] font-semibold text-content-muted">
-                  {formatMemberSince(item.inserted_at)}
-                </Text>
-                <View className="h-px flex-1 bg-line" />
-              </View>
-            ) : null}
             <MessageItem
               message={item}
               author={authors[item.user_id] ?? unknownAuthor(item.user_id)}
@@ -100,6 +88,18 @@ export function MessageList({
               }
               onRequestActions={() => onRequestActions(item.id)}
             />
+            {newDay ? (
+              <View
+                accessibilityRole="header"
+                className="mt-3 flex-row items-center gap-3 px-4"
+              >
+                <View className="h-px flex-1 bg-line" />
+                <Text className="text-[12px] font-semibold text-content-muted">
+                  {formatMemberSince(item.inserted_at)}
+                </Text>
+                <View className="h-px flex-1 bg-line" />
+              </View>
+            ) : null}
           </>
         );
       }}
