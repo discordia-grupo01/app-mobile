@@ -42,6 +42,7 @@ interface ChannelChatProps {
   canManageMessages: boolean;
   canSendMessages: boolean;
   canMentionEveryone: boolean;
+  canAddReactions: boolean;
 }
 
 export function ChannelChat({
@@ -53,6 +54,7 @@ export function ChannelChat({
   canManageMessages,
   canSendMessages,
   canMentionEveryone,
+  canAddReactions,
 }: ChannelChatProps) {
   const {
     status,
@@ -66,7 +68,7 @@ export function ChannelChat({
     toggleReaction,
     editMessage,
     deleteMessage,
-  } = useChannelMessages(channel);
+  } = useChannelMessages(channel, currentAuthor?.id ?? null);
   const members = useServerMembers(serverId);
   const authors = useMessageAuthors(members, messages, currentAuthor);
   const [reactingToId, setReactingToId] = useState<string | null>(null);
@@ -75,12 +77,18 @@ export function ChannelChat({
   const [deletingMessageId, setDeletingMessageId] = useState<string | null>(
     null,
   );
-  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   async function handleDelete(messageId: string) {
-    setDeleteError(null);
+    setActionError(null);
     const result = await deleteMessage(messageId);
-    if (!result.ok) setDeleteError(result.message);
+    if (!result.ok) setActionError(result.message);
+  }
+
+  async function handleToggleReaction(messageId: string, emoji: string) {
+    setActionError(null);
+    const result = await toggleReaction(messageId, emoji);
+    if (!result.ok) setActionError(result.message);
   }
 
   const currentUserId = currentAuthor?.id ?? null;
@@ -148,17 +156,18 @@ export function ChannelChat({
           hasMore={hasMore}
           isLoadingOlder={isLoadingOlder}
           onLoadOlder={loadOlder}
-          onToggleReaction={toggleReaction}
+          onToggleReaction={handleToggleReaction}
           onRequestReaction={setReactingToId}
+          canAddReactions={canAddReactions}
           onRequestActions={setActionsMessageId}
         />
       )}
-      {deleteError ? (
+      {actionError ? (
         <Text
           accessibilityRole="alert"
           className="bg-danger/10 px-4 py-1 text-center text-[12px] text-danger"
         >
-          {deleteError}
+          {actionError}
         </Text>
       ) : null}
       {status === "reconnecting" ? (
@@ -193,10 +202,14 @@ export function ChannelChat({
         visible={actionsMessageId !== null}
         canEdit={canEditActions}
         canDelete={canDeleteActions}
-        onReact={() => {
-          setReactingToId(actionsMessageId);
-          setActionsMessageId(null);
-        }}
+        onReact={
+          canAddReactions
+            ? () => {
+                setReactingToId(actionsMessageId);
+                setActionsMessageId(null);
+              }
+            : undefined
+        }
         onEdit={() => {
           setEditingMessageId(actionsMessageId);
           setActionsMessageId(null);
@@ -225,7 +238,7 @@ export function ChannelChat({
         visible={reactingToId !== null}
         title={ADD_REACTION_LABEL}
         onPick={(emoji) => {
-          if (reactingToId) toggleReaction(reactingToId, emoji);
+          if (reactingToId) void handleToggleReaction(reactingToId, emoji);
         }}
         onClose={() => setReactingToId(null)}
       />

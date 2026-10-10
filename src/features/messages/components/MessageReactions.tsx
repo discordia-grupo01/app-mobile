@@ -13,12 +13,15 @@ interface MessageReactionsProps {
   reactions: MessageReaction[];
   onToggle: (emoji: string) => void;
   onAddPress: () => void;
+  /** Sin `ADD_REACTIONS`: solo se puede sacar la reaccion propia (CA2/CA3). */
+  canAdd?: boolean;
 }
 
 export function MessageReactions({
   reactions,
   onToggle,
   onAddPress,
+  canAdd = true,
 }: MessageReactionsProps) {
   const colors = useThemeColors();
   if (reactions.length === 0) return null;
@@ -30,20 +33,23 @@ export function MessageReactions({
           key={reaction.emoji}
           reaction={reaction}
           onToggle={() => onToggle(reaction.emoji)}
+          disabled={!canAdd && !reaction.reacted_by_me}
         />
       ))}
-      <TouchableOpacity
-        onPress={onAddPress}
-        className="h-[26px] items-center justify-center rounded-full border border-line px-2.5"
-        accessibilityRole="button"
-        accessibilityLabel={ADD_REACTION_LABEL}
-      >
-        <MaterialCommunityIcons
-          name="emoticon-plus-outline"
-          size={14}
-          color={colors.textSubtle}
-        />
-      </TouchableOpacity>
+      {canAdd ? (
+        <TouchableOpacity
+          onPress={onAddPress}
+          className="h-[26px] items-center justify-center rounded-full border border-line px-2.5"
+          accessibilityRole="button"
+          accessibilityLabel={ADD_REACTION_LABEL}
+        >
+          <MaterialCommunityIcons
+            name="emoticon-plus-outline"
+            size={14}
+            color={colors.textSubtle}
+          />
+        </TouchableOpacity>
+      ) : null}
     </View>
   );
 }

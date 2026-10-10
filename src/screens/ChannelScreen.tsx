@@ -30,6 +30,7 @@ interface ChannelScreenProps {
   canManageMessages?: boolean;
   canSendMessages?: boolean;
   canMentionEveryone?: boolean;
+  canAddReactions?: boolean;
   serverRoles?: Role[];
   myRoleIds?: string[];
   onBack: () => void;
@@ -45,6 +46,7 @@ export function ChannelScreen({
   canManageMessages = false,
   canSendMessages = false,
   canMentionEveryone = false,
+  canAddReactions = false,
   serverRoles = [],
   myRoleIds = [],
   onBack,
@@ -133,6 +135,7 @@ export function ChannelScreen({
             canManageMessages={canManageMessages}
             canSendMessages={canSendMessages}
             canMentionEveryone={canMentionEveryone}
+            canAddReactions={canAddReactions}
           />
         </KeyboardAvoidingView>
       ) : (

@@ -236,6 +236,10 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
     { isOwner, roles: myRoles },
     "MENTION_EVERYONE",
   );
+  const canAddReactions = hasPermission(
+    { isOwner, roles: myRoles },
+    "ADD_REACTIONS",
+  );
 
   const myRoleIds = useMemo(() => myRoles.map((role) => role.id), [myRoles]);
 
@@ -394,6 +398,7 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
           canManageMessages={canManageMessages}
           canSendMessages={canSendMessages}
           canMentionEveryone={canMentionEveryone}
+          canAddReactions={canAddReactions}
           serverRoles={serverRoles}
           myRoleIds={myRoleIds}
           onBack={() => setSelectedChannelId(null)}

@@ -39,6 +39,8 @@ interface MessageItemProps {
   onToggleReaction?: (emoji: string) => void;
   /** Boton "+" de reacciones: abre el picker de emojis directo. */
   onRequestReaction?: () => void;
+  /** `false` sin `ADD_REACTIONS`: no se ofrece reaccionar, solo sacar la propia. */
+  canAddReactions?: boolean;
   /** Mantener presionado: abre el menu de reaccionar/editar/eliminar. */
   onRequestActions: () => void;
 }
@@ -50,6 +52,7 @@ export function MessageItem({
   isEditing,
   onToggleReaction,
   onRequestReaction,
+  canAddReactions = true,
   onRequestActions,
 }: MessageItemProps) {
   const { me } = useMessageMentions();
@@ -137,6 +140,7 @@ export function MessageItem({
             reactions={message.reactions}
             onToggle={onToggleReaction}
             onAddPress={onRequestReaction}
+            canAdd={canAddReactions}
           />
         ) : null}
       </View>
