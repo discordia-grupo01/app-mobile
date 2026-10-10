@@ -39,13 +39,13 @@ const GOLD = LOGO_ISOTYPE.gold;
 
 const clamped = { extrapolate: "clamp" } as const;
 
-function useLogoAnimation() {
+function useLogoAnimation(skipIntro: boolean) {
   const [values] = useState(() => ({
     blocks: LOGO_ISOTYPE.blocks.map(
       () => new Animated.Value(blockTiming.lowOpacity),
     ),
-    letters: LOGO_WORD_PATHS.map(() => new Animated.Value(0)),
-    tagline: new Animated.Value(0),
+    letters: LOGO_WORD_PATHS.map(() => new Animated.Value(skipIntro ? 1 : 0)),
+    tagline: new Animated.Value(skipIntro ? 1 : 0),
     gold: new Animated.Value(0),
     pulse: new Animated.Value(0),
   }));
@@ -132,10 +132,16 @@ function useLogoAnimation() {
   return values;
 }
 
-function AnimatedLogo({ width }: { width: number }) {
+function AnimatedLogo({
+  width,
+  skipIntro,
+}: {
+  width: number;
+  skipIntro: boolean;
+}) {
   const { theme } = useTheme();
   const colors = LOGO_COLORS[theme];
-  const values = useLogoAnimation();
+  const values = useLogoAnimation(skipIntro);
   const { inkRects, dPath, dot, square, cablePaths, cableStrokeWidth, blocks } =
     LOGO_ISOTYPE;
 
@@ -298,13 +304,18 @@ function BouncingDots({ logoWidth }: { logoWidth: number }) {
 
 interface LoadingScreenProps {
   isLeaving?: boolean;
+  /** Ya se vio otra pantalla de carga: las letras aparecen sin la entrada. */
+  skipIntro?: boolean;
 }
 
 /**
  * Pantalla de carga inicial: se muestra hasta que responden los servicios del
  * home, para no mostrar estados vacios que luego se corrigen.
  */
-export function LoadingScreen({ isLeaving = false }: LoadingScreenProps) {
+export function LoadingScreen({
+  isLeaving = false,
+  skipIntro = false,
+}: LoadingScreenProps) {
   const { width: screenWidth } = useWindowDimensions();
   const logoWidth = Math.min(LOGO_MAX_WIDTH, screenWidth * 0.8);
   const [opacity] = useState(() => new Animated.Value(1));
@@ -326,7 +337,7 @@ export function LoadingScreen({ isLeaving = false }: LoadingScreenProps) {
       style={{ opacity }}
     >
       <View style={{ width: logoWidth }}>
-        <AnimatedLogo width={logoWidth} />
+        <AnimatedLogo width={logoWidth} skipIntro={skipIntro} />
         <BouncingDots logoWidth={logoWidth} />
       </View>
     </Animated.View>

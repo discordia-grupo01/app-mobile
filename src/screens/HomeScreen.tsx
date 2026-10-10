@@ -39,7 +39,12 @@ import { ServerPickerScreen } from "./ServerPickerScreen";
 
 type MainView = "servers" | "dm";
 
-export function HomeScreen() {
+interface HomeScreenProps {
+  /** La pantalla de carga ya estaba a la vista antes de montar el home. */
+  resumesLoader?: boolean;
+}
+
+export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
   const colors = useThemeColors();
   const statusBarStyle = useStatusBarStyle();
   const { user, token, logout, updateUser } = useAuth();
@@ -319,13 +324,16 @@ export function HomeScreen() {
     isRestored &&
     isProfileLoaded &&
     (!currentAuthor || (mentions.isLoaded && !directMessages.isLoading));
-  const gate = useLoadingGate(isReady);
+  const gate = useLoadingGate(isReady, { showImmediately: resumesLoader });
   if (gate === "waiting" || gate === "loading" || gate === "leaving") {
     return (
       <View className="flex-1 bg-surface-servers">
         <StatusBar style={statusBarStyle} />
         {gate === "waiting" ? null : (
-          <LoadingScreen isLeaving={gate === "leaving"} />
+          <LoadingScreen
+            isLeaving={gate === "leaving"}
+            skipIntro={resumesLoader}
+          />
         )}
       </View>
     );
