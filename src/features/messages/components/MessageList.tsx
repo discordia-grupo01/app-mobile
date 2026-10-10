@@ -1,14 +1,16 @@
 import {
+  formatMemberSince,
   LOAD_OLDER_MESSAGES_LABEL,
   LOADING_MESSAGES_LABEL,
   type Message,
   type MessageAuthor,
   startsMessageGroup,
+  startsNewDay,
   unknownAuthor,
 } from "@discordia/client-shared";
 
 import { useMemo, type ReactNode } from "react";
-import { FlatList, Text, TouchableOpacity } from "react-native";
+import { FlatList, Text, TouchableOpacity, View } from "react-native";
 
 import { MessageItem } from "./MessageItem";
 
@@ -69,20 +71,36 @@ export function MessageList({
       }
       renderItem={({ item, index }) => {
         const previous = newestFirst[index + 1];
+        const newDay = startsNewDay(previous?.inserted_at, item.inserted_at);
         return (
-          <MessageItem
-            message={item}
-            author={authors[item.user_id] ?? unknownAuthor(item.user_id)}
-            isGroupStart={startsMessageGroup(previous, item)}
-            isEditing={editingMessageId === item.id}
-            onToggleReaction={
-              onToggleReaction && ((emoji) => onToggleReaction(item.id, emoji))
-            }
-            onRequestReaction={
-              onRequestReaction && (() => onRequestReaction(item.id))
-            }
-            onRequestActions={() => onRequestActions(item.id)}
-          />
+          <>
+            {newDay ? (
+              <View
+                accessibilityRole="header"
+                className="my-3 flex-row items-center gap-3 px-4"
+              >
+                <View className="h-px flex-1 bg-line" />
+                <Text className="text-[12px] font-semibold text-content-muted">
+                  {formatMemberSince(item.inserted_at)}
+                </Text>
+                <View className="h-px flex-1 bg-line" />
+              </View>
+            ) : null}
+            <MessageItem
+              message={item}
+              author={authors[item.user_id] ?? unknownAuthor(item.user_id)}
+              isGroupStart={newDay || startsMessageGroup(previous, item)}
+              isEditing={editingMessageId === item.id}
+              onToggleReaction={
+                onToggleReaction &&
+                ((emoji) => onToggleReaction(item.id, emoji))
+              }
+              onRequestReaction={
+                onRequestReaction && (() => onRequestReaction(item.id))
+              }
+              onRequestActions={() => onRequestActions(item.id)}
+            />
+          </>
         );
       }}
     />
