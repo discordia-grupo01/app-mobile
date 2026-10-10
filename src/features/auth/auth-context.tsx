@@ -44,6 +44,8 @@ interface AuthContextValue {
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  /** Hay una sesion guardada que se esta validando contra el backend. */
+  isRestoringSession: boolean;
   isPinEnabled: boolean;
   setPinEnabled: (enabled: boolean) => Promise<void>;
   login: (credentials: LoginValues) => Promise<LoginResultWithToken>;
@@ -228,6 +230,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       token,
       isAuthenticated: user !== null && token !== null,
       isLoading,
+      isRestoringSession: isLoading && user !== null,
       isPinEnabled,
       setPinEnabled,
       login,

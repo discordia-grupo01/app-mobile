@@ -1,6 +1,7 @@
 import "./global.css";
 
 import { useCallback, useState } from "react";
+import { View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { LoadingScreen } from "./src/components/ui/LoadingScreen";
@@ -20,7 +21,8 @@ import { ThemeProvider } from "./src/theme/theme-context";
 type AuthScreen = AuthMode | "forgot-password" | "confirm-email";
 
 function AppContent() {
-  const { isAuthenticated, isLoading, isPinEnabled } = useAuth();
+  const { isAuthenticated, isLoading, isRestoringSession, isPinEnabled } =
+    useAuth();
   const [authScreen, setAuthScreen] = useState<AuthScreen>("login");
   const [justRegistered, setJustRegistered] = useState(false);
   const {
@@ -35,10 +37,13 @@ function AppContent() {
   );
 
   const [skipPinEntry, setSkipPinEntry] = useState(false);
-  // Al reabrir la app la sesion se restaura con la pantalla de carga a la
-  // vista; el home sigue con ella en vez de esperar de nuevo desde cero.
+  // Al reabrir la app con sesion guardada se ve la pantalla de carga mientras
+  // se valida; el home sigue con ella en vez de esperar de nuevo desde cero.
   const [hasShownLoader, setHasShownLoader] = useState(false);
-  if (isLoading && !hasShownLoader) setHasShownLoader(true);
+  if (isRestoringSession && !hasShownLoader) setHasShownLoader(true);
+  if (!isLoading && !isAuthenticated && hasShownLoader) {
+    setHasShownLoader(false);
+  }
 
   function handleSwitchMode(mode: AuthScreen) {
     setAuthScreen(mode);
@@ -59,7 +64,13 @@ function AppContent() {
     setAuthScreen("confirm-email");
   }
 
-  if (isLoading) return <LoadingScreen />;
+  if (isLoading) {
+    return isRestoringSession ? (
+      <LoadingScreen />
+    ) : (
+      <View className="flex-1 bg-surface" />
+    );
+  }
 
   if (authScreen === "confirm-email") {
     return (
