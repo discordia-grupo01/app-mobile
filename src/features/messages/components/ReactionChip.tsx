@@ -7,12 +7,19 @@ import { cn } from "../../../lib/cn";
 interface ReactionChipProps {
   reaction: MessageReaction;
   onToggle: () => void;
+  /** Sin permiso para reaccionar: se ve, pero no se puede sumar a la reaccion. */
+  disabled?: boolean;
 }
 
-export function ReactionChip({ reaction, onToggle }: ReactionChipProps) {
+export function ReactionChip({
+  reaction,
+  onToggle,
+  disabled = false,
+}: ReactionChipProps) {
   return (
     <TouchableOpacity
       onPress={onToggle}
+      disabled={disabled}
       activeOpacity={0.7}
       className={cn(
         "flex-row items-center gap-1 rounded-full border px-2.5 py-1",
@@ -21,7 +28,7 @@ export function ReactionChip({ reaction, onToggle }: ReactionChipProps) {
           : "border-line bg-surface-input",
       )}
       accessibilityRole="button"
-      accessibilityState={{ selected: reaction.reacted_by_me }}
+      accessibilityState={{ selected: reaction.reacted_by_me, disabled }}
       accessibilityLabel={`${reaction.emoji} ${reaction.count}`}
     >
       <Text className="text-[13px]">{reaction.emoji}</Text>

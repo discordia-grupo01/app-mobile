@@ -25,6 +25,8 @@ interface MessageListProps {
   /** Sin estas dos no se muestran reacciones (ej. en mensajes directos). */
   onToggleReaction?: (messageId: string, emoji: string) => void;
   onRequestReaction?: (messageId: string) => void;
+  /** `ADD_REACTIONS` del usuario actual en el servidor. */
+  canAddReactions?: boolean;
   onRequestActions: (messageId: string) => void;
 }
 
@@ -38,6 +40,7 @@ export function MessageList({
   onLoadOlder,
   onToggleReaction,
   onRequestReaction,
+  canAddReactions = true,
   onRequestActions,
 }: MessageListProps) {
   const newestFirst = useMemo(() => [...messages].reverse(), [messages]);
@@ -86,6 +89,7 @@ export function MessageList({
               onRequestReaction={
                 onRequestReaction && (() => onRequestReaction(item.id))
               }
+              canAddReactions={canAddReactions}
               onRequestActions={() => onRequestActions(item.id)}
             />
             {newDay ? (
