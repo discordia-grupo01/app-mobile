@@ -327,7 +327,7 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
   const gate = useLoadingGate(isReady, { showImmediately: resumesLoader });
   if (gate === "waiting" || gate === "loading" || gate === "leaving") {
     return (
-      <View className="flex-1 bg-surface-servers">
+      <View className="flex-1 bg-surface">
         <StatusBar style={statusBarStyle} />
         {gate === "waiting" ? null : (
           <LoadingScreen

@@ -333,7 +333,7 @@ export function LoadingScreen({
     <Animated.View
       accessibilityRole="progressbar"
       accessibilityLabel="Cargando"
-      className="flex-1 items-center justify-center bg-surface-servers"
+      className="flex-1 items-center justify-center bg-surface"
       style={{ opacity }}
     >
       <View style={{ width: logoWidth }}>
