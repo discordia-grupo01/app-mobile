@@ -208,6 +208,8 @@ function DraggableRow({
         onPanResponderTerminate: () => {
           callbacksRef.current.onDragEnd();
         },
+        onPanResponderTerminationRequest: () => false,
+        onShouldBlockNativeResponder: () => true,
       }),
     [bucketKey, top],
   );

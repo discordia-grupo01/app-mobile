@@ -181,7 +181,7 @@ function DraggableCategoryRow({
 
   const panResponder = useMemo(
     () =>
-      // eslint-disable-next-line react-hooks/refs -- mismo caso que DraggableChannelList: el responder tiene que mantener identidad durante todo el gesto
+      // eslint-disable-next-line react-hooks/refs
       PanResponder.create({
         onStartShouldSetPanResponder: () => false,
         onStartShouldSetPanResponderCapture: () => false,
@@ -201,6 +201,8 @@ function DraggableCategoryRow({
         onPanResponderTerminate: () => {
           callbacksRef.current.onDragEnd();
         },
+        onPanResponderTerminationRequest: () => false,
+        onShouldBlockNativeResponder: () => true,
       }),
     [topAnim],
   );

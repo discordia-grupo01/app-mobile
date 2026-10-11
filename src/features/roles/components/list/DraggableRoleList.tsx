@@ -138,6 +138,8 @@ export function DraggableRoleList({
             top={offsets.get(id) ?? 0}
             isDragging={draggingId === id}
             canAnimate={canAnimate}
+            rowHeight={heightOf(id)}
+            containerHeight={totalHeight(order)}
             onDragStart={() => handleDragStart(id)}
             onDragMove={(dy) => handleDragMove(id, dy)}
             onDragEnd={() => handleDragEnd(id)}
@@ -155,6 +157,8 @@ function DraggableRoleRow({
   top,
   isDragging,
   canAnimate,
+  rowHeight,
+  containerHeight,
   onDragStart,
   onDragMove,
   onDragEnd,
@@ -164,6 +168,8 @@ function DraggableRoleRow({
   top: number;
   isDragging: boolean;
   canAnimate: boolean;
+  rowHeight: number;
+  containerHeight: number;
   onDragStart: () => void;
   onDragMove: (dy: number) => void;
   onDragEnd: () => void;
@@ -176,6 +182,16 @@ function DraggableRoleRow({
   useEffect(() => {
     topRef.current = top;
   }, [top]);
+
+  const rowHeightRef = useRef(rowHeight);
+  useEffect(() => {
+    rowHeightRef.current = rowHeight;
+  }, [rowHeight]);
+
+  const containerHeightRef = useRef(containerHeight);
+  useEffect(() => {
+    containerHeightRef.current = containerHeight;
+  }, [containerHeight]);
 
   useEffect(() => {
     if (isDragging) return;
@@ -210,7 +226,13 @@ function DraggableRoleRow({
           callbacksRef.current.onDragStart();
         },
         onPanResponderMove: (_evt, gesture) => {
-          topAnim.setValue(startTopValueRef.current + gesture.dy);
+          const rawTop = startTopValueRef.current + gesture.dy;
+          const maxTop = Math.max(
+            containerHeightRef.current - rowHeightRef.current,
+            0,
+          );
+          const clampedTop = Math.min(Math.max(rawTop, 0), maxTop);
+          topAnim.setValue(clampedTop);
           callbacksRef.current.onDragMove(gesture.dy);
         },
         onPanResponderRelease: () => {
@@ -219,6 +241,8 @@ function DraggableRoleRow({
         onPanResponderTerminate: () => {
           callbacksRef.current.onDragEnd();
         },
+        onPanResponderTerminationRequest: () => false,
+        onShouldBlockNativeResponder: () => true,
       }),
     [topAnim],
   );
