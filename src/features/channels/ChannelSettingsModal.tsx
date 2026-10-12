@@ -24,16 +24,16 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { Button } from "../../../../../components/ui/Button";
-import { FormErrorBanner } from "../../../../../components/ui/FormErrorBanner";
-import { ModalShell } from "../../../../../components/ui/ModalShell";
-import { cn } from "../../../../../lib/cn";
-import { withAlpha } from "../../../../../lib/color";
-import { useThemeColors } from "../../../../../theme/theme-context";
-import { useChannelOverrides } from "../../../useChannelOverrides";
-import { ChannelOverviewStep } from "./ChannelOverviewStep";
-import { ChannelPermissionsStep } from "./ChannelPermissionsStep";
-import { useChannelOverviewForm } from "./useChannelOverviewForm";
+import { Button } from "../../components/ui/Button";
+import { FormErrorBanner } from "../../components/ui/FormErrorBanner";
+import { ModalShell } from "../../components/ui/ModalShell";
+import { cn } from "../../lib/cn";
+import { withAlpha } from "../../lib/color";
+import { useThemeColors } from "../../theme/theme-context";
+import { useChannelOverrides } from "./useChannelOverrides";
+import { ChannelOverviewStep } from "./components/overview/ChannelOverviewStep";
+import { ChannelPermissionsStep } from "./components/permissions/ChannelPermissionsStep";
+import { useChannelOverviewForm } from "./components/overview/useChannelOverviewForm";
 
 export type ChannelSettingsSection = "overview" | "permissions";
 type SettingsStep = "list" | ChannelSettingsSection;

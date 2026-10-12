@@ -21,9 +21,9 @@ import {
 import { Feather } from "@expo/vector-icons";
 import { Text, TouchableOpacity, View } from "react-native";
 
-import { cn } from "../../../../../lib/cn";
-import { withAlpha } from "../../../../../lib/color";
-import { useTheme, useThemeColors } from "../../../../../theme/theme-context";
+import { cn } from "../../../../lib/cn";
+import { withAlpha } from "../../../../lib/color";
+import { useTheme, useThemeColors } from "../../../../theme/theme-context";
 import { OverrideIcon, type OverrideIconName } from "./OverrideIcon";
 
 const ROLE_EDITOR_HINT =

@@ -28,21 +28,21 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 
-import { ChannelOptionsSheet } from "../features/servers/components/channel/ChannelOptionsSheet";
+import { ChannelOptionsSheet } from "../features/channels/components/list/ChannelOptionsSheet";
 import {
   ChannelDragProvider,
   ChannelDropZone,
-} from "../features/servers/components/channel/ChannelDragContext";
+} from "../features/channels/components/list/ChannelDragContext";
 import { CreateCategoryModal } from "../features/servers/components/category/CreateCategoryModal";
 import { DraggableCategoryList } from "../features/servers/components/category/DraggableCategoryList";
-import { CreateChannelModal } from "../features/servers/components/channel/CreateChannelModal";
-import { DeleteChannelModal } from "../features/servers/components/channel/DeleteChannelModal";
-import { ChannelRow } from "../features/servers/components/channel/ChannelRow";
-import { DraggableChannelList } from "../features/servers/components/channel/DraggableChannelList";
+import { CreateChannelModal } from "../features/channels/components/create/CreateChannelModal";
+import { DeleteChannelModal } from "../features/channels/components/delete/DeleteChannelModal";
+import { ChannelRow } from "../features/channels/components/list/ChannelRow";
+import { DraggableChannelList } from "../features/channels/components/list/DraggableChannelList";
 import {
   ChannelSettingsModal,
   type ChannelSettingsSection,
-} from "../features/servers/components/channel/settings/ChannelSettingsModal";
+} from "../features/channels/ChannelSettingsModal";
 import { InviteLinkModal } from "../features/servers/components/server/InviteLinkModal";
 import { LeaveServerModal } from "../features/servers/components/server/LeaveServerModal";
 import { ServerSettingsModal } from "../features/servers/components/server/ServerSettingsModal";

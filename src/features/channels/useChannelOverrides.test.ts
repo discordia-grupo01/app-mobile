@@ -1,7 +1,7 @@
-import { deleteChannelOverride, setChannelOverride } from "./api";
+import { deleteChannelOverride, setChannelOverride } from "../servers/api";
 import { applyOverrideChanges, mergeFailedRoles } from "./useChannelOverrides";
 
-jest.mock("./api", () => ({
+jest.mock("../servers/api", () => ({
   deleteChannelOverride: jest.fn(),
   listChannelOverrides: jest.fn(),
   setChannelOverride: jest.fn(),
