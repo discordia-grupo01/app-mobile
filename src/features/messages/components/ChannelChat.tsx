@@ -1,4 +1,5 @@
 import {
+  type AccessRevokedReason,
   ADD_REACTION_LABEL,
   authorFromMember,
   buildMentionResolver,
@@ -12,6 +13,7 @@ import {
   type MessageAuthor,
   resolveImageUrl,
   type Role,
+  SEND_MESSAGES_DENIED_PLACEHOLDER,
 } from "@discordia/client-shared";
 
 import { useMemo, useState } from "react";
@@ -43,6 +45,8 @@ interface ChannelChatProps {
   canSendMessages: boolean;
   canMentionEveryone: boolean;
   canAddReactions: boolean;
+  /** El back cerro el canal: si fue por permisos, conviene recargar el servidor. */
+  onAccessRevoked?: (reason: AccessRevokedReason) => void;
 }
 
 export function ChannelChat({
@@ -55,6 +59,7 @@ export function ChannelChat({
   canSendMessages,
   canMentionEveryone,
   canAddReactions,
+  onAccessRevoked,
 }: ChannelChatProps) {
   const {
     status,
@@ -68,7 +73,9 @@ export function ChannelChat({
     toggleReaction,
     editMessage,
     deleteMessage,
-  } = useChannelMessages(channel, currentAuthor?.id ?? null);
+  } = useChannelMessages(channel, currentAuthor?.id ?? null, {
+    onAccessRevoked,
+  });
   const members = useServerMembers(serverId);
   const authors = useMessageAuthors(members, messages, currentAuthor);
   const [reactingToId, setReactingToId] = useState<string | null>(null);
@@ -179,9 +186,13 @@ export function ChannelChat({
         </Text>
       ) : null}
       <MessageComposer
-        placeholder={messageInputPlaceholder(channel.name)}
+        placeholder={
+          canSendMessages
+            ? messageInputPlaceholder(channel.name)
+            : SEND_MESSAGES_DENIED_PLACEHOLDER
+        }
         onSend={sendMessage}
-        disabled={!currentAuthor || status !== "ready"}
+        disabled={!currentAuthor || status !== "ready" || !canSendMessages}
         editing={
           editingMessage
             ? {

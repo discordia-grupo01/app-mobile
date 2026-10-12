@@ -39,7 +39,10 @@ import { CreateChannelModal } from "../features/servers/components/channel/Creat
 import { DeleteChannelModal } from "../features/servers/components/channel/DeleteChannelModal";
 import { ChannelRow } from "../features/servers/components/channel/ChannelRow";
 import { DraggableChannelList } from "../features/servers/components/channel/DraggableChannelList";
-import { EditChannelModal } from "../features/servers/components/channel/EditChannelModal";
+import {
+  ChannelSettingsModal,
+  type ChannelSettingsSection,
+} from "../features/servers/components/channel/settings/ChannelSettingsModal";
 import { InviteLinkModal } from "../features/servers/components/server/InviteLinkModal";
 import { LeaveServerModal } from "../features/servers/components/server/LeaveServerModal";
 import { ServerSettingsModal } from "../features/servers/components/server/ServerSettingsModal";
@@ -71,12 +74,14 @@ interface ServerChannelsScreenProps {
   userName?: string | null;
   isOwner?: boolean;
   myRoles?: Role[];
+  serverRoles?: Role[];
   canManageChannels?: boolean;
   canManageRoles?: boolean;
   canManageServer?: boolean;
   canBanMembers?: boolean;
   canInvite?: boolean;
   onPermissionsChanged?: () => void;
+  onChannelPermissionsSaved?: () => void;
   onSelectChannel: (channelId: string) => void;
   onOpenDirectMessages: () => void;
   unreadDmCount?: number;
@@ -100,12 +105,14 @@ export function ServerChannelsScreen({
   userName,
   isOwner = false,
   myRoles = [],
+  serverRoles = [],
   canManageChannels = false,
   canManageRoles = false,
   canManageServer = false,
   canBanMembers = false,
   canInvite = false,
   onPermissionsChanged,
+  onChannelPermissionsSaved,
   onSelectChannel,
   onOpenDirectMessages,
   unreadDmCount,
@@ -142,12 +149,28 @@ export function ServerChannelsScreen({
   const [channelOptionsFor, setChannelOptionsFor] = useState<Channel | null>(
     null,
   );
-  const [editingChannel, setEditingChannel] = useState<Channel | null>(null);
+  const [settingsTarget, setSettingsTarget] = useState<{
+    channelId: string;
+    section: ChannelSettingsSection;
+  } | null>(null);
   const [deletingChannel, setDeletingChannel] = useState<Channel | null>(null);
   const [dragError, setDragError] = useState("");
   const [isChannelDragActive, setIsChannelDragActive] = useState(false);
   const [isCategoryDragActive, setIsCategoryDragActive] = useState(false);
   const insets = useSafeAreaInsets();
+  const canOpenChannelOptions = canManageChannels || canManageRoles;
+  const settingsChannel = settingsTarget
+    ? (server.channels.find(
+        (channel) => channel.id === settingsTarget.channelId,
+      ) ?? null)
+    : null;
+  const settingsCategory = settingsChannel
+    ? server.categories.find(
+        (category) =>
+          category.id === settingsChannel.category_id &&
+          !isUnassignedCategory(category),
+      )
+    : undefined;
 
   const bannerUrl = resolveServerBannerUrl(server.banner_url);
   const bannerVisible = Boolean(bannerUrl);
@@ -224,8 +247,15 @@ export function ServerChannelsScreen({
     });
   }
 
+  function openChannelSettings(
+    channel: Channel | null,
+    section: ChannelSettingsSection,
+  ) {
+    setChannelOptionsFor(null);
+    if (channel) setSettingsTarget({ channelId: channel.id, section });
+  }
+
   function handleChannelUpdated(channel: Channel) {
-    setEditingChannel(null);
     onServerUpdated({
       ...server,
       channels: server.channels.map((existing) =>
@@ -327,7 +357,7 @@ export function ServerChannelsScreen({
       <ChannelRow
         key={channel.id}
         channel={channel}
-        canManage={canManageChannels}
+        canManage={canOpenChannelOptions}
         unreadMentions={unreadMentionsByChannel[channel.id]}
         onPress={() => onSelectChannel(channel.id)}
         onOptions={() => setChannelOptionsFor(channel)}
@@ -398,7 +428,7 @@ export function ServerChannelsScreen({
                 renderChannel={(channel) => (
                   <ChannelRow
                     channel={channel}
-                    canManage={canManageChannels}
+                    canManage={canOpenChannelOptions}
                     unreadMentions={unreadMentionsByChannel[channel.id]}
                     onPress={() => onSelectChannel(channel.id)}
                     onOptions={() => setChannelOptionsFor(channel)}
@@ -633,7 +663,7 @@ export function ServerChannelsScreen({
                     renderChannel={(channel) => (
                       <ChannelRow
                         channel={channel}
-                        canManage={canManageChannels}
+                        canManage={canOpenChannelOptions}
                         unreadMentions={unreadMentionsByChannel[channel.id]}
                         onPress={() => onSelectChannel(channel.id)}
                         onOptions={() => setChannelOptionsFor(channel)}
@@ -769,16 +799,17 @@ export function ServerChannelsScreen({
           onClose={() => setIsBansModalVisible(false)}
         />
       ) : null}
-      {canManageChannels ? (
+      {canOpenChannelOptions ? (
         <ChannelOptionsSheet
           visible={channelOptionsFor !== null}
           channel={channelOptionsFor}
+          canManageChannel={canManageChannels}
+          canManagePermissions={canManageRoles}
           onClose={() => setChannelOptionsFor(null)}
-          onEdit={() => {
-            const channel = channelOptionsFor;
-            setChannelOptionsFor(null);
-            setEditingChannel(channel);
-          }}
+          onEdit={() => openChannelSettings(channelOptionsFor, "overview")}
+          onOverridePermissions={() =>
+            openChannelSettings(channelOptionsFor, "permissions")
+          }
           onDelete={() => {
             const channel = channelOptionsFor;
             setChannelOptionsFor(null);
@@ -786,11 +817,24 @@ export function ServerChannelsScreen({
           }}
         />
       ) : null}
-      {editingChannel ? (
-        <EditChannelModal
-          channel={editingChannel}
-          onClose={() => setEditingChannel(null)}
-          onUpdated={handleChannelUpdated}
+      {settingsTarget && settingsChannel ? (
+        <ChannelSettingsModal
+          key={settingsChannel.id}
+          channel={settingsChannel}
+          categoryName={settingsCategory?.name ?? null}
+          initialSection={settingsTarget.section}
+          canManageChannel={canManageChannels}
+          canManagePermissions={canManageRoles}
+          isOwner={isOwner}
+          myRoles={myRoles}
+          serverRoles={serverRoles}
+          onClose={() => setSettingsTarget(null)}
+          onChannelUpdated={handleChannelUpdated}
+          onPermissionsSaved={() => onChannelPermissionsSaved?.()}
+          onDelete={() => {
+            setSettingsTarget(null);
+            setDeletingChannel(settingsChannel);
+          }}
         />
       ) : null}
       {deletingChannel ? (

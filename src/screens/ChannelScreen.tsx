@@ -1,4 +1,8 @@
-import type { Channel, Role } from "@discordia/client-shared";
+import type {
+  AccessRevokedReason,
+  Channel,
+  Role,
+} from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
 import { useMemo, useState } from "react";
@@ -31,8 +35,10 @@ interface ChannelScreenProps {
   canSendMessages?: boolean;
   canMentionEveryone?: boolean;
   canAddReactions?: boolean;
+  canConnect?: boolean;
   serverRoles?: Role[];
   myRoleIds?: string[];
+  onAccessRevoked?: (reason: AccessRevokedReason) => void;
   onBack: () => void;
 }
 
@@ -47,8 +53,10 @@ export function ChannelScreen({
   canSendMessages = false,
   canMentionEveryone = false,
   canAddReactions = false,
+  canConnect = false,
   serverRoles = [],
   myRoleIds = [],
+  onAccessRevoked,
   onBack,
 }: ChannelScreenProps) {
   const colors = useThemeColors();
@@ -136,10 +144,11 @@ export function ChannelScreen({
             canSendMessages={canSendMessages}
             canMentionEveryone={canMentionEveryone}
             canAddReactions={canAddReactions}
+            onAccessRevoked={onAccessRevoked}
           />
         </KeyboardAvoidingView>
       ) : (
-        <VoiceChannelPlaceholder name={channel.name} />
+        <VoiceChannelPlaceholder name={channel.name} canConnect={canConnect} />
       )}
     </View>
   );

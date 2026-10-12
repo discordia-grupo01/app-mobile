@@ -1,6 +1,12 @@
-import { type Channel } from "@discordia/client-shared";
+import {
+  type Channel,
+  DELETE_CHANNEL_LABEL,
+  EDIT_CHANNEL_LABEL,
+  OVERRIDE_CHANNEL_PERMISSIONS_LABEL,
+} from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
+import { type ComponentProps } from "react";
 import {
   Modal,
   Pressable,
@@ -10,22 +16,67 @@ import {
   View,
 } from "react-native";
 
+import { withAlpha } from "../../../../lib/color";
+import { cn } from "../../../../lib/cn";
 import { useThemeColors } from "../../../../theme/theme-context";
 
 interface ChannelOptionsSheetProps {
   visible: boolean;
   channel: Channel | null;
+  canManageChannel: boolean;
+  canManagePermissions: boolean;
   onClose: () => void;
   onEdit: () => void;
+  onOverridePermissions: () => void;
   onDelete: () => void;
 }
 
-/** Menú de "..." de un canal (equivalente al popover de web-client). */
+function SheetOption({
+  icon,
+  label,
+  color,
+  danger,
+  onPress,
+}: {
+  icon: ComponentProps<typeof Feather>["name"];
+  label: string;
+  color: string;
+  danger?: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <TouchableOpacity
+      activeOpacity={0.75}
+      className="flex-row items-center gap-3.5 rounded-[14px] py-3 px-2"
+      onPress={onPress}
+      accessibilityRole="button"
+    >
+      <View
+        className="w-9.5 h-9.5 rounded-[11px] items-center justify-center"
+        style={{ backgroundColor: withAlpha(color, 0.15) }}
+      >
+        <Feather name={icon} size={16} color={color} />
+      </View>
+      <Text
+        className={cn(
+          "text-[15px] font-bold",
+          danger ? "text-danger" : "text-content",
+        )}
+      >
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
+}
+
 export function ChannelOptionsSheet({
   visible,
   channel,
+  canManageChannel,
+  canManagePermissions,
   onClose,
   onEdit,
+  onOverridePermissions,
   onDelete,
 }: ChannelOptionsSheetProps) {
   const colors = useThemeColors();
@@ -58,31 +109,33 @@ export function ChannelOptionsSheet({
             </View>
           ) : null}
 
-          <TouchableOpacity
-            activeOpacity={0.75}
-            className="flex-row items-center gap-3.5 rounded-[14px] py-3 px-2"
-            onPress={onEdit}
-          >
-            <View className="w-9.5 h-9.5 rounded-[11px] items-center justify-center bg-[rgba(107,149,189,0.15)]">
-              <Feather name="edit-2" size={16} color={colors.info} />
-            </View>
-            <Text className="text-[15px] font-bold text-content">
-              Editar Canal
-            </Text>
-          </TouchableOpacity>
+          {canManageChannel ? (
+            <SheetOption
+              icon="edit-2"
+              label={EDIT_CHANNEL_LABEL}
+              color={colors.info}
+              onPress={onEdit}
+            />
+          ) : null}
 
-          <TouchableOpacity
-            activeOpacity={0.75}
-            className="flex-row items-center gap-3.5 rounded-[14px] py-3 px-2"
-            onPress={onDelete}
-          >
-            <View className="w-9.5 h-9.5 rounded-[11px] items-center justify-center bg-[rgba(224,82,82,0.12)]">
-              <Feather name="trash-2" size={16} color={colors.danger} />
-            </View>
-            <Text className="text-[15px] font-bold text-danger">
-              Eliminar Canal
-            </Text>
-          </TouchableOpacity>
+          {canManagePermissions ? (
+            <SheetOption
+              icon="shield"
+              label={OVERRIDE_CHANNEL_PERMISSIONS_LABEL}
+              color={colors.info}
+              onPress={onOverridePermissions}
+            />
+          ) : null}
+
+          {canManageChannel ? (
+            <SheetOption
+              icon="trash-2"
+              label={DELETE_CHANNEL_LABEL}
+              color={colors.danger}
+              danger
+              onPress={onDelete}
+            />
+          ) : null}
 
           <TouchableOpacity
             activeOpacity={0.75}

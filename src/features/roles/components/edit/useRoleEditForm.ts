@@ -1,10 +1,15 @@
 import {
+  EVERYONE_VIEW_CHANNELS_OFF_BODY,
+  EVERYONE_VIEW_CHANNELS_OFF_CONFIRM,
+  EVERYONE_VIEW_CHANNELS_OFF_TITLE,
+  removesViewChannelsFromEveryone,
   type Role,
   type RolePermission,
   validateRole,
 } from "@discordia/client-shared";
 
 import { useState } from "react";
+import { Alert } from "react-native";
 
 import { deleteRole, setDefaultRole, updateRole } from "../../api";
 
@@ -75,6 +80,25 @@ export function useRoleEditForm(
     setIsDirty(false);
     setNameError("");
     setColorError("");
+  }
+
+  function requestSave() {
+    if (removesViewChannelsFromEveryone(role, editPerms)) {
+      Alert.alert(
+        EVERYONE_VIEW_CHANNELS_OFF_TITLE,
+        EVERYONE_VIEW_CHANNELS_OFF_BODY,
+        [
+          { text: "Cancelar", style: "cancel" },
+          {
+            text: EVERYONE_VIEW_CHANNELS_OFF_CONFIRM,
+            style: "destructive",
+            onPress: () => void handleSave(),
+          },
+        ],
+      );
+      return;
+    }
+    void handleSave();
   }
 
   async function handleSave() {
@@ -187,7 +211,7 @@ export function useRoleEditForm(
     handleEditColor,
     handleTogglePerm,
     handleDiscard,
-    handleSave,
+    requestSave,
     deleteConfirm,
     deleteError,
     deleting,
