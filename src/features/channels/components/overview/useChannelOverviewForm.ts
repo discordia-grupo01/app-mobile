@@ -6,7 +6,7 @@ import {
 
 import { useCallback, useState } from "react";
 
-import { updateChannel } from "../../../api";
+import { updateChannel } from "../../../servers/api";
 
 type OverviewSaveResult =
   { ok: true; channel: Channel } | { ok: false; message?: string };

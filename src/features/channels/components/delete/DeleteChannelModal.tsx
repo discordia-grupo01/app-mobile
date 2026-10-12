@@ -4,7 +4,7 @@ import { Feather } from "@expo/vector-icons";
 import { useState } from "react";
 import { Text, View } from "react-native";
 
-import { deleteChannel } from "../../api";
+import { deleteChannel } from "../../../servers/api";
 import { useThemeColors } from "../../../../theme/theme-context";
 import { Button } from "../../../../components/ui/Button";
 import { ModalShell } from "../../../../components/ui/ModalShell";

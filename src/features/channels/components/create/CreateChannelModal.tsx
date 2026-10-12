@@ -17,10 +17,11 @@ import {
   View,
 } from "react-native";
 
-import { createChannel } from "../../api";
+import { createChannel } from "../../../servers/api";
 import { cn } from "../../../../lib/cn";
 import { useThemeColors } from "../../../../theme/theme-context";
 import { Button } from "../../../../components/ui/Button";
+import { FieldError } from "../../../../components/ui/FieldError";
 import { ModalShell } from "../../../../components/ui/ModalShell";
 import { ModalCloseButton } from "../../../../components/ui/ModalCloseButton";
 
@@ -206,12 +207,7 @@ export function CreateChannelModal({
               className="flex-1 text-content text-[14px]"
             />
           </View>
-          {nameError ? (
-            <View className="flex-row items-center gap-1.5 mt-1.5">
-              <Feather name="alert-circle" size={13} color={colors.danger} />
-              <Text className="text-danger text-[12px]">{nameError}</Text>
-            </View>
-          ) : null}
+          <FieldError message={nameError} />
         </View>
 
         <View className="mb-4.5">

@@ -33,7 +33,7 @@ import {
   leaveServer,
   listMyServers,
 } from "../features/servers/api";
-import { useMyChannelPermissions } from "../features/servers/useMyChannelPermissions";
+import { useMyChannelPermissions } from "../features/channels/useMyChannelPermissions";
 import { getLastLocation, setLastLocation } from "../lib/storage";
 import { useStatusBarStyle, useThemeColors } from "../theme/theme-context";
 import { ChannelScreen } from "./ChannelScreen";

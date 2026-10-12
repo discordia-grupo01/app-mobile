@@ -16,7 +16,7 @@ import {
   deleteChannelOverride,
   listChannelOverrides,
   setChannelOverride,
-} from "./api";
+} from "../servers/api";
 
 export interface OverrideSaveFailure {
   roleId: string;

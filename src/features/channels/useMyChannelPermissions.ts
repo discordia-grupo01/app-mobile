@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { AppState } from "react-native";
 
-import { getMemberChannelPermissions } from "./api";
+import { getMemberChannelPermissions } from "../servers/api";
 
 export function useMyChannelPermissions(
   channelId: string | null,

@@ -18,7 +18,7 @@ import { cn } from "../../../../lib/cn";
 import { useThemeColors } from "../../../../theme/theme-context";
 
 import { ColorGrid } from "../shared/ColorGrid";
-import { FieldError } from "../shared/FieldError";
+import { FieldError } from "../../../../components/ui/FieldError";
 import { PermissionToggle } from "../shared/PermissionToggle";
 import { RolePreviewBadge } from "../shared/RolePreviewBadge";
 

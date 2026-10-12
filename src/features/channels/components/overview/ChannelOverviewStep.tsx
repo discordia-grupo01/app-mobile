@@ -11,20 +11,10 @@ import {
 import { Feather } from "@expo/vector-icons";
 import { Text, TextInput, View } from "react-native";
 
-import { cn } from "../../../../../lib/cn";
-import { useThemeColors } from "../../../../../theme/theme-context";
+import { FieldError } from "../../../../components/ui/FieldError";
+import { cn } from "../../../../lib/cn";
+import { useThemeColors } from "../../../../theme/theme-context";
 import type { ChannelOverviewForm } from "./useChannelOverviewForm";
-
-function FieldError({ message }: { message: string }) {
-  const colors = useThemeColors();
-  if (!message) return null;
-  return (
-    <View className="flex-row items-center gap-1.5 mt-1.5">
-      <Feather name="alert-circle" size={13} color={colors.danger} />
-      <Text className="flex-1 text-danger text-[12px]">{message}</Text>
-    </View>
-  );
-}
 
 function Counter({ length, max }: { length: number; max: number }) {
   return (

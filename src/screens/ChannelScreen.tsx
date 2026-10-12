@@ -18,8 +18,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "../features/auth/auth-context";
 import { authorFromProfile } from "../features/messages/author";
 import { ChannelChat } from "../features/messages/components/ChannelChat";
-import { MembersSidebar } from "../features/servers/components/channel/MembersSidebar";
-import { VoiceChannelPlaceholder } from "../features/servers/components/channel/VoiceChannelPlaceholder";
+import { MembersSidebar } from "../features/servers/components/members/MembersSidebar";
+import { VoiceChannelPlaceholder } from "../features/channels/components/voice/VoiceChannelPlaceholder";
 import { useTheme, useThemeColors } from "../theme/theme-context";
 
 interface ChannelScreenProps {

@@ -19,11 +19,11 @@ import { Feather } from "@expo/vector-icons";
 import { useMemo, useState } from "react";
 import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 
-import { Button } from "../../../../../components/ui/Button";
-import { FormErrorBanner } from "../../../../../components/ui/FormErrorBanner";
-import { cn } from "../../../../../lib/cn";
-import { useThemeColors } from "../../../../../theme/theme-context";
-import type { ChannelOverridesState } from "../../../useChannelOverrides";
+import { Button } from "../../../../components/ui/Button";
+import { FormErrorBanner } from "../../../../components/ui/FormErrorBanner";
+import { cn } from "../../../../lib/cn";
+import { useThemeColors } from "../../../../theme/theme-context";
+import type { ChannelOverridesState } from "../../useChannelOverrides";
 import { RoleOverrideEditor } from "./RoleOverrideEditor";
 
 const NO_OVERRIDES_SUMMARY = "Sin excepciones · hereda del servidor";
