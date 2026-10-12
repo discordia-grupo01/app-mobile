@@ -36,6 +36,8 @@ interface MembersSidebarProps {
   canManageRoles?: boolean;
   /** Owner, o miembro con el permiso BAN_MEMBERS via algún rol. */
   canBanMembers?: boolean;
+  /** Owner, o miembro con el permiso KICK_MEMBERS via algún rol. */
+  canKickMembers?: boolean;
   onClose: () => void;
 }
 
@@ -46,6 +48,7 @@ export function MembersSidebar({
   authToken,
   canManageRoles = false,
   canBanMembers = false,
+  canKickMembers = false,
   onClose,
 }: MembersSidebarProps) {
   const colors = useThemeColors();
@@ -105,10 +108,11 @@ export function MembersSidebar({
 
   const owners = (resolvedMembers ?? []).filter((m) => m.is_owner);
   const others = (resolvedMembers ?? []).filter((m) => !m.is_owner);
-  const canBanViewed =
-    canBanMembers &&
+  const isModeratable =
     viewingUserId !== currentUserId &&
     !owners.some((owner) => owner.user_id === viewingUserId);
+  const canBanViewed = canBanMembers && isModeratable;
+  const canKickViewed = canKickMembers && isModeratable;
 
   function handleSelectMember(member: Member) {
     if (member.user_id === currentUserId) {
@@ -263,6 +267,7 @@ export function MembersSidebar({
         serverId={serverId}
         canManageRoles={canManageRoles}
         canBan={canBanViewed}
+        canKick={canKickViewed}
         canBlock={viewingUserId !== currentUserId}
         onBanned={fetchMembers}
         onClose={() => setViewingUserId(null)}

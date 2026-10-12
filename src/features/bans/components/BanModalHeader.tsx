@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Text, View } from "react-native";
 
 import { withAlpha } from "../../../lib/color";
@@ -7,10 +8,12 @@ import { BanIcon } from "./BanIcon";
 interface BanModalHeaderProps {
   title: string;
   subtitle: string;
+  /** Icono de la accion (ya con su color); por defecto el de baneo. */
+  icon?: ReactNode;
 }
 
 /** Encabezado de los modales de moderacion: icono, titulo y subtitulo. */
-export function BanModalHeader({ title, subtitle }: BanModalHeaderProps) {
+export function BanModalHeader({ title, subtitle, icon }: BanModalHeaderProps) {
   const colors = useThemeColors();
 
   return (
@@ -19,7 +22,7 @@ export function BanModalHeader({ title, subtitle }: BanModalHeaderProps) {
         className="size-10 shrink-0 items-center justify-center rounded-xl"
         style={{ backgroundColor: withAlpha(colors.danger, 0.15) }}
       >
-        <BanIcon size={19} color={colors.danger} />
+        {icon ?? <BanIcon size={19} color={colors.danger} />}
       </View>
       <View className="min-w-0 flex-1">
         <Text

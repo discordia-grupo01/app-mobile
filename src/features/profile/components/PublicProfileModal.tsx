@@ -6,6 +6,7 @@ import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 
 import { avatarUriOf } from "../../../lib/userProfile";
 import { BanMemberModal } from "../../bans/components/BanMemberModal";
+import { KickMemberModal } from "../../moderation/components/KickMemberModal";
 import { useThemeColors } from "../../../theme/theme-context";
 import { Avatar } from "../../../components/ui/Avatar";
 import { MemberRoleBadges } from "../../roles/components/MemberRoleBadges";
@@ -26,7 +27,10 @@ interface PublicProfileModalProps {
   serverId?: string;
   canManageRoles?: boolean;
   canBan?: boolean;
+  /** Puede expulsar (permiso) y el perfil no es el propio ni el del owner. */
+  canKick?: boolean;
   canBlock?: boolean;
+  /** Se dispara al banear o expulsar: el miembro ya no esta en el servidor. */
   onBanned?: () => void;
   onClose: () => void;
 }
@@ -38,6 +42,7 @@ export function PublicProfileModal({
   serverId,
   canManageRoles = false,
   canBan = false,
+  canKick = false,
   canBlock = false,
   onBanned,
   onClose,
@@ -47,6 +52,7 @@ export function PublicProfileModal({
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isBanOpen, setIsBanOpen] = useState(false);
+  const [isKickOpen, setIsKickOpen] = useState(false);
   const [wasBanned, setWasBanned] = useState(false);
   const [isBlockOpen, setIsBlockOpen] = useState(false);
   const { blockedIds, blockUser, unblockUser } = useBlockedUsersContext();
@@ -88,6 +94,7 @@ export function PublicProfileModal({
 
   function handleBanClosed() {
     setIsBanOpen(false);
+    setIsKickOpen(false);
     if (wasBanned) onClose();
   }
 
@@ -175,12 +182,17 @@ export function PublicProfileModal({
               </View>
             ) : null}
 
-            {canBan && serverId ? (
-              <ModeratorActions onBan={() => setIsBanOpen(true)} />
+            {(canBan || canKick) && serverId ? (
+              <ModeratorActions
+                onKick={canKick ? () => setIsKickOpen(true) : undefined}
+                onBan={canBan ? () => setIsBanOpen(true) : undefined}
+              />
             ) : null}
 
             {canBlock ? (
-              <View className={canBan && serverId ? "mt-3" : undefined}>
+              <View
+                className={(canBan || canKick) && serverId ? "mt-3" : undefined}
+              >
                 <BlockUserAction
                   isBlocked={blockedIds.has(profile.id)}
                   onPress={() => setIsBlockOpen(true)}
@@ -217,6 +229,19 @@ export function PublicProfileModal({
               : blockUser(profile.id)
           }
           onClose={() => setIsBlockOpen(false)}
+        />
+      ) : null}
+
+      {isKickOpen && profile && serverId ? (
+        <KickMemberModal
+          serverId={serverId}
+          target={{
+            userId: profile.id,
+            name: profile.name,
+            avatarUri: avatarUriOf(profile),
+          }}
+          onClose={handleBanClosed}
+          onKicked={handleBanned}
         />
       ) : null}
 
