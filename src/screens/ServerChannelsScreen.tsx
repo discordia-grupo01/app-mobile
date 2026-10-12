@@ -78,6 +78,8 @@ interface ServerChannelsScreenProps {
   canManageChannels?: boolean;
   canManageRoles?: boolean;
   canManageServer?: boolean;
+  /** Editar las palabras prohibidas (en la configuracion del servidor). */
+  canManageMessages?: boolean;
   canBanMembers?: boolean;
   canInvite?: boolean;
   onPermissionsChanged?: () => void;
@@ -109,6 +111,7 @@ export function ServerChannelsScreen({
   canManageChannels = false,
   canManageRoles = false,
   canManageServer = false,
+  canManageMessages = false,
   canBanMembers = false,
   canInvite = false,
   onPermissionsChanged,
@@ -548,7 +551,7 @@ export function ServerChannelsScreen({
                   />
                 ) : null}
 
-                {canManageServer ? (
+                {canManageServer || canManageMessages ? (
                   <ServerMenuItem
                     icon="settings"
                     label="Configuración del servidor"
@@ -710,11 +713,13 @@ export function ServerChannelsScreen({
         </View>
       </ChannelDragProvider>
 
-      {canManageServer ? (
+      {canManageServer || canManageMessages ? (
         <ServerSettingsModal
           visible={isServerSettingsVisible}
           server={server}
           isOwner={isOwner}
+          canManageServer={canManageServer}
+          canManageMessages={canManageMessages}
           onClose={() => setIsServerSettingsVisible(false)}
           onUpdated={(updated) => {
             setIsServerSettingsVisible(false);

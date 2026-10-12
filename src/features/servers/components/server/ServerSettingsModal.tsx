@@ -16,6 +16,7 @@ import {
   validateServerBanner,
   validateServerIcon,
   validateServerName,
+  WORD_FILTER_TITLE,
 } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
@@ -46,6 +47,7 @@ import { Avatar } from "../../../../components/ui/Avatar";
 import { ServerBanner } from "../ServerBanner";
 import { ModalShell } from "../../../../components/ui/ModalShell";
 import { DeleteServerFields } from "./DeleteServerModal";
+import { WordFilterStep } from "./WordFilterStep";
 
 const BANNER_HEIGHT = 120;
 const ICON_SIZE = 84;
@@ -55,7 +57,7 @@ const PRESET_SWATCH_HEIGHT = 64;
 const PRESET_SWATCH_RADIUS = 16;
 const PRESET_COLUMNS = 3;
 
-type SettingsStep = "list" | "profile" | "delete";
+type SettingsStep = "list" | "profile" | "words" | "delete";
 type FeatherIconName = ComponentProps<typeof Feather>["name"];
 
 function chunk<T>(items: readonly T[], size: number): T[][] {
@@ -161,7 +163,9 @@ function SettingsHeader({
       ? "Configuración del servidor"
       : step === "profile"
         ? "Perfil del servidor"
-        : "Eliminar servidor";
+        : step === "words"
+          ? WORD_FILTER_TITLE
+          : "Eliminar servidor";
 
   return (
     <View className="flex-row items-center gap-2 px-3 py-3 border-b border-b-line">
@@ -271,12 +275,18 @@ function SettingsIdentityHeader({ server }: { server: ServerSummary }) {
 function SettingsListStep({
   server,
   isOwner,
+  canManageServer,
+  canManageMessages,
   onSelectProfile,
+  onSelectWords,
   onSelectDelete,
 }: {
   server: ServerSummary;
   isOwner: boolean;
+  canManageServer: boolean;
+  canManageMessages: boolean;
   onSelectProfile: () => void;
+  onSelectWords: () => void;
   onSelectDelete: () => void;
 }) {
   return (
@@ -284,12 +294,22 @@ function SettingsListStep({
       <SettingsIdentityHeader server={server} />
       <View className="h-px bg-line mx-7 mb-2" />
 
-      <SettingsRow
-        icon="edit-2"
-        title="Perfil del servidor"
-        subtitle="Banner, ícono y nombre"
-        onPress={onSelectProfile}
-      />
+      {canManageServer ? (
+        <SettingsRow
+          icon="edit-2"
+          title="Perfil del servidor"
+          subtitle="Banner, ícono y nombre"
+          onPress={onSelectProfile}
+        />
+      ) : null}
+      {canManageMessages ? (
+        <SettingsRow
+          icon="slash"
+          title={WORD_FILTER_TITLE}
+          subtitle="Mensajes que no se pueden enviar"
+          onPress={onSelectWords}
+        />
+      ) : null}
       {isOwner ? (
         <>
           <View className="h-px bg-line mx-7 my-2" />
@@ -310,6 +330,10 @@ interface ServerSettingsModalProps {
   visible: boolean;
   server: ServerSummary;
   isOwner: boolean;
+  /** "Perfil del servidor" (nombre, icono, banner). */
+  canManageServer: boolean;
+  /** "Palabras prohibidas". */
+  canManageMessages: boolean;
   onClose: () => void;
   onUpdated: (server: ServerSummary) => void;
   onConfirmDelete: (confirmName: string) => Promise<DeleteServerResult>;
@@ -319,6 +343,8 @@ export function ServerSettingsModal({
   visible,
   server,
   isOwner,
+  canManageServer,
+  canManageMessages,
   onClose,
   onUpdated,
   onConfirmDelete,
@@ -564,7 +590,10 @@ export function ServerSettingsModal({
         <SettingsListStep
           server={server}
           isOwner={isOwner}
+          canManageServer={canManageServer}
+          canManageMessages={canManageMessages}
           onSelectProfile={() => setStep("profile")}
+          onSelectWords={() => setStep("words")}
           onSelectDelete={() => setStep("delete")}
         />
       ) : null}
@@ -766,6 +795,8 @@ export function ServerSettingsModal({
           </View>
         </ScrollView>
       ) : null}
+
+      {step === "words" ? <WordFilterStep serverId={server.id} /> : null}
 
       {step === "delete" ? (
         <ScrollView
