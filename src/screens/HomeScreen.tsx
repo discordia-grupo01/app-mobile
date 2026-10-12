@@ -34,6 +34,7 @@ import {
   listMyServers,
 } from "../features/servers/api";
 import { useMyChannelPermissions } from "../features/channels/useMyChannelPermissions";
+import { useVoiceSession } from "../features/voice/voice-session-context";
 import { getLastLocation, setLastLocation } from "../lib/storage";
 import { useStatusBarStyle, useThemeColors } from "../theme/theme-context";
 import { ChannelScreen } from "./ChannelScreen";
@@ -71,6 +72,7 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
   const [serverRoles, setServerRoles] = useState<Role[]>([]);
   const [permissionsVersion, setPermissionsVersion] = useState(0);
   const [lostChannel, setLostChannel] = useState<Channel | null>(null);
+  const voice = useVoiceSession();
 
   useEffect(() => {
     let cancelled = false;
@@ -106,6 +108,31 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
       cancelled = true;
     };
   }, [token, updateUser]);
+
+  // Tocar "Voz conectada" (desde cualquier vista) abre el canal de la llamada.
+  const voiceFocus = voice.state.focus;
+  const [seenFocusNonce, setSeenFocusNonce] = useState(voiceFocus?.nonce);
+  if (voiceFocus && voiceFocus.nonce !== seenFocusNonce) {
+    setSeenFocusNonce(voiceFocus.nonce);
+    setView("servers");
+    setSelectedServerId(voiceFocus.serverId);
+    setSelectedChannelId(voiceFocus.channelId);
+    setLostChannel(null);
+  }
+
+  // Si el canal de la llamada ya no esta (se borro, saliste del servidor o
+  // perdiste el acceso), se corta.
+  const voiceTarget = voice.state.target;
+  const leaveVoice = voice.leave;
+  const isVoiceChannelGone =
+    voiceTarget !== null &&
+    !isLoadingServers &&
+    !servers
+      .find((server) => server.id === voiceTarget.serverId)
+      ?.channels.some((channel) => channel.id === voiceTarget.channelId);
+  useEffect(() => {
+    if (isVoiceChannelGone) leaveVoice();
+  }, [isVoiceChannelGone, leaveVoice]);
 
   const selectedServer =
     servers.find((server) => server.id === selectedServerId) ?? null;
@@ -442,6 +469,7 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
         <ChannelScreen
           channel={selectedChannel}
           serverId={selectedServer.id}
+          server={selectedServer}
           authToken={token}
           currentUserId={user ? String(user.id) : null}
           canManageRoles={canManageRoles}
