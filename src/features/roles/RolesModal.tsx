@@ -105,7 +105,6 @@ export function RolesModal({
   }
 
   function goToTab(tab: "edit" | "members") {
-    if (tab === "members" && !isEveryoneSelected) membersHook.ensureLoaded();
     setStep(tab);
   }
 
@@ -203,7 +202,7 @@ export function RolesModal({
           canManage={canManageSelected}
           isEveryoneSelected={isEveryoneSelected}
           isDefaultRole={selectedRole.id === defaultRoleId}
-          memberCount={membersHook.membersWithRole.length}
+          memberCount={membersHook.memberCount}
           onSaved={rolesList.updateRoleInList}
           onDeleted={() => {
             rolesList.removeRoleFromList(selectedRole.id);

@@ -31,6 +31,10 @@ interface ChannelScreenProps {
   canManageRoles?: boolean;
   /** Owner, o miembro con el permiso BAN_MEMBERS via algún rol. */
   canBanMembers?: boolean;
+  /** Owner, o miembro con el permiso KICK_MEMBERS via algún rol. */
+  canKickMembers?: boolean;
+  /** MANAGE_MESSAGES a nivel servidor (silenciar no mira overrides de canal). */
+  canMuteMembers?: boolean;
   canManageMessages?: boolean;
   canSendMessages?: boolean;
   canMentionEveryone?: boolean;
@@ -49,6 +53,8 @@ export function ChannelScreen({
   currentUserId,
   canManageRoles = false,
   canBanMembers = false,
+  canKickMembers = false,
+  canMuteMembers = false,
   canManageMessages = false,
   canSendMessages = false,
   canMentionEveryone = false,
@@ -125,6 +131,8 @@ export function ChannelScreen({
         authToken={authToken}
         canManageRoles={canManageRoles}
         canBanMembers={canBanMembers}
+        canKickMembers={canKickMembers}
+        canMuteMembers={canMuteMembers}
         onClose={() => setIsMembersVisible(false)}
       />
 

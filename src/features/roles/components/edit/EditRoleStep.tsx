@@ -1,4 +1,5 @@
 import {
+  roleMembersCount,
   MAX_NAME,
   ROLE_PERMISSIONS,
   type Role,
@@ -31,7 +32,8 @@ interface EditRoleStepProps {
   canManage: boolean;
   isEveryoneSelected: boolean;
   isDefaultRole: boolean;
-  memberCount: number;
+  /** `null` mientras no se sabe. */
+  memberCount: number | null;
   onSaved: (role: Role) => void;
   onDeleted: () => void;
   onDefaultChanged: (roleId: string) => void;
@@ -87,13 +89,11 @@ export function EditRoleStep({
               </View>
             ) : null}
             <Text className="text-[12px] text-content-subtle">
-              {isEveryoneSelected ? (
-                "Todos los miembros"
-              ) : (
-                <>
-                  {memberCount} {memberCount === 1 ? "miembro" : "miembros"}
-                </>
-              )}
+              {isEveryoneSelected
+                ? "Todos los miembros"
+                : memberCount !== null
+                  ? roleMembersCount(memberCount)
+                  : null}
             </Text>
           </View>
         </View>

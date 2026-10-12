@@ -1,5 +1,6 @@
 import {
   displayNameOf,
+  isMemberMuted,
   type Member,
   MEMBER_PAGE_LIMIT,
   resolveImageUrl,
@@ -36,6 +37,10 @@ interface MembersSidebarProps {
   canManageRoles?: boolean;
   /** Owner, o miembro con el permiso BAN_MEMBERS via algún rol. */
   canBanMembers?: boolean;
+  /** Owner, o miembro con el permiso KICK_MEMBERS via algún rol. */
+  canKickMembers?: boolean;
+  /** Owner, o miembro con MANAGE_MESSAGES a nivel servidor: puede silenciar. */
+  canMuteMembers?: boolean;
   onClose: () => void;
 }
 
@@ -46,6 +51,8 @@ export function MembersSidebar({
   authToken,
   canManageRoles = false,
   canBanMembers = false,
+  canKickMembers = false,
+  canMuteMembers = false,
   onClose,
 }: MembersSidebarProps) {
   const colors = useThemeColors();
@@ -105,10 +112,15 @@ export function MembersSidebar({
 
   const owners = (resolvedMembers ?? []).filter((m) => m.is_owner);
   const others = (resolvedMembers ?? []).filter((m) => !m.is_owner);
-  const canBanViewed =
-    canBanMembers &&
+  const isModeratable =
     viewingUserId !== currentUserId &&
     !owners.some((owner) => owner.user_id === viewingUserId);
+  const canBanViewed = canBanMembers && isModeratable;
+  const canKickViewed = canKickMembers && isModeratable;
+  const canMuteViewed = canMuteMembers && isModeratable;
+  const viewedMember = (resolvedMembers ?? []).find(
+    (m) => m.user_id === viewingUserId,
+  );
 
   function handleSelectMember(member: Member) {
     if (member.user_id === currentUserId) {
@@ -163,6 +175,14 @@ export function MembersSidebar({
             </Text>
           ) : null}
         </View>
+        {isMemberMuted(member) ? (
+          <Feather
+            name="mic-off"
+            size={15}
+            color={colors.danger}
+            accessibilityLabel="Silenciado"
+          />
+        ) : null}
         {member.is_owner ? (
           <MaterialCommunityIcons
             name="crown"
@@ -263,6 +283,10 @@ export function MembersSidebar({
         serverId={serverId}
         canManageRoles={canManageRoles}
         canBan={canBanViewed}
+        canKick={canKickViewed}
+        canMute={canMuteViewed}
+        mutedUntil={viewedMember?.muted_until ?? null}
+        onMuteChanged={fetchMembers}
         canBlock={viewingUserId !== currentUserId}
         onBanned={fetchMembers}
         onClose={() => setViewingUserId(null)}
