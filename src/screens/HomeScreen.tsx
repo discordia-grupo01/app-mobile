@@ -474,6 +474,7 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
           canManageChannels={canManageChannels}
           canManageRoles={canManageRoles}
           canManageServer={canManageServer}
+          canManageMessages={canManageMessages}
           canBanMembers={canBanMembers}
           canInvite={canInvite}
           onPermissionsChanged={handlePermissionsChanged}
