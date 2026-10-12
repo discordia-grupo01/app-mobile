@@ -1,4 +1,7 @@
 import {
+  type AccessRevokedReason,
+  type Channel,
+  type ChannelOverridePermission,
   type DeleteServerResult,
   hasPermission,
   type LeaveServerResult,
@@ -30,6 +33,7 @@ import {
   leaveServer,
   listMyServers,
 } from "../features/servers/api";
+import { useMyChannelPermissions } from "../features/servers/useMyChannelPermissions";
 import { getLastLocation, setLastLocation } from "../lib/storage";
 import { useStatusBarStyle, useThemeColors } from "../theme/theme-context";
 import { ChannelScreen } from "./ChannelScreen";
@@ -65,6 +69,8 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
   const [isAddServerSheetVisible, setIsAddServerSheetVisible] = useState(false);
   const [myRoles, setMyRoles] = useState<Role[]>([]);
   const [serverRoles, setServerRoles] = useState<Role[]>([]);
+  const [permissionsVersion, setPermissionsVersion] = useState(0);
+  const [lostChannel, setLostChannel] = useState<Channel | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -106,7 +112,8 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
   const selectedChannel =
     selectedServer?.channels.find(
       (channel) => channel.id === selectedChannelId,
-    ) ?? null;
+    ) ??
+    (lostChannel && lostChannel.id === selectedChannelId ? lostChannel : null);
 
   const isOwner =
     user != null &&
@@ -196,8 +203,8 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
    * caso: `serverRoles` queda con el valor anterior, que no se usa hasta que
    * haya un canal de texto abierto).
    */
-  useEffect(() => {
-    if (!selectedServer) return;
+  const fetchServerRoles = useCallback(() => {
+    if (!selectedServer) return undefined;
     let cancelled = false;
     listRoles(selectedServer.id).then((result) => {
       if (!cancelled && result.ok) setServerRoles(result.roles);
@@ -206,6 +213,31 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
       cancelled = true;
     };
   }, [selectedServer]);
+
+  useEffect(() => fetchServerRoles(), [fetchServerRoles]);
+
+  const reloadServers = useCallback(async () => {
+    const result = await listMyServers();
+    if (result.ok) setServers(result.servers);
+  }, []);
+
+  const handlePermissionsChanged = useCallback(() => {
+    fetchMyRoles();
+    fetchServerRoles();
+    setPermissionsVersion((version) => version + 1);
+    void reloadServers();
+  }, [fetchMyRoles, fetchServerRoles, reloadServers]);
+
+  function handleAccessRevoked(reason: AccessRevokedReason) {
+    if (reason !== "permissions_changed" || !selectedChannel) return;
+    setLostChannel(selectedChannel);
+    void reloadServers();
+  }
+
+  function closeChannel() {
+    setLostChannel(null);
+    setSelectedChannelId(null);
+  }
 
   const canManageChannels = hasPermission(
     { isOwner, roles: myRoles },
@@ -240,6 +272,24 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
     { isOwner, roles: myRoles },
     "ADD_REACTIONS",
   );
+  const canConnect = hasPermission({ isOwner, roles: myRoles }, "CONNECT");
+
+  const channelPermissions = useMyChannelPermissions(
+    selectedChannel && selectedChannel !== lostChannel
+      ? selectedChannel.id
+      : null,
+    userId,
+    permissionsVersion,
+  );
+
+  /** Lo del servidor hasta que lleguen los permisos del canal, que traen las excepciones. */
+  function canInChannel(
+    permission: ChannelOverridePermission,
+    serverLevel: boolean,
+  ): boolean {
+    if (isOwner || channelPermissions === null) return serverLevel;
+    return channelPermissions.includes(permission);
+  }
 
   const myRoleIds = useMemo(() => myRoles.map((role) => role.id), [myRoles]);
 
@@ -260,6 +310,7 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
     setView("servers");
     setSelectedServerId(serverId);
     setSelectedChannelId(null);
+    setLostChannel(null);
   }
 
   const addAndSelect = useCallback((server: ServerSummary) => {
@@ -395,13 +446,15 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
           currentUserId={user ? String(user.id) : null}
           canManageRoles={canManageRoles}
           canBanMembers={canBanMembers}
-          canManageMessages={canManageMessages}
-          canSendMessages={canSendMessages}
+          canManageMessages={canInChannel("MANAGE_MESSAGES", canManageMessages)}
+          canSendMessages={canInChannel("SEND_MESSAGES", canSendMessages)}
           canMentionEveryone={canMentionEveryone}
-          canAddReactions={canAddReactions}
+          canAddReactions={canInChannel("ADD_REACTIONS", canAddReactions)}
+          canConnect={canInChannel("CONNECT", canConnect)}
           serverRoles={serverRoles}
           myRoleIds={myRoleIds}
-          onBack={() => setSelectedChannelId(null)}
+          onAccessRevoked={handleAccessRevoked}
+          onBack={closeChannel}
         />
       </View>
     );
@@ -417,12 +470,14 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
           userName={user?.name}
           isOwner={isOwner}
           myRoles={myRoles}
+          serverRoles={serverRoles}
           canManageChannels={canManageChannels}
           canManageRoles={canManageRoles}
           canManageServer={canManageServer}
           canBanMembers={canBanMembers}
           canInvite={canInvite}
-          onPermissionsChanged={fetchMyRoles}
+          onPermissionsChanged={handlePermissionsChanged}
+          onChannelPermissionsSaved={handlePermissionsChanged}
           onSelectChannel={setSelectedChannelId}
           onOpenDirectMessages={handleOpenDirectMessages}
           unreadDmCount={unreadDmCount}
