@@ -152,7 +152,8 @@ export function WordFilterStep({ serverId }: { serverId: string }) {
                 title={WORD_FILTER_ADD_ACTION}
                 variant="secondary"
                 onPress={handleAdd}
-                style={{ width: undefined, paddingHorizontal: 16 }}
+                fullWidth={false}
+                className="px-4"
               />
             </View>
             {draftError ? (
