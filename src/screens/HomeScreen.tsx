@@ -451,6 +451,7 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
           canManageRoles={canManageRoles}
           canBanMembers={canBanMembers}
           canKickMembers={canKickMembers}
+          canMuteMembers={canManageMessages}
           canManageMessages={canInChannel("MANAGE_MESSAGES", canManageMessages)}
           canSendMessages={canInChannel("SEND_MESSAGES", canSendMessages)}
           canMentionEveryone={canMentionEveryone}
