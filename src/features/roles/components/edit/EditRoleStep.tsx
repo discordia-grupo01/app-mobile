@@ -311,7 +311,7 @@ export function EditRoleStep({
         />
         <Button
           title="Guardar cambios"
-          onPress={form.handleSave}
+          onPress={form.requestSave}
           disabled={!form.isDirty}
           isLoading={form.saving}
           style={{ flex: 1, width: undefined }}
