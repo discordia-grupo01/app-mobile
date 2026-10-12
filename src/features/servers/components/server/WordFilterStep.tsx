@@ -124,10 +124,10 @@ export function WordFilterStep({ serverId }: { serverId: string }) {
       {saved !== null ? (
         <>
           <View className="px-7 mt-5">
-            <View className="flex-row gap-2">
+            <View className="flex-row items-center gap-2">
               <View
                 className={cn(
-                  "flex-1 rounded-xl border bg-surface-input px-3.5 min-h-12 justify-center",
+                  "flex-1 rounded-xl border bg-surface-input px-3.5 h-12 justify-center",
                   draftError ? "border-danger" : "border-line",
                 )}
               >
@@ -148,13 +148,20 @@ export function WordFilterStep({ serverId }: { serverId: string }) {
                   className="text-content text-[14px]"
                 />
               </View>
-              <Button
-                title={WORD_FILTER_ADD_ACTION}
-                variant="secondary"
+              <TouchableOpacity
                 onPress={handleAdd}
-                fullWidth={false}
-                className="px-4"
-              />
+                disabled={draft.trim() === ""}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel={WORD_FILTER_ADD_ACTION}
+                className={cn(
+                  "items-center justify-center rounded-xl bg-accent",
+                  draft.trim() === "" && "opacity-40",
+                )}
+                style={{ width: 48, height: 48 }}
+              >
+                <Feather name="plus" size={20} color={colors.onAccent} />
+              </TouchableOpacity>
             </View>
             {draftError ? (
               <View className="flex-row items-center gap-1.5 mt-1.5">
