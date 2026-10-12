@@ -282,6 +282,10 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
     { isOwner, roles: myRoles },
     "BAN_MEMBERS",
   );
+  const canKickMembers = hasPermission(
+    { isOwner, roles: myRoles },
+    "KICK_MEMBERS",
+  );
   const canInvite = hasPermission({ isOwner, roles: myRoles }, "CREATE_INVITE");
   const canManageMessages = hasPermission(
     { isOwner, roles: myRoles },
@@ -474,6 +478,8 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
           currentUserId={user ? String(user.id) : null}
           canManageRoles={canManageRoles}
           canBanMembers={canBanMembers}
+          canKickMembers={canKickMembers}
+          canMuteMembers={canManageMessages}
           canManageMessages={canInChannel("MANAGE_MESSAGES", canManageMessages)}
           canSendMessages={canInChannel("SEND_MESSAGES", canSendMessages)}
           canMentionEveryone={canMentionEveryone}

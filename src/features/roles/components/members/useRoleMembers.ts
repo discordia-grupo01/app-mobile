@@ -1,65 +1,75 @@
 import {
   displayNameOf,
-  MEMBER_PAGE_LIMIT,
   type MemberInfo,
   type Role,
 } from "@discordia/client-shared";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-import { listMembers } from "../../../servers/api";
-import { assignRole, listMemberRoles, removeRole } from "../../api";
+import { useServerMembers } from "../../../servers/useServerMembers";
+import { assignRole, listRoleMembers, removeRole } from "../../api";
 
 interface UseRoleMembersOptions {
   onToast: (message: string) => void;
 }
 
+/**
+ * Quien tiene el rol elegido (#58): los ids salen de `GET /roles/:id/members`
+ * (se piden al elegir el rol, asi el contador ya es el real) y el resto de los
+ * miembros, para "Sin este rol", de la lista completa del servidor.
+ */
 export function useRoleMembers(
   serverId: string,
   role: Role | undefined,
   { onToast }: UseRoleMembersOptions,
 ) {
-  const [membersInfo, setMembersInfo] = useState<MemberInfo[] | null>(null);
-  const [membersError, setMembersError] = useState("");
+  const serverMembers = useServerMembers(serverId);
+  const [roleMemberIds, setRoleMemberIds] = useState<Record<string, string[]>>(
+    {},
+  );
+  const [roleErrors, setRoleErrors] = useState<Record<string, string>>({});
   const [busyMemberId, setBusyMemberId] = useState<string | null>(null);
+  const selectedRoleId = role?.id ?? "";
 
-  const [lastRoleId, setLastRoleId] = useState(role?.id);
-  if (lastRoleId !== role?.id) {
-    setLastRoleId(role?.id);
-    setMembersInfo(null);
-    setMembersError("");
-    setBusyMemberId(null);
-  }
-
-  function ensureLoaded() {
-    if (membersInfo !== null || membersError) return;
-    setMembersError("");
-    listMembers(serverId, { limit: MEMBER_PAGE_LIMIT }).then((result) => {
+  useEffect(() => {
+    if (
+      !selectedRoleId ||
+      roleMemberIds[selectedRoleId] ||
+      roleErrors[selectedRoleId]
+    ) {
+      return;
+    }
+    let cancelled = false;
+    listRoleMembers(selectedRoleId).then((result) => {
+      if (cancelled) return;
       if (!result.ok) {
-        setMembersError(result.message);
-        setMembersInfo([]);
+        setRoleErrors((prev) => ({
+          ...prev,
+          [selectedRoleId]: result.message,
+        }));
         return;
       }
-      Promise.all(
-        result.members.map(async (member) => {
-          const memberRolesResult = await listMemberRoles(
-            serverId,
-            member.user_id,
-          );
-          return {
-            userId: member.user_id,
-            name: displayNameOf(member.profile),
-            avatarUrl: member.profile?.avatar_url ?? null,
-            roleIds: memberRolesResult.ok
-              ? memberRolesResult.roles.map((r) => r.id)
-              : [],
-          };
-        }),
-      ).then((infos) => setMembersInfo(infos));
+      setRoleMemberIds((prev) => ({
+        ...prev,
+        [selectedRoleId]: result.members.map((m) => m.user_id),
+      }));
     });
-  }
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedRoleId, roleMemberIds, roleErrors]);
 
-  const selectedRoleId = role?.id ?? "";
+  const selectedIds = roleMemberIds[selectedRoleId] ?? null;
+  const membersError = roleErrors[selectedRoleId] ?? "";
+  const membersInfo: MemberInfo[] | null =
+    serverMembers === null || selectedIds === null
+      ? null
+      : serverMembers.map((member) => ({
+          userId: member.user_id,
+          name: displayNameOf(member.profile),
+          avatarUrl: member.profile?.avatar_url ?? null,
+          roleIds: selectedIds.includes(member.user_id) ? [selectedRoleId] : [],
+        }));
   const membersWithRole = (membersInfo ?? []).filter((m) =>
     m.roleIds.includes(selectedRoleId),
   );
@@ -77,19 +87,15 @@ export function useRoleMembers(
       onToast(result.message);
       return;
     }
-    setMembersInfo(
-      (prev) =>
-        prev?.map((m) =>
-          m.userId === member.userId
-            ? {
-                ...m,
-                roleIds: hasRole
-                  ? m.roleIds.filter((id) => id !== selectedRoleId)
-                  : [...m.roleIds, selectedRoleId],
-              }
-            : m,
-        ) ?? null,
-    );
+    setRoleMemberIds((prev) => {
+      const current = prev[selectedRoleId] ?? [];
+      return {
+        ...prev,
+        [selectedRoleId]: hasRole
+          ? current.filter((id) => id !== member.userId)
+          : [...current, member.userId],
+      };
+    });
   }
 
   return {
@@ -98,7 +104,8 @@ export function useRoleMembers(
     busyMemberId,
     membersWithRole,
     membersWithoutRole,
-    ensureLoaded,
+    /** `null` hasta saber cuantos tienen el rol. */
+    memberCount: selectedIds?.length ?? null,
     handleToggleMember,
   };
 }

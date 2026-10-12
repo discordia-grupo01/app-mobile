@@ -1,4 +1,4 @@
-import { type MemberInfo } from "@discordia/client-shared";
+import { type MemberInfo, ROLE_MEMBERS_EMPTY } from "@discordia/client-shared";
 
 import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 
@@ -34,11 +34,7 @@ export function RoleMembersStep({
       contentContainerClassName="p-5 gap-5.5"
       showsVerticalScrollIndicator={false}
     >
-      {isEveryoneSelected ? (
-        <Text className="text-content-subtle text-[13px]">
-          Todos los miembros del servidor tienen este rol automáticamente.
-        </Text>
-      ) : membersError ? (
+      {membersError ? (
         <Text className="text-danger text-[13px] text-center mt-4">
           {membersError}
         </Text>
@@ -51,6 +47,11 @@ export function RoleMembersStep({
       ) : (
         <>
           <View className="gap-0">
+            {isEveryoneSelected ? (
+              <Text className="text-content-subtle text-[13px] mb-3">
+                Todos los miembros del servidor tienen este rol automáticamente.
+              </Text>
+            ) : null}
             <Text
               className={cn(
                 "text-[11px] font-bold tracking-[1px] uppercase text-content-subtle",
@@ -61,7 +62,7 @@ export function RoleMembersStep({
             </Text>
             {membersWithRole.length === 0 ? (
               <Text className="text-content-subtle text-[13px] mt-2">
-                Ningún miembro tiene este rol.
+                {ROLE_MEMBERS_EMPTY}
               </Text>
             ) : null}
             <View className="gap-1.5 mt-1">
@@ -71,13 +72,17 @@ export function RoleMembersStep({
                   member={member}
                   hasRole
                   isBusy={busyMemberId === member.userId}
-                  onToggle={() => onToggleMember(member, true)}
+                  onToggle={
+                    isEveryoneSelected
+                      ? undefined
+                      : () => onToggleMember(member, true)
+                  }
                 />
               ))}
             </View>
           </View>
 
-          {membersWithoutRole.length > 0 ? (
+          {!isEveryoneSelected && membersWithoutRole.length > 0 ? (
             <View className="gap-0">
               <Text
                 className={cn(
