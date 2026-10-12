@@ -1,5 +1,6 @@
 import {
-  type ActivityStatus,
+  displayedStatus,
+  type ActivityStatusChoice,
   CANCEL_NAME_EDIT_LABEL,
   CHANGE_AVATAR_LABEL,
   DESCRIPTION_PLACEHOLDER,
@@ -32,10 +33,8 @@ import { useThemeColors } from "../../../theme/theme-context";
 import { useAuth } from "../../auth/auth-context";
 import { Avatar } from "../../../components/ui/Avatar";
 import { MemberRoleBadges } from "../../roles/components/MemberRoleBadges";
-import {
-  ACTIVITY_STATUS_COLOR,
-  ActivityStatusPicker,
-} from "./ActivityStatusPicker";
+import { activityStatusColor } from "./activityStatusColor";
+import { ActivityStatusRow } from "./ActivityStatusRow";
 import { CustomStatusEditor } from "./CustomStatusEditor";
 import { MemberSince } from "./MemberSince";
 import { ProfileBanner } from "./ProfileBanner";
@@ -76,7 +75,7 @@ export function OwnProfileModal({
   const scrollViewRef = useRef<ScrollView>(null);
 
   const [activityStatus, setActivityStatus] =
-    useState<ActivityStatus>("online");
+    useState<ActivityStatusChoice>("online");
 
   if (visible !== wasVisible) {
     setWasVisible(visible);
@@ -345,7 +344,7 @@ export function OwnProfileModal({
         </View>
 
         <View className="mb-4">
-          <ActivityStatusPicker
+          <ActivityStatusRow
             status={activityStatus}
             onChange={setActivityStatus}
           />
@@ -465,7 +464,10 @@ export function OwnProfileModal({
           <View
             className="absolute right-0 bottom-0 w-4.5 h-4.5 rounded-[9px] border-[3px] border-surface-modal"
             style={{
-              backgroundColor: ACTIVITY_STATUS_COLOR[activityStatus],
+              backgroundColor: activityStatusColor(
+                colors,
+                displayedStatus(activityStatus),
+              ),
             }}
           />
         </TouchableOpacity>
