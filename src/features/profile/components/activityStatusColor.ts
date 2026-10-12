@@ -13,6 +13,6 @@ export function activityStatusColor(
     case "dnd":
       return colors.danger;
     case "offline":
-      return colors.textSubtle;
+      return colors.offline;
   }
 }

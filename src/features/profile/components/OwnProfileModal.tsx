@@ -462,7 +462,7 @@ export function OwnProfileModal({
             ) : null}
           </View>
           <View
-            className="absolute right-0 bottom-0 w-4.5 h-4.5 rounded-[9px] border-[3px] border-surface-modal"
+            className="absolute right-0.5 bottom-0.5 w-4.5 h-4.5 rounded-[9px] border-[3px] border-surface-modal"
             style={{
               backgroundColor: activityStatusColor(
                 colors,
