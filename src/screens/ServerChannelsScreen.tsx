@@ -67,6 +67,7 @@ import { useThemeColors } from "../theme/theme-context";
 const HEADER_HEIGHT = 52;
 const BANNER_HEIGHT = 88;
 const UNCATEGORIZED_KEY = "none";
+const SECTION_GAP = 18;
 
 interface ServerChannelsScreenProps {
   server: ServerSummary;
@@ -185,6 +186,8 @@ export function ServerChannelsScreen({
   const sortedCategories = sortByPosition(visibleCategories(server.categories));
   const unassignedCategory =
     server.categories.find(isUnassignedCategory) ?? null;
+  const canDropToUncategorized =
+    canManageChannels && sortedCategories.length > 0;
 
   const [pendingTransferServerId, setPendingTransferServerId] = useState(
     server.id,
@@ -679,6 +682,13 @@ export function ServerChannelsScreen({
                   </View>
                 )}
               </ChannelDropZone>
+            ) : canDropToUncategorized ? (
+              <ChannelDropZone
+                bucketKey={UNCATEGORIZED_KEY}
+                categoryId={unassignedCategory?.id ?? null}
+                isTopEdge
+                style={{ marginBottom: -SECTION_GAP }}
+              />
             ) : null}
 
             {canManageChannels && sortedCategories.length > 1 ? (
