@@ -7,7 +7,14 @@ import {
 
 import { Feather } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, ScrollView, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 import { avatarUriOf } from "../../../lib/userProfile";
 import { BanMemberModal } from "../../bans/components/BanMemberModal";
@@ -21,9 +28,8 @@ import { getPublicProfile } from "../service";
 import { MutualServersList } from "./MutualServersList";
 import { ProfileBanner } from "./ProfileBanner";
 import { useBlockedUsersContext } from "../../blocks/blocked-users-context";
-import { BlockUserAction } from "./BlockUserAction";
 import { BlockUserModal } from "./BlockUserModal";
-import { ModeratorActions } from "../../bans/components/ModeratorActions";
+import { MemberActionsSheet } from "./MemberActionsSheet";
 import { ModalShell } from "../../../components/ui/ModalShell";
 
 interface PublicProfileModalProps {
@@ -75,6 +81,7 @@ export function PublicProfileModal({
   const [currentMutedUntil, setCurrentMutedUntil] = useState(mutedUntil);
   const [wasBanned, setWasBanned] = useState(false);
   const [isBlockOpen, setIsBlockOpen] = useState(false);
+  const [isActionsOpen, setIsActionsOpen] = useState(false);
   const { blockedIds, blockUser, unblockUser } = useBlockedUsersContext();
 
   const key = `${visible}::${userId}`;
@@ -88,6 +95,7 @@ export function PublicProfileModal({
       setIsLoading(true);
       setIsBanOpen(false);
       setIsBlockOpen(false);
+      setIsActionsOpen(false);
       setWasBanned(false);
     }
   }
@@ -146,10 +154,42 @@ export function PublicProfileModal({
   const isMuted = isMemberMuted({ muted_until: currentMutedUntil });
   const hasModeratorActions =
     Boolean(serverId) && (canBan || canKick || canMute);
+  const hasMemberActions =
+    Boolean(profile) &&
+    !profile?.is_suspended &&
+    (hasModeratorActions || canBlock);
 
   return (
     <ModalShell visible={visible} onClose={onClose} className="max-w-100">
-      <ProfileBanner onClose={onClose} dimmed={profile?.is_suspended} />
+      <ProfileBanner
+        onClose={onClose}
+        dimmed={profile?.is_suspended}
+        action={
+          hasMemberActions ? (
+            <TouchableOpacity
+              onPress={() => setIsActionsOpen(true)}
+              disabled={isUnmuting}
+              className="h-7.5 w-7.5 items-center justify-center rounded-full bg-[rgba(0,0,0,0.3)]"
+              accessibilityRole="button"
+              accessibilityLabel="Más acciones"
+              accessibilityState={{ busy: isUnmuting }}
+            >
+              {isUnmuting ? (
+                <ActivityIndicator
+                  size="small"
+                  color="rgba(255,255,255,0.85)"
+                />
+              ) : (
+                <Feather
+                  name="more-vertical"
+                  size={14}
+                  color="rgba(255,255,255,0.85)"
+                />
+              )}
+            </TouchableOpacity>
+          ) : undefined
+        }
+      />
 
       {profile?.is_suspended ? (
         <View className="items-center gap-2.5 px-6 py-8">
@@ -225,36 +265,11 @@ export function PublicProfileModal({
             </View>
 
             {serverId ? (
-              <View className="mb-4">
-                <MemberRoleBadges
-                  serverId={serverId}
-                  userId={profile.id}
-                  canManage={canManageRoles}
-                />
-              </View>
-            ) : null}
-
-            {hasModeratorActions ? (
-              <ModeratorActions
-                onUnmute={
-                  canMute && isMuted ? () => void handleUnmute() : undefined
-                }
-                isUnmuting={isUnmuting}
-                onMute={
-                  canMute && !isMuted ? () => setIsMuteOpen(true) : undefined
-                }
-                onKick={canKick ? () => setIsKickOpen(true) : undefined}
-                onBan={canBan ? () => setIsBanOpen(true) : undefined}
+              <MemberRoleBadges
+                serverId={serverId}
+                userId={profile.id}
+                canManage={canManageRoles}
               />
-            ) : null}
-
-            {canBlock ? (
-              <View className={hasModeratorActions ? "mt-3" : undefined}>
-                <BlockUserAction
-                  isBlocked={blockedIds.has(profile.id)}
-                  onPress={() => setIsBlockOpen(true)}
-                />
-              </View>
             ) : null}
           </ScrollView>
 
@@ -274,6 +289,34 @@ export function PublicProfileModal({
           </View>
         </>
       )}
+
+      {profile ? (
+        <MemberActionsSheet
+          visible={isActionsOpen}
+          memberName={profile.name}
+          onUnmute={
+            hasModeratorActions && canMute && isMuted
+              ? () => void handleUnmute()
+              : undefined
+          }
+          onMute={
+            hasModeratorActions && canMute && !isMuted
+              ? () => setIsMuteOpen(true)
+              : undefined
+          }
+          onKick={
+            hasModeratorActions && canKick
+              ? () => setIsKickOpen(true)
+              : undefined
+          }
+          onBan={
+            hasModeratorActions && canBan ? () => setIsBanOpen(true) : undefined
+          }
+          onToggleBlock={canBlock ? () => setIsBlockOpen(true) : undefined}
+          isBlocked={blockedIds.has(profile.id)}
+          onClose={() => setIsActionsOpen(false)}
+        />
+      ) : null}
 
       {isBlockOpen && profile ? (
         <BlockUserModal
