@@ -209,7 +209,6 @@ export function ChannelScreen({
           channel={channel}
           serverId={serverId}
           serverName={server.name}
-          channels={server.channels}
           canConnect={canConnect}
           presence={voice.presence[channel.id] ?? []}
           bottomInset={insets.bottom}

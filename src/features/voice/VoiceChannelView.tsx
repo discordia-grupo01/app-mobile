@@ -4,7 +4,10 @@ import {
   VOICE_CONNECT_FORBIDDEN,
   VOICE_IN_CHANNEL_LABEL,
   VOICE_JOIN,
+  VOICE_MODERATOR_MUTED,
   VOICE_SWITCH,
+  VOICE_UNAVAILABLE,
+  voiceParticipantsOf,
   type VoicePresenceParticipant,
   voicePresenceCount,
 } from "@discordia/client-shared";
@@ -19,7 +22,7 @@ import { avatarUriOf } from "../../lib/userProfile";
 import { useThemeColors } from "../../theme/theme-context";
 import { useAuth } from "../auth/auth-context";
 import { useVoiceSession } from "./voice-session-context";
-import { voiceParticipantsOf } from "./voiceSession";
+import { VoiceNotice } from "./components/VoiceNotice";
 import { VoiceControls } from "./components/call/VoiceControls";
 import {
   clampToAspect,
@@ -68,8 +71,6 @@ interface VoiceChannelViewProps {
   channel: Channel;
   serverId: string;
   serverName: string;
-  /** Todos los canales del servidor (los datos de prueba salen de aca). */
-  channels: readonly Channel[];
   canConnect: boolean;
   /** Quien esta en este canal, para la pantalla previa a entrar. */
   presence: readonly VoicePresenceParticipant[];
@@ -80,7 +81,6 @@ export function VoiceChannelView({
   channel,
   serverId,
   serverName,
-  channels,
   canConnect,
   presence,
   bottomInset,
@@ -95,27 +95,25 @@ export function VoiceChannelView({
       <VoiceLobby
         channelName={channel.name}
         canConnect={canConnect && user !== null}
+        isAvailable={voice.isAvailable}
         isInAnotherChannel={state.target !== null}
         presence={presence}
+        notice={state.target === null ? state.notice : null}
+        onDismissNotice={voice.dismissNotice}
         onJoin={() =>
-          voice.join(
-            {
-              serverId,
-              serverName,
-              channelId: channel.id,
-              channelName: channel.name,
-            },
-            channels,
-          )
+          voice.join({
+            serverId,
+            serverName,
+            channelId: channel.id,
+            channelName: channel.name,
+          })
         }
       />
     );
   }
 
-  const participants = voiceParticipantsOf(state, {
-    identity: user.id,
-    name: user.name,
-  });
+  const participants = voiceParticipantsOf(state);
+  const banner = !state.canSpeak ? VOICE_MODERATOR_MUTED : voice.mediaError;
   const ownAvatarUri = avatarUriOf(user);
   const layout = gridLayoutFor(
     participants.length,
@@ -124,8 +122,13 @@ export function VoiceChannelView({
   );
   return (
     <View className="flex-1">
+      {banner ? (
+        <View className="px-3 pt-3">
+          <VoiceNotice message={banner} />
+        </View>
+      ) : null}
       <ScrollView
-        className={cn("flex-1", state.status === "connecting" && "opacity-60")}
+        className={cn("flex-1", state.status !== "connected" && "opacity-60")}
         contentContainerClassName="grow justify-center"
         contentContainerStyle={{ padding: GRID_PADDING }}
         onLayout={(event) => {
@@ -166,12 +169,9 @@ export function VoiceChannelView({
 
       <VoiceControls
         muted={state.muted}
-        cameraOn={state.cameraOn}
-        screenSharing={state.screenSharing}
+        canSpeak={state.canSpeak}
         bottomInset={bottomInset}
         onToggleMute={voice.toggleMute}
-        onToggleCamera={voice.toggleCamera}
-        onToggleScreenShare={voice.toggleScreenShare}
         onLeave={voice.leave}
       />
     </View>
@@ -181,14 +181,20 @@ export function VoiceChannelView({
 function VoiceLobby({
   channelName,
   canConnect,
+  isAvailable,
   isInAnotherChannel,
   presence,
+  notice,
+  onDismissNotice,
   onJoin,
 }: {
   channelName: string;
   canConnect: boolean;
+  isAvailable: boolean;
   isInAnotherChannel: boolean;
   presence: readonly VoicePresenceParticipant[];
+  notice: string | null;
+  onDismissNotice: () => void;
   onJoin: () => void;
 }) {
   const colors = useThemeColors();
@@ -217,9 +223,11 @@ function VoiceLobby({
         <Text className="text-[15px] leading-[21px] text-content-muted text-center max-w-80">
           {!canConnect
             ? VOICE_CONNECT_FORBIDDEN
-            : presence.length === 0
-              ? VOICE_CHANNEL_EMPTY
-              : voicePresenceCount(presence.length)}
+            : !isAvailable
+              ? VOICE_UNAVAILABLE
+              : presence.length === 0
+                ? VOICE_CHANNEL_EMPTY
+                : voicePresenceCount(presence.length)}
         </Text>
       </View>
 
@@ -252,7 +260,11 @@ function VoiceLobby({
         </View>
       ) : null}
 
-      {canConnect ? (
+      {notice ? (
+        <VoiceNotice message={notice} onDismiss={onDismissNotice} />
+      ) : null}
+
+      {canConnect && isAvailable ? (
         <TouchableOpacity
           onPress={onJoin}
           activeOpacity={0.8}

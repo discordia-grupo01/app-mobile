@@ -1,5 +1,6 @@
 import {
   resolveImageUrl,
+  VOICE_MODERATOR_MUTED,
   VOICE_MUTE_LABEL,
   VOICE_UNMUTE_LABEL,
 } from "@discordia/client-shared";
@@ -38,6 +39,7 @@ export function UserProfileBar({
   const [isProfileVisible, setIsProfileVisible] = useState(false);
   const voice = useOptionalVoiceSession();
   const isMicMuted = voice?.state.muted ?? false;
+  const canSpeak = voice?.state.canSpeak ?? true;
   const [isDeafened, setIsDeafened] = useState(false);
   const { theme, setTheme } = useTheme();
 
@@ -81,10 +83,16 @@ export function UserProfileBar({
         <TouchableOpacity
           className="w-10 h-10 rounded-[10px] items-center justify-center"
           onPress={voice?.toggleMute}
+          disabled={!canSpeak}
+          style={{ opacity: canSpeak ? 1 : 0.5 }}
           accessibilityRole="button"
-          accessibilityState={{ selected: isMicMuted }}
+          accessibilityState={{ selected: isMicMuted, disabled: !canSpeak }}
           accessibilityLabel={
-            isMicMuted ? VOICE_UNMUTE_LABEL : VOICE_MUTE_LABEL
+            !canSpeak
+              ? VOICE_MODERATOR_MUTED
+              : isMicMuted
+                ? VOICE_UNMUTE_LABEL
+                : VOICE_MUTE_LABEL
           }
         >
           <Feather

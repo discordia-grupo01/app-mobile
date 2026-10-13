@@ -2,16 +2,16 @@ import {
   type ServerSummary,
   toVoicePresence,
   type VoicePresenceByChannel,
+  voiceParticipantsOf,
   withLivePresence,
 } from "@discordia/client-shared";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 
 import { avatarUriOf } from "../../lib/userProfile";
 import { useAuth } from "../auth/auth-context";
-import { mockPresenceFor } from "./mockVoice";
 import { useVoiceSession } from "./voice-session-context";
-import { voiceParticipantsOf } from "./voiceSession";
+import { useVoicePresence } from "./useVoicePresence";
 
 export interface SidebarVoiceParticipant {
   identity: string;
@@ -31,23 +31,29 @@ export function useServerVoice(server: ServerSummary) {
     state.target?.serverId === server.id ? state.target.channelId : null;
 
   const liveParticipants = useMemo(
-    () =>
-      voiceChannelId && user
-        ? voiceParticipantsOf(state, { identity: user.id, name: user.name })
-        : [],
-    [voiceChannelId, user, state],
+    () => (voiceChannelId ? voiceParticipantsOf(state) : []),
+    [voiceChannelId, state],
   );
 
-  const presence: VoicePresenceByChannel = useMemo(() => {
-    const polled = mockPresenceFor(server.channels);
-    return voiceChannelId
-      ? withLivePresence(
-          polled,
-          voiceChannelId,
-          toVoicePresence(liveParticipants),
-        )
-      : polled;
-  }, [server.channels, voiceChannelId, liveParticipants]);
+  const polled = useVoicePresence(server.id);
+  const refreshPresence = polled.refresh;
+  // Al entrar o salir, la lista del canal que se deja se actualiza ya.
+  const status = state.status;
+  useEffect(() => {
+    refreshPresence();
+  }, [voiceChannelId, status, refreshPresence]);
+
+  const presence: VoicePresenceByChannel = useMemo(
+    () =>
+      voiceChannelId
+        ? withLivePresence(
+            polled.byChannel,
+            voiceChannelId,
+            toVoicePresence(liveParticipants),
+          )
+        : polled.byChannel,
+    [polled.byChannel, voiceChannelId, liveParticipants],
+  );
 
   const ownAvatarUri = avatarUriOf(user);
 

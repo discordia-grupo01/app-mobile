@@ -1,17 +1,10 @@
 import {
-  VOICE_CAMERA,
-  VOICE_CAMERA_OFF,
-  VOICE_CAMERA_OFF_ACTION,
-  VOICE_CAMERA_ON_ACTION,
   VOICE_CONTROLS_LABEL,
   VOICE_LEAVE,
   VOICE_LEAVE_LABEL,
+  VOICE_MODERATOR_MUTED,
   VOICE_MUTE,
   VOICE_MUTE_LABEL,
-  VOICE_SCREEN_SHARE,
-  VOICE_SCREEN_SHARE_START,
-  VOICE_SCREEN_SHARE_STOP,
-  VOICE_SCREEN_SHARING,
   VOICE_UNMUTE,
   VOICE_UNMUTE_LABEL,
 } from "@discordia/client-shared";
@@ -24,27 +17,26 @@ import { cn } from "../../../../lib/cn";
 import { withAlpha } from "../../../../lib/color";
 import { useThemeColors } from "../../../../theme/theme-context";
 
-type ControlTone = "neutral" | "danger" | "accent";
+type ControlTone = "neutral" | "danger";
 
 interface VoiceControlsProps {
   muted: boolean;
-  cameraOn: boolean;
-  screenSharing: boolean;
+  /** `false` si un moderador te silencio: el mic queda apagado y no se puede activar. */
+  canSpeak: boolean;
   bottomInset: number;
   onToggleMute: () => void;
-  onToggleCamera: () => void;
-  onToggleScreenShare: () => void;
   onLeave: () => void;
 }
 
+/**
+ * Sin camara ni pantalla: la llamada corre en un WebView invisible y desde
+ * ahi no hay como mostrar ni capturar video. Los demas si ven los tuyos.
+ */
 export function VoiceControls({
   muted,
-  cameraOn,
-  screenSharing,
+  canSpeak,
   bottomInset,
   onToggleMute,
-  onToggleCamera,
-  onToggleScreenShare,
   onLeave,
 }: VoiceControlsProps) {
   return (
@@ -61,30 +53,17 @@ export function VoiceControls({
         <ControlButton
           icon={muted ? "mic-off" : "mic"}
           label={muted ? VOICE_UNMUTE : VOICE_MUTE}
-          accessibilityLabel={muted ? VOICE_UNMUTE_LABEL : VOICE_MUTE_LABEL}
+          accessibilityLabel={
+            !canSpeak
+              ? VOICE_MODERATOR_MUTED
+              : muted
+                ? VOICE_UNMUTE_LABEL
+                : VOICE_MUTE_LABEL
+          }
           tone={muted ? "danger" : "neutral"}
           isSelected={muted}
+          disabled={!canSpeak}
           onPress={onToggleMute}
-        />
-        <ControlButton
-          icon={cameraOn ? "video" : "video-off"}
-          label={cameraOn ? VOICE_CAMERA : VOICE_CAMERA_OFF}
-          accessibilityLabel={
-            cameraOn ? VOICE_CAMERA_OFF_ACTION : VOICE_CAMERA_ON_ACTION
-          }
-          tone={cameraOn ? "neutral" : "danger"}
-          isSelected={cameraOn}
-          onPress={onToggleCamera}
-        />
-        <ControlButton
-          icon="monitor"
-          label={screenSharing ? VOICE_SCREEN_SHARING : VOICE_SCREEN_SHARE}
-          accessibilityLabel={
-            screenSharing ? VOICE_SCREEN_SHARE_STOP : VOICE_SCREEN_SHARE_START
-          }
-          tone={screenSharing ? "accent" : "neutral"}
-          isSelected={screenSharing}
-          onPress={onToggleScreenShare}
         />
 
         <View className="mx-1 h-10 w-px bg-line" />
@@ -115,8 +94,6 @@ function toneBackground(
   }
   if (tone === "danger")
     return { backgroundColor: withAlpha(colors.danger, 0.12) };
-  if (tone === "accent")
-    return { backgroundColor: withAlpha(colors.accent, 0.18) };
   return {};
 }
 
@@ -127,6 +104,7 @@ function ControlButton({
   tone,
   isSelected,
   isLeave = false,
+  disabled = false,
   onPress,
 }: {
   icon: ComponentProps<typeof Feather>["name"];
@@ -135,27 +113,23 @@ function ControlButton({
   tone: ControlTone;
   isSelected?: boolean;
   isLeave?: boolean;
+  disabled?: boolean;
   onPress: () => void;
 }) {
   const colors = useThemeColors();
-  const iconColor =
-    tone === "danger"
-      ? colors.danger
-      : tone === "accent"
-        ? colors.accentBright
-        : colors.textMuted;
+  const iconColor = tone === "danger" ? colors.danger : colors.textMuted;
 
   return (
     <TouchableOpacity
       onPress={onPress}
+      disabled={disabled}
       activeOpacity={0.7}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
-      accessibilityState={
-        isSelected === undefined ? undefined : { selected: isSelected }
-      }
+      accessibilityState={{ selected: isSelected, disabled }}
       className={cn(
         "min-w-[62px] items-center gap-1 rounded-xl px-2.5 py-2",
+        disabled && "opacity-50",
         tone === "neutral" && "bg-surface-input",
         isLeave && "border px-4",
       )}
@@ -166,11 +140,7 @@ function ControlButton({
         className={cn(
           "text-[11px]",
           isLeave ? "font-semibold" : "font-medium",
-          tone === "neutral"
-            ? "text-content-subtle"
-            : tone === "danger"
-              ? "text-danger"
-              : "text-accent-strong",
+          tone === "neutral" ? "text-content-subtle" : "text-danger",
         )}
       >
         {label}

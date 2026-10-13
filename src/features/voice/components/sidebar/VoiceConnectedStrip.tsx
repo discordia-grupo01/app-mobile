@@ -13,6 +13,7 @@ import { cn } from "../../../../lib/cn";
 import { withAlpha } from "../../../../lib/color";
 import { useThemeColors } from "../../../../theme/theme-context";
 import { useOptionalVoiceSession } from "../../voice-session-context";
+import { VoiceNotice } from "../VoiceNotice";
 
 const STATUS_LABEL = {
   connecting: VOICE_CONNECTING,
@@ -24,6 +25,16 @@ export function VoiceConnectedStrip() {
   const colors = useThemeColors();
   const voice = useOptionalVoiceSession();
   const target = voice?.state.target;
+  if (voice && !target && voice.state.notice) {
+    return (
+      <View className="px-3.5 py-2 border-t border-t-line">
+        <VoiceNotice
+          message={voice.state.notice}
+          onDismiss={voice.dismissNotice}
+        />
+      </View>
+    );
+  }
   if (!voice || !target || voice.state.status === "idle") return null;
 
   const isConnected = voice.state.status === "connected";
