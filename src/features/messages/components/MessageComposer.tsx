@@ -1,9 +1,13 @@
 import {
   ATTACH_FILE_LABEL,
+  ALLOWED_ATTACHMENT_TYPES,
+  type AttachmentTarget,
   decodeMentions,
   EMOJI_PICKER_LABEL,
   MAX_MESSAGE_LENGTH,
   SEND_MESSAGE_LABEL,
+  validateAttachment,
+  validateAttachmentCount,
   validateMessageContent,
 } from "@discordia/client-shared";
 
@@ -13,6 +17,7 @@ import { Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { cn } from "../../../lib/cn";
+import { useAttachmentUploads } from "../../attachments/useAttachmentUploads";
 import { useThemeColors } from "../../../theme/theme-context";
 import type { SendMessageResult } from "../use-channel-messages";
 import { useMentionDraft } from "../useMentionDraft";
@@ -28,7 +33,12 @@ const COUNTER_THRESHOLD = MAX_MESSAGE_LENGTH - 200;
 
 interface MessageComposerProps {
   placeholder: string;
-  onSend: (content: string) => void | Promise<SendMessageResult>;
+  onSend: (
+    content: string,
+    attachmentIds?: string[],
+  ) => void | Promise<SendMessageResult>;
+  /** A donde van los archivos: el canal o el usuario del DM. */
+  uploadTarget: AttachmentTarget;
   disabled?: boolean;
   /** Mientras hay un mensaje en edicion, el composer lo carga y guarda en lugar de enviar uno nuevo. */
   editing?: ComposerEditing | null;
@@ -37,6 +47,7 @@ interface MessageComposerProps {
 export function MessageComposer({
   placeholder,
   onSend,
+  uploadTarget,
   disabled = false,
   editing = null,
 }: MessageComposerProps) {
@@ -51,6 +62,7 @@ export function MessageComposer({
     DocumentPicker.DocumentPickerAsset[]
   >([]);
   const inputRef = useRef<TextInput>(null);
+  const { uploadAll, forget } = useAttachmentUploads();
 
   // Al empezar o terminar una edicion el borrador pasa a ser el del mensaje (o
   // vuelve a vacio). Se ajusta durante el render, no en un efecto, para no
@@ -76,7 +88,10 @@ export function MessageComposer({
   const canSend =
     !disabled &&
     !isSending &&
-    validateMessageContent(draft.encoded) === undefined;
+    validateMessageContent(
+      draft.encoded,
+      editing ? editing.hasAttachments : attachments.length > 0,
+    ) === undefined;
   const length = [...draft.encoded].length;
   const draftChildren = useMentionDraftChildren(draft.segments ?? []);
 
@@ -89,34 +104,67 @@ export function MessageComposer({
       return;
     }
 
-    const outcome = editing
-      ? editing.onSave(draft.encoded)
-      : onSend(draft.encoded);
-    if (outcome === undefined) {
-      draft.reset();
-      setAttachments([]);
+    if (editing) {
+      const outcome = editing.onSave(draft.encoded);
+      if (outcome === undefined) return draft.reset();
+      setIsSending(true);
+      const result = await outcome;
+      setIsSending(false);
+      if (result.ok) draft.reset();
+      else setSendError(result.message);
       return;
     }
 
     setIsSending(true);
+    const uploads = await uploadAll(attachments, uploadTarget);
+    if (!uploads.ok) {
+      setIsSending(false);
+      setSendError(uploads.message);
+      return;
+    }
+
+    const outcome = onSend(draft.encoded, uploads.ids);
+    if (outcome === undefined) {
+      setIsSending(false);
+      clearDraft();
+      return;
+    }
+
     const result = await outcome;
     setIsSending(false);
-    if (result.ok) {
-      draft.reset();
-      setAttachments([]);
-    } else setSendError(result.message);
+    if (result.ok) clearDraft();
+    else setSendError(result.message);
+  }
+
+  function clearDraft() {
+    draft.reset();
+    setAttachments([]);
+    forget();
   }
 
   async function pickFiles() {
     const result = await DocumentPicker.getDocumentAsync({
       multiple: true,
-      copyToCacheDirectory: false,
+      type: [...ALLOWED_ATTACHMENT_TYPES],
+      copyToCacheDirectory: true,
     });
     if (result.canceled) return;
-    setAttachments((prev) => {
-      const known = new Set(prev.map((file) => file.uri));
-      return [...prev, ...result.assets.filter((f) => !known.has(f.uri))];
+
+    const known = new Set(attachments.map((file) => file.uri));
+    const fresh = result.assets.filter((file) => !known.has(file.uri));
+    const toFile = (file: DocumentPicker.DocumentPickerAsset) => ({
+      type: file.mimeType ?? "",
+      size: file.size ?? 1,
     });
+    const rejected = fresh
+      .map((file) => validateAttachment(toFile(file)))
+      .find((error) => error !== undefined);
+    const valid = fresh.filter((file) => !validateAttachment(toFile(file)));
+    const overLimit = validateAttachmentCount(attachments.length, valid.length);
+    if (overLimit) return setSendError(overLimit);
+
+    setSendError(rejected);
+    setAttachments((prev) => [...prev, ...valid]);
   }
 
   return (
@@ -130,7 +178,8 @@ export function MessageComposer({
       ) : null}
       {editing ? <EditingBanner onCancel={editing.onCancel} /> : null}
       <AttachmentChips
-        attachments={attachments}
+        attachments={editing ? [] : attachments}
+        disabled={isSending}
         onRemove={(uri) =>
           setAttachments((prev) => prev.filter((file) => file.uri !== uri))
         }
@@ -141,7 +190,7 @@ export function MessageComposer({
           label={ATTACH_FILE_LABEL}
           color={colors.textSubtle}
           onPress={pickFiles}
-          disabled={disabled || isSending}
+          disabled={disabled || isSending || editing !== null}
         />
         <TextInput
           ref={inputRef}
