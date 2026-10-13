@@ -1,11 +1,8 @@
-import * as FileSystem from "expo-file-system/legacy";
-
 import {
   ATTACHMENT_UPLOAD_FAILED,
   attachmentUploadQuery,
   type AttachmentTarget,
   type MessageAttachment,
-  NETWORK_ERROR_MESSAGE,
   SESSION_EXPIRED_MESSAGE,
   toApiResult,
   toUploadAttachmentResult,
@@ -21,23 +18,29 @@ export interface FileToUpload {
   name: string;
 }
 
+interface RawResponse {
+  status: number;
+  body: string;
+}
+
 async function post(
   file: FileToUpload,
   target: AttachmentTarget,
   token: string | null,
-) {
-  return FileSystem.uploadAsync(
+): Promise<RawResponse> {
+  const bytes = await (await fetch(file.uri)).blob();
+  const response = await fetch(
     `${env.apiUrl}/v1/attachments?${attachmentUploadQuery(target, file.name)}`,
-    file.uri,
     {
-      httpMethod: "POST",
-      uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
+      method: "POST",
       headers: {
         "Content-Type": "application/octet-stream",
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
+      body: bytes,
     },
   );
+  return { status: response.status, body: await response.text() };
 }
 
 /** Sube los bytes del archivo al back: `POST /v1/attachments` (cuerpo binario). */
@@ -45,15 +48,18 @@ export async function uploadAttachment(
   file: FileToUpload,
   target: AttachmentTarget,
 ): Promise<UploadAttachmentResult> {
-  let response: FileSystem.FileSystemUploadResult;
+  let response: RawResponse;
   try {
     response = await post(file, target, await getToken());
     if (response.status === 401) {
       const newToken = await refreshAccessToken();
       if (newToken) response = await post(file, target, newToken);
     }
-  } catch {
-    return { ok: false, message: NETWORK_ERROR_MESSAGE };
+  } catch (err) {
+    if (__DEV__) {
+      console.error("uploadAttachment: request failed", file.uri, err);
+    }
+    return { ok: false, message: ATTACHMENT_UPLOAD_FAILED };
   }
 
   if (response.status === 401) {
