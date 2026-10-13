@@ -3,14 +3,19 @@ import { AppState } from "react-native";
 
 import { getMemberChannelPermissions } from "../servers/api";
 
+export type MyChannelPermissions =
+  | { status: "loading" }
+  | { status: "loaded"; permissions: readonly string[] }
+  | { status: "unknown" };
+
 export function useMyChannelPermissions(
   channelId: string | null,
   userId: string | null,
   refreshKey = 0,
-): string[] | null {
+): MyChannelPermissions {
   const [loaded, setLoaded] = useState<{
     channelId: string;
-    permissions: string[];
+    permissions: string[] | null;
   } | null>(null);
   const [foregroundCount, setForegroundCount] = useState(0);
 
@@ -25,13 +30,22 @@ export function useMyChannelPermissions(
     if (!channelId || !userId) return;
     let cancelled = false;
     getMemberChannelPermissions(channelId, userId).then((result) => {
-      if (cancelled || !result.ok) return;
-      setLoaded({ channelId, permissions: result.permissions });
+      if (cancelled) return;
+      setLoaded((current) => {
+        if (result.ok) return { channelId, permissions: result.permissions };
+        // Un fallo al refrescar no borra lo que ya sabiamos de este canal.
+        if (current?.channelId === channelId) return current;
+        return { channelId, permissions: null };
+      });
     });
     return () => {
       cancelled = true;
     };
   }, [channelId, userId, refreshKey, foregroundCount]);
 
-  return loaded && loaded.channelId === channelId ? loaded.permissions : null;
+  if (!channelId || !userId) return { status: "unknown" };
+  if (loaded?.channelId !== channelId) return { status: "loading" };
+  return loaded.permissions
+    ? { status: "loaded", permissions: loaded.permissions }
+    : { status: "unknown" };
 }

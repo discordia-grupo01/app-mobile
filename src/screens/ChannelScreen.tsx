@@ -49,6 +49,7 @@ interface ChannelScreenProps {
   canMentionEveryone?: boolean;
   canAddReactions?: boolean;
   canConnect?: boolean;
+  isCheckingChannelPermissions?: boolean;
   serverRoles?: Role[];
   myRoleIds?: string[];
   onAccessRevoked?: (reason: AccessRevokedReason) => void;
@@ -70,6 +71,7 @@ export function ChannelScreen({
   canMentionEveryone = false,
   canAddReactions = false,
   canConnect = false,
+  isCheckingChannelPermissions = false,
   serverRoles = [],
   myRoleIds = [],
   onAccessRevoked,
@@ -201,6 +203,7 @@ export function ChannelScreen({
             canSendMessages={canSendMessages}
             canMentionEveryone={canMentionEveryone}
             canAddReactions={canAddReactions}
+            isCheckingPermissions={isCheckingChannelPermissions}
             onAccessRevoked={onAccessRevoked}
           />
         </KeyboardAvoidingView>
@@ -210,6 +213,7 @@ export function ChannelScreen({
           serverId={serverId}
           serverName={server.name}
           canConnect={canConnect}
+          isCheckingAccess={isCheckingChannelPermissions}
           presence={voice.presence[channel.id] ?? []}
           bottomInset={insets.bottom}
         />

@@ -313,13 +313,16 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
     permissionsVersion,
   );
 
-  /** Lo del servidor hasta que lleguen los permisos del canal, que traen las excepciones. */
+  const isCheckingChannelPermissions =
+    !isOwner && channelPermissions.status === "loading";
+
   function canInChannel(
     permission: ChannelOverridePermission,
     serverLevel: boolean,
   ): boolean {
-    if (isOwner || channelPermissions === null) return serverLevel;
-    return channelPermissions.includes(permission);
+    if (isOwner || channelPermissions.status === "unknown") return serverLevel;
+    if (channelPermissions.status === "loading") return false;
+    return channelPermissions.permissions.includes(permission);
   }
 
   const myRoleIds = useMemo(() => myRoles.map((role) => role.id), [myRoles]);
@@ -485,6 +488,7 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
           canMentionEveryone={canMentionEveryone}
           canAddReactions={canInChannel("ADD_REACTIONS", canAddReactions)}
           canConnect={canInChannel("CONNECT", canConnect)}
+          isCheckingChannelPermissions={isCheckingChannelPermissions}
           serverRoles={serverRoles}
           myRoleIds={myRoleIds}
           onAccessRevoked={handleAccessRevoked}

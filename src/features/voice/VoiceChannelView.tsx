@@ -72,6 +72,7 @@ interface VoiceChannelViewProps {
   serverId: string;
   serverName: string;
   canConnect: boolean;
+  isCheckingAccess?: boolean;
   /** Quien esta en este canal, para la pantalla previa a entrar. */
   presence: readonly VoicePresenceParticipant[];
   bottomInset: number;
@@ -82,6 +83,7 @@ export function VoiceChannelView({
   serverId,
   serverName,
   canConnect,
+  isCheckingAccess = false,
   presence,
   bottomInset,
 }: VoiceChannelViewProps) {
@@ -95,6 +97,7 @@ export function VoiceChannelView({
       <VoiceLobby
         channelName={channel.name}
         canConnect={canConnect && user !== null}
+        isCheckingAccess={isCheckingAccess}
         isAvailable={voice.isAvailable}
         isInAnotherChannel={state.target !== null}
         presence={presence}
@@ -181,6 +184,7 @@ export function VoiceChannelView({
 function VoiceLobby({
   channelName,
   canConnect,
+  isCheckingAccess,
   isAvailable,
   isInAnotherChannel,
   presence,
@@ -190,6 +194,7 @@ function VoiceLobby({
 }: {
   channelName: string;
   canConnect: boolean;
+  isCheckingAccess: boolean;
   isAvailable: boolean;
   isInAnotherChannel: boolean;
   presence: readonly VoicePresenceParticipant[];
@@ -198,6 +203,7 @@ function VoiceLobby({
   onJoin: () => void;
 }) {
   const colors = useThemeColors();
+  const isForbidden = !canConnect && !isCheckingAccess;
   const shown = presence.slice(0, LOBBY_MAX_AVATARS);
   const hidden = presence.length - shown.length;
 
@@ -206,13 +212,13 @@ function VoiceLobby({
       <View
         className={cn(
           "w-16 h-16 rounded-2xl items-center justify-center",
-          canConnect ? "bg-accent" : "bg-surface-raised",
+          isForbidden ? "bg-surface-raised" : "bg-accent",
         )}
       >
         <Feather
-          name={canConnect ? "volume-2" : "volume-x"}
+          name={isForbidden ? "volume-x" : "volume-2"}
           size={28}
-          color={canConnect ? colors.onAccent : colors.danger}
+          color={isForbidden ? colors.danger : colors.onAccent}
         />
       </View>
 
@@ -221,7 +227,7 @@ function VoiceLobby({
           {channelName}
         </Text>
         <Text className="text-[15px] leading-[21px] text-content-muted text-center max-w-80">
-          {!canConnect
+          {isForbidden
             ? VOICE_CONNECT_FORBIDDEN
             : !isAvailable
               ? VOICE_UNAVAILABLE
