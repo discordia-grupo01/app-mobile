@@ -86,6 +86,26 @@ export async function setPinEnabled(enabled: boolean): Promise<void> {
   await AsyncStorage.setItem(PIN_ENABLED_KEY, enabled ? "true" : "false");
 }
 
+const PIN_OWNER_KEY = "discordia_pin_owner";
+
+export interface PinOwner {
+  name: string | null;
+  email: string | null;
+}
+
+export async function getPinOwner(): Promise<PinOwner | null> {
+  const raw = await AsyncStorage.getItem(PIN_OWNER_KEY);
+  return raw ? (JSON.parse(raw) as PinOwner) : null;
+}
+
+export async function setPinOwner(owner: PinOwner | null): Promise<void> {
+  if (owner) {
+    await AsyncStorage.setItem(PIN_OWNER_KEY, JSON.stringify(owner));
+  } else {
+    await AsyncStorage.removeItem(PIN_OWNER_KEY);
+  }
+}
+
 /** Donde estaba parado el usuario, para volver ahi al reabrir la app. */
 export interface LastLocation {
   userId: string;
