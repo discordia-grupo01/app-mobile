@@ -192,12 +192,14 @@ export function ChannelChat({
             : SEND_MESSAGES_DENIED_PLACEHOLDER
         }
         onSend={sendMessage}
+        uploadTarget={{ channelId: channel.id }}
         disabled={!currentAuthor || status !== "ready" || !canSendMessages}
         editing={
           editingMessage
             ? {
                 id: editingMessage.id,
                 content: editingMessage.content,
+                hasAttachments: Boolean(editingMessage.attachments?.length),
                 onSave: async (content) => {
                   const result = await editMessage(editingMessage.id, content);
                   if (result.ok) setEditingMessageId(null);

@@ -16,10 +16,12 @@ import { Animated, View, type ViewStyle } from "react-native";
 const HIGHLIGHT_BACKGROUND = "rgba(107,149,189,0.15)";
 const HIGHLIGHT_BORDER = "rgba(107,149,189,0.5)";
 const CONTENT_HORIZONTAL_INSET = 10;
+const TOP_EDGE_LINE_OFFSET = 6;
 
 interface BucketEntry {
   categoryId: string | null;
   ref: RefObject<View | null>;
+  extendsToTop: boolean;
 }
 
 interface Rect {
@@ -39,6 +41,7 @@ interface ChannelDragContextValue {
     key: string,
     categoryId: string | null,
     ref: RefObject<View | null>,
+    extendsToTop?: boolean,
   ) => void;
   unregisterBucket: (key: string) => void;
   beginDrag: (
@@ -95,8 +98,13 @@ export function ChannelDragProvider({
   const [overlayWidth, setOverlayWidth] = useState(0);
 
   const registerBucket = useCallback(
-    (key: string, categoryId: string | null, ref: RefObject<View | null>) => {
-      bucketsRef.current.set(key, { categoryId, ref });
+    (
+      key: string,
+      categoryId: string | null,
+      ref: RefObject<View | null>,
+      extendsToTop = false,
+    ) => {
+      bucketsRef.current.set(key, { categoryId, ref, extendsToTop });
     },
     [],
   );
@@ -142,7 +150,10 @@ export function ChannelDragProvider({
         const node = entry.ref.current;
         if (!node) return;
         node.measure((_x, _y, _width, height, _pageX, pageY) => {
-          rectsRef.current.set(key, { top: pageY, bottom: pageY + height });
+          rectsRef.current.set(key, {
+            top: entry.extendsToTop ? -Infinity : pageY,
+            bottom: pageY + height,
+          });
         });
       });
     },
@@ -269,13 +280,15 @@ export function ChannelDragProvider({
 export function ChannelDropZone({
   bucketKey,
   categoryId,
+  isTopEdge = false,
   style,
   children,
 }: {
   bucketKey: string;
   categoryId: string | null;
+  isTopEdge?: boolean;
   style?: ViewStyle;
-  children: ReactNode;
+  children?: ReactNode;
 }) {
   const {
     registerBucket,
@@ -286,14 +299,35 @@ export function ChannelDropZone({
   const ref = useRef<View>(null);
 
   useEffect(() => {
-    registerBucket(bucketKey, categoryId, ref);
+    registerBucket(bucketKey, categoryId, ref, isTopEdge);
     return () => unregisterBucket(bucketKey);
-  }, [bucketKey, categoryId, registerBucket, unregisterBucket]);
+  }, [bucketKey, categoryId, isTopEdge, registerBucket, unregisterBucket]);
 
   const isDropTarget =
     sourceBucketKey !== null &&
     sourceBucketKey !== bucketKey &&
     hoveredBucketKey === bucketKey;
+
+  if (isTopEdge) {
+    return (
+      <View ref={ref} collapsable={false} style={style}>
+        {isDropTarget ? (
+          <View
+            pointerEvents="none"
+            style={{
+              position: "absolute",
+              top: -TOP_EDGE_LINE_OFFSET,
+              left: 0,
+              right: 0,
+              height: 2,
+              borderRadius: 1,
+              backgroundColor: HIGHLIGHT_BORDER,
+            }}
+          />
+        ) : null}
+      </View>
+    );
+  }
 
   return (
     <View

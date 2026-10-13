@@ -14,6 +14,7 @@ import { cn } from "../../../lib/cn";
 import { useThemeColors } from "../../../theme/theme-context";
 import { Avatar } from "../../../components/ui/Avatar";
 import { useMessageMentions } from "./MentionsContext";
+import { MessageAttachments } from "./MessageAttachments";
 import { MessageContent } from "./MessageContent";
 import { MessageHeader } from "./MessageHeader";
 import { MessageReactions } from "./MessageReactions";
@@ -28,6 +29,7 @@ export interface MessageItemMessage
     Pick<Message, "id" | "user_id" | "content" | "inserted_at" | "edited_at">,
     MessageMentions {
   reactions?: Message["reactions"];
+  attachments?: Message["attachments"];
 }
 
 interface MessageItemProps {
@@ -122,18 +124,24 @@ export function MessageItem({
           <MessageHeader author={author} createdAt={message.inserted_at} />
         ) : null}
 
-        <MessageContent
-          content={message.content}
-          mentions={message}
-          suffix={
-            message.edited_at ? (
-              <Text className="text-[11px] text-content-subtle">
-                {" "}
-                {MESSAGE_EDITED_LABEL}
-              </Text>
-            ) : null
-          }
-        />
+        {message.content || !message.attachments?.length ? (
+          <MessageContent
+            content={message.content}
+            mentions={message}
+            suffix={
+              message.edited_at ? (
+                <Text className="text-[11px] text-content-subtle">
+                  {" "}
+                  {MESSAGE_EDITED_LABEL}
+                </Text>
+              ) : null
+            }
+          />
+        ) : null}
+
+        {message.attachments?.length ? (
+          <MessageAttachments attachments={message.attachments} />
+        ) : null}
 
         {message.reactions && onToggleReaction && onRequestReaction ? (
           <MessageReactions

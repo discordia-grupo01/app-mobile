@@ -11,6 +11,8 @@ export interface ComposerEditing {
   id: string;
   /** Contenido actual del mensaje: es el borrador con el que arranca la edicion. */
   content: string;
+  /** El mensaje tiene adjuntos: puede quedar sin texto (los adjuntos no se editan). */
+  hasAttachments: boolean;
   /** Si devuelve una promesa, el borrador se conserva hasta que guarda bien. */
   onSave: (
     content: string,
