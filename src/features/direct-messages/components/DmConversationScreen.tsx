@@ -24,7 +24,10 @@ import { DmThread } from "./DmThread";
 interface DmConversationScreenProps {
   currentAuthor: MessageAuthor;
   summary: ConversationSummary;
-  onSend: (content: string) => Promise<SendDmResult>;
+  onSend: (
+    content: string,
+    attachmentIds?: readonly string[],
+  ) => Promise<SendDmResult>;
   onBack: () => void;
 }
 

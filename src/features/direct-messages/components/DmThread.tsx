@@ -26,7 +26,10 @@ interface DmThreadProps {
   partner: MessageAuthor;
   currentAuthor: MessageAuthor;
   blockedByMe: boolean;
-  onSend: (content: string) => Promise<SendDmResult>;
+  onSend: (
+    content: string,
+    attachmentIds?: readonly string[],
+  ) => Promise<SendDmResult>;
 }
 
 /** Un borrador no tiene canal al que unirse: solo el composer. */
@@ -48,6 +51,7 @@ export function DmThread(props: DmThreadProps) {
         <MessageComposer
           placeholder={dmInputPlaceholder(props.partner.name)}
           onSend={props.onSend}
+          uploadTarget={{ to: props.partner.id }}
           disabled={props.blockedByMe}
         />
       </>
@@ -155,12 +159,14 @@ function LiveDmThread({
       <MessageComposer
         placeholder={dmInputPlaceholder(partner.name)}
         onSend={onSend}
+        uploadTarget={{ to: partner.id }}
         disabled={blockedByMe}
         editing={
           editingMessage
             ? {
                 id: editingMessage.id,
                 content: editingMessage.content,
+                hasAttachments: Boolean(editingMessage.attachments?.length),
                 onSave: async (content) => {
                   const result = await editMessage(editingMessage.id, content);
                   if (result.ok) setEditingMessageId(null);
