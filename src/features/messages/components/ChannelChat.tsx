@@ -7,7 +7,6 @@ import {
   canEditMessage,
   CHAT_RECONNECTING_NOTICE,
   type Channel,
-  CHAT_OFFLINE_NOTICE_MOBILE,
   LOADING_MESSAGES_LABEL,
   type MentionSources,
   messageInputPlaceholder,
@@ -165,9 +164,11 @@ export function ChannelChat({
   return (
     <MessageMentionsProvider value={mentions}>
       {messages === null ? (
-        <ChatStatusNotice
-          message={status === "offline" ? CHAT_OFFLINE_NOTICE_MOBILE : LOADING_MESSAGES_LABEL}
-        />
+        status === "offline" ? (
+          <ConnectionLostNotice variant="panel" />
+        ) : (
+          <ChatStatusNotice message={LOADING_MESSAGES_LABEL} />
+        )
       ) : (
         <MessageList
           welcome={<ChannelWelcome channelName={channel.name} />}
@@ -192,7 +193,7 @@ export function ChannelChat({
         </Text>
       ) : null}
       {status === "offline" && messages !== null ? (
-        <ConnectionLostNotice />
+        <ConnectionLostNotice variant="bar" />
       ) : null}
       {status === "reconnecting" ? (
         <Text

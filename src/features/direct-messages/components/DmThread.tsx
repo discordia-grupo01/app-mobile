@@ -3,7 +3,6 @@ import {
   canEditMessage,
   CHAT_RECONNECTING_NOTICE,
   dmInputPlaceholder,
-  CHAT_OFFLINE_NOTICE_MOBILE,
   LOADING_MESSAGES_LABEL,
   type MessageAuthor,
   type SendDmResult,
@@ -150,9 +149,11 @@ function LiveDmThread({
   return (
     <>
       {messages === null ? (
-        <ChatStatusNotice
-          message={status === "offline" ? CHAT_OFFLINE_NOTICE_MOBILE : LOADING_MESSAGES_LABEL}
-        />
+        status === "offline" ? (
+          <ConnectionLostNotice variant="panel" />
+        ) : (
+          <ChatStatusNotice message={LOADING_MESSAGES_LABEL} />
+        )
       ) : (
         <MessageList
           welcome={<DmWelcome partner={partner} />}
@@ -174,7 +175,7 @@ function LiveDmThread({
         </Text>
       ) : null}
       {status === "offline" && messages !== null ? (
-        <ConnectionLostNotice />
+        <ConnectionLostNotice variant="bar" />
       ) : null}
       {status === "reconnecting" ? (
         <Text
