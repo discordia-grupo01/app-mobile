@@ -42,10 +42,9 @@ const VOICE_EMBED_URL = env.webUrl
 
 interface VoiceSessionValue {
   state: VoiceSessionState;
-  /** `false` si no hay `EXPO_PUBLIC_WEB_URL`: sin la pagina no hay llamada. */
   isAvailable: boolean;
-  /** Falla de medios dentro de la llamada (mic denegado); la llamada sigue. */
   mediaError: string | null;
+  leaveSettledCount: number;
   join: (target: VoiceSessionTarget) => void;
   leave: () => void;
   toggleMute: () => void;
@@ -67,6 +66,7 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
     initialVoiceSessionState,
   );
   const [mediaError, setMediaError] = useState<string | null>(null);
+  const [leaveSettledCount, setLeaveSettledCount] = useState(0);
   // Con sesion se monta el WebView; al salir se desmonta y corta la llamada.
   const [bridge, setBridge] = useState<BridgeSession | null>(null);
   const webViewRef = useRef<WebView>(null);
@@ -112,7 +112,6 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
       if (!VOICE_EMBED_URL) return;
       if (stateRef.current.target?.channelId === target.channelId) return;
 
-      // Cambiar de canal: signaling ya saca la sesion vieja al pedir el token.
       closeBridge();
       const attempt = attemptRef.current;
       dispatch({ type: "join_requested", target });
@@ -120,7 +119,6 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
       const permission = await requestRecordingPermissionsAsync();
       if (attempt !== attemptRef.current) return;
       if (!permission.granted) {
-        // Se entra igual a escuchar, con el mic apagado.
         setMediaError(VOICE_MIC_DENIED);
         if (!stateRef.current.muted) dispatch({ type: "toggle_mute" });
       }
@@ -143,6 +141,7 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
     if (!channelId) return;
 
     const result = await leaveVoiceSession(channelId);
+    setLeaveSettledCount((count) => count + 1);
     if (!result.ok && stateRef.current.target === null) {
       dispatch({ type: "ended", notice: result.message });
     }
@@ -193,14 +192,11 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
     [handleEvent],
   );
 
-  // La pagina se carga de nuevo con cada sesion y se queda esperando `connect`.
   useEffect(() => {
     if (!bridge) return;
     send({ type: "connect", url: bridge.url, token: bridge.token });
   }, [bridge, send]);
 
-  // El mic sigue al estado: el boton cambia el estado y aca se aplica. La
-  // pagina guarda el pedido si todavia no termino de conectar.
   const { muted, mutedForMe } = state;
   useEffect(() => {
     if (!bridge) return;
@@ -250,6 +246,7 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
       state,
       isAvailable: VOICE_EMBED_URL !== null,
       mediaError,
+      leaveSettledCount,
       join: startJoin,
       leave: startLeave,
       toggleMute,
@@ -260,6 +257,7 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
     [
       state,
       mediaError,
+      leaveSettledCount,
       startJoin,
       startLeave,
       toggleMute,

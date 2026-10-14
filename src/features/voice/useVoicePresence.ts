@@ -1,6 +1,7 @@
 import {
   VOICE_PARTICIPANTS_POLL_MS,
   type VoicePresenceByChannel,
+  type VoicePresenceParticipant,
 } from "@discordia/client-shared";
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -10,9 +11,29 @@ import { listVoiceParticipants } from "./api";
 
 const EMPTY: VoicePresenceByChannel = {};
 
+function withoutParticipant(
+  byChannel: VoicePresenceByChannel,
+  channelId: string,
+  identity: string,
+): VoicePresenceByChannel {
+  const participants = byChannel[channelId];
+  if (!participants) return byChannel;
+  const rest = participants.filter(
+    (participant) => participant.participant_id !== identity,
+  );
+  if (rest.length === participants.length) return byChannel;
+  const result: Record<string, readonly VoicePresenceParticipant[]> = {
+    ...byChannel,
+  };
+  if (rest.length > 0) result[channelId] = rest;
+  else delete result[channelId];
+  return result;
+}
+
 export function useVoicePresence(serverId: string | null): {
   byChannel: VoicePresenceByChannel;
   refresh: () => void;
+  forget: (channelId: string, identity: string) => void;
 } {
   const [presence, setPresence] = useState<{
     serverId: string | null;
@@ -28,6 +49,14 @@ export function useVoicePresence(serverId: string | null): {
       setPresence({ serverId, byChannel: result.byChannel });
     });
   }, [serverId]);
+
+  const forget = useCallback((channelId: string, identity: string) => {
+    requestId.current += 1;
+    setPresence((current) => ({
+      ...current,
+      byChannel: withoutParticipant(current.byChannel, channelId, identity),
+    }));
+  }, []);
 
   useEffect(() => {
     if (!serverId) return;
@@ -46,5 +75,5 @@ export function useVoicePresence(serverId: string | null): {
   }, [serverId, refresh]);
 
   const byChannel = presence.serverId === serverId ? presence.byChannel : EMPTY;
-  return { byChannel, refresh };
+  return { byChannel, refresh, forget };
 }

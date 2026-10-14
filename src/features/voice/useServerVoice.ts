@@ -6,7 +6,7 @@ import {
   withLivePresence,
 } from "@discordia/client-shared";
 
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import { avatarUriOf } from "../../lib/userProfile";
 import { useAuth } from "../auth/auth-context";
@@ -24,7 +24,7 @@ export interface SidebarVoiceParticipant {
 }
 
 export function useServerVoice(server: ServerSummary) {
-  const { state } = useVoiceSession();
+  const { state, leaveSettledCount } = useVoiceSession();
   const { user } = useAuth();
 
   const voiceChannelId =
@@ -37,11 +37,26 @@ export function useServerVoice(server: ServerSummary) {
 
   const polled = useVoicePresence(server.id);
   const refreshPresence = polled.refresh;
-  // Al entrar o salir, la lista del canal que se deja se actualiza ya.
+  const forgetParticipant = polled.forget;
   const status = state.status;
   useEffect(() => {
-    refreshPresence();
+    if (status === "connected") refreshPresence();
   }, [voiceChannelId, status, refreshPresence]);
+
+  const ownIdentity = user ? String(user.id) : null;
+  const previousVoiceChannelId = useRef(voiceChannelId);
+  useEffect(() => {
+    const previous = previousVoiceChannelId.current;
+    previousVoiceChannelId.current = voiceChannelId;
+    if (previous && previous !== voiceChannelId && ownIdentity) {
+      forgetParticipant(previous, ownIdentity);
+    }
+  }, [voiceChannelId, ownIdentity, forgetParticipant]);
+
+  // Con la salida confirmada, ya se puede pedir la presencia real.
+  useEffect(() => {
+    if (leaveSettledCount > 0) refreshPresence();
+  }, [leaveSettledCount, refreshPresence]);
 
   const presence: VoicePresenceByChannel = useMemo(
     () =>
