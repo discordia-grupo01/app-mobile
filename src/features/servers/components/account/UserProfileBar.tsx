@@ -1,4 +1,9 @@
-import { resolveImageUrl } from "@discordia/client-shared";
+import {
+  resolveImageUrl,
+  VOICE_MODERATOR_MUTED,
+  VOICE_MUTE_LABEL,
+  VOICE_UNMUTE_LABEL,
+} from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
 import { useState } from "react";
@@ -13,6 +18,8 @@ import { Avatar } from "../../../../components/ui/Avatar";
 import { AccountSettingsSheet } from "./AccountSettingsSheet";
 import { ModalShell } from "../../../../components/ui/ModalShell";
 import { ModalCloseButton } from "../../../../components/ui/ModalCloseButton";
+import { VoiceConnectedStrip } from "../../../voice/components/sidebar/VoiceConnectedStrip";
+import { useOptionalVoiceSession } from "../../../voice/voice-session-context";
 
 interface UserProfileBarProps {
   userName?: string | null;
@@ -30,7 +37,9 @@ export function UserProfileBar({
   const [isConfirmVisible, setIsConfirmVisible] = useState(false);
   const [isSettingsVisible, setIsSettingsVisible] = useState(false);
   const [isProfileVisible, setIsProfileVisible] = useState(false);
-  const [isMicMuted, setIsMicMuted] = useState(false);
+  const voice = useOptionalVoiceSession();
+  const isMicMuted = voice?.state.muted ?? false;
+  const canSpeak = voice?.state.canSpeak ?? true;
   const [isDeafened, setIsDeafened] = useState(false);
   const { theme, setTheme } = useTheme();
 
@@ -45,6 +54,7 @@ export function UserProfileBar({
 
   return (
     <>
+      <VoiceConnectedStrip />
       <View className="flex-row items-center gap-2 px-3.5 py-3.5 border-t border-t-line bg-surface-panel">
         <TouchableOpacity
           className="flex-1 flex-row items-center gap-2 min-w-0"
@@ -72,10 +82,17 @@ export function UserProfileBar({
 
         <TouchableOpacity
           className="w-10 h-10 rounded-[10px] items-center justify-center"
-          onPress={() => setIsMicMuted((prev) => !prev)}
+          onPress={voice?.toggleMute}
+          disabled={!canSpeak}
+          style={{ opacity: canSpeak ? 1 : 0.5 }}
           accessibilityRole="button"
+          accessibilityState={{ selected: isMicMuted, disabled: !canSpeak }}
           accessibilityLabel={
-            isMicMuted ? "Activar micrófono" : "Silenciar micrófono"
+            !canSpeak
+              ? VOICE_MODERATOR_MUTED
+              : isMicMuted
+                ? VOICE_UNMUTE_LABEL
+                : VOICE_MUTE_LABEL
           }
         >
           <Feather

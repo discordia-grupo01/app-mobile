@@ -38,7 +38,10 @@ import { DraggableCategoryList } from "../features/servers/components/category/D
 import { CreateChannelModal } from "../features/channels/components/create/CreateChannelModal";
 import { DeleteChannelModal } from "../features/channels/components/delete/DeleteChannelModal";
 import { ChannelRow } from "../features/channels/components/list/ChannelRow";
-import { DraggableChannelList } from "../features/channels/components/list/DraggableChannelList";
+import {
+  DRAG_ROW_HEIGHT,
+  DraggableChannelList,
+} from "../features/channels/components/list/DraggableChannelList";
 import {
   ChannelSettingsModal,
   type ChannelSettingsSection,
@@ -54,6 +57,8 @@ import { ServerMenuItem } from "../features/servers/components/server/ServerMenu
 import { ServerBanner } from "../features/servers/components/ServerBanner";
 import { ServerRail } from "../features/servers/components/rail/ServerRail";
 import { UserProfileBar } from "../features/servers/components/account/UserProfileBar";
+import { voiceParticipantsHeight } from "../features/voice/components/sidebar/VoiceChannelParticipants";
+import { useServerVoice } from "../features/voice/useServerVoice";
 import { useAuth } from "../features/auth/auth-context";
 import {
   getPendingOwnershipTransfer,
@@ -132,6 +137,22 @@ export function ServerChannelsScreen({
   const colors = useThemeColors();
   const { user } = useAuth();
   const currentUserId = user ? String(user.id) : null;
+  const voice = useServerVoice(server);
+
+  function voicePropsOf(channel: Channel) {
+    return {
+      isVoiceConnected: channel.id === voice.voiceChannelId,
+      voiceParticipants:
+        channel.kind === "voice" ? voice.participantsFor(channel.id) : [],
+    };
+  }
+
+  function rowHeightOf(channel: Channel): number {
+    return (
+      DRAG_ROW_HEIGHT +
+      voiceParticipantsHeight(voicePropsOf(channel).voiceParticipants.length)
+    );
+  }
   const [isServerMenuOpen, setIsServerMenuOpen] = useState(false);
   const [isServerSettingsVisible, setIsServerSettingsVisible] = useState(false);
   const [isLeaveModalVisible, setIsLeaveModalVisible] = useState(false);
@@ -365,6 +386,7 @@ export function ServerChannelsScreen({
         channel={channel}
         canManage={canOpenChannelOptions}
         unreadMentions={unreadMentionsByChannel[channel.id]}
+        {...voicePropsOf(channel)}
         onPress={() => onSelectChannel(channel.id)}
         onOptions={() => setChannelOptionsFor(channel)}
       />
@@ -431,11 +453,13 @@ export function ServerChannelsScreen({
                 }
                 onMoveToOtherBucket={handleChannelMovedToCategory}
                 onDragActiveChange={setIsChannelDragActive}
+                rowHeightOf={rowHeightOf}
                 renderChannel={(channel) => (
                   <ChannelRow
                     channel={channel}
                     canManage={canOpenChannelOptions}
                     unreadMentions={unreadMentionsByChannel[channel.id]}
+                    {...voicePropsOf(channel)}
                     onPress={() => onSelectChannel(channel.id)}
                     onOptions={() => setChannelOptionsFor(channel)}
                   />
@@ -666,11 +690,13 @@ export function ServerChannelsScreen({
                     }
                     onMoveToOtherBucket={handleChannelMovedToCategory}
                     onDragActiveChange={setIsChannelDragActive}
+                    rowHeightOf={rowHeightOf}
                     renderChannel={(channel) => (
                       <ChannelRow
                         channel={channel}
                         canManage={canOpenChannelOptions}
                         unreadMentions={unreadMentionsByChannel[channel.id]}
+                        {...voicePropsOf(channel)}
                         onPress={() => onSelectChannel(channel.id)}
                         onOptions={() => setChannelOptionsFor(channel)}
                       />

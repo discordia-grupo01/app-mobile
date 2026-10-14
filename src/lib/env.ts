@@ -33,7 +33,8 @@ function resolveApiUrl(): string {
 
 /**
  * URL publica de `web-client`, para armar los links de invitacion que se
- * comparten fuera de la app.
+ * comparten fuera de la app y para cargar `/voice-embed`, donde corre la
+ * llamada de voz. Sin ella no se puede entrar a un canal de voz.
  *
  * No se puede auto-detectar como `apiUrl`: el front web no corre en la misma
  * maquina que el bundler de Metro. Mientras no este seteada, los links quedan

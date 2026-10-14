@@ -17,6 +17,17 @@ interface DraggableChannelListProps {
     targetCategoryId: string | null,
   ) => void;
   onDragActiveChange?: (active: boolean) => void;
+  rowHeightOf?: (channel: Channel) => number;
+}
+
+function offsetsOf(heights: readonly number[]): number[] {
+  const offsets: number[] = [];
+  let top = 0;
+  for (const height of heights) {
+    offsets.push(top);
+    top += height;
+  }
+  return offsets;
 }
 
 export function DraggableChannelList({
@@ -26,6 +37,7 @@ export function DraggableChannelList({
   onReorder,
   onMoveToOtherBucket,
   onDragActiveChange,
+  rowHeightOf = () => DRAG_ROW_HEIGHT,
 }: DraggableChannelListProps) {
   const listRef = useRef<View>(null);
   const channelDrag = useChannelDrag();
@@ -46,23 +58,34 @@ export function DraggableChannelList({
     orderRef.current = order;
   }, [order]);
 
-  const startIndexRef = useRef(0);
+  const channelById = new Map(channels.map((channel) => [channel.id, channel]));
+  const heightOf = (id: string) => {
+    const channel = channelById.get(id);
+    return channel ? rowHeightOf(channel) : DRAG_ROW_HEIGHT;
+  };
+  const heights = order.map(heightOf);
+  const offsets = offsetsOf(heights);
+
+  const startOffsetRef = useRef(0);
 
   function handleDragStart(channel: Channel) {
-    startIndexRef.current = orderRef.current.indexOf(channel.id);
+    const index = orderRef.current.indexOf(channel.id);
+    startOffsetRef.current = offsetsOf(orderRef.current.map(heightOf))[index];
     setDraggingId(channel.id);
     onDragActiveChange?.(true);
     channelDrag.beginDrag(channel, bucketKey, DRAG_ROW_HEIGHT, listRef);
   }
 
   function handleDragMove(id: string, dy: number) {
-    const rawIndex = Math.round(
-      (startIndexRef.current * DRAG_ROW_HEIGHT + dy) / DRAG_ROW_HEIGHT,
-    );
-    const targetIndex = Math.min(
-      Math.max(rawIndex, 0),
-      orderRef.current.length - 1,
-    );
+    const center = startOffsetRef.current + dy + DRAG_ROW_HEIGHT / 2;
+    const others = orderRef.current.filter((other) => other !== id);
+    let targetIndex = 0;
+    let top = 0;
+    for (const other of others) {
+      const height = heightOf(other);
+      if (center > top + height / 2) targetIndex += 1;
+      top += height;
+    }
     const currentIndex = orderRef.current.indexOf(id);
     if (targetIndex !== currentIndex && currentIndex !== -1) {
       const next = [...orderRef.current];
@@ -93,13 +116,13 @@ export function DraggableChannelList({
     }
   }
 
-  const channelById = new Map(channels.map((channel) => [channel.id, channel]));
+  const totalHeight = heights.reduce((sum, height) => sum + height, 0);
 
   return (
     <View
       ref={listRef}
       collapsable={false}
-      style={[styles.container, { height: order.length * DRAG_ROW_HEIGHT }]}
+      style={[styles.container, { height: totalHeight }]}
     >
       {order.map((id, index) => {
         const channel = channelById.get(id);
@@ -109,7 +132,8 @@ export function DraggableChannelList({
           <DraggableRow
             key={id}
             bucketKey={bucketKey}
-            index={index}
+            top={offsets[index]}
+            height={heights[index]}
             isDragging={draggingId === id}
             onDragStart={() => handleDragStart(channel)}
             onDragMove={(dy) => handleDragMove(id, dy)}
@@ -125,7 +149,8 @@ export function DraggableChannelList({
 
 function DraggableRow({
   bucketKey,
-  index,
+  top: rowTop,
+  height,
   isDragging,
   onDragStart,
   onDragMove,
@@ -133,7 +158,8 @@ function DraggableRow({
   children,
 }: {
   bucketKey: string;
-  index: number;
+  top: number;
+  height: number;
   isDragging: boolean;
   onDragStart: () => void;
   onDragMove: (dy: number) => void;
@@ -143,15 +169,15 @@ function DraggableRow({
   const channelDrag = useChannelDrag();
 
   const top = useMemo(
-    () => new Animated.Value(index * DRAG_ROW_HEIGHT),
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- valor inicial nada más, a propósito no seguimos actualizando `index` acá
+    () => new Animated.Value(rowTop),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- valor inicial nada más, a propósito no seguimos actualizando `rowTop` acá
     [],
   );
 
-  const indexRef = useRef(index);
+  const rowTopRef = useRef(rowTop);
   useEffect(() => {
-    indexRef.current = index;
-  }, [index]);
+    rowTopRef.current = rowTop;
+  }, [rowTop]);
 
   const callbacksRef = useRef({ onDragStart, onDragMove, onDragEnd });
   useEffect(() => {
@@ -169,11 +195,11 @@ function DraggableRow({
   useEffect(() => {
     if (isDragging) return;
     Animated.timing(top, {
-      toValue: index * DRAG_ROW_HEIGHT,
+      toValue: rowTop,
       duration: 150,
       useNativeDriver: false,
     }).start();
-  }, [index, isDragging, top]);
+  }, [rowTop, isDragging, top]);
 
   const panResponder = useMemo(
     () =>
@@ -184,7 +210,7 @@ function DraggableRow({
         onMoveShouldSetPanResponderCapture: (_evt, gesture) =>
           Math.abs(gesture.dy) > 6 || Math.abs(gesture.dx) > 6,
         onPanResponderGrant: () => {
-          startTopRef.current = indexRef.current * DRAG_ROW_HEIGHT;
+          startTopRef.current = rowTopRef.current;
           isAwayRef.current = false;
           callbacksRef.current.onDragStart();
         },
@@ -218,7 +244,7 @@ function DraggableRow({
     <Animated.View
       style={[
         styles.row,
-        { top, height: DRAG_ROW_HEIGHT },
+        { top, height },
         isDragging ? styles.rowDragging : null,
       ]}
       {...panResponder.panHandlers}
