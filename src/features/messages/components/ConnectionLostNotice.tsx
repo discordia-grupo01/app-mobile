@@ -25,7 +25,9 @@ export function ConnectionLostNotice({ variant }: ConnectionLostNoticeProps) {
         className="flex-row items-center justify-center gap-2 bg-danger/10 px-4 py-1"
       >
         <Feather name="wifi-off" size={13} color={colors.danger} />
-        <Text className="text-[12px] text-danger">{CHAT_OFFLINE_BAR_MOBILE}</Text>
+        <Text className="text-[12px] text-danger">
+          {CHAT_OFFLINE_BAR_MOBILE}
+        </Text>
       </View>
     );
   }

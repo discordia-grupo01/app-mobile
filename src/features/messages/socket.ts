@@ -15,17 +15,16 @@ export const {
   closeSocket,
   onSocketSessionExpired,
   onSocketGaveUp,
-} =
-  createSocketManager({
-    createSocket: (params) => new Socket(env.wsUrl, { params }),
-    fetchTicket: fetchSocketTicket,
-    // En segundo plano el sistema puede matar la conexion sin avisar: al volver
-    // a primer plano, si el socket no esta abierto, se reconecta ya en vez de
-    // esperar a que Phoenix se entere del corte.
-    watchLifecycle: ({ reconnectIfDisconnected }) => {
-      const subscription = AppState.addEventListener("change", (next) => {
-        if (next === "active") reconnectIfDisconnected();
-      });
-      return () => subscription.remove();
-    },
-  });
+} = createSocketManager({
+  createSocket: (params) => new Socket(env.wsUrl, { params }),
+  fetchTicket: fetchSocketTicket,
+  // En segundo plano el sistema puede matar la conexion sin avisar: al volver
+  // a primer plano, si el socket no esta abierto, se reconecta ya en vez de
+  // esperar a que Phoenix se entere del corte.
+  watchLifecycle: ({ reconnectIfDisconnected }) => {
+    const subscription = AppState.addEventListener("change", (next) => {
+      if (next === "active") reconnectIfDisconnected();
+    });
+    return () => subscription.remove();
+  },
+});
