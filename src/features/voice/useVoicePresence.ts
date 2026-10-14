@@ -4,17 +4,21 @@ import {
   type VoicePresenceParticipant,
 } from "@discordia/client-shared";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppState } from "react-native";
 
 import { listVoiceParticipants } from "./api";
 
 const EMPTY: VoicePresenceByChannel = {};
 
+interface HiddenParticipant {
+  channelId: string;
+  identity: string;
+}
+
 function withoutParticipant(
   byChannel: VoicePresenceByChannel,
-  channelId: string,
-  identity: string,
+  { channelId, identity }: HiddenParticipant,
 ): VoicePresenceByChannel {
   const participants = byChannel[channelId];
   if (!participants) return byChannel;
@@ -34,12 +38,15 @@ export function useVoicePresence(serverId: string | null): {
   byChannel: VoicePresenceByChannel;
   refresh: () => void;
   forget: (channelId: string, identity: string) => void;
+  confirm: () => void;
 } {
   const [presence, setPresence] = useState<{
     serverId: string | null;
     byChannel: VoicePresenceByChannel;
   }>({ serverId, byChannel: EMPTY });
+  const [hidden, setHidden] = useState<readonly HiddenParticipant[]>([]);
   const requestId = useRef(0);
+  const confirmedFrom = useRef<number | null>(null);
 
   const refresh = useCallback(() => {
     if (!serverId) return;
@@ -47,16 +54,28 @@ export function useVoicePresence(serverId: string | null): {
     void listVoiceParticipants(serverId).then((result) => {
       if (id !== requestId.current || !result.ok) return;
       setPresence({ serverId, byChannel: result.byChannel });
+      if (confirmedFrom.current !== null && id >= confirmedFrom.current) {
+        confirmedFrom.current = null;
+        setHidden([]);
+      }
     });
   }, [serverId]);
 
   const forget = useCallback((channelId: string, identity: string) => {
-    requestId.current += 1;
-    setPresence((current) => ({
-      ...current,
-      byChannel: withoutParticipant(current.byChannel, channelId, identity),
-    }));
+    confirmedFrom.current = null;
+    setHidden((current) =>
+      current.some(
+        (entry) => entry.channelId === channelId && entry.identity === identity,
+      )
+        ? current
+        : [...current, { channelId, identity }],
+    );
   }, []);
+
+  const confirm = useCallback(() => {
+    confirmedFrom.current = requestId.current + 1;
+    refresh();
+  }, [refresh]);
 
   useEffect(() => {
     if (!serverId) return;
@@ -74,6 +93,10 @@ export function useVoicePresence(serverId: string | null): {
     };
   }, [serverId, refresh]);
 
-  const byChannel = presence.serverId === serverId ? presence.byChannel : EMPTY;
-  return { byChannel, refresh, forget };
+  const current = presence.serverId === serverId ? presence.byChannel : EMPTY;
+  const byChannel = useMemo(
+    () => hidden.reduce(withoutParticipant, current),
+    [hidden, current],
+  );
+  return { byChannel, refresh, forget, confirm };
 }

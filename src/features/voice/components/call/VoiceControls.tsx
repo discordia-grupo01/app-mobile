@@ -1,4 +1,8 @@
 import {
+  VOICE_CAMERA,
+  VOICE_CAMERA_OFF,
+  VOICE_CAMERA_OFF_ACTION,
+  VOICE_CAMERA_ON_ACTION,
   VOICE_CONTROLS_LABEL,
   VOICE_LEAVE,
   VOICE_LEAVE_LABEL,
@@ -23,20 +27,24 @@ interface VoiceControlsProps {
   muted: boolean;
   /** `false` si un moderador te silencio: el mic queda apagado y no se puede activar. */
   canSpeak: boolean;
+  cameraOn: boolean;
   bottomInset: number;
   onToggleMute: () => void;
+  onToggleCamera: () => void;
   onLeave: () => void;
 }
 
 /**
- * Sin camara ni pantalla: la llamada corre en un WebView invisible y desde
- * ahi no hay como mostrar ni capturar video. Los demas si ven los tuyos.
+ * Sin compartir pantalla: la llamada corre en un WebView y ni el de Android
+ * ni el de iOS pueden capturarla. Las pantallas de los demas si se ven.
  */
 export function VoiceControls({
   muted,
   canSpeak,
+  cameraOn,
   bottomInset,
   onToggleMute,
+  onToggleCamera,
   onLeave,
 }: VoiceControlsProps) {
   return (
@@ -64,6 +72,16 @@ export function VoiceControls({
           isSelected={muted}
           disabled={!canSpeak}
           onPress={onToggleMute}
+        />
+        <ControlButton
+          icon={cameraOn ? "video" : "video-off"}
+          label={cameraOn ? VOICE_CAMERA : VOICE_CAMERA_OFF}
+          accessibilityLabel={
+            cameraOn ? VOICE_CAMERA_OFF_ACTION : VOICE_CAMERA_ON_ACTION
+          }
+          tone={cameraOn ? "neutral" : "danger"}
+          isSelected={cameraOn}
+          onPress={onToggleCamera}
         />
 
         <View className="mx-1 h-10 w-px bg-line" />

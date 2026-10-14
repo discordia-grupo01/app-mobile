@@ -216,6 +216,7 @@ export function ChannelScreen({
           isCheckingAccess={isCheckingChannelPermissions}
           presence={voice.presence[channel.id] ?? []}
           bottomInset={insets.bottom}
+          isCovered={isMembersVisible}
         />
       )}
     </View>

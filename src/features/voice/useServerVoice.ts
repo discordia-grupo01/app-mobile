@@ -6,7 +6,13 @@ import {
   withLivePresence,
 } from "@discordia/client-shared";
 
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+} from "react";
 
 import { avatarUriOf } from "../../lib/userProfile";
 import { useAuth } from "../auth/auth-context";
@@ -36,16 +42,17 @@ export function useServerVoice(server: ServerSummary) {
   );
 
   const polled = useVoicePresence(server.id);
-  const refreshPresence = polled.refresh;
+  const confirmPresence = polled.confirm;
   const forgetParticipant = polled.forget;
+  // Con la conexion hecha signaling ya movio la sesion.
   const status = state.status;
   useEffect(() => {
-    if (status === "connected") refreshPresence();
-  }, [voiceChannelId, status, refreshPresence]);
+    if (status === "connected") confirmPresence();
+  }, [voiceChannelId, status, confirmPresence]);
 
   const ownIdentity = user ? String(user.id) : null;
   const previousVoiceChannelId = useRef(voiceChannelId);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const previous = previousVoiceChannelId.current;
     previousVoiceChannelId.current = voiceChannelId;
     if (previous && previous !== voiceChannelId && ownIdentity) {
@@ -53,10 +60,9 @@ export function useServerVoice(server: ServerSummary) {
     }
   }, [voiceChannelId, ownIdentity, forgetParticipant]);
 
-  // Con la salida confirmada, ya se puede pedir la presencia real.
   useEffect(() => {
-    if (leaveSettledCount > 0) refreshPresence();
-  }, [leaveSettledCount, refreshPresence]);
+    if (leaveSettledCount > 0) confirmPresence();
+  }, [leaveSettledCount, confirmPresence]);
 
   const presence: VoicePresenceByChannel = useMemo(
     () =>

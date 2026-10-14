@@ -31,6 +31,12 @@
         {
           "microphonePermission": "Discordia usa el micrófono para que te escuchen en los canales de voz."
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Discordia usa la cámara para que te vean en los canales de voz."
+        }
       ]
     ]
   }

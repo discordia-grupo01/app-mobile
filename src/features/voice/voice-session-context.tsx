@@ -2,6 +2,7 @@ import {
   initialVoiceSessionState,
   parseVoiceBridgeEvent,
   serializeVoiceBridgeMessage,
+  VOICE_CAMERA_DENIED,
   VOICE_CONNECT_FAILED,
   VOICE_CONNECTION_LOST,
   VOICE_EMBED_PATH,
@@ -15,6 +16,7 @@ import {
 } from "@discordia/client-shared";
 
 import { requestRecordingPermissionsAsync } from "expo-audio";
+import { requestCameraPermissionsAsync } from "expo-image-picker";
 import {
   createContext,
   useCallback,
@@ -30,15 +32,21 @@ import { StyleSheet, View } from "react-native";
 import { WebView, type WebViewMessageEvent } from "react-native-webview";
 
 import { env } from "../../lib/env";
+import { avatarUriOf } from "../../lib/userProfile";
+import { useTheme, useThemeColors } from "../../theme/theme-context";
+import { useAuth } from "../auth/auth-context";
 import { leaveVoiceSession, requestVoiceToken } from "./api";
 
-/**
- * Expo Go no tiene el SDK nativo de LiveKit: la llamada corre en la pagina
- * `/voice-embed` de web-client, dentro de un WebView invisible.
- */
 const VOICE_EMBED_URL = env.webUrl
   ? `${env.webUrl.replace(/\/$/, "")}${VOICE_EMBED_PATH}`
   : null;
+
+export interface CallStageFrame {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
 
 interface VoiceSessionValue {
   state: VoiceSessionState;
@@ -48,6 +56,8 @@ interface VoiceSessionValue {
   join: (target: VoiceSessionTarget) => void;
   leave: () => void;
   toggleMute: () => void;
+  toggleCamera: () => void;
+  setCallStage: (frame: CallStageFrame | null) => void;
   toggleMutedForMe: (identity: string) => void;
   focusConnectedChannel: () => void;
   dismissNotice: () => void;
@@ -67,6 +77,13 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
   );
   const [mediaError, setMediaError] = useState<string | null>(null);
   const [leaveSettledCount, setLeaveSettledCount] = useState(0);
+  const [callStage, setCallStage] = useState<CallStageFrame | null>(null);
+  const [overlayOrigin, setOverlayOrigin] = useState({ x: 0, y: 0 });
+  const overlayRef = useRef<View>(null);
+  const { theme } = useTheme();
+  const colors = useThemeColors();
+  const { user } = useAuth();
+  const localAvatarUrl = avatarUriOf(user);
   // Con sesion se monta el WebView; al salir se desmonta y corta la llamada.
   const [bridge, setBridge] = useState<BridgeSession | null>(null);
   const webViewRef = useRef<WebView>(null);
@@ -167,6 +184,12 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
         case "speakPermission":
           dispatch({ type: "speak_permission", allowed: event.allowed });
           return;
+        case "cameraStopped":
+          if (stateRef.current.cameraOn) dispatch({ type: "toggle_camera" });
+          return;
+        case "muteForMeRequested":
+          dispatch({ type: "toggle_muted_for_me", identity: event.identity });
+          return;
         case "disconnected":
           end(voiceDisconnectMessage(event.reason));
           return;
@@ -176,8 +199,9 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
           } else if (event.error === "mic_denied") {
             setMediaError(VOICE_MIC_DENIED);
             if (!stateRef.current.muted) dispatch({ type: "toggle_mute" });
+          } else if (event.error === "camera_denied") {
+            setMediaError(VOICE_CAMERA_DENIED);
           }
-          // `audio_blocked` no pasa: el WebView reproduce sin gesto.
           return;
       }
     },
@@ -197,11 +221,37 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
     send({ type: "connect", url: bridge.url, token: bridge.token });
   }, [bridge, send]);
 
-  const { muted, mutedForMe } = state;
+  const { muted, cameraOn, mutedForMe } = state;
   useEffect(() => {
     if (!bridge) return;
     send({ type: "setMicrophoneEnabled", enabled: !muted });
   }, [bridge, muted, send]);
+
+  useEffect(() => {
+    if (!bridge) return;
+    if (!cameraOn) {
+      send({ type: "setCameraEnabled", enabled: false });
+      return;
+    }
+    let cancelled = false;
+    void requestCameraPermissionsAsync().then((permission) => {
+      if (cancelled) return;
+      if (!permission.granted) {
+        setMediaError(VOICE_CAMERA_DENIED);
+        if (stateRef.current.cameraOn) dispatch({ type: "toggle_camera" });
+        return;
+      }
+      send({ type: "setCameraEnabled", enabled: true });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [bridge, cameraOn, send]);
+
+  useEffect(() => {
+    if (!bridge) return;
+    send({ type: "setAppearance", theme, localAvatarUrl });
+  }, [bridge, theme, localAvatarUrl, send]);
 
   useEffect(() => {
     if (!bridge) return;
@@ -222,6 +272,10 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
   const toggleMute = useCallback(() => {
     setMediaError(null);
     dispatch({ type: "toggle_mute" });
+  }, []);
+  const toggleCamera = useCallback(() => {
+    setMediaError(null);
+    dispatch({ type: "toggle_camera" });
   }, []);
   const toggleMutedForMe = useCallback(
     (identity: string) => dispatch({ type: "toggle_muted_for_me", identity }),
@@ -250,6 +304,8 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
       join: startJoin,
       leave: startLeave,
       toggleMute,
+      toggleCamera,
+      setCallStage,
       toggleMutedForMe,
       focusConnectedChannel,
       dismissNotice,
@@ -261,6 +317,7 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
       startJoin,
       startLeave,
       toggleMute,
+      toggleCamera,
       toggleMutedForMe,
       focusConnectedChannel,
       dismissNotice,
@@ -271,20 +328,47 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
     <VoiceSessionContext.Provider value={value}>
       {children}
       {bridge && VOICE_EMBED_URL ? (
-        <View style={styles.bridge} pointerEvents="none">
-          <WebView
-            ref={webViewRef}
-            source={{ uri: VOICE_EMBED_URL }}
-            onMessage={onMessage}
-            onError={() => end(VOICE_CONNECT_FAILED)}
-            onHttpError={() => end(VOICE_CONNECT_FAILED)}
-            onRenderProcessGone={() => end(VOICE_CONNECTION_LOST)}
-            onContentProcessDidTerminate={() => end(VOICE_CONNECTION_LOST)}
-            mediaPlaybackRequiresUserAction={false}
-            allowsInlineMediaPlayback
-            mediaCapturePermissionGrantType="grant"
-            javaScriptEnabled
-          />
+        <View
+          ref={overlayRef}
+          style={StyleSheet.absoluteFill}
+          pointerEvents="box-none"
+          onLayout={() =>
+            overlayRef.current?.measureInWindow((x, y) =>
+              setOverlayOrigin((origin) =>
+                origin.x === x && origin.y === y ? origin : { x, y },
+              ),
+            )
+          }
+        >
+          <View
+            pointerEvents={callStage ? "auto" : "none"}
+            style={
+              callStage
+                ? {
+                    position: "absolute",
+                    left: callStage.x - overlayOrigin.x,
+                    top: callStage.y - overlayOrigin.y,
+                    width: callStage.width,
+                    height: callStage.height,
+                  }
+                : styles.hidden
+            }
+          >
+            <WebView
+              ref={webViewRef}
+              source={{ uri: VOICE_EMBED_URL }}
+              onMessage={onMessage}
+              onError={() => end(VOICE_CONNECT_FAILED)}
+              onHttpError={() => end(VOICE_CONNECT_FAILED)}
+              onRenderProcessGone={() => end(VOICE_CONNECTION_LOST)}
+              onContentProcessDidTerminate={() => end(VOICE_CONNECTION_LOST)}
+              mediaPlaybackRequiresUserAction={false}
+              allowsInlineMediaPlayback
+              mediaCapturePermissionGrantType="grant"
+              javaScriptEnabled
+              style={{ backgroundColor: colors.bgChat }}
+            />
+          </View>
         </View>
       ) : null}
     </VoiceSessionContext.Provider>
@@ -292,8 +376,7 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
 }
 
 const styles = StyleSheet.create({
-  // Fuera de la vista pero con tamano: un WebView de 0x0 puede no arrancar.
-  bridge: { position: "absolute", width: 1, height: 1, opacity: 0 },
+  hidden: { position: "absolute", width: 1, height: 1, opacity: 0 },
 });
 
 export function useVoiceSession(): VoiceSessionValue {
