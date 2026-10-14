@@ -2,12 +2,14 @@ import {
   hexToRgba,
   mentionsPerson,
   MESSAGE_EDITED_LABEL,
+  MESSAGE_NOT_SENT_LABEL,
   type Message,
   type MessageAuthor,
   type MessageMentions,
 } from "@discordia/client-shared";
 
 import { useState } from "react";
+import { Feather } from "@expo/vector-icons";
 import { Animated, Pressable, Text, View } from "react-native";
 
 import { cn } from "../../../lib/cn";
@@ -26,7 +28,16 @@ const FLASH_FADE_MS = 300;
 /** Forma minima que necesita esta fila: sirve para los mensajes de un canal y de un DM. */
 export interface MessageItemMessage
   extends
-    Pick<Message, "id" | "user_id" | "content" | "inserted_at" | "edited_at">,
+    Pick<
+      Message,
+      | "id"
+      | "user_id"
+      | "content"
+      | "inserted_at"
+      | "edited_at"
+      | "delivery"
+      | "delivery_error"
+    >,
     MessageMentions {
   reactions?: Message["reactions"];
   attachments?: Message["attachments"];
@@ -59,6 +70,7 @@ export function MessageItem({
 }: MessageItemProps) {
   const { me } = useMessageMentions();
   const colors = useThemeColors();
+  const delivery = message.delivery;
   const isMentioningMe =
     me.userId !== null && mentionsPerson(message, me.userId, me.roleIds);
 
@@ -80,12 +92,13 @@ export function MessageItem({
     <Pressable
       onPressIn={showFlash}
       onPressOut={fadeFlash}
-      onLongPress={isEditing ? undefined : onRequestActions}
+      onLongPress={isEditing || delivery ? undefined : onRequestActions}
       delayLongPress={300}
       className={cn(
         "flex-row gap-3 px-4 py-0.5",
         isGroupStart && "mt-4",
         isEditing && "bg-surface-hover",
+        delivery === "failed" && "border-l-2 border-l-danger bg-danger/5",
       )}
       // El color viene de los tokens del tema: con una variable CSS no se puede aplicar transparencia.
       style={
@@ -97,7 +110,9 @@ export function MessageItem({
             }
           : undefined
       }
-      accessibilityHint="Mantené presionado para más acciones"
+      accessibilityHint={
+        delivery ? undefined : "Mantené presionado para más acciones"
+      }
     >
       <Animated.View
         pointerEvents="none"
@@ -143,7 +158,22 @@ export function MessageItem({
           <MessageAttachments attachments={message.attachments} />
         ) : null}
 
-        {message.reactions && onToggleReaction && onRequestReaction ? (
+        {delivery === "failed" ? (
+          <View
+            accessibilityRole="alert"
+            className="mt-0.5 flex-row items-center gap-1"
+          >
+            <Feather name="alert-circle" size={13} color={colors.danger} />
+            <Text className="flex-1 text-[12px] text-danger">
+              {message.delivery_error || MESSAGE_NOT_SENT_LABEL}
+            </Text>
+          </View>
+        ) : null}
+
+        {!delivery &&
+        message.reactions &&
+        onToggleReaction &&
+        onRequestReaction ? (
           <MessageReactions
             reactions={message.reactions}
             onToggle={onToggleReaction}

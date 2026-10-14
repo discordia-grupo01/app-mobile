@@ -22,6 +22,7 @@ import { Text } from "react-native";
 import { env } from "../../../lib/env";
 import { useServerMembers } from "../../servers/useServerMembers";
 import { useChannelMessages } from "../use-channel-messages";
+import { useFailedMessages } from "../useFailedMessages";
 import { useMessageAuthors } from "../useMessageAuthors";
 import { ChannelWelcome } from "./ChannelWelcome";
 import { ChatStatusNotice } from "./ChatStatusNotice";
@@ -75,6 +76,13 @@ export function ChannelChat({
     deleteMessage,
   } = useChannelMessages(channel, currentAuthor?.id ?? null, {
     onAccessRevoked,
+  });
+  const failed = useFailedMessages({
+    chatKey: channel.id,
+    channelId: channel.id,
+    currentUserId: currentAuthor?.id ?? null,
+    send: sendMessage,
+    getLastMessageId: () => messages?.at(-1)?.id ?? null,
   });
   const members = useServerMembers(serverId);
   const authors = useMessageAuthors(members, messages, currentAuthor);
@@ -157,7 +165,7 @@ export function ChannelChat({
       ) : (
         <MessageList
           welcome={<ChannelWelcome channelName={channel.name} />}
-          messages={messages}
+          messages={failed.withFailed(messages)}
           authors={authors}
           editingMessageId={editingMessageId}
           hasMore={hasMore}
@@ -191,7 +199,7 @@ export function ChannelChat({
             ? messageInputPlaceholder(channel.name)
             : SEND_MESSAGES_DENIED_PLACEHOLDER
         }
-        onSend={sendMessage}
+        onSend={failed.onSend}
         uploadTarget={{ channelId: channel.id }}
         disabled={!currentAuthor || status !== "ready" || !canSendMessages}
         editing={

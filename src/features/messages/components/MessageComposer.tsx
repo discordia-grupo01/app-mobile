@@ -115,6 +115,20 @@ export function MessageComposer({
       return;
     }
 
+    // Solo texto: si el que envia devuelve `void` (los fallos se muestran en el
+    // chat) el cuadro se libera al instante, sin pasar por `isSending` para no
+    // perder el foco ni el teclado.
+    if (attachments.length === 0) {
+      const outcome = onSend(draft.encoded, []);
+      if (outcome === undefined) return clearDraft();
+      setIsSending(true);
+      const result = await outcome;
+      setIsSending(false);
+      if (result.ok) clearDraft();
+      else setSendError(result.message);
+      return;
+    }
+
     setIsSending(true);
     const uploads = await uploadAll(attachments, uploadTarget);
     if (!uploads.ok) {
@@ -123,16 +137,9 @@ export function MessageComposer({
       return;
     }
 
-    const outcome = onSend(draft.encoded, uploads.ids);
-    if (outcome === undefined) {
-      setIsSending(false);
-      clearDraft();
-      return;
-    }
-
-    const result = await outcome;
+    const result = await onSend(draft.encoded, uploads.ids);
     setIsSending(false);
-    if (result.ok) clearDraft();
+    if (result === undefined || result.ok) clearDraft();
     else setSendError(result.message);
   }
 
@@ -184,7 +191,7 @@ export function MessageComposer({
           setAttachments((prev) => prev.filter((file) => file.uri !== uri))
         }
       />
-      <View className="flex-row items-end rounded-[10px] border border-line bg-surface-input px-1">
+      <View className="flex-row items-end rounded-[10px] border border-line bg-surface-input px-1.5 py-1">
         <ComposerIconButton
           name="paperclip"
           label={ATTACH_FILE_LABEL}

@@ -12,6 +12,7 @@ import { useMemo, useState } from "react";
 import { Text } from "react-native";
 
 import { useChannelMessages } from "../../messages/use-channel-messages";
+import { useFailedMessages } from "../../messages/useFailedMessages";
 import { ChatStatusNotice } from "../../messages/components/ChatStatusNotice";
 import { DeleteMessageModal } from "../../messages/components/DeleteMessageModal";
 import { MessageActionsSheet } from "../../messages/components/MessageActionsSheet";
@@ -34,30 +35,44 @@ interface DmThreadProps {
 
 /** Un borrador no tiene canal al que unirse: solo el composer. */
 export function DmThread(props: DmThreadProps) {
-  if (props.conversationId === null) {
-    return (
-      <>
-        <MessageList
-          welcome={<DmWelcome partner={props.partner} />}
-          messages={[]}
-          authors={{}}
-          editingMessageId={null}
-          hasMore={false}
-          isLoadingOlder={false}
-          onLoadOlder={() => {}}
-          onRequestActions={() => {}}
-        />
-        {props.blockedByMe ? <DmBlockedNotice /> : null}
-        <MessageComposer
-          placeholder={dmInputPlaceholder(props.partner.name)}
-          onSend={props.onSend}
-          uploadTarget={{ to: props.partner.id }}
-          disabled={props.blockedByMe}
-        />
-      </>
-    );
-  }
+  if (props.conversationId === null) return <DraftDmThread {...props} />;
   return <LiveDmThread {...props} conversationId={props.conversationId} />;
+}
+
+function DraftDmThread({
+  partner,
+  currentAuthor,
+  blockedByMe,
+  onSend,
+}: DmThreadProps) {
+  const failed = useFailedMessages({
+    chatKey: partner.id,
+    channelId: "",
+    currentUserId: currentAuthor.id,
+    send: onSend,
+    getLastMessageId: () => null,
+  });
+  return (
+    <>
+      <MessageList
+        welcome={<DmWelcome partner={partner} />}
+        messages={failed.withFailed([])}
+        authors={{ [currentAuthor.id]: currentAuthor }}
+        editingMessageId={null}
+        hasMore={false}
+        isLoadingOlder={false}
+        onLoadOlder={() => {}}
+        onRequestActions={() => {}}
+      />
+      {blockedByMe ? <DmBlockedNotice /> : null}
+      <MessageComposer
+        placeholder={dmInputPlaceholder(partner.name)}
+        onSend={failed.onSend}
+        uploadTarget={{ to: partner.id }}
+        disabled={blockedByMe}
+      />
+    </>
+  );
 }
 
 /**
@@ -84,6 +99,13 @@ function LiveDmThread({
     editMessage,
     deleteMessage,
   } = useChannelMessages({ id: conversationId });
+  const failed = useFailedMessages({
+    chatKey: conversationId,
+    channelId: conversationId,
+    currentUserId: currentAuthor.id,
+    send: onSend,
+    getLastMessageId: () => messages?.at(-1)?.id ?? null,
+  });
   const authors = useMemo(
     () => ({ [partner.id]: partner, [currentAuthor.id]: currentAuthor }),
     [partner, currentAuthor],
@@ -130,7 +152,7 @@ function LiveDmThread({
       ) : (
         <MessageList
           welcome={<DmWelcome partner={partner} />}
-          messages={messages}
+          messages={failed.withFailed(messages)}
           authors={authors}
           editingMessageId={editingMessageId}
           hasMore={hasMore}
@@ -158,7 +180,7 @@ function LiveDmThread({
       {blockedByMe ? <DmBlockedNotice /> : null}
       <MessageComposer
         placeholder={dmInputPlaceholder(partner.name)}
-        onSend={onSend}
+        onSend={failed.onSend}
         uploadTarget={{ to: partner.id }}
         disabled={blockedByMe}
         editing={
