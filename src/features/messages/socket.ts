@@ -10,7 +10,12 @@ import { fetchSocketTicket } from "./api";
  * en `createSocketManager` (`@discordia/client-shared`); aca solo va lo propio
  * de React Native.
  */
-export const { acquireSocket, closeSocket, onSocketSessionExpired } =
+export const {
+  acquireSocket,
+  closeSocket,
+  onSocketSessionExpired,
+  onSocketGaveUp,
+} =
   createSocketManager({
     createSocket: (params) => new Socket(env.wsUrl, { params }),
     fetchTicket: fetchSocketTicket,

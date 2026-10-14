@@ -35,6 +35,7 @@ export function DirectMessagesScreen({
   const {
     conversations,
     isLoading,
+    loadError,
     activeSummary,
     openConversation,
     closeConversation,
@@ -72,6 +73,7 @@ export function DirectMessagesScreen({
       <DmConversationList
         conversations={conversations}
         isLoading={isLoading}
+        loadError={loadError}
         activePartnerId={activeSummary?.partner.id ?? null}
         userName={userName}
         onSelect={openConversation}

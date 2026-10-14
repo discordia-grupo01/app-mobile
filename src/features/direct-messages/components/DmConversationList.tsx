@@ -22,6 +22,7 @@ import { cn } from "../../../lib/cn";
 interface DmConversationListProps {
   conversations: ConversationSummary[];
   isLoading: boolean;
+  loadError: string | null;
   activePartnerId: string | null;
   userName?: string | null;
   onSelect: (partnerId: string) => void;
@@ -32,6 +33,7 @@ interface DmConversationListProps {
 export function DmConversationList({
   conversations,
   isLoading,
+  loadError,
   activePartnerId,
   userName,
   onSelect,
@@ -62,8 +64,14 @@ export function DmConversationList({
             <ActivityIndicator color={colors.accentBright} />
           </View>
         ) : conversations.length === 0 ? (
-          <Text className="px-2 py-3 text-[13px] text-content-subtle">
-            {NO_CONVERSATIONS_YET}
+          <Text
+            accessibilityRole={loadError ? "alert" : undefined}
+            className={cn(
+              "px-2 py-3 text-[13px]",
+              loadError ? "text-danger" : "text-content-subtle",
+            )}
+          >
+            {loadError ?? NO_CONVERSATIONS_YET}
           </Text>
         ) : (
           conversations.map(

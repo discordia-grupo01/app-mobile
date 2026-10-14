@@ -3,6 +3,7 @@ import {
   canEditMessage,
   CHAT_RECONNECTING_NOTICE,
   dmInputPlaceholder,
+  CHAT_OFFLINE_NOTICE_MOBILE,
   LOADING_MESSAGES_LABEL,
   type MessageAuthor,
   type SendDmResult,
@@ -14,6 +15,7 @@ import { Text } from "react-native";
 import { useChannelMessages } from "../../messages/use-channel-messages";
 import { useFailedMessages } from "../../messages/useFailedMessages";
 import { ChatStatusNotice } from "../../messages/components/ChatStatusNotice";
+import { ConnectionLostNotice } from "../../messages/components/ConnectionLostNotice";
 import { DeleteMessageModal } from "../../messages/components/DeleteMessageModal";
 import { MessageActionsSheet } from "../../messages/components/MessageActionsSheet";
 import { MessageComposer } from "../../messages/components/MessageComposer";
@@ -148,7 +150,9 @@ function LiveDmThread({
   return (
     <>
       {messages === null ? (
-        <ChatStatusNotice message={LOADING_MESSAGES_LABEL} />
+        <ChatStatusNotice
+          message={status === "offline" ? CHAT_OFFLINE_NOTICE_MOBILE : LOADING_MESSAGES_LABEL}
+        />
       ) : (
         <MessageList
           welcome={<DmWelcome partner={partner} />}
@@ -168,6 +172,9 @@ function LiveDmThread({
         >
           {deleteError}
         </Text>
+      ) : null}
+      {status === "offline" && messages !== null ? (
+        <ConnectionLostNotice />
       ) : null}
       {status === "reconnecting" ? (
         <Text
