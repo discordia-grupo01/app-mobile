@@ -9,6 +9,8 @@ import {
   VOICE_MODERATOR_MUTED,
   VOICE_MUTE,
   VOICE_MUTE_LABEL,
+  VOICE_PARTICIPANTS_BUTTON,
+  VOICE_PARTICIPANTS_OPEN,
   VOICE_UNMUTE,
   VOICE_UNMUTE_LABEL,
 } from "@discordia/client-shared";
@@ -25,19 +27,15 @@ type ControlTone = "neutral" | "danger";
 
 interface VoiceControlsProps {
   muted: boolean;
-  /** `false` si un moderador te silencio: el mic queda apagado y no se puede activar. */
   canSpeak: boolean;
   cameraOn: boolean;
   bottomInset: number;
   onToggleMute: () => void;
   onToggleCamera: () => void;
+  onShowParticipants: () => void;
   onLeave: () => void;
 }
 
-/**
- * Sin compartir pantalla: la llamada corre en un WebView y ni el de Android
- * ni el de iOS pueden capturarla. Las pantallas de los demas si se ven.
- */
 export function VoiceControls({
   muted,
   canSpeak,
@@ -45,6 +43,7 @@ export function VoiceControls({
   bottomInset,
   onToggleMute,
   onToggleCamera,
+  onShowParticipants,
   onLeave,
 }: VoiceControlsProps) {
   return (
@@ -82,6 +81,14 @@ export function VoiceControls({
           tone={cameraOn ? "neutral" : "danger"}
           isSelected={cameraOn}
           onPress={onToggleCamera}
+        />
+
+        <ControlButton
+          icon="users"
+          label={VOICE_PARTICIPANTS_BUTTON}
+          accessibilityLabel={VOICE_PARTICIPANTS_OPEN}
+          tone="neutral"
+          onPress={onShowParticipants}
         />
 
         <View className="mx-1 h-10 w-px bg-line" />

@@ -8,6 +8,7 @@ import {
   VOICE_SWITCH,
   VOICE_UNAVAILABLE,
   type VoicePresenceParticipant,
+  voiceParticipantsOf,
   voicePresenceCount,
 } from "@discordia/client-shared";
 
@@ -16,12 +17,14 @@ import { Text, TouchableOpacity, View } from "react-native";
 
 import { Avatar } from "../../components/ui/Avatar";
 import { cn } from "../../lib/cn";
+import { avatarUriOf } from "../../lib/userProfile";
 import { useThemeColors } from "../../theme/theme-context";
 import { useAuth } from "../auth/auth-context";
 import { useVoiceSession } from "./voice-session-context";
 import { VoiceNotice } from "./components/VoiceNotice";
 import { CallStage } from "./components/call/CallStage";
 import { VoiceControls } from "./components/call/VoiceControls";
+import { VoiceParticipantsSheet } from "./components/call/VoiceParticipantsSheet";
 
 const LOBBY_MAX_AVATARS = 5;
 
@@ -93,7 +96,21 @@ export function VoiceChannelView({
         bottomInset={bottomInset}
         onToggleMute={voice.toggleMute}
         onToggleCamera={voice.toggleCamera}
+        onShowParticipants={voice.openParticipants}
         onLeave={voice.leave}
+      />
+
+      <VoiceParticipantsSheet
+        visible={voice.isParticipantsOpen}
+        participants={voiceParticipantsOf(state)}
+        ownAvatarUri={avatarUriOf(user)}
+        pinnedIdentity={voice.pinnedIdentity}
+        onToggleMutedForMe={voice.toggleMutedForMe}
+        onPinChange={(identity) => {
+          voice.setPinnedIdentity(identity);
+          voice.closeParticipants();
+        }}
+        onClose={voice.closeParticipants}
       />
     </View>
   );

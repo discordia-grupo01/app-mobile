@@ -17,6 +17,8 @@ interface ChannelRowProps {
   onOptions: () => void;
   isVoiceConnected?: boolean;
   voiceParticipants?: readonly SidebarVoiceParticipant[];
+  isVoiceExpanded?: boolean;
+  onToggleVoiceExpanded?: () => void;
 }
 
 export function ChannelRow({
@@ -27,6 +29,8 @@ export function ChannelRow({
   onOptions,
   isVoiceConnected = false,
   voiceParticipants = [],
+  isVoiceExpanded = false,
+  onToggleVoiceExpanded,
 }: ChannelRowProps) {
   const colors = useThemeColors();
   return (
@@ -78,7 +82,11 @@ export function ChannelRow({
           </TouchableOpacity>
         ) : null}
       </View>
-      <VoiceChannelParticipants participants={voiceParticipants} />
+      <VoiceChannelParticipants
+        participants={voiceParticipants}
+        isExpanded={isVoiceExpanded}
+        onToggleExpanded={onToggleVoiceExpanded}
+      />
     </View>
   );
 }
