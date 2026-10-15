@@ -1,6 +1,8 @@
 import {
   initialVoiceSessionState,
   parseVoiceBridgeEvent,
+  pinOnScreenShareChange,
+  screenSharingIds,
   serializeVoiceBridgeMessage,
   VOICE_CAMERA_DENIED,
   VOICE_CONNECT_FAILED,
@@ -59,6 +61,11 @@ interface VoiceSessionValue {
   toggleCamera: () => void;
   setCallStage: (frame: CallStageFrame | null) => void;
   toggleMutedForMe: (identity: string) => void;
+  pinnedIdentity: string | null;
+  setPinnedIdentity: (identity: string | null) => void;
+  isParticipantsOpen: boolean;
+  openParticipants: () => void;
+  closeParticipants: () => void;
   focusConnectedChannel: () => void;
   dismissNotice: () => void;
 }
@@ -78,6 +85,9 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
   const [mediaError, setMediaError] = useState<string | null>(null);
   const [leaveSettledCount, setLeaveSettledCount] = useState(0);
   const [callStage, setCallStage] = useState<CallStageFrame | null>(null);
+  const [pinnedIdentity, setPinnedIdentity] = useState<string | null>(null);
+  const [isParticipantsOpen, setIsParticipantsOpen] = useState(false);
+  const [lastSharingIds, setLastSharingIds] = useState<readonly string[]>([]);
   const [overlayOrigin, setOverlayOrigin] = useState({ x: 0, y: 0 });
   const overlayRef = useRef<View>(null);
   const { theme } = useTheme();
@@ -91,6 +101,13 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
   const pendingRef = useRef<VoiceBridgeCommand[]>([]);
   const sentMutedForMeRef = useRef<readonly string[]>([]);
   const attemptRef = useRef(0);
+  const sharingIds = screenSharingIds(state.participants);
+  if (sharingIds.join("|") !== lastSharingIds.join("|")) {
+    setLastSharingIds(sharingIds);
+    setPinnedIdentity((pinned) =>
+      pinOnScreenShareChange(pinned, lastSharingIds, state.participants),
+    );
+  }
   const stateRef = useRef(state);
   useEffect(() => {
     stateRef.current = state;
@@ -115,6 +132,8 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
     setBridge(null);
     setIsEmbedPainted(false);
     setMediaError(null);
+    setPinnedIdentity(null);
+    setIsParticipantsOpen(false);
   }, []);
 
   const end = useCallback(
@@ -192,6 +211,12 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
         case "muteForMeRequested":
           dispatch({ type: "toggle_muted_for_me", identity: event.identity });
           return;
+        case "participantsRequested":
+          setIsParticipantsOpen(true);
+          return;
+        case "pinRequested":
+          setPinnedIdentity(event.identity);
+          return;
         case "disconnected":
           end(voiceDisconnectMessage(event.reason));
           return;
@@ -257,6 +282,11 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!bridge) return;
+    send({ type: "setPinned", identity: pinnedIdentity });
+  }, [bridge, pinnedIdentity, send]);
+
+  useEffect(() => {
+    if (!bridge) return;
     const sent = sentMutedForMeRef.current;
     mutedForMe
       .filter((identity) => !sent.includes(identity))
@@ -283,6 +313,8 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
     (identity: string) => dispatch({ type: "toggle_muted_for_me", identity }),
     [],
   );
+  const openParticipants = useCallback(() => setIsParticipantsOpen(true), []);
+  const closeParticipants = useCallback(() => setIsParticipantsOpen(false), []);
   const focusConnectedChannel = useCallback(
     () => dispatch({ type: "focus" }),
     [],
@@ -309,6 +341,11 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
       toggleCamera,
       setCallStage,
       toggleMutedForMe,
+      pinnedIdentity,
+      setPinnedIdentity,
+      isParticipantsOpen,
+      openParticipants,
+      closeParticipants,
       focusConnectedChannel,
       dismissNotice,
     }),
@@ -321,6 +358,10 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
       toggleMute,
       toggleCamera,
       toggleMutedForMe,
+      pinnedIdentity,
+      isParticipantsOpen,
+      openParticipants,
+      closeParticipants,
       focusConnectedChannel,
       dismissNotice,
     ],
