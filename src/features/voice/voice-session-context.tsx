@@ -84,8 +84,8 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
   const colors = useThemeColors();
   const { user } = useAuth();
   const localAvatarUrl = avatarUriOf(user);
-  // Con sesion se monta el WebView; al salir se desmonta y corta la llamada.
   const [bridge, setBridge] = useState<BridgeSession | null>(null);
+  const [isEmbedPainted, setIsEmbedPainted] = useState(false);
   const webViewRef = useRef<WebView>(null);
   const isReadyRef = useRef(false);
   const pendingRef = useRef<VoiceBridgeCommand[]>([]);
@@ -113,6 +113,7 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
     pendingRef.current = [];
     sentMutedForMeRef.current = [];
     setBridge(null);
+    setIsEmbedPainted(false);
     setMediaError(null);
   }, []);
 
@@ -179,6 +180,7 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
           else dispatch({ type: "status", status: event.status });
           return;
         case "participants":
+          setIsEmbedPainted(true);
           dispatch({ type: "participants", participants: event.participants });
           return;
         case "speakPermission":
@@ -341,7 +343,7 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
           }
         >
           <View
-            pointerEvents={callStage ? "auto" : "none"}
+            pointerEvents={callStage && isEmbedPainted ? "auto" : "none"}
             style={
               callStage
                 ? {
@@ -350,6 +352,7 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
                     top: callStage.y - overlayOrigin.y,
                     width: callStage.width,
                     height: callStage.height,
+                    opacity: isEmbedPainted ? 1 : 0,
                   }
                 : styles.hidden
             }
