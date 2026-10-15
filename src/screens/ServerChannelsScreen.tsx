@@ -138,19 +138,34 @@ export function ServerChannelsScreen({
   const { user } = useAuth();
   const currentUserId = user ? String(user.id) : null;
   const voice = useServerVoice(server);
+  const [expandedVoiceChannels, setExpandedVoiceChannels] = useState<
+    ReadonlySet<string>
+  >(new Set());
+
+  function toggleVoiceExpanded(channelId: string) {
+    setExpandedVoiceChannels((current) => {
+      const next = new Set(current);
+      if (next.has(channelId)) next.delete(channelId);
+      else next.add(channelId);
+      return next;
+    });
+  }
 
   function voicePropsOf(channel: Channel) {
     return {
       isVoiceConnected: channel.id === voice.voiceChannelId,
       voiceParticipants:
         channel.kind === "voice" ? voice.participantsFor(channel.id) : [],
+      isVoiceExpanded: expandedVoiceChannels.has(channel.id),
+      onToggleVoiceExpanded: () => toggleVoiceExpanded(channel.id),
     };
   }
 
   function rowHeightOf(channel: Channel): number {
+    const { voiceParticipants, isVoiceExpanded } = voicePropsOf(channel);
     return (
       DRAG_ROW_HEIGHT +
-      voiceParticipantsHeight(voicePropsOf(channel).voiceParticipants.length)
+      voiceParticipantsHeight(voiceParticipants.length, isVoiceExpanded)
     );
   }
   const [isServerMenuOpen, setIsServerMenuOpen] = useState(false);
