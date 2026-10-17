@@ -46,7 +46,7 @@ export function useServerVoice(server: ServerSummary) {
             toVoicePresence(liveParticipants),
           )
         : socketPresence.byChannel,
-      [socketPresence.byChannel, voiceChannelId, liveParticipants],
+    [socketPresence.byChannel, voiceChannelId, liveParticipants],
   );
 
   const ownAvatarUri = avatarUriOf(user);
