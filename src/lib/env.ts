@@ -58,10 +58,18 @@ function resolveWsUrl(apiUrl: string): string {
   );
 }
 
+function resolveVoiceWsUrl(apiUrl: string): string {
+  return (
+    process.env.EXPO_PUBLIC_VOICE_WS_URL ??
+    `${apiUrl.replace(/^http/, "ws")}/voice/socket`
+  );
+}
+
 const apiUrl = resolveApiUrl();
 
 export const env = {
   apiUrl,
   wsUrl: resolveWsUrl(apiUrl),
+  voiceWsUrl: resolveVoiceWsUrl(apiUrl),
   webUrl: resolveWebUrl(),
 };

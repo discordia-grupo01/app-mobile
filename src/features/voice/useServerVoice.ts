@@ -6,13 +6,7 @@ import {
   withLivePresence,
 } from "@discordia/client-shared";
 
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-} from "react";
+import { useCallback, useMemo } from "react";
 
 import { avatarUriOf } from "../../lib/userProfile";
 import { useAuth } from "../auth/auth-context";
@@ -30,7 +24,7 @@ export interface SidebarVoiceParticipant {
 }
 
 export function useServerVoice(server: ServerSummary) {
-  const { state, leaveSettledCount } = useVoiceSession();
+  const { state } = useVoiceSession();
   const { user } = useAuth();
 
   const voiceChannelId =
@@ -41,39 +35,18 @@ export function useServerVoice(server: ServerSummary) {
     [voiceChannelId, state],
   );
 
-  const polled = useVoicePresence(server.id);
-  const confirmPresence = polled.confirm;
-  const forgetParticipant = polled.forget;
-  // Con la conexion hecha signaling ya movio la sesion.
-  const status = state.status;
-  useEffect(() => {
-    if (status === "connected") confirmPresence();
-  }, [voiceChannelId, status, confirmPresence]);
-
-  const ownIdentity = user ? String(user.id) : null;
-  const previousVoiceChannelId = useRef(voiceChannelId);
-  useLayoutEffect(() => {
-    const previous = previousVoiceChannelId.current;
-    previousVoiceChannelId.current = voiceChannelId;
-    if (previous && previous !== voiceChannelId && ownIdentity) {
-      forgetParticipant(previous, ownIdentity);
-    }
-  }, [voiceChannelId, ownIdentity, forgetParticipant]);
-
-  useEffect(() => {
-    if (leaveSettledCount > 0) confirmPresence();
-  }, [leaveSettledCount, confirmPresence]);
+  const socketPresence = useVoicePresence(server.id);
 
   const presence: VoicePresenceByChannel = useMemo(
     () =>
       voiceChannelId
         ? withLivePresence(
-            polled.byChannel,
+            socketPresence.byChannel,
             voiceChannelId,
             toVoicePresence(liveParticipants),
           )
-        : polled.byChannel,
-    [polled.byChannel, voiceChannelId, liveParticipants],
+        : socketPresence.byChannel,
+      [socketPresence.byChannel, voiceChannelId, liveParticipants],
   );
 
   const ownAvatarUri = avatarUriOf(user);
