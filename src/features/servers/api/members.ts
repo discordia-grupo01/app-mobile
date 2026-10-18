@@ -4,6 +4,8 @@ import {
   type ListMembersResult,
   MEMBER_REASONS,
   type MemberListResponse,
+  type MemberPageQuery,
+  memberPageQueryString,
   MEMBERS_LOAD_FAILED,
   messageFor,
   OWNER_ONLY_TRANSFER,
@@ -22,17 +24,13 @@ import {
 
 import { apiFetch } from "../../../lib/api-client";
 
+/** Una pagina de miembros, opcionalmente filtrada por nombre (`search`). */
 export async function listMembers(
   serverId: string,
-  params?: { limit?: number; offset?: number },
+  query: MemberPageQuery = {},
 ): Promise<ListMembersResult> {
-  const query = new URLSearchParams();
-  if (params?.limit != null) query.set("limit", String(params.limit));
-  if (params?.offset != null) query.set("offset", String(params.offset));
-  const qs = query.toString();
-
   const result = await apiFetch<MemberListResponse>(
-    `/v1/servers/${serverId}/members${qs ? `?${qs}` : ""}`,
+    `/v1/servers/${serverId}/members${memberPageQueryString(query)}`,
     { method: "GET" },
   );
 

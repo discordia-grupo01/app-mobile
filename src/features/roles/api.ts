@@ -1,10 +1,9 @@
 import {
-  collectAllPages,
   type ListRoleMembersResult,
   listRoleMembersFailureMessage,
-  type Member,
-  MEMBER_PAGE_LIMIT,
   type MemberListResponse,
+  type MemberPageQuery,
+  memberPageQueryString,
   type AssignRoleResult,
   type CreateRoleResult,
   DEFAULT_ROLE_SET_FAILED,
@@ -347,24 +346,19 @@ export async function removeRole(
 }
 
 /**
- * Todos los miembros que tienen el rol (#58): `GET /v1/roles/:id/members`
- * pagina de a 100 como mucho, asi que se juntan las paginas. Exige
- * `MANAGE_ROLES`. Para @everyone son todos los miembros.
+ * Una pagina de los miembros que tienen el rol (#58), o con `hasRole: false`
+ * de los que no lo tienen. Exige `MANAGE_ROLES`. Para @everyone son todos.
  */
 export async function listRoleMembers(
   roleId: string,
+  query: MemberPageQuery = {},
 ): Promise<ListRoleMembersResult> {
-  const result = await collectAllPages<Member>(async (offset) => {
-    const page = await apiFetch<MemberListResponse>(
-      `/v1/roles/${roleId}/members?limit=${MEMBER_PAGE_LIMIT}&offset=${offset}`,
-      { method: "GET" },
-    );
-    return page.ok
-      ? { ...page, data: { items: page.data.members, total: page.data.total } }
-      : page;
-  });
+  const result = await apiFetch<MemberListResponse>(
+    `/v1/roles/${roleId}/members${memberPageQueryString(query)}`,
+    { method: "GET" },
+  );
   if (!result.ok) {
     return { ok: false, message: listRoleMembersFailureMessage(result) };
   }
-  return { ok: true, members: result.data.items, total: result.data.total };
+  return { ok: true, members: result.data.members, total: result.data.total };
 }

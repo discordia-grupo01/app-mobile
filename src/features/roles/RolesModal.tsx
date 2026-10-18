@@ -76,9 +76,7 @@ export function RolesModal({
     setStep("edit");
   }
 
-  const membersHook = useRoleMembers(serverId, selectedRole, {
-    onToast: showToast,
-  });
+  const membersHook = useRoleMembers(selectedRole);
   const createForm = useCreateRoleForm(serverId, {
     roles: rolesList.roles,
     everyoneRole: rolesList.everyoneRole,
@@ -216,13 +214,12 @@ export function RolesModal({
 
       {step === "members" && selectedRole ? (
         <RoleMembersStep
+          key={selectedRole.id}
+          serverId={serverId}
+          roleId={selectedRole.id}
           isEveryoneSelected={isEveryoneSelected}
-          membersInfo={membersHook.membersInfo}
-          membersError={membersHook.membersError}
-          membersWithRole={membersHook.membersWithRole}
-          membersWithoutRole={membersHook.membersWithoutRole}
-          busyMemberId={membersHook.busyMemberId}
-          onToggleMember={membersHook.handleToggleMember}
+          onMembershipChange={membersHook.handleMembershipChange}
+          onToast={showToast}
         />
       ) : null}
     </ModalShell>

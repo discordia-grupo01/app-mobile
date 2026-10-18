@@ -24,8 +24,9 @@ interface UseBansListViewOptions {
 
 /**
  * Lo que muestra el modal de moderacion: la pestaña activa (baneados o
- * miembros), su busqueda por nombre y la pagina actual. Los miembros recien se
- * piden la primera vez que se abre su pestaña.
+ * miembros), su busqueda por nombre y la pagina actual. Los baneados se buscan
+ * y paginan en memoria (el back no los filtra por nombre); los miembros los
+ * busca y pagina el back, y recien se piden al abrir su pestaña.
  */
 export function useBansListView({
   serverId,
@@ -41,22 +42,40 @@ export function useBansListView({
     serverId,
     ownerId,
     currentUserId,
+    search,
     enabled: hasOpenedMembers,
   });
 
   const isBans = tab === "bans";
   const isSearching = search.trim() !== "";
 
-  const items = useMemo<UserListItem[] | null>(() => {
-    if (isBans) return banList.bans && banListItems(banList.bans);
-    return candidates.candidates && memberListItems(candidates.candidates);
-  }, [isBans, banList.bans, candidates.candidates]);
-
-  const matches = useMemo(
-    () => filterByDisplayName(items ?? [], search),
-    [items, search],
+  const banItems = useMemo<UserListItem[] | null>(
+    () => banList.bans && banListItems(banList.bans),
+    [banList.bans],
   );
-  const pagination = usePagination(matches);
+  const banMatches = useMemo(
+    () => filterByDisplayName(banItems ?? [], search),
+    [banItems, search],
+  );
+  const banPagination = usePagination(banMatches);
+
+  const memberItems = useMemo<UserListItem[] | null>(
+    () => candidates.candidates && memberListItems(candidates.candidates),
+    [candidates.candidates],
+  );
+
+  // Lo que dibuja la pestaña activa, venga de memoria o del back.
+  const items = isBans ? banItems : memberItems;
+  const pagination = isBans
+    ? banPagination
+    : {
+        pageItems: memberItems ?? [],
+        page: candidates.page,
+        pageCount: candidates.pageCount,
+        total: candidates.total,
+        range: candidates.range,
+        setPage: candidates.setPage,
+      };
 
   const emptyMessage = isBans
     ? isSearching
@@ -70,12 +89,12 @@ export function useBansListView({
     setTab(next);
     if (next === "members") setHasOpenedMembers(true);
     setSearch("");
-    pagination.resetPage();
+    banPagination.resetPage();
   }
 
   function changeSearch(value: string) {
     setSearch(value);
-    pagination.resetPage();
+    banPagination.resetPage();
   }
 
   function reload() {
@@ -92,7 +111,8 @@ export function useBansListView({
     emptyMessage,
     errorMessage: isBans ? banList.errorMessage : candidates.errorMessage,
     items,
-    matchCount: matches.length,
+    /** Solo para baneados: la busqueda de miembros la resume la paginacion. */
+    matchCount: isBans ? banMatches.length : null,
     bansCount: banList.bans?.length ?? 0,
     pagination,
     unban: banList.unban,

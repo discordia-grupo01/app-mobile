@@ -2,7 +2,11 @@ import {
   displayNameOf,
   isMemberMuted,
   type Member,
-  MEMBER_PAGE_LIMIT,
+  type MemberPageQuery,
+  MEMBERS_EMPTY_SEARCH,
+  MEMBERS_LOADING_MORE,
+  MEMBERS_SEARCH_LABEL,
+  MEMBERS_SEARCH_PLACEHOLDER,
   resolveImageUrl,
 } from "@discordia/client-shared";
 
@@ -11,8 +15,8 @@ import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   BackHandler,
+  FlatList,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -20,7 +24,8 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useProfileFallback } from "../../../../hooks/useProfileFallback";
+import { SearchInput } from "../../../../components/ui/SearchInput";
+import { useMemberScroll } from "../../../../hooks/useMemberScroll";
 import { env } from "../../../../lib/env";
 import { useThemeColors } from "../../../../theme/theme-context";
 import { OwnProfileModal } from "../../../profile/components/OwnProfileModal";
@@ -56,47 +61,32 @@ export function MembersSidebar({
   onClose,
 }: MembersSidebarProps) {
   const colors = useThemeColors();
-  const [members, setMembers] = useState<Member[] | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [search, setSearch] = useState("");
   const [isOwnProfileVisible, setIsOwnProfileVisible] = useState(false);
   const [viewingUserId, setViewingUserId] = useState<string | null>(null);
   const [wasVisible, setWasVisible] = useState(visible);
   const insets = useSafeAreaInsets();
-  const resolvedMembers = useProfileFallback(members);
 
   if (visible !== wasVisible) {
     setWasVisible(visible);
-    if (visible) {
-      setMembers(null);
-      setIsLoading(true);
-      setErrorMessage("");
-    }
+    if (visible) setSearch("");
   }
 
-  const fetchMembers = useCallback(() => {
-    let cancelled = false;
-
-    listMembers(serverId, { limit: MEMBER_PAGE_LIMIT }).then((result) => {
-      if (cancelled) return;
-      setIsLoading(false);
-      if (!result.ok) {
-        setErrorMessage(result.message);
-        return;
-      }
-
-      setMembers(result.members);
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [serverId]);
-
-  useEffect(() => {
-    if (!visible) return;
-    return fetchMembers();
-  }, [visible, fetchMembers]);
+  const fetchPage = useCallback(
+    (query: MemberPageQuery) => listMembers(serverId, query),
+    [serverId],
+  );
+  const {
+    members: resolvedMembers,
+    total,
+    isSearching,
+    isLoadingMore,
+    errorMessage,
+    loadMore,
+    reload,
+    // El panel se monta siempre: pide al abrirse, y de nuevo cada vez que se
+    // reabre, asi muestra a quien haya entrado o salido mientras estaba cerrado.
+  } = useMemberScroll({ fetchPage, search, enabled: visible });
 
   useEffect(() => {
     if (!visible) return;
@@ -112,6 +102,49 @@ export function MembersSidebar({
 
   const owners = (resolvedMembers ?? []).filter((m) => m.is_owner);
   const others = (resolvedMembers ?? []).filter((m) => !m.is_owner);
+  // Filas de la lista: miembros con su encabezado de seccion intercalado.
+  type Row =
+    | { kind: "header"; key: string; label: string }
+    | { kind: "member"; key: string; member: Member };
+  const rows: Row[] = isSearching
+    ? [
+        { kind: "header", key: "h-results", label: `RESULTADOS — ${total}` },
+        ...(resolvedMembers ?? []).map((member): Row => ({
+          kind: "member",
+          key: member.user_id,
+          member,
+        })),
+      ]
+    : [
+        ...(owners.length > 0
+          ? [
+              {
+                kind: "header",
+                key: "h-owner",
+                label: `PROPIETARIO — ${owners.length}`,
+              } as Row,
+            ]
+          : []),
+        ...owners.map((member): Row => ({
+          kind: "member",
+          key: member.user_id,
+          member,
+        })),
+        ...(others.length > 0
+          ? [
+              {
+                kind: "header",
+                key: "h-members",
+                label: `MIEMBRO — ${Math.max(total - 1, others.length)}`,
+              } as Row,
+            ]
+          : []),
+        ...others.map((member): Row => ({
+          kind: "member",
+          key: member.user_id,
+          member,
+        })),
+      ];
   const isModeratable =
     viewingUserId !== currentUserId &&
     !owners.some((owner) => owner.user_id === viewingUserId);
@@ -223,48 +256,65 @@ export function MembersSidebar({
                 </TouchableOpacity>
               </View>
 
-              <ScrollView
-                contentContainerClassName="px-4 pb-6 gap-5"
-                showsVerticalScrollIndicator={false}
-              >
-                {isLoading && members === null ? (
+              <View className="px-4 pb-3">
+                <SearchInput
+                  value={search}
+                  onChange={setSearch}
+                  label={MEMBERS_SEARCH_LABEL}
+                  placeholder={MEMBERS_SEARCH_PLACEHOLDER}
+                />
+              </View>
+
+              {resolvedMembers === null ? (
+                errorMessage ? (
+                  <Text className="text-danger text-[13px] mt-6 text-center px-4">
+                    {errorMessage}
+                  </Text>
+                ) : (
                   <ActivityIndicator
                     size="small"
                     color={colors.accentBright}
                     className="mt-6"
                   />
-                ) : errorMessage ? (
-                  <Text className="text-danger text-[13px] mt-6 text-center">
-                    {errorMessage}
-                  </Text>
-                ) : (
-                  <>
-                    {owners.length > 0 ? (
-                      <View className="gap-2.5">
-                        <Text className="text-[11px] font-bold tracking-[1px] text-content-subtle mb-0.5">
-                          PROPIETARIO — {owners.length}
-                        </Text>
-                        {owners.map(renderMemberRow)}
-                      </View>
-                    ) : null}
-
-                    {others.length > 0 ? (
-                      <View className="gap-2.5">
-                        <Text className="text-[11px] font-bold tracking-[1px] text-content-subtle mb-0.5">
-                          MIEMBRO — {others.length}
-                        </Text>
-                        {others.map(renderMemberRow)}
-                      </View>
-                    ) : null}
-
-                    {owners.length === 0 && others.length === 0 ? (
-                      <Text className="text-content-subtle text-[13px] mt-6 text-center">
-                        Todavía no hay miembros para mostrar.
+                )
+              ) : (
+                <FlatList
+                  data={rows}
+                  keyExtractor={(row) => row.key}
+                  renderItem={({ item: row }) =>
+                    row.kind === "header" ? (
+                      <Text className="text-[11px] font-bold tracking-[1px] text-content-subtle mt-2.5">
+                        {row.label}
                       </Text>
-                    ) : null}
-                  </>
-                )}
-              </ScrollView>
+                    ) : (
+                      renderMemberRow(row.member)
+                    )
+                  }
+                  contentContainerClassName="px-4 pb-6 gap-2.5"
+                  showsVerticalScrollIndicator={false}
+                  keyboardShouldPersistTaps="handled"
+                  onEndReached={loadMore}
+                  onEndReachedThreshold={0.5}
+                  ListEmptyComponent={
+                    <Text className="text-content-subtle text-[13px] mt-6 text-center">
+                      {isSearching
+                        ? MEMBERS_EMPTY_SEARCH
+                        : "Todavía no hay miembros para mostrar."}
+                    </Text>
+                  }
+                  ListFooterComponent={
+                    isLoadingMore ? (
+                      <Text className="text-content-subtle text-[12px] mt-1">
+                        {MEMBERS_LOADING_MORE}
+                      </Text>
+                    ) : errorMessage ? (
+                      <Text className="text-danger text-[12px] mt-1">
+                        {errorMessage}
+                      </Text>
+                    ) : null
+                  }
+                />
+              )}
             </View>
           </View>
         </View>
@@ -286,9 +336,9 @@ export function MembersSidebar({
         canKick={canKickViewed}
         canMute={canMuteViewed}
         mutedUntil={viewedMember?.muted_until ?? null}
-        onMuteChanged={fetchMembers}
+        onMuteChanged={reload}
         canBlock={viewingUserId !== currentUserId}
-        onBanned={fetchMembers}
+        onBanned={reload}
         onClose={() => setViewingUserId(null)}
       />
     </>
