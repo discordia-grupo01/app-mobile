@@ -1,9 +1,13 @@
 import {
   displayNameOf,
   type Member,
-  MEMBER_PAGE_LIMIT,
+  type MemberPageQuery,
+  MEMBERS_EMPTY_SEARCH,
+  MEMBERS_SEARCH_LABEL,
+  MEMBERS_SEARCH_PLACEHOLDER,
   type OwnershipTransfer,
   resolveImageUrl,
+  TRANSFER_CANDIDATES_PAGE_SIZE,
   TRANSFER_CHOOSE_NEW_OWNER,
   TRANSFER_NONE_PENDING,
   TRANSFER_NO_OTHER_MEMBERS,
@@ -23,7 +27,7 @@ import {
 } from "react-native";
 
 import { getPublicUser } from "../../../../features/auth/service";
-import { useProfileFallback } from "../../../../hooks/useProfileFallback";
+import { useMemberPages } from "../../../../hooks/useMemberPages";
 import {
   acceptOwnershipTransfer,
   cancelOwnershipTransfer,
@@ -38,6 +42,8 @@ import { Button } from "../../../../components/ui/Button";
 import { Avatar } from "../../../../components/ui/Avatar";
 import { ModalShell } from "../../../../components/ui/ModalShell";
 import { ModalCloseButton } from "../../../../components/ui/ModalCloseButton";
+import { PaginationFooter } from "../../../../components/ui/PaginationFooter";
+import { SearchInput } from "../../../../components/ui/SearchInput";
 
 interface TransferOwnershipModalProps {
   visible: boolean;
@@ -52,7 +58,7 @@ interface TransferOwnershipModalProps {
   onOwnershipAccepted: () => void;
 }
 
-type InitiateStep = "loading-members" | "members-error" | "form" | "confirm";
+type InitiateStep = "form" | "confirm";
 
 export function TransferOwnershipModal({
   visible,
@@ -67,12 +73,12 @@ export function TransferOwnershipModal({
   onOwnershipAccepted,
 }: TransferOwnershipModalProps) {
   const colors = useThemeColors();
-  const [initiateStep, setInitiateStep] =
-    useState<InitiateStep>("loading-members");
-  const [rawCandidates, setRawCandidates] = useState<Member[]>([]);
-  const members = useProfileFallback(rawCandidates) ?? [];
-  const [membersError, setMembersError] = useState("");
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [initiateStep, setInitiateStep] = useState<InitiateStep>("form");
+  const [search, setSearch] = useState("");
+  // Se guarda el miembro entero y no solo su id: al cambiar de pagina deja de
+  // estar en la lista, y la confirmacion necesita su nombre y avatar.
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const selectedUserId = selectedMember?.user_id ?? null;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [counterpartName, setCounterpartName] = useState<string | null>(null);
@@ -96,42 +102,31 @@ export function TransferOwnershipModal({
   if (visible !== wasVisible) {
     setWasVisible(visible);
     if (visible) {
-      setInitiateStep("loading-members");
-      setRawCandidates([]);
-      setMembersError("");
-      setSelectedUserId(null);
+      setInitiateStep("form");
+      setSearch("");
+      setSelectedMember(null);
       setErrorMessage("");
       setIsSubmitting(false);
     }
   }
 
-  const fetchMembers = useCallback(() => {
-    let cancelled = false;
-
-    listMembers(serverId, { limit: MEMBER_PAGE_LIMIT }).then((result) => {
-      if (cancelled) return;
-      if (!result.ok) {
-        setMembersError(result.message);
-        setInitiateStep("members-error");
-        return;
-      }
-
-      const candidates = result.members.filter(
-        (m) => !m.is_owner && m.user_id !== currentUserId,
-      );
-      setRawCandidates(candidates);
-      setInitiateStep("form");
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [serverId, currentUserId]);
-
-  useEffect(() => {
-    if (!visible || !canInitiate) return;
-    return fetchMembers();
-  }, [visible, canInitiate, fetchMembers]);
+  const fetchPage = useCallback(
+    (query: MemberPageQuery) => listMembers(serverId, query),
+    [serverId],
+  );
+  const memberPages = useMemberPages({
+    fetchPage,
+    search,
+    enabled: visible && canInitiate,
+    pageSize: TRANSFER_CANDIDATES_PAGE_SIZE,
+  });
+  // El back pagina a todos los miembros; el propietario (uno mismo) no es
+  // candidato, asi que su pagina muestra uno menos.
+  const members =
+    memberPages.members?.filter(
+      (m) => !m.is_owner && m.user_id !== currentUserId,
+    ) ?? null;
+  const hasOtherMembers = memberPages.isSearching || memberPages.total > 1;
 
   const [resolvedCounterpartId, setResolvedCounterpartId] = useState<
     string | undefined
@@ -154,9 +149,7 @@ export function TransferOwnershipModal({
   }, [counterpartUserId]);
 
   function handleRetryMembers() {
-    setInitiateStep("loading-members");
-    setMembersError("");
-    fetchMembers();
+    memberPages.reload();
   }
 
   function handleContinue() {
@@ -226,8 +219,6 @@ export function TransferOwnershipModal({
     onClose();
   }
 
-  const selectedMember =
-    members.find((m) => m.user_id === selectedUserId) ?? null;
   const selectedDisplayName = displayNameOf(selectedMember?.profile);
 
   const errorBanner = errorMessage ? (
@@ -346,7 +337,7 @@ export function TransferOwnershipModal({
       );
     }
 
-    if (initiateStep === "loading-members") {
+    if (members === null && !memberPages.errorMessage) {
       return (
         <View className="p-7 pt-8 items-center justify-center gap-3.5">
           <ActivityIndicator size="small" color={colors.textSubtle} />
@@ -357,13 +348,13 @@ export function TransferOwnershipModal({
       );
     }
 
-    if (initiateStep === "members-error") {
+    if (members === null) {
       return (
         <View className="p-7 pt-8">
           <View className="flex-row items-start gap-2.5 rounded-xl border border-[rgba(224,82,82,0.3)] bg-[rgba(224,82,82,0.1)] px-3.5 py-3 mb-4">
             <Feather name="alert-circle" size={15} color={colors.danger} />
             <Text className="flex-1 text-danger text-[13px] leading-[18px]">
-              {membersError}
+              {memberPages.errorMessage}
             </Text>
           </View>
           <Button title="Reintentar" onPress={handleRetryMembers} />
@@ -384,9 +375,24 @@ export function TransferOwnershipModal({
             {TRANSFER_CHOOSE_NEW_OWNER}
           </Text>
 
-          {members.length === 0 ? (
+          {hasOtherMembers ? (
+            <View className="px-5 pb-3">
+              <SearchInput
+                value={search}
+                onChange={setSearch}
+                label={MEMBERS_SEARCH_LABEL}
+                placeholder={MEMBERS_SEARCH_PLACEHOLDER}
+              />
+            </View>
+          ) : null}
+
+          {!hasOtherMembers ? (
             <Text className="text-[13px] leading-[19px] text-content-muted text-center px-7 py-6">
               {TRANSFER_NO_OTHER_MEMBERS}
+            </Text>
+          ) : members.length === 0 ? (
+            <Text className="text-[13px] leading-[19px] text-content-muted text-center px-7 py-6">
+              {MEMBERS_EMPTY_SEARCH}
             </Text>
           ) : (
             <FlatList
@@ -401,7 +407,7 @@ export function TransferOwnershipModal({
                 return (
                   <TouchableOpacity
                     activeOpacity={0.7}
-                    onPress={() => setSelectedUserId(item.user_id)}
+                    onPress={() => setSelectedMember(item)}
                     className={cn(
                       "flex-row items-center gap-3 rounded-xl border px-2 py-2",
                       selected
@@ -441,8 +447,24 @@ export function TransferOwnershipModal({
             />
           )}
 
-          {members.length > 0 ? (
-            <View className="flex-row gap-3 mt-4 pt-8 border-t border-t-line p-7">
+          {memberPages.pageCount > 1 ? (
+            <PaginationFooter
+              page={memberPages.page}
+              pageCount={memberPages.pageCount}
+              range={memberPages.range}
+              total={memberPages.total}
+              noun={memberPages.isSearching ? "resultados" : "miembros"}
+              onPageChange={memberPages.setPage}
+            />
+          ) : null}
+
+          {hasOtherMembers ? (
+            <View
+              className={cn(
+                "flex-row gap-3 p-7 pt-6",
+                memberPages.pageCount > 1 ? null : "border-t border-t-line",
+              )}
+            >
               <Button
                 title="Cancelar"
                 variant="secondary"
