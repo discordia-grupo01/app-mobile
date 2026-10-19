@@ -7,6 +7,7 @@ import {
   MAX_DESCRIPTION,
   MAX_NAME,
   NO_DESCRIPTION_YET,
+  REMOVE_AVATAR_LABEL,
   resolveImageUrl,
   validateAvatar,
 } from "@discordia/client-shared";
@@ -102,6 +103,7 @@ export function OwnProfileModal({
     name?: string;
     description?: string;
     image?: PickedProfileImage;
+    removeImage?: boolean;
   }): Promise<boolean> {
     if (!user) return false;
     setGlobalError("");
@@ -184,6 +186,28 @@ export function OwnProfileModal({
     const ok = await submitProfile({ description: descriptionDraft });
     setIsSubmitting(false);
     if (ok) setEditingField(null);
+  }
+
+  function removeAvatar() {
+    if (!user.avatar_url && !imagePreview) return;
+    Alert.alert(
+      REMOVE_AVATAR_LABEL,
+      "La foto se eliminará y se mostrará tu avatar con inicial.",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Eliminar",
+          style: "destructive",
+          onPress: async () => {
+            setImageError("");
+            setIsUploadingAvatar(true);
+            const ok = await submitProfile({ removeImage: true });
+            setIsUploadingAvatar(false);
+            if (ok) setImagePreview(null);
+          },
+        },
+      ],
+    );
   }
 
   async function pickAvatar() {
@@ -473,6 +497,20 @@ export function OwnProfileModal({
         </TouchableOpacity>
         {imageError ? (
           <Text className="text-danger text-[12px] mt-1.5">{imageError}</Text>
+        ) : null}
+        {user.avatar_url || imagePreview ? (
+          <TouchableOpacity
+            onPress={removeAvatar}
+            disabled={isUploadingAvatar}
+            activeOpacity={0.7}
+            accessibilityLabel={REMOVE_AVATAR_LABEL}
+            className="mt-2 flex-row items-center gap-1.5 self-start rounded-lg border border-[rgba(224,82,82,0.3)] bg-[rgba(224,82,82,0.1)] px-2.5 py-1.5"
+          >
+            <Feather name="trash-2" size={14} color={colors.danger} />
+            <Text className="text-danger text-[12px] font-semibold">
+              {REMOVE_AVATAR_LABEL}
+            </Text>
+          </TouchableOpacity>
         ) : null}
       </View>
     </ModalShell>
