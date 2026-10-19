@@ -7,7 +7,6 @@ import {
   MAX_DESCRIPTION,
   MAX_NAME,
   NO_DESCRIPTION_YET,
-  REMOVE_AVATAR_LABEL,
   resolveImageUrl,
   validateAvatar,
 } from "@discordia/client-shared";
@@ -44,6 +43,7 @@ import type { PickedProfileImage } from "../types";
 import { ModalShell } from "../../../components/ui/ModalShell";
 
 const MAX_AVATAR_DIMENSION = 1024;
+const REMOVE_AVATAR_LABEL = "Eliminar foto de perfil";
 
 type EditingField = "name" | "description" | null;
 
@@ -111,6 +111,7 @@ export function OwnProfileModal({
       name: overrides.name ?? user.name,
       description: overrides.description ?? user.description,
       image: overrides.image,
+      removeImage: overrides.removeImage,
     });
 
     if (!result.ok) {
@@ -189,7 +190,8 @@ export function OwnProfileModal({
   }
 
   function removeAvatar() {
-    if (!user.avatar_url && !imagePreview) return;
+    const currentUser = user;
+    if (!currentUser || (!currentUser.avatar_url && !imagePreview)) return;
     Alert.alert(
       REMOVE_AVATAR_LABEL,
       "La foto se eliminará y se mostrará tu avatar con inicial.",
