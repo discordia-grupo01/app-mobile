@@ -61,3 +61,20 @@ export async function listVoiceParticipants(
     ? { ok: true, byChannel: presenceByChannel(result.data) }
     : result;
 }
+
+export async function fetchVoiceSocketTicket(): Promise<
+  { ok: true; ticket: string } | { ok: false; sessionExpired: boolean }
+> {
+  const { result } = await apiFetchWithBody<{
+    ticket?: string;
+  }>("/api/voice/socket-ticket", { method: "POST" });
+
+  if (result.ok && typeof result.data?.ticket === "string") {
+    return { ok: true, ticket: result.data.ticket };
+  }
+
+  return {
+    ok: false,
+    sessionExpired: result.status === 401,
+  };
+}
