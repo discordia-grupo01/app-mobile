@@ -307,6 +307,10 @@ export function OwnProfileModal({
           </View>
         ) : null}
 
+        {imageError ? (
+          <Text className="text-danger text-[12px] mb-3">{imageError}</Text>
+        ) : null}
+
         <View className="mb-4">
           {editingField === "name" ? (
             <View className="flex-row items-center gap-2">
@@ -497,24 +501,24 @@ export function OwnProfileModal({
             }}
           />
         </TouchableOpacity>
-        {imageError ? (
-          <Text className="text-danger text-[12px] mt-1.5">{imageError}</Text>
-        ) : null}
-        {user.avatar_url || imagePreview ? (
+      </View>
+
+      {user.avatar_url || imagePreview ? (
+        <View className="absolute top-28 right-5.5 z-10">
           <TouchableOpacity
             onPress={removeAvatar}
             disabled={isUploadingAvatar}
             activeOpacity={0.7}
             accessibilityLabel={REMOVE_AVATAR_LABEL}
-            className="mt-2 flex-row items-center gap-1.5 self-start rounded-lg border border-[rgba(224,82,82,0.3)] bg-[rgba(224,82,82,0.1)] px-2.5 py-1.5"
+            className="flex-row items-center gap-1.5 rounded-lg border border-[rgba(224,82,82,0.3)] bg-[rgba(224,82,82,0.1)] px-2.5 py-1.5"
           >
             <Feather name="trash-2" size={14} color={colors.danger} />
             <Text className="text-danger text-[12px] font-semibold">
-              {REMOVE_AVATAR_LABEL}
+              Eliminar foto
             </Text>
           </TouchableOpacity>
-        ) : null}
-      </View>
+        </View>
+      ) : null}
     </ModalShell>
   );
 }
