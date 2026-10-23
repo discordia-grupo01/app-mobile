@@ -29,6 +29,7 @@ import {
   useRef,
   useState,
   type ReactNode,
+  type ComponentRef,
 } from "react";
 import { StyleSheet, View } from "react-native";
 import { WebView, type WebViewMessageEvent } from "react-native-webview";
@@ -38,6 +39,10 @@ import { avatarUriOf } from "../../lib/userProfile";
 import { useTheme, useThemeColors } from "../../theme/theme-context";
 import { useAuth } from "../auth/auth-context";
 import { leaveVoiceSession, requestVoiceToken } from "./api";
+
+// react-native-webview 14 declara `WebView<P = undefined>` y `WebViewProps & undefined`
+// colapsa a `never`; pasando el genérico explícito vuelven a tiparse las props y el ref.
+type EmbedWebView = WebView<object>;
 
 const VOICE_EMBED_URL = env.webUrl
   ? `${env.webUrl.replace(/\/$/, "")}${VOICE_EMBED_PATH}`
@@ -89,14 +94,14 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
   const [isParticipantsOpen, setIsParticipantsOpen] = useState(false);
   const [lastSharingIds, setLastSharingIds] = useState<readonly string[]>([]);
   const [overlayOrigin, setOverlayOrigin] = useState({ x: 0, y: 0 });
-  const overlayRef = useRef<View>(null);
+  const overlayRef = useRef<ComponentRef<typeof View>>(null);
   const { theme } = useTheme();
   const colors = useThemeColors();
   const { user } = useAuth();
   const localAvatarUrl = avatarUriOf(user);
   const [bridge, setBridge] = useState<BridgeSession | null>(null);
   const [isEmbedPainted, setIsEmbedPainted] = useState(false);
-  const webViewRef = useRef<WebView>(null);
+  const webViewRef = useRef<EmbedWebView>(null);
   const isReadyRef = useRef(false);
   const pendingRef = useRef<VoiceBridgeCommand[]>([]);
   const sentMutedForMeRef = useRef<readonly string[]>([]);
@@ -398,7 +403,7 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
                 : styles.hidden
             }
           >
-            <WebView
+            <WebView<object>
               ref={webViewRef}
               source={{ uri: VOICE_EMBED_URL }}
               onMessage={onMessage}

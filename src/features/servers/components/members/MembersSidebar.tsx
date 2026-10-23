@@ -311,7 +311,7 @@ export function MembersSidebar({
                       <Text className="text-danger text-[12px] mt-1">
                         {errorMessage}
                       </Text>
-                    ) : null
+                    ) : undefined
                   }
                 />
               )}

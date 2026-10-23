@@ -5,7 +5,7 @@ import {
   type PinSetupErrors,
   validatePinSetup,
 } from "@discordia/client-shared";
-import { useEffect, useState, type RefObject } from "react";
+import { useEffect, useState, type RefObject, type ComponentRef } from "react";
 import { ScrollView, Text, View } from "react-native";
 
 import { Button } from "../../../../components/ui/Button";
@@ -20,7 +20,7 @@ import { configurePinService } from "../../../auth/service";
 interface PinSetupPanelProps {
   isPinEnabled: boolean;
   onClose: () => void;
-  scrollRef: RefObject<ScrollView | null>;
+  scrollRef: RefObject<ComponentRef<typeof ScrollView> | null>;
 }
 
 export function PinSetupPanel({

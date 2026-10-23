@@ -37,7 +37,10 @@
         {
           "cameraPermission": "Discordia usa la cámara para que te vean en los canales de voz."
         }
-      ]
+      ],
+      "expo-status-bar",
+      "expo-font",
+      "expo-asset"
     ]
   }
 }
