@@ -11,10 +11,7 @@ import {
 } from "@discordia/client-shared";
 
 import { useCallback, useMemo, useReducer, useState } from "react";
-import type {
-  NativeSyntheticEvent,
-  TextInputSelectionChangeEventData,
-} from "react-native";
+import type { TextInputSelectionChangeEvent } from "react-native";
 
 interface UseMentionDraftOptions {
   /** Lo que se puede mencionar; `null` en un chat sin menciones (DMs): sin selector. */
@@ -48,7 +45,7 @@ export function useMentionDraft({ sources }: UseMentionDraftOptions) {
   );
 
   const handleSelectionChange = useCallback(
-    (event: NativeSyntheticEvent<TextInputSelectionChangeEventData>) => {
+    (event: TextInputSelectionChangeEvent) => {
       setForcedCursor(null);
       dispatch({
         type: "moveCursor",

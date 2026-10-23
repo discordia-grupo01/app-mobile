@@ -1,7 +1,7 @@
 import type { ThemeName } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ComponentRef } from "react";
 import {
   KeyboardAvoidingView,
   Modal,
@@ -56,7 +56,7 @@ export function AccountSettingsSheet({
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
   const [section, setSection] = useState<Section>("menu");
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ y: 0, animated: false });

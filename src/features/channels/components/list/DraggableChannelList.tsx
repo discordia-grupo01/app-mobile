@@ -1,6 +1,6 @@
 import { type Channel } from "@discordia/client-shared";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ComponentRef } from "react";
 import { Animated, PanResponder, StyleSheet, View } from "react-native";
 
 import { useChannelDrag } from "./ChannelDragContext";
@@ -39,7 +39,7 @@ export function DraggableChannelList({
   onDragActiveChange,
   rowHeightOf = () => DRAG_ROW_HEIGHT,
 }: DraggableChannelListProps) {
-  const listRef = useRef<View>(null);
+  const listRef = useRef<ComponentRef<typeof View>>(null);
   const channelDrag = useChannelDrag();
 
   const channelIds = channels.map((channel) => channel.id);

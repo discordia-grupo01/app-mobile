@@ -12,7 +12,7 @@ import {
 } from "@discordia/client-shared";
 
 import * as DocumentPicker from "expo-document-picker";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ComponentRef } from "react";
 import { Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -61,7 +61,7 @@ export function MessageComposer({
   const [attachments, setAttachments] = useState<
     DocumentPicker.DocumentPickerAsset[]
   >([]);
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<ComponentRef<typeof TextInput>>(null);
   const { uploadAll, forget } = useAttachmentUploads();
 
   // Al empezar o terminar una edicion el borrador pasa a ser el del mensaje (o

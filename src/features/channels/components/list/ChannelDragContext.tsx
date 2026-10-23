@@ -10,6 +10,7 @@ import {
   useState,
   type ReactNode,
   type RefObject,
+  type ComponentRef,
 } from "react";
 import { Animated, View, type ViewStyle } from "react-native";
 
@@ -20,7 +21,7 @@ const TOP_EDGE_LINE_OFFSET = 6;
 
 interface BucketEntry {
   categoryId: string | null;
-  ref: RefObject<View | null>;
+  ref: RefObject<ComponentRef<typeof View> | null>;
   extendsToTop: boolean;
 }
 
@@ -40,7 +41,7 @@ interface ChannelDragContextValue {
   registerBucket: (
     key: string,
     categoryId: string | null,
-    ref: RefObject<View | null>,
+    ref: RefObject<ComponentRef<typeof View> | null>,
     extendsToTop?: boolean,
   ) => void;
   unregisterBucket: (key: string) => void;
@@ -48,7 +49,7 @@ interface ChannelDragContextValue {
     channel: Channel,
     sourceBucketKey: string,
     rowHeight: number,
-    ownRef: RefObject<View | null>,
+    ownRef: RefObject<ComponentRef<typeof View> | null>,
   ) => void;
   getHomeTop: () => number | null;
   updateDrag: (absoluteCenterY: number) => string | null;
@@ -78,7 +79,7 @@ export function ChannelDragProvider({
   renderChannel: (channel: Channel) => ReactNode;
   children: ReactNode;
 }) {
-  const rootRef = useRef<View>(null);
+  const rootRef = useRef<ComponentRef<typeof View>>(null);
   const rootTopRef = useRef(0);
 
   const bucketsRef = useRef<Map<string, BucketEntry>>(new Map());
@@ -101,7 +102,7 @@ export function ChannelDragProvider({
     (
       key: string,
       categoryId: string | null,
-      ref: RefObject<View | null>,
+      ref: RefObject<ComponentRef<typeof View> | null>,
       extendsToTop = false,
     ) => {
       bucketsRef.current.set(key, { categoryId, ref, extendsToTop });
@@ -118,7 +119,7 @@ export function ChannelDragProvider({
       channel: Channel,
       bucketKey: string,
       rowHeight: number,
-      ownRef: RefObject<View | null>,
+      ownRef: RefObject<ComponentRef<typeof View> | null>,
     ) => {
       sourceBucketKeyRef.current = bucketKey;
       hoveredBucketKeyRef.current = bucketKey;
@@ -296,7 +297,7 @@ export function ChannelDropZone({
     hoveredBucketKey,
     sourceBucketKey,
   } = useChannelDrag();
-  const ref = useRef<View>(null);
+  const ref = useRef<ComponentRef<typeof View>>(null);
 
   useEffect(() => {
     registerBucket(bucketKey, categoryId, ref, isTopEdge);

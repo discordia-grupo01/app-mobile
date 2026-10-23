@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, type ComponentRef } from "react";
 import { View } from "react-native";
 
 import { useVoiceSession } from "../../voice-session-context";
@@ -9,7 +9,7 @@ interface CallStageProps {
 
 export function CallStage({ isCovered }: CallStageProps) {
   const { setCallStage } = useVoiceSession();
-  const stageRef = useRef<View>(null);
+  const stageRef = useRef<ComponentRef<typeof View>>(null);
 
   const measure = useCallback(() => {
     if (isCovered) return;

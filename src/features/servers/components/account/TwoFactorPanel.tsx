@@ -11,7 +11,13 @@ import {
 } from "@discordia/client-shared";
 
 import * as Clipboard from "expo-clipboard";
-import { useCallback, useEffect, useState, type RefObject } from "react";
+import {
+  useCallback,
+  useEffect,
+  useState,
+  type RefObject,
+  type ComponentRef,
+} from "react";
 import { ActivityIndicator, ScrollView, View } from "react-native";
 
 import { useThemeColors } from "../../../../theme/theme-context";
@@ -32,7 +38,7 @@ import { TwoFactorStatusStep } from "./two-factor/TwoFactorStatusStep";
 
 interface TwoFactorPanelProps {
   onClose: () => void;
-  scrollRef: RefObject<ScrollView | null>;
+  scrollRef: RefObject<ComponentRef<typeof ScrollView> | null>;
 }
 
 type Step =
