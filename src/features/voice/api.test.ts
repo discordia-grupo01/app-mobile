@@ -7,6 +7,7 @@ import {
 import { apiFetchWithBody } from "../../lib/api-client";
 
 import {
+  fetchVoiceSocketTicket,
   leaveVoiceSession,
   listVoiceParticipants,
   requestVoiceToken,
@@ -114,6 +115,32 @@ describe("listVoiceParticipants", () => {
     expect(await listVoiceParticipants("s1")).toEqual({
       ok: false,
       message: VOICE_PARTICIPANTS_FAILED,
+    });
+  });
+
+  describe("fetchVoiceSocketTicket", () => {
+    it("pide un ticket autenticado para el socket de presencia", async () => {
+      mockedFetch.mockResolvedValue({
+        result: { ok: true, status: 200, data: { ticket: "voice-ticket" } },
+        body: { ticket: "voice-ticket" },
+      });
+
+      expect(await fetchVoiceSocketTicket()).toEqual({
+        ok: true,
+        ticket: "voice-ticket",
+      });
+      expect(mockedFetch).toHaveBeenCalledWith("/api/voice/socket-ticket", {
+        method: "POST",
+      });
+    });
+
+    it("informa cuando la sesion expiro", async () => {
+      mockedFetch.mockResolvedValue(failure(401, { error: "unauthorized" }));
+
+      expect(await fetchVoiceSocketTicket()).toEqual({
+        ok: false,
+        sessionExpired: true,
+      });
     });
   });
 });
