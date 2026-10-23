@@ -7,7 +7,6 @@ import {
   type PinLoginErrors,
   TWO_FACTOR_RECOVERY_CODE_USED,
   twoFactorRecoveryCodesRemaining,
-  type User,
   validatePinLogin,
 } from "@discordia/client-shared";
 import { Feather } from "@expo/vector-icons";
@@ -31,7 +30,7 @@ import { ThemeToggleButton } from "../components/ui/ThemeToggleButton";
 import { useAuth } from "../features/auth/auth-context";
 import { TwoFactorLoginStep } from "../features/auth/components/TwoFactorLoginStep";
 import { withAlpha } from "../lib/color";
-import { getStoredUser } from "../lib/storage";
+import { getPinOwner } from "../lib/storage";
 import { useStatusBarStyle, useThemeColors } from "../theme/theme-context";
 
 interface PinEntryScreenProps {
@@ -60,10 +59,10 @@ export function PinEntryScreen({
   const [lockSecondsLeft, setLockSecondsLeft] = useState(0);
 
   useEffect(() => {
-    getStoredUser<User>()
-      .then((user) => {
-        setUserName(user?.name ?? null);
-        setUserEmail(user?.email ?? null);
+    getPinOwner()
+      .then((owner) => {
+        setUserName(owner?.name ?? null);
+        setUserEmail(owner?.email ?? null);
       })
       .catch(() => {});
   }, []);

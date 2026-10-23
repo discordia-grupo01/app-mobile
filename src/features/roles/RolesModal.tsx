@@ -76,9 +76,7 @@ export function RolesModal({
     setStep("edit");
   }
 
-  const membersHook = useRoleMembers(serverId, selectedRole, {
-    onToast: showToast,
-  });
+  const membersHook = useRoleMembers(selectedRole);
   const createForm = useCreateRoleForm(serverId, {
     roles: rolesList.roles,
     everyoneRole: rolesList.everyoneRole,
@@ -105,7 +103,6 @@ export function RolesModal({
   }
 
   function goToTab(tab: "edit" | "members") {
-    if (tab === "members" && !isEveryoneSelected) membersHook.ensureLoaded();
     setStep(tab);
   }
 
@@ -203,7 +200,7 @@ export function RolesModal({
           canManage={canManageSelected}
           isEveryoneSelected={isEveryoneSelected}
           isDefaultRole={selectedRole.id === defaultRoleId}
-          memberCount={membersHook.membersWithRole.length}
+          memberCount={membersHook.memberCount}
           onSaved={rolesList.updateRoleInList}
           onDeleted={() => {
             rolesList.removeRoleFromList(selectedRole.id);
@@ -217,13 +214,12 @@ export function RolesModal({
 
       {step === "members" && selectedRole ? (
         <RoleMembersStep
+          key={selectedRole.id}
+          serverId={serverId}
+          roleId={selectedRole.id}
           isEveryoneSelected={isEveryoneSelected}
-          membersInfo={membersHook.membersInfo}
-          membersError={membersHook.membersError}
-          membersWithRole={membersHook.membersWithRole}
-          membersWithoutRole={membersHook.membersWithoutRole}
-          busyMemberId={membersHook.busyMemberId}
-          onToggleMember={membersHook.handleToggleMember}
+          onMembershipChange={membersHook.handleMembershipChange}
+          onToast={showToast}
         />
       ) : null}
     </ModalShell>

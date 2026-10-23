@@ -1,4 +1,12 @@
-import type { Channel, Role } from "@discordia/client-shared";
+import {
+  type AccessRevokedReason,
+  type Channel,
+  type Role,
+  type ServerSummary,
+  VOICE_CONNECTING,
+  VOICE_RECONNECTING,
+  voiceConnectedCount,
+} from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
 import { useMemo, useState } from "react";
@@ -14,37 +22,59 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "../features/auth/auth-context";
 import { authorFromProfile } from "../features/messages/author";
 import { ChannelChat } from "../features/messages/components/ChannelChat";
-import { MembersSidebar } from "../features/servers/components/channel/MembersSidebar";
-import { VoiceChannelPlaceholder } from "../features/servers/components/channel/VoiceChannelPlaceholder";
+import { MembersSidebar } from "../features/servers/components/members/MembersSidebar";
+import { VoiceChannelView } from "../features/voice/VoiceChannelView";
+import { useServerVoice } from "../features/voice/useServerVoice";
+import { cn } from "../lib/cn";
+import { withAlpha } from "../lib/color";
 import { useTheme, useThemeColors } from "../theme/theme-context";
 
 interface ChannelScreenProps {
   channel: Channel;
   serverId: string;
+  /** Nombre y canales del servidor, para la llamada de voz. */
+  server: ServerSummary;
   authToken?: string | null;
   currentUserId?: string | null;
   /** Owner, o miembro con el permiso MANAGE_ROLES via algún rol. */
   canManageRoles?: boolean;
   /** Owner, o miembro con el permiso BAN_MEMBERS via algún rol. */
   canBanMembers?: boolean;
+  /** Owner, o miembro con el permiso KICK_MEMBERS via algún rol. */
+  canKickMembers?: boolean;
+  /** MANAGE_MESSAGES a nivel servidor (silenciar no mira overrides de canal). */
+  canMuteMembers?: boolean;
   canManageMessages?: boolean;
   canSendMessages?: boolean;
   canMentionEveryone?: boolean;
+  canAddReactions?: boolean;
+  canConnect?: boolean;
+  isCheckingChannelPermissions?: boolean;
   serverRoles?: Role[];
+  myRoleIds?: string[];
+  onAccessRevoked?: (reason: AccessRevokedReason) => void;
   onBack: () => void;
 }
 
 export function ChannelScreen({
   channel,
   serverId,
+  server,
   authToken,
   currentUserId,
   canManageRoles = false,
   canBanMembers = false,
+  canKickMembers = false,
+  canMuteMembers = false,
   canManageMessages = false,
   canSendMessages = false,
   canMentionEveryone = false,
+  canAddReactions = false,
+  canConnect = false,
+  isCheckingChannelPermissions = false,
   serverRoles = [],
+  myRoleIds = [],
+  onAccessRevoked,
   onBack,
 }: ChannelScreenProps) {
   const colors = useThemeColors();
@@ -57,6 +87,16 @@ export function ChannelScreen({
     () => (user ? authorFromProfile(user) : null),
     [user],
   );
+  const voice = useServerVoice(server);
+  const isInThisCall = voice.voiceChannelId === channel.id;
+  const voicePillLabel =
+    voice.status === "connected"
+      ? voiceConnectedCount(voice.liveParticipants.length)
+      : voice.status === "reconnecting"
+        ? VOICE_RECONNECTING
+        : VOICE_CONNECTING;
+  const pillColor =
+    voice.status === "connected" ? colors.success : colors.highlight;
 
   return (
     <View className="flex-1 bg-surface">
@@ -74,14 +114,43 @@ export function ChannelScreen({
         <Feather
           name={isText ? "hash" : "volume-2"}
           size={19}
-          color={colors.textSubtle}
+          color={isInThisCall ? colors.success : colors.textSubtle}
         />
-        <Text
-          className="flex-1 text-[17px] font-bold text-content"
-          numberOfLines={1}
-        >
-          {channel.name}
-        </Text>
+        <View className="flex-1 flex-row items-center gap-2 min-w-0">
+          <Text
+            className="shrink text-[17px] font-bold text-content"
+            numberOfLines={1}
+          >
+            {channel.name}
+          </Text>
+          {isInThisCall ? (
+            <View
+              className="flex-row items-center gap-1.5 rounded-full border px-2 py-0.5"
+              style={{
+                backgroundColor: withAlpha(pillColor, 0.12),
+                borderColor: withAlpha(pillColor, 0.25),
+              }}
+            >
+              <View
+                className={cn(
+                  "w-1.5 h-1.5 rounded-full",
+                  voice.status === "connected" ? "bg-success" : "bg-highlight",
+                )}
+              />
+              <Text
+                className={cn(
+                  "text-[12px] font-medium",
+                  voice.status === "connected"
+                    ? "text-success"
+                    : "text-highlight",
+                )}
+                numberOfLines={1}
+              >
+                {voicePillLabel}
+              </Text>
+            </View>
+          ) : null}
+        </View>
         <TouchableOpacity
           onPress={() => setTheme(theme === "dark" ? "light" : "dark")}
           className="w-8.5 h-8.5 items-center justify-center"
@@ -113,6 +182,8 @@ export function ChannelScreen({
         authToken={authToken}
         canManageRoles={canManageRoles}
         canBanMembers={canBanMembers}
+        canKickMembers={canKickMembers}
+        canMuteMembers={canMuteMembers}
         onClose={() => setIsMembersVisible(false)}
       />
 
@@ -127,13 +198,26 @@ export function ChannelScreen({
             channel={channel}
             currentAuthor={currentAuthor}
             serverRoles={serverRoles}
+            myRoleIds={myRoleIds}
             canManageMessages={canManageMessages}
             canSendMessages={canSendMessages}
             canMentionEveryone={canMentionEveryone}
+            canAddReactions={canAddReactions}
+            isCheckingPermissions={isCheckingChannelPermissions}
+            onAccessRevoked={onAccessRevoked}
           />
         </KeyboardAvoidingView>
       ) : (
-        <VoiceChannelPlaceholder name={channel.name} />
+        <VoiceChannelView
+          channel={channel}
+          serverId={serverId}
+          serverName={server.name}
+          canConnect={canConnect}
+          isCheckingAccess={isCheckingChannelPermissions}
+          presence={voice.presence[channel.id] ?? []}
+          bottomInset={insets.bottom}
+          isCovered={isMembersVisible}
+        />
       )}
     </View>
   );

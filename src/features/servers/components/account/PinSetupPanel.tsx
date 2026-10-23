@@ -5,13 +5,14 @@ import {
   type PinSetupErrors,
   validatePinSetup,
 } from "@discordia/client-shared";
-import { useEffect, useState, type RefObject } from "react";
+import { useEffect, useState, type RefObject, type ComponentRef } from "react";
 import { ScrollView, Text, View } from "react-native";
 
 import { Button } from "../../../../components/ui/Button";
 import { FormErrorBanner } from "../../../../components/ui/FormErrorBanner";
 import { TextField } from "../../../../components/ui/TextField";
 import { withAlpha } from "../../../../lib/color";
+import { setPinOwner } from "../../../../lib/storage";
 import { useThemeColors } from "../../../../theme/theme-context";
 import { useAuth } from "../../../auth/auth-context";
 import { configurePinService } from "../../../auth/service";
@@ -19,7 +20,7 @@ import { configurePinService } from "../../../auth/service";
 interface PinSetupPanelProps {
   isPinEnabled: boolean;
   onClose: () => void;
-  scrollRef: RefObject<ScrollView | null>;
+  scrollRef: RefObject<ComponentRef<typeof ScrollView> | null>;
 }
 
 export function PinSetupPanel({
@@ -28,7 +29,7 @@ export function PinSetupPanel({
   scrollRef,
 }: PinSetupPanelProps) {
   const colors = useThemeColors();
-  const { setPinEnabled } = useAuth();
+  const { setPinEnabled, user } = useAuth();
   const [pin, setPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
   const [errors, setErrors] = useState<PinSetupErrors>({});
@@ -58,6 +59,7 @@ export function PinSetupPanel({
     }
 
     await setPinEnabled(true);
+    await setPinOwner({ name: user?.name ?? null, email: user?.email ?? null });
     setIsDone(true);
   }
 

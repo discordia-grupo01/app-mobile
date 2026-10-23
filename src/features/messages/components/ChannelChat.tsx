@@ -1,23 +1,38 @@
 import {
+  type AccessRevokedReason,
   ADD_REACTION_LABEL,
+  authorFromMember,
+  buildMentionResolver,
   canDeleteMessage,
   canEditMessage,
   CHAT_RECONNECTING_NOTICE,
   type Channel,
   LOADING_MESSAGES_LABEL,
+  type MentionSources,
+  messageInputPlaceholder,
   type MessageAuthor,
+  resolveImageUrl,
   type Role,
+  SEND_MESSAGES_DENIED_PLACEHOLDER,
 } from "@discordia/client-shared";
 
 import { useMemo, useState } from "react";
 import { Text } from "react-native";
 
-import { buildMentionResolver } from "../message-mentions";
+import { env } from "../../../lib/env";
+import { useServerMembers } from "../../servers/useServerMembers";
 import { useChannelMessages } from "../use-channel-messages";
-import { useMessageAuthors } from "../use-message-authors";
+import { useFailedMessages } from "../useFailedMessages";
+import { useMessageAuthors } from "../useMessageAuthors";
+import { ChannelWelcome } from "./ChannelWelcome";
 import { ChatStatusNotice } from "./ChatStatusNotice";
+import { ConnectionLostNotice } from "./ConnectionLostNotice";
 import { DeleteMessageModal } from "./DeleteMessageModal";
 import { EmojiPickerSheet } from "./EmojiPickerSheet";
+import {
+  MessageMentionsProvider,
+  type MessageMentionsValue,
+} from "./MentionsContext";
 import { MessageActionsSheet } from "./MessageActionsSheet";
 import { MessageComposer } from "./MessageComposer";
 import { MessageList } from "./MessageList";
@@ -27,9 +42,14 @@ interface ChannelChatProps {
   channel: Channel;
   currentAuthor: MessageAuthor | null;
   serverRoles: Role[];
+  myRoleIds: string[];
   canManageMessages: boolean;
   canSendMessages: boolean;
   canMentionEveryone: boolean;
+  canAddReactions: boolean;
+  isCheckingPermissions?: boolean;
+  /** El back cerro el canal: si fue por permisos, conviene recargar el servidor. */
+  onAccessRevoked?: (reason: AccessRevokedReason) => void;
 }
 
 export function ChannelChat({
@@ -37,9 +57,13 @@ export function ChannelChat({
   channel,
   currentAuthor,
   serverRoles,
+  myRoleIds,
   canManageMessages,
   canSendMessages,
   canMentionEveryone,
+  canAddReactions,
+  isCheckingPermissions = false,
+  onAccessRevoked,
 }: ChannelChatProps) {
   const {
     status,
@@ -53,26 +77,63 @@ export function ChannelChat({
     toggleReaction,
     editMessage,
     deleteMessage,
-  } = useChannelMessages(channel);
-  const authors = useMessageAuthors(serverId, messages, currentAuthor);
+  } = useChannelMessages(channel, currentAuthor?.id ?? null, {
+    onAccessRevoked,
+  });
+  const failed = useFailedMessages({
+    chatKey: channel.id,
+    channelId: channel.id,
+    currentUserId: currentAuthor?.id ?? null,
+    send: sendMessage,
+    getLastMessageId: () => messages?.at(-1)?.id ?? null,
+  });
+  const members = useServerMembers(serverId);
+  const authors = useMessageAuthors(members, messages, currentAuthor);
   const [reactingToId, setReactingToId] = useState<string | null>(null);
   const [actionsMessageId, setActionsMessageId] = useState<string | null>(null);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [deletingMessageId, setDeletingMessageId] = useState<string | null>(
     null,
   );
-  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   async function handleDelete(messageId: string) {
-    setDeleteError(null);
+    setActionError(null);
     const result = await deleteMessage(messageId);
-    if (!result.ok) setDeleteError(result.message);
+    if (!result.ok) setActionError(result.message);
   }
 
-  const resolveMention = useMemo(
-    () => buildMentionResolver(authors, serverRoles),
-    [authors, serverRoles],
-  );
+  async function handleToggleReaction(messageId: string, emoji: string) {
+    setActionError(null);
+    const result = await toggleReaction(messageId, emoji);
+    if (!result.ok) setActionError(result.message);
+  }
+
+  const currentUserId = currentAuthor?.id ?? null;
+  const mentions = useMemo<MessageMentionsValue>(() => {
+    const sources: MentionSources = {
+      members: (members ?? []).map((member) =>
+        authorFromMember(
+          member,
+          resolveImageUrl(member.profile?.avatar_url, env.apiUrl),
+        ),
+      ),
+      roles: serverRoles,
+      canMentionEveryone,
+    };
+    return {
+      resolveMention: buildMentionResolver(authors, serverRoles),
+      sources,
+      me: { userId: currentUserId, roleIds: myRoleIds },
+    };
+  }, [
+    authors,
+    members,
+    serverRoles,
+    canMentionEveryone,
+    currentUserId,
+    myRoleIds,
+  ]);
 
   // Estados de los que no se sale solos: el canal no se puede mostrar.
   if (statusMessage && status !== "ready") {
@@ -101,31 +162,38 @@ export function ChannelChat({
     messages?.find((m) => m.id === deletingMessageId) ?? null;
 
   return (
-    <>
+    <MessageMentionsProvider value={mentions}>
       {messages === null ? (
-        <ChatStatusNotice message={LOADING_MESSAGES_LABEL} />
+        status === "offline" ? (
+          <ConnectionLostNotice variant="panel" />
+        ) : (
+          <ChatStatusNotice message={LOADING_MESSAGES_LABEL} />
+        )
       ) : (
         <MessageList
-          channelName={channel.name}
-          messages={messages}
+          welcome={<ChannelWelcome channelName={channel.name} />}
+          messages={failed.withFailed(messages)}
           authors={authors}
           editingMessageId={editingMessageId}
-          resolveMention={resolveMention}
           hasMore={hasMore}
           isLoadingOlder={isLoadingOlder}
           onLoadOlder={loadOlder}
-          onToggleReaction={toggleReaction}
+          onToggleReaction={handleToggleReaction}
           onRequestReaction={setReactingToId}
+          canAddReactions={canAddReactions}
           onRequestActions={setActionsMessageId}
         />
       )}
-      {deleteError ? (
+      {actionError ? (
         <Text
           accessibilityRole="alert"
           className="bg-danger/10 px-4 py-1 text-center text-[12px] text-danger"
         >
-          {deleteError}
+          {actionError}
         </Text>
+      ) : null}
+      {status === "offline" && messages !== null ? (
+        <ConnectionLostNotice variant="bar" />
       ) : null}
       {status === "reconnecting" ? (
         <Text
@@ -136,15 +204,20 @@ export function ChannelChat({
         </Text>
       ) : null}
       <MessageComposer
-        channelName={channel.name}
-        onSend={sendMessage}
-        disabled={!currentAuthor || status !== "ready"}
-        canMentionEveryone={canMentionEveryone}
+        placeholder={
+          canSendMessages || isCheckingPermissions
+            ? messageInputPlaceholder(channel.name)
+            : SEND_MESSAGES_DENIED_PLACEHOLDER
+        }
+        onSend={failed.onSend}
+        uploadTarget={{ channelId: channel.id }}
+        disabled={!currentAuthor || status !== "ready" || !canSendMessages}
         editing={
           editingMessage
             ? {
                 id: editingMessage.id,
                 content: editingMessage.content,
+                hasAttachments: Boolean(editingMessage.attachments?.length),
                 onSave: async (content) => {
                   const result = await editMessage(editingMessage.id, content);
                   if (result.ok) setEditingMessageId(null);
@@ -160,10 +233,14 @@ export function ChannelChat({
         visible={actionsMessageId !== null}
         canEdit={canEditActions}
         canDelete={canDeleteActions}
-        onReact={() => {
-          setReactingToId(actionsMessageId);
-          setActionsMessageId(null);
-        }}
+        onReact={
+          canAddReactions
+            ? () => {
+                setReactingToId(actionsMessageId);
+                setActionsMessageId(null);
+              }
+            : undefined
+        }
         onEdit={() => {
           setEditingMessageId(actionsMessageId);
           setActionsMessageId(null);
@@ -181,7 +258,6 @@ export function ChannelChat({
         author={
           deletingMessage ? (authors[deletingMessage.user_id] ?? null) : null
         }
-        resolveMention={resolveMention}
         onConfirm={() => {
           if (deletingMessageId) void handleDelete(deletingMessageId);
           setDeletingMessageId(null);
@@ -193,10 +269,10 @@ export function ChannelChat({
         visible={reactingToId !== null}
         title={ADD_REACTION_LABEL}
         onPick={(emoji) => {
-          if (reactingToId) toggleReaction(reactingToId, emoji);
+          if (reactingToId) void handleToggleReaction(reactingToId, emoji);
         }}
         onClose={() => setReactingToId(null)}
       />
-    </>
+    </MessageMentionsProvider>
   );
 }

@@ -4,6 +4,7 @@ import {
   DELETE_MESSAGE_CONFIRM_BODY,
   DELETE_MESSAGE_CONFIRM_TITLE,
   type MessageAuthor,
+  type MessageMentions,
 } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
@@ -12,16 +13,14 @@ import { ScrollView, Text, View } from "react-native";
 import { Button } from "../../../components/ui/Button";
 import { ModalShell } from "../../../components/ui/ModalShell";
 import { useThemeColors } from "../../../theme/theme-context";
-import { ServerAvatar } from "../../servers/components/ServerAvatar";
-import { MessageContent, type MentionResolver } from "./MessageContent";
+import { Avatar } from "../../../components/ui/Avatar";
+import { MessageContent } from "./MessageContent";
 import { MessageHeader } from "./MessageHeader";
 
 interface DeleteMessageModalProps {
   visible: boolean;
-  /** El mensaje que se va a eliminar, completo, para que se vea cual es. */
-  message: { content: string; inserted_at: string } | null;
+  message: ({ content: string; inserted_at: string } & MessageMentions) | null;
   author: MessageAuthor | null;
-  resolveMention?: MentionResolver;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -31,7 +30,6 @@ export function DeleteMessageModal({
   visible,
   message,
   author,
-  resolveMention,
   onConfirm,
   onCancel,
 }: DeleteMessageModalProps) {
@@ -57,13 +55,10 @@ export function DeleteMessageModal({
           className="mt-3 max-h-48 w-full rounded-xl border border-line bg-surface-input"
           contentContainerClassName="flex-row gap-3 px-3 py-2.5"
         >
-          <ServerAvatar name={author.name} uri={author.avatarUrl} size={32} />
+          <Avatar name={author.name} uri={author.avatarUrl} size={32} />
           <View className="min-w-0 flex-1">
             <MessageHeader author={author} createdAt={message.inserted_at} />
-            <MessageContent
-              content={message.content}
-              resolveMention={resolveMention}
-            />
+            <MessageContent content={message.content} mentions={message} />
           </View>
         </ScrollView>
       ) : null}

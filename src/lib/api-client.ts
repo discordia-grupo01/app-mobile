@@ -71,8 +71,15 @@ async function doRefresh(): Promise<string | null> {
 export async function apiFetch<T = unknown>(
   path: string,
   options: RequestInit = {},
-  isRetry = false,
 ): Promise<ApiResult<T>> {
+  return (await apiFetchWithBody<T>(path, options)).result;
+}
+
+export async function apiFetchWithBody<T = unknown>(
+  path: string,
+  options: RequestInit = {},
+  isRetry = false,
+): Promise<{ result: ApiResult<T>; body: unknown }> {
   const token = await getToken();
 
   let res: Response;
@@ -87,7 +94,7 @@ export async function apiFetch<T = unknown>(
       },
     });
   } catch {
-    return networkFailure();
+    return { result: networkFailure(), body: null };
   }
 
   // El access token dura 15 min: cualquier request se tope
@@ -102,7 +109,7 @@ export async function apiFetch<T = unknown>(
   if (res.status === 401 && !isRetry && !AUTH_PATHS_WITHOUT_RETRY.has(path)) {
     const newToken = await refreshAccessToken();
     if (newToken) {
-      return apiFetch<T>(path, options, true);
+      return apiFetchWithBody<T>(path, options, true);
     }
   }
 
@@ -113,5 +120,5 @@ export async function apiFetch<T = unknown>(
     body = await res.json();
   } catch {}
 
-  return toApiResult<T>(res.status, body);
+  return { result: toApiResult<T>(res.status, body), body };
 }

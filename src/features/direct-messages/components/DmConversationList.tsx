@@ -1,29 +1,40 @@
 import {
+  BLOCKED_BADGE_LABEL,
   DIRECT_MESSAGES_TITLE,
+  type ConversationSummary,
   NO_CONVERSATIONS_YET,
 } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 import { UserProfileBar } from "../../servers/components/account/UserProfileBar";
-import { ServerAvatar } from "../../servers/components/ServerAvatar";
+import { Avatar } from "../../../components/ui/Avatar";
 import { useThemeColors } from "../../../theme/theme-context";
 import { cn } from "../../../lib/cn";
-import type { ConversationSummary } from "../useDirectMessages";
 
 interface DmConversationListProps {
   conversations: ConversationSummary[];
-  activeConversationId: string | null;
+  isLoading: boolean;
+  loadError: string | null;
+  activePartnerId: string | null;
   userName?: string | null;
-  onSelect: (conversationId: string) => void;
+  onSelect: (partnerId: string) => void;
   onStartNew: () => void;
   onLogout: () => void;
 }
 
 export function DmConversationList({
   conversations,
-  activeConversationId,
+  isLoading,
+  loadError,
+  activePartnerId,
   userName,
   onSelect,
   onStartNew,
@@ -48,32 +59,41 @@ export function DmConversationList({
       </View>
 
       <ScrollView contentContainerClassName="px-2 py-2">
-        {conversations.length === 0 ? (
-          <Text className="px-2 py-3 text-[13px] text-content-subtle">
-            {NO_CONVERSATIONS_YET}
+        {isLoading ? (
+          <View className="items-center py-6">
+            <ActivityIndicator color={colors.accentBright} />
+          </View>
+        ) : conversations.length === 0 ? (
+          <Text
+            accessibilityRole={loadError ? "alert" : undefined}
+            className={cn(
+              "px-2 py-3 text-[13px]",
+              loadError ? "text-danger" : "text-content-subtle",
+            )}
+          >
+            {loadError ?? NO_CONVERSATIONS_YET}
           </Text>
         ) : (
           conversations.map(
             ({
-              conversation,
+              conversationId,
               partner,
               lastMessage,
               isUnread,
               blockedByMe,
-              blocksMe,
             }) => {
-              const isActive = conversation.id === activeConversationId;
+              const isActive = partner.id === activePartnerId;
               return (
                 <TouchableOpacity
-                  key={conversation.id}
-                  onPress={() => onSelect(conversation.id)}
+                  key={conversationId}
+                  onPress={() => onSelect(partner.id)}
                   activeOpacity={0.75}
                   className={cn(
                     "mb-0.5 flex-row items-center gap-2.5 rounded-lg px-2 py-2.5",
                     isActive && "bg-accent/20",
                   )}
                 >
-                  <ServerAvatar
+                  <Avatar
                     name={partner.name}
                     uri={partner.avatarUrl}
                     size={38}
@@ -86,10 +106,10 @@ export function DmConversationList({
                       >
                         {partner.name}
                       </Text>
-                      {blockedByMe || blocksMe ? (
+                      {blockedByMe ? (
                         <View className="rounded bg-danger/15 px-1 py-px">
                           <Text className="text-[9px] text-danger">
-                            bloqueado
+                            {BLOCKED_BADGE_LABEL}
                           </Text>
                         </View>
                       ) : null}

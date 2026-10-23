@@ -1,29 +1,55 @@
-import { type PublicUser } from "@discordia/client-shared";
+import {
+  isMemberMuted,
+  mutedUntilLabel,
+  type PublicUser,
+  unmuteSuccessNotice,
+} from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, ScrollView, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 import { avatarUriOf } from "../../../lib/userProfile";
 import { BanMemberModal } from "../../bans/components/BanMemberModal";
+import { unmuteMember } from "../../moderation/api";
+import { KickMemberModal } from "../../moderation/components/KickMemberModal";
+import { MuteMemberModal } from "../../moderation/components/MuteMemberModal";
 import { useThemeColors } from "../../../theme/theme-context";
-import { ServerAvatar } from "../../servers/components/ServerAvatar";
+import { Avatar } from "../../../components/ui/Avatar";
 import { MemberRoleBadges } from "../../roles/components/MemberRoleBadges";
 import { getPublicProfile } from "../service";
 import { MutualServersList } from "./MutualServersList";
 import { ProfileBanner } from "./ProfileBanner";
-import { ModeratorActions } from "../../bans/components/ModeratorActions";
+import { useBlockedUsersContext } from "../../blocks/blocked-users-context";
+import { BlockUserModal } from "./BlockUserModal";
+import { MemberActionsSheet } from "./MemberActionsSheet";
 import { ModalShell } from "../../../components/ui/ModalShell";
 
 interface PublicProfileModalProps {
   visible: boolean;
   userId: string | null;
   authToken?: string | null;
-  serverId: string;
-  canManageRoles: boolean;
-  /** Muestra el boton de banear: quien lo abre decide si puede (permiso, no es el dueño ni uno mismo). */
+  /** Sin servidor (perfil abierto desde un mensaje directo) no hay roles que mostrar. */
+  serverId?: string;
+  canManageRoles?: boolean;
   canBan?: boolean;
-  /** Se dispara apenas el back confirma el baneo de este usuario. */
+  /** Puede expulsar (permiso) y el perfil no es el propio ni el del owner. */
+  canKick?: boolean;
+  /** Puede silenciar (`MANAGE_MESSAGES`) y el perfil no es el propio ni el del owner. */
+  canMute?: boolean;
+  /** Hasta cuando esta silenciado (de la lista de miembros); `null` si no lo esta. */
+  mutedUntil?: string | null;
+  /** Se dispara al silenciar o quitar el silencio, para refrescar la lista. */
+  onMuteChanged?: () => void;
+  canBlock?: boolean;
+  /** Se dispara al banear o expulsar: el miembro ya no esta en el servidor. */
   onBanned?: () => void;
   onClose: () => void;
 }
@@ -33,8 +59,13 @@ export function PublicProfileModal({
   userId,
   authToken,
   serverId,
-  canManageRoles,
+  canManageRoles = false,
   canBan = false,
+  canKick = false,
+  canMute = false,
+  mutedUntil = null,
+  onMuteChanged,
+  canBlock = false,
   onBanned,
   onClose,
 }: PublicProfileModalProps) {
@@ -43,17 +74,28 @@ export function PublicProfileModal({
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isBanOpen, setIsBanOpen] = useState(false);
+  const [isKickOpen, setIsKickOpen] = useState(false);
+  const [isMuteOpen, setIsMuteOpen] = useState(false);
+  const [isUnmuting, setIsUnmuting] = useState(false);
+  /** Arranca con lo que dice la lista y se actualiza al silenciar o quitar. */
+  const [currentMutedUntil, setCurrentMutedUntil] = useState(mutedUntil);
   const [wasBanned, setWasBanned] = useState(false);
+  const [isBlockOpen, setIsBlockOpen] = useState(false);
+  const [isActionsOpen, setIsActionsOpen] = useState(false);
+  const { blockedIds, blockUser, unblockUser } = useBlockedUsersContext();
 
   const key = `${visible}::${userId}`;
   const [lastKey, setLastKey] = useState(key);
   if (key !== lastKey) {
     setLastKey(key);
+    setCurrentMutedUntil(mutedUntil);
     if (visible && userId) {
       setProfile(null);
       setErrorMessage("");
       setIsLoading(true);
       setIsBanOpen(false);
+      setIsBlockOpen(false);
+      setIsActionsOpen(false);
       setWasBanned(false);
     }
   }
@@ -81,7 +123,27 @@ export function PublicProfileModal({
 
   function handleBanClosed() {
     setIsBanOpen(false);
+    setIsKickOpen(false);
     if (wasBanned) onClose();
+  }
+
+  async function handleUnmute() {
+    if (!profile || !serverId) return;
+    setIsUnmuting(true);
+    const result = await unmuteMember(serverId, profile.id);
+    setIsUnmuting(false);
+    if (!result.ok) {
+      Alert.alert(result.message);
+      return;
+    }
+    setCurrentMutedUntil(null);
+    onMuteChanged?.();
+    Alert.alert(unmuteSuccessNotice(profile.name));
+  }
+
+  function handleMuted(untilAt: string) {
+    setCurrentMutedUntil(untilAt);
+    onMuteChanged?.();
   }
 
   function handleBanned() {
@@ -89,9 +151,45 @@ export function PublicProfileModal({
     onBanned?.();
   }
 
+  const isMuted = isMemberMuted({ muted_until: currentMutedUntil });
+  const hasModeratorActions =
+    Boolean(serverId) && (canBan || canKick || canMute);
+  const hasMemberActions =
+    Boolean(profile) &&
+    !profile?.is_suspended &&
+    (hasModeratorActions || canBlock);
+
   return (
     <ModalShell visible={visible} onClose={onClose} className="max-w-100">
-      <ProfileBanner onClose={onClose} dimmed={profile?.is_suspended} />
+      <ProfileBanner
+        onClose={onClose}
+        dimmed={profile?.is_suspended}
+        action={
+          hasMemberActions ? (
+            <TouchableOpacity
+              onPress={() => setIsActionsOpen(true)}
+              disabled={isUnmuting}
+              className="h-7.5 w-7.5 items-center justify-center rounded-full bg-[rgba(0,0,0,0.3)]"
+              accessibilityRole="button"
+              accessibilityLabel="Más acciones"
+              accessibilityState={{ busy: isUnmuting }}
+            >
+              {isUnmuting ? (
+                <ActivityIndicator
+                  size="small"
+                  color="rgba(255,255,255,0.85)"
+                />
+              ) : (
+                <Feather
+                  name="more-vertical"
+                  size={14}
+                  color="rgba(255,255,255,0.85)"
+                />
+              )}
+            </TouchableOpacity>
+          ) : undefined
+        }
+      />
 
       {profile?.is_suspended ? (
         <View className="items-center gap-2.5 px-6 py-8">
@@ -130,6 +228,14 @@ export function PublicProfileModal({
               >
                 {profile.name}
               </Text>
+              {isMuted && currentMutedUntil ? (
+                <View className="mt-1 flex-row items-center gap-1.5">
+                  <Feather name="mic-off" size={12} color={colors.danger} />
+                  <Text className="text-[12px] font-semibold text-danger">
+                    {mutedUntilLabel(currentMutedUntil)}
+                  </Text>
+                </View>
+              ) : null}
               {profile.status_text || profile.status_emoji ? (
                 <View className="self-start rounded-full bg-surface-input px-3 py-[5px] mt-2">
                   <Text
@@ -158,16 +264,12 @@ export function PublicProfileModal({
               <MutualServersList serverIds={profile.mutual_server_ids} />
             </View>
 
-            <View className="mb-4">
+            {serverId ? (
               <MemberRoleBadges
                 serverId={serverId}
                 userId={profile.id}
                 canManage={canManageRoles}
               />
-            </View>
-
-            {canBan ? (
-              <ModeratorActions onBan={() => setIsBanOpen(true)} />
             ) : null}
           </ScrollView>
 
@@ -175,7 +277,7 @@ export function PublicProfileModal({
             <View className="w-20 h-20">
               <View className="absolute top-0 left-0 w-20 h-20 rounded-[40px] bg-surface-modal" />
               <View className="absolute top-1 left-1 w-18 h-18">
-                <ServerAvatar
+                <Avatar
                   name={profile.name}
                   uri={avatarSrc}
                   size={72}
@@ -188,7 +290,75 @@ export function PublicProfileModal({
         </>
       )}
 
-      {isBanOpen && profile ? (
+      {profile ? (
+        <MemberActionsSheet
+          visible={isActionsOpen}
+          memberName={profile.name}
+          onUnmute={
+            hasModeratorActions && canMute && isMuted
+              ? () => void handleUnmute()
+              : undefined
+          }
+          onMute={
+            hasModeratorActions && canMute && !isMuted
+              ? () => setIsMuteOpen(true)
+              : undefined
+          }
+          onKick={
+            hasModeratorActions && canKick
+              ? () => setIsKickOpen(true)
+              : undefined
+          }
+          onBan={
+            hasModeratorActions && canBan ? () => setIsBanOpen(true) : undefined
+          }
+          onToggleBlock={canBlock ? () => setIsBlockOpen(true) : undefined}
+          isBlocked={blockedIds.has(profile.id)}
+          onClose={() => setIsActionsOpen(false)}
+        />
+      ) : null}
+
+      {isBlockOpen && profile ? (
+        <BlockUserModal
+          visible
+          userName={profile.name}
+          isBlocked={blockedIds.has(profile.id)}
+          onConfirm={() =>
+            blockedIds.has(profile.id)
+              ? unblockUser(profile.id)
+              : blockUser(profile.id)
+          }
+          onClose={() => setIsBlockOpen(false)}
+        />
+      ) : null}
+
+      {isMuteOpen && profile && serverId ? (
+        <MuteMemberModal
+          serverId={serverId}
+          target={{
+            userId: profile.id,
+            name: profile.name,
+            avatarUri: avatarUriOf(profile),
+          }}
+          onClose={() => setIsMuteOpen(false)}
+          onMuted={handleMuted}
+        />
+      ) : null}
+
+      {isKickOpen && profile && serverId ? (
+        <KickMemberModal
+          serverId={serverId}
+          target={{
+            userId: profile.id,
+            name: profile.name,
+            avatarUri: avatarUriOf(profile),
+          }}
+          onClose={handleBanClosed}
+          onKicked={handleBanned}
+        />
+      ) : null}
+
+      {isBanOpen && profile && serverId ? (
         <BanMemberModal
           serverId={serverId}
           target={{

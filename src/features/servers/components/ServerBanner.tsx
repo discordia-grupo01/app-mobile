@@ -8,7 +8,7 @@ interface ServerBannerProps {
 }
 
 // El banner es un recurso público (ver servers/README.md y
-// servers/openapi.yaml), así que -- igual que ServerAvatar -- se le pasa la
+// servers/openapi.yaml), así que -- igual que Avatar -- se le pasa la
 // URL directo a <Image>, sin bajarla a mano ni cachearla a disco.
 export function ServerBanner({ uri, height, style }: ServerBannerProps) {
   const [failed, setFailed] = useState(false);

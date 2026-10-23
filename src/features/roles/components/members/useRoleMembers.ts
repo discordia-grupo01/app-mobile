@@ -1,104 +1,42 @@
-import {
-  displayNameOf,
-  MEMBER_PAGE_LIMIT,
-  type MemberInfo,
-  type Role,
-} from "@discordia/client-shared";
+import { type Role } from "@discordia/client-shared";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-import { listMembers } from "../../../servers/api";
-import { assignRole, listMemberRoles, removeRole } from "../../api";
+import { listRoleMembers } from "../../api";
 
-interface UseRoleMembersOptions {
-  onToast: (message: string) => void;
-}
-
-export function useRoleMembers(
-  serverId: string,
-  role: Role | undefined,
-  { onToast }: UseRoleMembersOptions,
-) {
-  const [membersInfo, setMembersInfo] = useState<MemberInfo[] | null>(null);
-  const [membersError, setMembersError] = useState("");
-  const [busyMemberId, setBusyMemberId] = useState<string | null>(null);
-
-  const [lastRoleId, setLastRoleId] = useState(role?.id);
-  if (lastRoleId !== role?.id) {
-    setLastRoleId(role?.id);
-    setMembersInfo(null);
-    setMembersError("");
-    setBusyMemberId(null);
-  }
-
-  function ensureLoaded() {
-    if (membersInfo !== null || membersError) return;
-    setMembersError("");
-    listMembers(serverId, { limit: MEMBER_PAGE_LIMIT }).then((result) => {
-      if (!result.ok) {
-        setMembersError(result.message);
-        setMembersInfo([]);
-        return;
-      }
-      Promise.all(
-        result.members.map(async (member) => {
-          const memberRolesResult = await listMemberRoles(
-            serverId,
-            member.user_id,
-          );
-          return {
-            userId: member.user_id,
-            name: displayNameOf(member.profile),
-            avatarUrl: member.profile?.avatar_url ?? null,
-            roleIds: memberRolesResult.ok
-              ? memberRolesResult.roles.map((r) => r.id)
-              : [],
-          };
-        }),
-      ).then((infos) => setMembersInfo(infos));
-    });
-  }
-
+/**
+ * Cuantos tienen el rol elegido (#58), para el encabezado. Se pide al elegir
+ * el rol, asi el contador ya es el real; alcanza con una pagina de 1 porque
+ * solo interesa el total. Las listas en si las pagina `RoleMembersStep`.
+ */
+export function useRoleMembers(role: Role | undefined) {
+  const [counts, setCounts] = useState<Record<string, number>>({});
   const selectedRoleId = role?.id ?? "";
-  const membersWithRole = (membersInfo ?? []).filter((m) =>
-    m.roleIds.includes(selectedRoleId),
-  );
-  const membersWithoutRole = (membersInfo ?? []).filter(
-    (m) => !m.roleIds.includes(selectedRoleId),
-  );
 
-  async function handleToggleMember(member: MemberInfo, hasRole: boolean) {
-    setBusyMemberId(member.userId);
-    const result = hasRole
-      ? await removeRole(serverId, member.userId, selectedRoleId)
-      : await assignRole(serverId, member.userId, selectedRoleId);
-    setBusyMemberId(null);
-    if (!result.ok) {
-      onToast(result.message);
-      return;
-    }
-    setMembersInfo(
-      (prev) =>
-        prev?.map((m) =>
-          m.userId === member.userId
-            ? {
-                ...m,
-                roleIds: hasRole
-                  ? m.roleIds.filter((id) => id !== selectedRoleId)
-                  : [...m.roleIds, selectedRoleId],
-              }
-            : m,
-        ) ?? null,
+  useEffect(() => {
+    if (!selectedRoleId || counts[selectedRoleId] !== undefined) return;
+    let cancelled = false;
+    listRoleMembers(selectedRoleId, { limit: 1 }).then((result) => {
+      if (cancelled || !result.ok) return;
+      setCounts((prev) => ({ ...prev, [selectedRoleId]: result.total }));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedRoleId, counts]);
+
+  /** Se asigno (+1) o quito (-1) el rol a alguien. */
+  function handleMembershipChange(delta: 1 | -1) {
+    setCounts((prev) =>
+      prev[selectedRoleId] === undefined
+        ? prev
+        : { ...prev, [selectedRoleId]: prev[selectedRoleId] + delta },
     );
   }
 
   return {
-    membersInfo,
-    membersError,
-    busyMemberId,
-    membersWithRole,
-    membersWithoutRole,
-    ensureLoaded,
-    handleToggleMember,
+    /** `null` hasta saber cuantos tienen el rol. */
+    memberCount: counts[selectedRoleId] ?? null,
+    handleMembershipChange,
   };
 }

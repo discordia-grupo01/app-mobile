@@ -1,4 +1,8 @@
 import {
+  type AccessRevokedReason,
+  type Channel,
+  type ChannelOverridePermission,
+  type DeleteServerResult,
   hasPermission,
   type LeaveServerResult,
   type Role,
@@ -9,16 +13,13 @@ import {
 import { Feather } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  ActivityIndicator,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { LoadingScreen } from "../components/ui/LoadingScreen";
+import { useLoadingGate } from "../hooks/useLoadingGate";
 import { useDirectMessages } from "../features/direct-messages/useDirectMessages";
+import { useMentions } from "../features/mentions/useMentions";
 import { AddServerSheet } from "../features/servers/components/rail/AddServerSheet";
 import { CreateServerModal } from "../features/servers/components/server/CreateServerModal";
 import { EmptyState } from "../features/servers/components/home/EmptyState";
@@ -27,7 +28,14 @@ import { useAuth } from "../features/auth/auth-context";
 import { authorFromProfile } from "../features/messages/author";
 import { getOwnProfile } from "../features/profile/service";
 import { listMemberRoles, listRoles } from "../features/roles/api";
-import { leaveServer, listMyServers } from "../features/servers/api";
+import {
+  deleteServer,
+  leaveServer,
+  listMyServers,
+} from "../features/servers/api";
+import { useMyChannelPermissions } from "../features/channels/useMyChannelPermissions";
+import { useVoiceSession } from "../features/voice/voice-session-context";
+import { getLastLocation, setLastLocation } from "../lib/storage";
 import { useStatusBarStyle, useThemeColors } from "../theme/theme-context";
 import { ChannelScreen } from "./ChannelScreen";
 import { DirectMessagesScreen } from "./DirectMessagesScreen";
@@ -36,23 +44,35 @@ import { ServerPickerScreen } from "./ServerPickerScreen";
 
 type MainView = "servers" | "dm";
 
-export function HomeScreen() {
+interface HomeScreenProps {
+  /** La pantalla de carga ya estaba a la vista antes de montar el home. */
+  resumesLoader?: boolean;
+}
+
+export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
   const colors = useThemeColors();
   const statusBarStyle = useStatusBarStyle();
   const { user, token, logout, updateUser } = useAuth();
   const insets = useSafeAreaInsets();
   const [servers, setServers] = useState<ServerSummary[]>([]);
   const [isLoadingServers, setIsLoadingServers] = useState(true);
+  const [isProfileLoaded, setIsProfileLoaded] = useState(false);
   const [selectedServerId, setSelectedServerId] = useState<string | null>(null);
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(
     null,
   );
-  const [view, setView] = useState<MainView>("servers");
+  // Se abre en Mensajes Directos: asi lo primero que se ve tras loguearse es la
+  // lista de conversaciones y no un servidor.
+  const [view, setView] = useState<MainView>("dm");
+  const [isRestored, setIsRestored] = useState(false);
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
   const [isJoinModalVisible, setIsJoinModalVisible] = useState(false);
   const [isAddServerSheetVisible, setIsAddServerSheetVisible] = useState(false);
   const [myRoles, setMyRoles] = useState<Role[]>([]);
   const [serverRoles, setServerRoles] = useState<Role[]>([]);
+  const [permissionsVersion, setPermissionsVersion] = useState(0);
+  const [lostChannel, setLostChannel] = useState<Channel | null>(null);
+  const voice = useVoiceSession();
 
   useEffect(() => {
     let cancelled = false;
@@ -80,20 +100,47 @@ export function HomeScreen() {
     if (!token) return;
     let cancelled = false;
     getOwnProfile().then((result) => {
-      if (cancelled || !result.ok) return;
-      updateUser(result.user);
+      if (cancelled) return;
+      if (result.ok) updateUser(result.user);
+      setIsProfileLoaded(true);
     });
     return () => {
       cancelled = true;
     };
   }, [token, updateUser]);
 
+  // Tocar "Voz conectada" (desde cualquier vista) abre el canal de la llamada.
+  const voiceFocus = voice.state.focus;
+  const [seenFocusNonce, setSeenFocusNonce] = useState(voiceFocus?.nonce);
+  if (voiceFocus && voiceFocus.nonce !== seenFocusNonce) {
+    setSeenFocusNonce(voiceFocus.nonce);
+    setView("servers");
+    setSelectedServerId(voiceFocus.serverId);
+    setSelectedChannelId(voiceFocus.channelId);
+    setLostChannel(null);
+  }
+
+  // Si el canal de la llamada ya no esta (se borro, saliste del servidor o
+  // perdiste el acceso), se corta.
+  const voiceTarget = voice.state.target;
+  const leaveVoice = voice.leave;
+  const isVoiceChannelGone =
+    voiceTarget !== null &&
+    !isLoadingServers &&
+    !servers
+      .find((server) => server.id === voiceTarget.serverId)
+      ?.channels.some((channel) => channel.id === voiceTarget.channelId);
+  useEffect(() => {
+    if (isVoiceChannelGone) leaveVoice();
+  }, [isVoiceChannelGone, leaveVoice]);
+
   const selectedServer =
     servers.find((server) => server.id === selectedServerId) ?? null;
   const selectedChannel =
     selectedServer?.channels.find(
       (channel) => channel.id === selectedChannelId,
-    ) ?? null;
+    ) ??
+    (lostChannel && lostChannel.id === selectedChannelId ? lostChannel : null);
 
   const isOwner =
     user != null &&
@@ -106,10 +153,59 @@ export function HomeScreen() {
     () => (user ? authorFromProfile(user) : null),
     [user],
   );
-  const directMessages = useDirectMessages(currentAuthor);
+  const mentions = useMentions(currentAuthor?.id ?? null);
+  const directMessages = useDirectMessages(currentAuthor, view === "dm", {
+    onMention: mentions.receive,
+    onRejoined: mentions.reload,
+  });
   const unreadDmCount = directMessages.conversations.filter(
     (c) => c.isUnread,
   ).length;
+
+  // Al reabrir la app se vuelve a donde se estaba (servidor + canal, o un DM).
+  const userId = user ? String(user.id) : null;
+  const { openConversation } = directMessages;
+  useEffect(() => {
+    if (isRestored || isLoadingServers || !userId) return;
+    let cancelled = false;
+    getLastLocation(userId).then((stored) => {
+      if (cancelled) return;
+      const server = servers.find((item) => item.id === stored?.serverId);
+      if (stored?.view === "servers" && server) {
+        setView("servers");
+        setSelectedServerId(server.id);
+        setSelectedChannelId(
+          server.channels.find((channel) => channel.id === stored.channelId)
+            ?.id ?? null,
+        );
+      } else if (stored?.partnerId) {
+        openConversation(stored.partnerId);
+      }
+      setIsRestored(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isRestored, isLoadingServers, userId, servers, openConversation]);
+
+  const activePartnerId = directMessages.activeSummary?.partner.id ?? null;
+  useEffect(() => {
+    if (!isRestored || !userId) return;
+    void setLastLocation({
+      userId,
+      view,
+      serverId: selectedServerId,
+      channelId: selectedChannelId,
+      partnerId: activePartnerId,
+    });
+  }, [
+    isRestored,
+    userId,
+    view,
+    selectedServerId,
+    selectedChannelId,
+    activePartnerId,
+  ]);
 
   /**
    * Roles asignados al usuario actual en `selectedServer`
@@ -134,8 +230,8 @@ export function HomeScreen() {
    * caso: `serverRoles` queda con el valor anterior, que no se usa hasta que
    * haya un canal de texto abierto).
    */
-  useEffect(() => {
-    if (!selectedServer) return;
+  const fetchServerRoles = useCallback(() => {
+    if (!selectedServer) return undefined;
     let cancelled = false;
     listRoles(selectedServer.id).then((result) => {
       if (!cancelled && result.ok) setServerRoles(result.roles);
@@ -144,6 +240,31 @@ export function HomeScreen() {
       cancelled = true;
     };
   }, [selectedServer]);
+
+  useEffect(() => fetchServerRoles(), [fetchServerRoles]);
+
+  const reloadServers = useCallback(async () => {
+    const result = await listMyServers();
+    if (result.ok) setServers(result.servers);
+  }, []);
+
+  const handlePermissionsChanged = useCallback(() => {
+    fetchMyRoles();
+    fetchServerRoles();
+    setPermissionsVersion((version) => version + 1);
+    void reloadServers();
+  }, [fetchMyRoles, fetchServerRoles, reloadServers]);
+
+  function handleAccessRevoked(reason: AccessRevokedReason) {
+    if (reason !== "permissions_changed" || !selectedChannel) return;
+    setLostChannel(selectedChannel);
+    void reloadServers();
+  }
+
+  function closeChannel() {
+    setLostChannel(null);
+    setSelectedChannelId(null);
+  }
 
   const canManageChannels = hasPermission(
     { isOwner, roles: myRoles },
@@ -161,6 +282,10 @@ export function HomeScreen() {
     { isOwner, roles: myRoles },
     "BAN_MEMBERS",
   );
+  const canKickMembers = hasPermission(
+    { isOwner, roles: myRoles },
+    "KICK_MEMBERS",
+  );
   const canInvite = hasPermission({ isOwner, roles: myRoles }, "CREATE_INVITE");
   const canManageMessages = hasPermission(
     { isOwner, roles: myRoles },
@@ -174,6 +299,42 @@ export function HomeScreen() {
     { isOwner, roles: myRoles },
     "MENTION_EVERYONE",
   );
+  const canAddReactions = hasPermission(
+    { isOwner, roles: myRoles },
+    "ADD_REACTIONS",
+  );
+  const canConnect = hasPermission({ isOwner, roles: myRoles }, "CONNECT");
+
+  const channelPermissions = useMyChannelPermissions(
+    selectedChannel && selectedChannel !== lostChannel
+      ? selectedChannel.id
+      : null,
+    userId,
+    permissionsVersion,
+  );
+
+  const isCheckingChannelPermissions =
+    !isOwner && channelPermissions.status === "loading";
+
+  function canInChannel(
+    permission: ChannelOverridePermission,
+    serverLevel: boolean,
+  ): boolean {
+    if (isOwner || channelPermissions.status === "unknown") return serverLevel;
+    if (channelPermissions.status === "loading") return false;
+    return channelPermissions.permissions.includes(permission);
+  }
+
+  const myRoleIds = useMemo(() => myRoles.map((role) => role.id), [myRoles]);
+
+  const openChannelId = selectedChannel?.id ?? null;
+  const openChannelUnread = openChannelId
+    ? (mentions.byChannel[openChannelId] ?? 0)
+    : 0;
+  const { markChannelRead } = mentions;
+  useEffect(() => {
+    if (openChannelId && openChannelUnread > 0) markChannelRead(openChannelId);
+  }, [openChannelId, openChannelUnread, markChannelRead]);
 
   function handleOpenDirectMessages() {
     setView("dm");
@@ -183,6 +344,7 @@ export function HomeScreen() {
     setView("servers");
     setSelectedServerId(serverId);
     setSelectedChannelId(null);
+    setLostChannel(null);
   }
 
   const addAndSelect = useCallback((server: ServerSummary) => {
@@ -223,6 +385,22 @@ export function HomeScreen() {
     [user],
   );
 
+  const handleDeleteServer = useCallback(
+    async (
+      serverId: string,
+      confirmName: string,
+    ): Promise<DeleteServerResult> => {
+      const result = await deleteServer(serverId, confirmName);
+      if (result.ok) {
+        setServers((prev) => prev.filter((server) => server.id !== serverId));
+        setSelectedServerId((prev) => (prev === serverId ? null : prev));
+        setSelectedChannelId(null);
+      }
+      return result;
+    },
+    [],
+  );
+
   /** El servidor cambió localmente (se creó un canal o una categoría). */
   const handleServerUpdated = useCallback((updated: ServerSummary) => {
     setServers((prev) =>
@@ -230,11 +408,22 @@ export function HomeScreen() {
     );
   }, []);
 
-  if (isLoadingServers) {
+  const isReady =
+    !isLoadingServers &&
+    isRestored &&
+    isProfileLoaded &&
+    (!currentAuthor || (mentions.isLoaded && !directMessages.isLoading));
+  const gate = useLoadingGate(isReady, { showImmediately: resumesLoader });
+  if (gate === "waiting" || gate === "loading" || gate === "leaving") {
     return (
-      <View className="flex-1 bg-surface-servers items-center justify-center">
+      <View className="flex-1 bg-surface">
         <StatusBar style={statusBarStyle} />
-        <ActivityIndicator size="large" color={colors.accentBright} />
+        {gate === "waiting" ? null : (
+          <LoadingScreen
+            isLeaving={gate === "leaving"}
+            skipIntro={resumesLoader}
+          />
+        )}
       </View>
     );
   }
@@ -244,6 +433,7 @@ export function HomeScreen() {
       <View className="flex-1">
         <StatusBar style={statusBarStyle} />
         <DirectMessagesScreen
+          unreadMentionsByServer={mentions.byServer}
           servers={servers}
           userName={user?.name}
           currentAuthor={currentAuthor}
@@ -286,15 +476,23 @@ export function HomeScreen() {
         <ChannelScreen
           channel={selectedChannel}
           serverId={selectedServer.id}
+          server={selectedServer}
           authToken={token}
           currentUserId={user ? String(user.id) : null}
           canManageRoles={canManageRoles}
           canBanMembers={canBanMembers}
-          canManageMessages={canManageMessages}
-          canSendMessages={canSendMessages}
+          canKickMembers={canKickMembers}
+          canMuteMembers={canManageMessages}
+          canManageMessages={canInChannel("MANAGE_MESSAGES", canManageMessages)}
+          canSendMessages={canInChannel("SEND_MESSAGES", canSendMessages)}
           canMentionEveryone={canMentionEveryone}
+          canAddReactions={canInChannel("ADD_REACTIONS", canAddReactions)}
+          canConnect={canInChannel("CONNECT", canConnect)}
+          isCheckingChannelPermissions={isCheckingChannelPermissions}
           serverRoles={serverRoles}
-          onBack={() => setSelectedChannelId(null)}
+          myRoleIds={myRoleIds}
+          onAccessRevoked={handleAccessRevoked}
+          onBack={closeChannel}
         />
       </View>
     );
@@ -310,19 +508,25 @@ export function HomeScreen() {
           userName={user?.name}
           isOwner={isOwner}
           myRoles={myRoles}
+          serverRoles={serverRoles}
           canManageChannels={canManageChannels}
           canManageRoles={canManageRoles}
           canManageServer={canManageServer}
+          canManageMessages={canManageMessages}
           canBanMembers={canBanMembers}
           canInvite={canInvite}
-          onPermissionsChanged={fetchMyRoles}
+          onPermissionsChanged={handlePermissionsChanged}
+          onChannelPermissionsSaved={handlePermissionsChanged}
           onSelectChannel={setSelectedChannelId}
           onOpenDirectMessages={handleOpenDirectMessages}
           unreadDmCount={unreadDmCount}
+          unreadMentionsByChannel={mentions.byChannel}
+          unreadMentionsByServer={mentions.byServer}
           onSwitchServer={selectServer}
           onAddServer={handleAddServer}
           onLogout={logout}
           onLeaveServer={handleLeaveServer}
+          onDeleteServer={handleDeleteServer}
           onServerUpdated={handleServerUpdated}
         />
 
@@ -360,6 +564,7 @@ export function HomeScreen() {
           servers={servers}
           userName={user?.name}
           unreadDmCount={unreadDmCount}
+          unreadMentionsByServer={mentions.byServer}
           onSelectServer={selectServer}
           onOpenDirectMessages={handleOpenDirectMessages}
           onAddServer={handleAddServer}

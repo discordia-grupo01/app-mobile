@@ -21,7 +21,7 @@ import { cn } from "../../../../lib/cn";
 import { useThemeColors } from "../../../../theme/theme-context";
 import { createServer } from "../../api";
 import { Button } from "../../../../components/ui/Button";
-import { ServerAvatar } from "../ServerAvatar";
+import { Avatar } from "../../../../components/ui/Avatar";
 import { ModalShell } from "../../../../components/ui/ModalShell";
 import { ModalCloseButton } from "../../../../components/ui/ModalCloseButton";
 
@@ -162,7 +162,7 @@ export function CreateServerModal({
           <View className="items-center gap-6">
             <View className="w-full rounded-2xl border border-line-strong bg-surface-raised overflow-hidden">
               <View className="flex-row items-center gap-2.5 px-4 py-3 border-b border-b-line">
-                <ServerAvatar
+                <Avatar
                   name={created.name}
                   uri={icon?.uri}
                   size={36}
@@ -232,7 +232,7 @@ export function CreateServerModal({
 
             <View className="items-center gap-2.5 mb-6">
               <TouchableOpacity activeOpacity={0.85} onPress={pickIcon}>
-                <ServerAvatar name={name} uri={icon?.uri} size={96} />
+                <Avatar name={name} uri={icon?.uri} size={96} />
               </TouchableOpacity>
 
               <View className="flex-row items-center gap-2.5">

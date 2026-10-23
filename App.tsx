@@ -1,12 +1,15 @@
 import "./global.css";
 
 import { useCallback, useState } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import { LoadingScreen } from "./src/components/ui/LoadingScreen";
 import type { AuthMode } from "./src/features/auth/components/AuthTabs";
 import { AuthProvider, useAuth } from "./src/features/auth/auth-context";
+import { BlockedUsersProvider } from "./src/features/blocks/blocked-users-context";
 import { useEmailConfirmation } from "./src/features/auth/use-email-confirmation";
+import { VoiceSessionProvider } from "./src/features/voice/voice-session-context";
 
 import { ForgotPasswordScreen } from "./src/screens/ForgotPasswordScreen";
 import { HomeScreen } from "./src/screens/HomeScreen";
@@ -14,13 +17,13 @@ import { LoginScreen } from "./src/screens/LoginScreen";
 import { PinEntryScreen } from "./src/screens/PinEntryScreen";
 import { RegisterScreen } from "./src/screens/RegisterScreen";
 import { ConfirmEmailScreen } from "./src/screens/ConfirmEmailScreen";
-import { ThemeProvider, useThemeColors } from "./src/theme/theme-context";
+import { ThemeProvider } from "./src/theme/theme-context";
 
 type AuthScreen = AuthMode | "forgot-password" | "confirm-email";
 
 function AppContent() {
-  const colors = useThemeColors();
-  const { isAuthenticated, isLoading, isPinEnabled } = useAuth();
+  const { isAuthenticated, isLoading, isRestoringSession, isPinEnabled } =
+    useAuth();
   const [authScreen, setAuthScreen] = useState<AuthScreen>("login");
   const [justRegistered, setJustRegistered] = useState(false);
   const {
@@ -35,6 +38,13 @@ function AppContent() {
   );
 
   const [skipPinEntry, setSkipPinEntry] = useState(false);
+  // Al reabrir la app con sesion guardada se ve la pantalla de carga mientras
+  // se valida; el home sigue con ella en vez de esperar de nuevo desde cero.
+  const [hasShownLoader, setHasShownLoader] = useState(false);
+  if (isRestoringSession && !hasShownLoader) setHasShownLoader(true);
+  if (!isLoading && !isAuthenticated && hasShownLoader) {
+    setHasShownLoader(false);
+  }
 
   function handleSwitchMode(mode: AuthScreen) {
     setAuthScreen(mode);
@@ -56,10 +66,10 @@ function AppContent() {
   }
 
   if (isLoading) {
-    return (
-      <View className="flex-1 bg-surface-servers justify-center items-center">
-        <ActivityIndicator size="large" color={colors.accentBright} />
-      </View>
+    return isRestoringSession ? (
+      <LoadingScreen />
+    ) : (
+      <View className="flex-1 bg-surface" />
     );
   }
 
@@ -75,7 +85,13 @@ function AppContent() {
   }
 
   if (isAuthenticated) {
-    return <HomeScreen />;
+    return (
+      <BlockedUsersProvider>
+        <VoiceSessionProvider>
+          <HomeScreen resumesLoader={hasShownLoader} />
+        </VoiceSessionProvider>
+      </BlockedUsersProvider>
+    );
   }
 
   if (isPinEnabled && !skipPinEntry) {

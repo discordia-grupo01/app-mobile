@@ -12,6 +12,7 @@ const TOKEN_KEY = "discordia_auth_token";
 const USER_KEY = "discordia_auth_user";
 const THEME_KEY = "discordia_theme_preference";
 const PIN_ENABLED_KEY = "discordia_pin_enabled";
+const LAST_LOCATION_KEY = "discordia_last_location";
 
 const secureStorage = {
   getItem(key: string): Promise<string | null> {
@@ -83,4 +84,61 @@ export async function getPinEnabled(): Promise<boolean> {
 
 export async function setPinEnabled(enabled: boolean): Promise<void> {
   await AsyncStorage.setItem(PIN_ENABLED_KEY, enabled ? "true" : "false");
+}
+
+const PIN_OWNER_KEY = "discordia_pin_owner";
+
+export interface PinOwner {
+  name: string | null;
+  email: string | null;
+}
+
+export async function getPinOwner(): Promise<PinOwner | null> {
+  const raw = await AsyncStorage.getItem(PIN_OWNER_KEY);
+  return raw ? (JSON.parse(raw) as PinOwner) : null;
+}
+
+export async function setPinOwner(owner: PinOwner | null): Promise<void> {
+  if (owner) {
+    await AsyncStorage.setItem(PIN_OWNER_KEY, JSON.stringify(owner));
+  } else {
+    await AsyncStorage.removeItem(PIN_OWNER_KEY);
+  }
+}
+
+/** Donde estaba parado el usuario, para volver ahi al reabrir la app. */
+export interface LastLocation {
+  userId: string;
+  view: "servers" | "dm";
+  serverId: string | null;
+  channelId: string | null;
+  partnerId: string | null;
+}
+
+export async function getLastLocation(
+  userId: string,
+): Promise<LastLocation | null> {
+  try {
+    const raw = await AsyncStorage.getItem(LAST_LOCATION_KEY);
+    if (!raw) return null;
+    const stored = JSON.parse(raw) as Partial<LastLocation> | null;
+    if (!stored || stored.userId !== userId) return null;
+    return {
+      userId,
+      view: stored.view === "servers" ? "servers" : "dm",
+      serverId: stored.serverId ?? null,
+      channelId: stored.channelId ?? null,
+      partnerId: stored.partnerId ?? null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function setLastLocation(location: LastLocation): Promise<void> {
+  try {
+    await AsyncStorage.setItem(LAST_LOCATION_KEY, JSON.stringify(location));
+  } catch {
+    // Sin storage simplemente no se recuerda.
+  }
 }

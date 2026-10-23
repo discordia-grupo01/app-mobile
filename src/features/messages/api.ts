@@ -5,12 +5,10 @@ import {
   type MessageHistory,
   MESSAGES_LOAD_FAILED,
   SESSION_EXPIRED_MESSAGE,
+  type SocketTicketResult,
 } from "@discordia/client-shared";
 
 import { apiFetch } from "../../lib/api-client";
-
-export type SocketTicketResult =
-  { ok: true; ticket: string } | { ok: false; sessionExpired: boolean };
 
 /**
  * Pide un ticket de un solo uso (vence a los 30 s) para abrir el WebSocket.

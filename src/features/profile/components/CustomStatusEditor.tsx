@@ -5,7 +5,7 @@ import {
 } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ComponentRef } from "react";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
 
 import { Button } from "../../../components/ui/Button";
@@ -27,7 +27,7 @@ export function CustomStatusEditor({
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(statusText);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<ComponentRef<typeof TextInput>>(null);
 
   useEffect(() => {
     if (isEditing) inputRef.current?.focus();

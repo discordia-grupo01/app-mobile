@@ -5,7 +5,7 @@ import { Text, TouchableOpacity, View } from "react-native";
 
 import { avatarUriOf } from "../../../lib/userProfile";
 import { useThemeColors } from "../../../theme/theme-context";
-import { ServerAvatar } from "../../servers/components/ServerAvatar";
+import { Avatar } from "../../../components/ui/Avatar";
 import { RowActionButton, type UserRowAction } from "./RowActionButton";
 
 interface UserRowProps {
@@ -32,26 +32,26 @@ export function UserRow({
   const name = displayNameOf(item.profile);
 
   return (
-    <View className="flex-row items-center gap-2 rounded-xl border border-line bg-surface-raised p-3">
+    <View className="flex-row items-center gap-2 rounded-xl border border-line bg-surface-raised px-3 py-2">
       <TouchableOpacity
         activeOpacity={0.7}
         disabled={!onSelect}
         onPress={() => onSelect?.(item)}
         accessibilityRole={onSelect ? "button" : undefined}
         accessibilityLabel={onSelect ? `Ver perfil de ${name}` : undefined}
-        className="min-w-0 flex-1 flex-row items-center gap-3"
+        className="min-w-0 flex-1 flex-row items-center gap-2.5"
       >
-        <ServerAvatar name={name} uri={avatarUriOf(item.profile)} size={40} />
+        <Avatar name={name} uri={avatarUriOf(item.profile)} size={32} />
         <View className="min-w-0 flex-1">
           <Text
             numberOfLines={1}
-            className="text-[15px] font-semibold text-content"
+            className="text-[14px] font-semibold text-content"
           >
             {name}
           </Text>
           {item.subtitle ? (
             <Text
-              numberOfLines={2}
+              numberOfLines={1}
               className="text-xs leading-[17px] text-content-muted"
             >
               {item.subtitle}

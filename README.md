@@ -5,16 +5,24 @@ Cliente mobile de Discordia (React Native + Expo).
 ## Stack
 
 - Lenguaje: TypeScript
-- Framework: React Native (Expo, SDK 57)
+- Framework: React Native 0.88 (Expo, SDK 58)
 - Testing: Jest (`jest-expo`)
+
+## Requisitos
+
+- **Node.js 22.13 o más nuevo** (SDK 58 no funciona con Node 20). Con nvm alcanza con `nvm install && nvm use`: toma la versión de `.nvmrc`.
+- **Expo Go para SDK 58** en el celular, que es la versión actual de App Store y Play Store. Si Expo Go muestra "Project is incompatible with this version of Expo Go", la versión de Expo Go y el SDK del proyecto no coinciden.
 
 ## Setup local
 
 ```bash
+nvm use
 cp .env.example .env
 npm install
 npm start
 ```
+
+Si venías de SDK 57 o de Node 20, reinstalá las dependencias de cero: `rm -rf node_modules && npm install`.
 
 Desde ahi, Expo CLI muestra un QR para abrir la app en el celular (con Expo Go) o las opciones para emulador Android / simulador iOS.
 
@@ -34,7 +42,7 @@ Pasos para levantar todo el backend y probar app-mobile conectada de verdad, des
 
    Esperar a que las migraciones corran y los servicios queden arriba (logs de `identity`, `servers` y `gateway` sin errores).
 
-2. **Instalar Expo Go en el celular** (App Store en iOS, Play Store en Android) y crear o loguearse con una cuenta de Expo (gratis).
+2. **Instalar Expo Go en el celular** (App Store en iOS, Play Store en Android; tiene que ser la versión para SDK 58) y crear o loguearse con una cuenta de Expo (gratis).
 
 3. **Loguearse con esa misma cuenta en la compu**, dentro de `app-mobile`:
 
@@ -141,4 +149,5 @@ El CI corre `npm run format:check` como red de seguridad (falla si encuentra arc
 
 - Las requests siempre van al Gateway (Kong), nunca directo a un microservicio (ADR-006).
 - Ver la seccion "Conectar con el backend real" para el paso a paso completo de como levantar el backend y probar app-mobile con Expo Go. La deteccion de la URL del backend es automatica.
+- `metro.config.js` hace que `expo-asset` importe el `react-native` original en vez del shim de NativeWind (`react-native-css`), porque ese shim no exporta `AssetRegistry` en RN 0.88. Sin esa excepción la app falla con `Cannot read property 'getAssetByID' of undefined`. Se puede sacar cuando `react-native-css` lo exporte.
 - El cliente HTTP (`src/lib/api-client.ts`) sigue el mismo patron que `web-client` (fetch wrapper + `ApiError` tipado), pero usa `AsyncStorage` en vez de `localStorage` para guardar la sesion (React Native no tiene `localStorage`).

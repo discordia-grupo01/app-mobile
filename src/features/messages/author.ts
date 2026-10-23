@@ -1,18 +1,12 @@
 import {
-  type MessageAuthor,
+  authorFromUser,
   resolveImageUrl,
   type User,
 } from "@discordia/client-shared";
 
 import { env } from "../../lib/env";
 
-// TODO: resolver etiqueta y color de rol cuando el back devuelva los mensajes con su autor.
-export function authorFromProfile(user: User): MessageAuthor {
-  return {
-    id: String(user.id),
-    name: user.name,
-    avatarUrl: resolveImageUrl(user.avatar_url, env.apiUrl),
-    roleName: null,
-    roleColor: null,
-  };
+/** El usuario logueado como autor de sus mensajes. */
+export function authorFromProfile(user: User) {
+  return authorFromUser(user, resolveImageUrl(user.avatar_url, env.apiUrl));
 }

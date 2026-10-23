@@ -18,7 +18,7 @@ import { FormErrorBanner } from "../../../components/ui/FormErrorBanner";
 import { ModalShell } from "../../../components/ui/ModalShell";
 import { SuccessNotice } from "../../../components/ui/SuccessNotice";
 import { useThemeColors } from "../../../theme/theme-context";
-import { ServerAvatar } from "../../servers/components/ServerAvatar";
+import { Avatar } from "../../../components/ui/Avatar";
 import { banMember } from "../api";
 import { type BanTarget } from "../types";
 import { BanModalHeader } from "./BanModalHeader";
@@ -82,7 +82,7 @@ export function BanMemberModal({
           keyboardShouldPersistTaps="handled"
         >
           <View className="flex-row items-center gap-3 rounded-xl bg-surface-raised p-3">
-            <ServerAvatar name={target.name} uri={target.avatarUri} size={40} />
+            <Avatar name={target.name} uri={target.avatarUri} size={40} />
             <Text
               numberOfLines={1}
               className="min-w-0 flex-1 text-[15px] font-semibold text-content"

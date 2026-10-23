@@ -1,66 +1,82 @@
 import {
   ATTACH_FILE_LABEL,
+  ALLOWED_ATTACHMENT_TYPES,
+  type AttachmentTarget,
+  decodeMentions,
   EMOJI_PICKER_LABEL,
   MAX_MESSAGE_LENGTH,
-  messageInputPlaceholder,
   SEND_MESSAGE_LABEL,
-  validateMentionEveryone,
+  validateAttachment,
+  validateAttachmentCount,
   validateMessageContent,
 } from "@discordia/client-shared";
 
-import { useEffect, useRef, useState } from "react";
+import * as DocumentPicker from "expo-document-picker";
+import { useEffect, useRef, useState, type ComponentRef } from "react";
 import { Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { cn } from "../../../lib/cn";
+import { useAttachmentUploads } from "../../attachments/useAttachmentUploads";
 import { useThemeColors } from "../../../theme/theme-context";
 import type { SendMessageResult } from "../use-channel-messages";
+import { useMentionDraft } from "../useMentionDraft";
+import { AttachmentChips } from "./AttachmentChips";
 import { ComposerIconButton } from "./ComposerIconButton";
 import { EditingBanner, type ComposerEditing } from "./EditingBanner";
 import { EmojiPickerSheet } from "./EmojiPickerSheet";
+import { useMentionDraftChildren } from "./useMentionDraftChildren";
+import { MentionSuggestions } from "./MentionSuggestions";
+import { useMessageMentions } from "./MentionsContext";
 
 const COUNTER_THRESHOLD = MAX_MESSAGE_LENGTH - 200;
 
 interface MessageComposerProps {
-  channelName: string;
-  /**
-   * Si devuelve una promesa, el borrador se conserva hasta que el envio sale
-   * bien (un fallo lo deja para reintentar). Si devuelve `void`, se limpia al
-   * instante.
-   */
-  onSend: (content: string) => void | Promise<SendMessageResult>;
+  placeholder: string;
+  onSend: (
+    content: string,
+    attachmentIds?: string[],
+  ) => void | Promise<SendMessageResult>;
+  /** A donde van los archivos: el canal o el usuario del DM. */
+  uploadTarget: AttachmentTarget;
   disabled?: boolean;
-  /** Puede usar `@everyone`/`@here`. Por defecto `false`. */
-  canMentionEveryone?: boolean;
   /** Mientras hay un mensaje en edicion, el composer lo carga y guarda en lugar de enviar uno nuevo. */
   editing?: ComposerEditing | null;
 }
 
 export function MessageComposer({
-  channelName,
+  placeholder,
   onSend,
+  uploadTarget,
   disabled = false,
-  canMentionEveryone = false,
   editing = null,
 }: MessageComposerProps) {
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
-  const [draft, setDraft] = useState("");
+  const { sources, resolveMention } = useMessageMentions();
+  const draft = useMentionDraft({ sources });
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
-  const [mentionError, setMentionError] = useState<string | undefined>();
   const [sendError, setSendError] = useState<string | undefined>();
   const [isSending, setIsSending] = useState(false);
-  const inputRef = useRef<TextInput>(null);
+  const [attachments, setAttachments] = useState<
+    DocumentPicker.DocumentPickerAsset[]
+  >([]);
+  const inputRef = useRef<ComponentRef<typeof TextInput>>(null);
+  const { uploadAll, forget } = useAttachmentUploads();
 
   // Al empezar o terminar una edicion el borrador pasa a ser el del mensaje (o
   // vuelve a vacio). Se ajusta durante el render, no en un efecto, para no
-  // mostrar un cuadro con el borrador viejo.
+  // mostrar un cuadro con el borrador viejo. El mensaje trae `<@id>`: se edita
+  // como `@Nombre` y se vuelve a codificar al guardar.
   const editingId = editing?.id ?? null;
   const [syncedEditingId, setSyncedEditingId] = useState<string | null>(null);
   if (editingId !== syncedEditingId) {
     setSyncedEditingId(editingId);
-    setDraft(editing?.content ?? "");
-    setMentionError(undefined);
+    const decoded = decodeMentions(
+      editing?.content ?? "",
+      (kind, id) => resolveMention?.(kind, id)?.name ?? null,
+    );
+    draft.load(decoded.text, decoded.picked);
     setSendError(undefined);
   }
 
@@ -68,63 +84,140 @@ export function MessageComposer({
   useEffect(() => {
     if (editingId) inputRef.current?.focus();
   }, [editingId]);
+  // El limite del back cuenta el texto con los tokens `<@id>`, no lo visible.
   const canSend =
-    !disabled && !isSending && validateMessageContent(draft) === undefined;
-  const length = [...draft].length;
+    !disabled &&
+    !isSending &&
+    validateMessageContent(
+      draft.encoded,
+      editing ? editing.hasAttachments : attachments.length > 0,
+    ) === undefined;
+  const length = [...draft.encoded].length;
+  const draftChildren = useMentionDraftChildren(draft.segments ?? []);
 
   async function submit() {
     if (!canSend) return;
-    const mentionIssue = validateMentionEveryone(draft, canMentionEveryone);
-    if (mentionIssue) {
-      setMentionError(mentionIssue);
-      return;
-    }
-    setMentionError(undefined);
     setSendError(undefined);
 
-    if (editing && draft.trim() === editing.content) {
+    if (editing && draft.encoded.trim() === editing.content) {
       editing.onCancel();
       return;
     }
 
-    const outcome = editing ? editing.onSave(draft) : onSend(draft);
-    if (outcome === undefined) {
-      setDraft("");
+    if (editing) {
+      const outcome = editing.onSave(draft.encoded);
+      if (outcome === undefined) return draft.reset();
+      setIsSending(true);
+      const result = await outcome;
+      setIsSending(false);
+      if (result.ok) draft.reset();
+      else setSendError(result.message);
+      return;
+    }
+
+    // Solo texto: si el que envia devuelve `void` (los fallos se muestran en el
+    // chat) el cuadro se libera al instante, sin pasar por `isSending` para no
+    // perder el foco ni el teclado.
+    if (attachments.length === 0) {
+      const outcome = onSend(draft.encoded, []);
+      if (outcome === undefined) return clearDraft();
+      setIsSending(true);
+      const result = await outcome;
+      setIsSending(false);
+      if (result.ok) clearDraft();
+      else setSendError(result.message);
       return;
     }
 
     setIsSending(true);
-    const result = await outcome;
+    const uploads = await uploadAll(attachments, uploadTarget);
+    if (!uploads.ok) {
+      setIsSending(false);
+      setSendError(uploads.message);
+      return;
+    }
+
+    const result = await onSend(draft.encoded, uploads.ids);
     setIsSending(false);
-    if (result.ok) setDraft("");
+    if (result === undefined || result.ok) clearDraft();
     else setSendError(result.message);
+  }
+
+  function clearDraft() {
+    draft.reset();
+    setAttachments([]);
+    forget();
+  }
+
+  async function pickFiles() {
+    const result = await DocumentPicker.getDocumentAsync({
+      multiple: true,
+      type: [...ALLOWED_ATTACHMENT_TYPES],
+      copyToCacheDirectory: true,
+    });
+    if (result.canceled) return;
+
+    const known = new Set(attachments.map((file) => file.uri));
+    const fresh = result.assets.filter((file) => !known.has(file.uri));
+    const toFile = (file: DocumentPicker.DocumentPickerAsset) => ({
+      type: file.mimeType ?? "",
+      size: file.size ?? 1,
+    });
+    const rejected = fresh
+      .map((file) => validateAttachment(toFile(file)))
+      .find((error) => error !== undefined);
+    const valid = fresh.filter((file) => !validateAttachment(toFile(file)));
+    const overLimit = validateAttachmentCount(attachments.length, valid.length);
+    if (overLimit) return setSendError(overLimit);
+
+    setSendError(rejected);
+    setAttachments((prev) => [...prev, ...valid]);
   }
 
   return (
     <View className="px-3 pt-1" style={{ paddingBottom: insets.bottom + 12 }}>
+      {draft.isOpen ? (
+        <MentionSuggestions
+          query={draft.query}
+          candidates={draft.candidates}
+          onPick={draft.pick}
+        />
+      ) : null}
       {editing ? <EditingBanner onCancel={editing.onCancel} /> : null}
-      <View className="flex-row items-end rounded-[10px] border border-line bg-surface-input px-1">
+      <AttachmentChips
+        attachments={editing ? [] : attachments}
+        disabled={isSending}
+        onRemove={(uri) =>
+          setAttachments((prev) => prev.filter((file) => file.uri !== uri))
+        }
+      />
+      <View className="flex-row items-end rounded-[10px] border border-line bg-surface-input px-1.5 py-1">
         <ComposerIconButton
           name="paperclip"
           label={ATTACH_FILE_LABEL}
           color={colors.textSubtle}
-          disabled
+          onPress={pickFiles}
+          disabled={disabled || isSending || editing !== null}
         />
         <TextInput
           ref={inputRef}
-          value={draft}
+          // Con menciones el texto va como hijos (cada tramo con su estilo); sin ellas, como `value`.
+          value={draft.segments ? undefined : draft.text}
           onChangeText={(text) => {
-            setDraft(text);
-            setMentionError(undefined);
+            draft.handleChangeText(text);
             setSendError(undefined);
           }}
+          onSelectionChange={draft.handleSelectionChange}
+          selection={draft.selection}
           editable={!disabled && !isSending}
           multiline
-          placeholder={messageInputPlaceholder(channelName)}
+          placeholder={placeholder}
           placeholderTextColor={colors.textSubtle}
-          accessibilityLabel={messageInputPlaceholder(channelName)}
+          accessibilityLabel={placeholder}
           className="max-h-32 min-h-10 flex-1 py-2.5 text-[15px] text-content"
-        />
+        >
+          {draft.segments ? draftChildren : null}
+        </TextInput>
         <ComposerIconButton
           name="smile"
           label={EMOJI_PICKER_LABEL}
@@ -142,10 +235,8 @@ export function MessageComposer({
         />
       </View>
 
-      {mentionError || sendError ? (
-        <Text className="mt-1.5 text-[12px] text-danger">
-          {mentionError ?? sendError}
-        </Text>
+      {sendError ? (
+        <Text className="mt-1.5 text-[12px] text-danger">{sendError}</Text>
       ) : null}
 
       {length >= COUNTER_THRESHOLD ? (
@@ -162,7 +253,7 @@ export function MessageComposer({
       <EmojiPickerSheet
         visible={isEmojiPickerOpen}
         title={EMOJI_PICKER_LABEL}
-        onPick={(emoji) => setDraft((prev) => prev + emoji)}
+        onPick={draft.append}
         onClose={() => setIsEmojiPickerOpen(false)}
       />
     </View>

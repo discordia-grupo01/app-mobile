@@ -122,7 +122,7 @@ export function BansModal({
         search={view.search}
         onSearchChange={view.changeSearch}
         results={
-          view.isSearching
+          view.isSearching && view.matchCount !== null
             ? {
                 matches: view.matchCount,
                 total: view.items?.length ?? 0,

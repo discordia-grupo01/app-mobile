@@ -1,4 +1,9 @@
 import {
+  type ListRoleMembersResult,
+  listRoleMembersFailureMessage,
+  type MemberListResponse,
+  type MemberPageQuery,
+  memberPageQueryString,
   type AssignRoleResult,
   type CreateRoleResult,
   DEFAULT_ROLE_SET_FAILED,
@@ -338,4 +343,22 @@ export async function removeRole(
   }
 
   return { ok: true };
+}
+
+/**
+ * Una pagina de los miembros que tienen el rol (#58), o con `hasRole: false`
+ * de los que no lo tienen. Exige `MANAGE_ROLES`. Para @everyone son todos.
+ */
+export async function listRoleMembers(
+  roleId: string,
+  query: MemberPageQuery = {},
+): Promise<ListRoleMembersResult> {
+  const result = await apiFetch<MemberListResponse>(
+    `/v1/roles/${roleId}/members${memberPageQueryString(query)}`,
+    { method: "GET" },
+  );
+  if (!result.ok) {
+    return { ok: false, message: listRoleMembersFailureMessage(result) };
+  }
+  return { ok: true, members: result.data.members, total: result.data.total };
 }

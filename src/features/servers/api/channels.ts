@@ -92,7 +92,7 @@ export async function createChannel(
  */
 export async function updateChannel(
   channelId: string,
-  input: { name: string },
+  input: { name?: string; topic?: string },
 ): Promise<UpdateChannelResult> {
   const result = await apiFetch<Channel>(`/v1/channels/${channelId}`, {
     method: "PATCH",

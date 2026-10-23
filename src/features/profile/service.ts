@@ -50,7 +50,12 @@ export async function getPublicProfile(
 }
 
 async function performProfileUpdate(
-  params: { name: string; description: string; image?: PickedProfileImage },
+  params: {
+    name: string;
+    description: string;
+    image?: PickedProfileImage;
+    removeImage?: boolean;
+  },
   token: string | null,
 ): Promise<{ status: number; rawBody: string }> {
   const authHeaders: Record<string, string> | undefined = token
@@ -76,6 +81,7 @@ async function performProfileUpdate(
   const formData = new FormData();
   formData.append("name", params.name);
   formData.append("description", params.description);
+  if (params.removeImage) formData.append("remove_image", "true");
   const res = await fetch(`${env.apiUrl}/v1/me/profile`, {
     method: "PATCH",
     headers: authHeaders,
@@ -88,6 +94,7 @@ export async function updateOwnProfile(params: {
   name: string;
   description: string;
   image?: PickedProfileImage;
+  removeImage?: boolean;
 }): Promise<UpdateOwnProfileResult> {
   let status: number;
   let rawBody: string;

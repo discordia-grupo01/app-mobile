@@ -1,5 +1,6 @@
 import {
-  type ActivityStatus,
+  displayedStatus,
+  type ActivityStatusChoice,
   CANCEL_NAME_EDIT_LABEL,
   CHANGE_AVATAR_LABEL,
   DESCRIPTION_PLACEHOLDER,
@@ -13,7 +14,7 @@ import {
 import { Feather } from "@expo/vector-icons";
 import * as ImageManipulator from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
-import { useRef, useState } from "react";
+import { useRef, useState, type ComponentRef } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -30,12 +31,10 @@ import { cn } from "../../../lib/cn";
 import { env } from "../../../lib/env";
 import { useThemeColors } from "../../../theme/theme-context";
 import { useAuth } from "../../auth/auth-context";
-import { ServerAvatar } from "../../servers/components/ServerAvatar";
+import { Avatar } from "../../../components/ui/Avatar";
 import { MemberRoleBadges } from "../../roles/components/MemberRoleBadges";
-import {
-  ACTIVITY_STATUS_COLOR,
-  ActivityStatusPicker,
-} from "./ActivityStatusPicker";
+import { activityStatusColor } from "./activityStatusColor";
+import { ActivityStatusRow } from "./ActivityStatusRow";
 import { CustomStatusEditor } from "./CustomStatusEditor";
 import { MemberSince } from "./MemberSince";
 import { ProfileBanner } from "./ProfileBanner";
@@ -44,6 +43,7 @@ import type { PickedProfileImage } from "../types";
 import { ModalShell } from "../../../components/ui/ModalShell";
 
 const MAX_AVATAR_DIMENSION = 1024;
+const REMOVE_AVATAR_LABEL = "Eliminar foto de perfil";
 
 type EditingField = "name" | "description" | null;
 
@@ -73,10 +73,10 @@ export function OwnProfileModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const scrollViewRef = useRef<ScrollView>(null);
+  const scrollViewRef = useRef<ComponentRef<typeof ScrollView>>(null);
 
   const [activityStatus, setActivityStatus] =
-    useState<ActivityStatus>("online");
+    useState<ActivityStatusChoice>("online");
 
   if (visible !== wasVisible) {
     setWasVisible(visible);
@@ -103,6 +103,7 @@ export function OwnProfileModal({
     name?: string;
     description?: string;
     image?: PickedProfileImage;
+    removeImage?: boolean;
   }): Promise<boolean> {
     if (!user) return false;
     setGlobalError("");
@@ -110,6 +111,7 @@ export function OwnProfileModal({
       name: overrides.name ?? user.name,
       description: overrides.description ?? user.description,
       image: overrides.image,
+      removeImage: overrides.removeImage,
     });
 
     if (!result.ok) {
@@ -185,6 +187,29 @@ export function OwnProfileModal({
     const ok = await submitProfile({ description: descriptionDraft });
     setIsSubmitting(false);
     if (ok) setEditingField(null);
+  }
+
+  function removeAvatar() {
+    const currentUser = user;
+    if (!currentUser || (!currentUser.avatar_url && !imagePreview)) return;
+    Alert.alert(
+      REMOVE_AVATAR_LABEL,
+      "La foto se eliminará y se mostrará tu avatar con inicial.",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Eliminar",
+          style: "destructive",
+          onPress: async () => {
+            setImageError("");
+            setIsUploadingAvatar(true);
+            const ok = await submitProfile({ removeImage: true });
+            setIsUploadingAvatar(false);
+            if (ok) setImagePreview(null);
+          },
+        },
+      ],
+    );
   }
 
   async function pickAvatar() {
@@ -282,6 +307,10 @@ export function OwnProfileModal({
           </View>
         ) : null}
 
+        {imageError ? (
+          <Text className="text-danger text-[12px] mb-3">{imageError}</Text>
+        ) : null}
+
         <View className="mb-4">
           {editingField === "name" ? (
             <View className="flex-row items-center gap-2">
@@ -345,7 +374,7 @@ export function OwnProfileModal({
         </View>
 
         <View className="mb-4">
-          <ActivityStatusPicker
+          <ActivityStatusRow
             status={activityStatus}
             onChange={setActivityStatus}
           />
@@ -447,7 +476,7 @@ export function OwnProfileModal({
         >
           <View className="absolute top-0 left-0 w-20 h-20 rounded-[40px] bg-surface-modal" />
           <View className="absolute top-1 left-1 w-18 h-18">
-            <ServerAvatar
+            <Avatar
               name={user.name}
               uri={avatarSrc}
               size={72}
@@ -463,16 +492,33 @@ export function OwnProfileModal({
             ) : null}
           </View>
           <View
-            className="absolute right-0 bottom-0 w-4.5 h-4.5 rounded-[9px] border-[3px] border-surface-modal"
+            className="absolute right-0.5 bottom-0.5 w-4.5 h-4.5 rounded-[9px] border-[3px] border-surface-modal"
             style={{
-              backgroundColor: ACTIVITY_STATUS_COLOR[activityStatus],
+              backgroundColor: activityStatusColor(
+                colors,
+                displayedStatus(activityStatus),
+              ),
             }}
           />
         </TouchableOpacity>
-        {imageError ? (
-          <Text className="text-danger text-[12px] mt-1.5">{imageError}</Text>
-        ) : null}
       </View>
+
+      {user.avatar_url || imagePreview ? (
+        <View className="absolute top-28 right-5.5 z-10">
+          <TouchableOpacity
+            onPress={removeAvatar}
+            disabled={isUploadingAvatar}
+            activeOpacity={0.7}
+            accessibilityLabel={REMOVE_AVATAR_LABEL}
+            className="flex-row items-center gap-1.5 rounded-lg border border-[rgba(224,82,82,0.3)] bg-[rgba(224,82,82,0.1)] px-2.5 py-1.5"
+          >
+            <Feather name="trash-2" size={14} color={colors.danger} />
+            <Text className="text-danger text-[12px] font-semibold">
+              Eliminar foto
+            </Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
     </ModalShell>
   );
 }
