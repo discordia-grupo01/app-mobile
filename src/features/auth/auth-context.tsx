@@ -20,6 +20,7 @@ import {
 } from "react";
 
 import { refreshAccessToken, setAuthEventHandlers } from "../../lib/api-client";
+import { clearPendingMessages } from "../../lib/pending-messages";
 import {
   clearSession,
   getPinEnabled,
@@ -199,6 +200,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const userId = user?.id;
   const logout = useCallback(async (): Promise<void> => {
     try {
       await logoutService();
@@ -210,7 +212,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await clearSession();
     } catch {}
-  }, []);
+    if (userId !== undefined) await clearPendingMessages(String(userId));
+  }, [userId]);
 
   const setPinEnabled = useCallback(async (enabled: boolean): Promise<void> => {
     setIsPinEnabledState(enabled);

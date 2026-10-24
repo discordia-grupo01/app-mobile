@@ -1,4 +1,5 @@
 import {
+  DISCARD_MESSAGE_LABEL,
   hexToRgba,
   mentionsPerson,
   MESSAGE_EDITED_LABEL,
@@ -6,6 +7,8 @@ import {
   type Message,
   type MessageAuthor,
   type MessageMentions,
+  RETRY_LABEL,
+  SENDING_LABEL,
 } from "@discordia/client-shared";
 
 import { useState } from "react";
@@ -56,6 +59,9 @@ interface MessageItemProps {
   canAddReactions?: boolean;
   /** Mantener presionado: abre el menu de reaccionar/editar/eliminar. */
   onRequestActions: () => void;
+  /** Solo en un mensaje fallido. */
+  onRetry?: () => void;
+  onDiscard?: () => void;
 }
 
 export function MessageItem({
@@ -67,6 +73,8 @@ export function MessageItem({
   onRequestReaction,
   canAddReactions = true,
   onRequestActions,
+  onRetry,
+  onDiscard,
 }: MessageItemProps) {
   const { me } = useMessageMentions();
   const colors = useThemeColors();
@@ -99,6 +107,7 @@ export function MessageItem({
         isGroupStart && "mt-4",
         isEditing && "bg-surface-hover",
         delivery === "failed" && "border-l-2 border-l-danger bg-danger/5",
+        delivery === "waiting" && "opacity-60",
       )}
       // El color viene de los tokens del tema: con una variable CSS no se puede aplicar transparencia.
       style={
@@ -158,15 +167,47 @@ export function MessageItem({
           <MessageAttachments attachments={message.attachments} />
         ) : null}
 
-        {delivery === "failed" ? (
-          <View
-            accessibilityRole="alert"
-            className="mt-0.5 flex-row items-center gap-1"
+        {delivery === "waiting" ? (
+          <Text
+            accessibilityRole="text"
+            className="mt-0.5 text-[12px] text-content-subtle"
           >
-            <Feather name="alert-circle" size={13} color={colors.danger} />
-            <Text className="flex-1 text-[12px] text-danger">
-              {message.delivery_error || MESSAGE_NOT_SENT_LABEL}
-            </Text>
+            {SENDING_LABEL}
+          </Text>
+        ) : null}
+
+        {delivery === "failed" ? (
+          <View accessibilityRole="alert" className="mt-0.5">
+            <View className="flex-row items-center gap-1">
+              <Feather name="alert-circle" size={13} color={colors.danger} />
+              <Text className="flex-1 text-[12px] text-danger">
+                {message.delivery_error || MESSAGE_NOT_SENT_LABEL}
+              </Text>
+            </View>
+            <View className="mt-1 flex-row items-center gap-4">
+              {onRetry ? (
+                <Pressable
+                  onPress={onRetry}
+                  accessibilityRole="button"
+                  hitSlop={8}
+                >
+                  <Text className="text-[13px] font-semibold text-danger underline">
+                    {RETRY_LABEL}
+                  </Text>
+                </Pressable>
+              ) : null}
+              {onDiscard ? (
+                <Pressable
+                  onPress={onDiscard}
+                  accessibilityRole="button"
+                  hitSlop={8}
+                >
+                  <Text className="text-[13px] font-semibold text-danger underline">
+                    {DISCARD_MESSAGE_LABEL}
+                  </Text>
+                </Pressable>
+              ) : null}
+            </View>
           </View>
         ) : null}
 

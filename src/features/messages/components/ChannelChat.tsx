@@ -5,7 +5,6 @@ import {
   buildMentionResolver,
   canDeleteMessage,
   canEditMessage,
-  CHAT_RECONNECTING_NOTICE,
   type Channel,
   LOADING_MESSAGES_LABEL,
   type MentionSources,
@@ -16,16 +15,17 @@ import {
   SEND_MESSAGES_DENIED_PLACEHOLDER,
 } from "@discordia/client-shared";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Text } from "react-native";
 
 import { env } from "../../../lib/env";
 import { useServerMembers } from "../../servers/useServerMembers";
 import { useChannelMessages } from "../use-channel-messages";
-import { useFailedMessages } from "../useFailedMessages";
+import { usePendingMessages } from "../usePendingMessages";
 import { useMessageAuthors } from "../useMessageAuthors";
 import { ChannelWelcome } from "./ChannelWelcome";
 import { ChatStatusNotice } from "./ChatStatusNotice";
+import { ConnectionPill } from "./ConnectionPill";
 import { ConnectionLostNotice } from "./ConnectionLostNotice";
 import { DeleteMessageModal } from "./DeleteMessageModal";
 import { EmojiPickerSheet } from "./EmojiPickerSheet";
@@ -80,13 +80,17 @@ export function ChannelChat({
   } = useChannelMessages(channel, currentAuthor?.id ?? null, {
     onAccessRevoked,
   });
-  const failed = useFailedMessages({
+  const pending = usePendingMessages({
     chatKey: channel.id,
     channelId: channel.id,
     currentUserId: currentAuthor?.id ?? null,
+    isReady: status === "ready",
     send: sendMessage,
-    getLastMessageId: () => messages?.at(-1)?.id ?? null,
   });
+  const reconcilePending = pending.reconcile;
+  useEffect(() => {
+    if (messages) reconcilePending(messages);
+  }, [messages, reconcilePending]);
   const members = useServerMembers(serverId);
   const authors = useMessageAuthors(members, messages, currentAuthor);
   const [reactingToId, setReactingToId] = useState<string | null>(null);
@@ -163,16 +167,19 @@ export function ChannelChat({
 
   return (
     <MessageMentionsProvider value={mentions}>
+      {messages !== null ? (
+        <ConnectionPill status={status} onRetry={retry} />
+      ) : null}
       {messages === null ? (
         status === "offline" ? (
-          <ConnectionLostNotice variant="panel" />
+          <ConnectionLostNotice onRetry={retry} />
         ) : (
-          <ChatStatusNotice message={LOADING_MESSAGES_LABEL} />
+          <ChatStatusNotice message={LOADING_MESSAGES_LABEL} isLoading />
         )
       ) : (
         <MessageList
           welcome={<ChannelWelcome channelName={channel.name} />}
-          messages={failed.withFailed(messages)}
+          messages={pending.withPending(messages)}
           authors={authors}
           editingMessageId={editingMessageId}
           hasMore={hasMore}
@@ -182,6 +189,8 @@ export function ChannelChat({
           onRequestReaction={setReactingToId}
           canAddReactions={canAddReactions}
           onRequestActions={setActionsMessageId}
+          onRetryMessage={pending.retry}
+          onDiscardMessage={pending.discard}
         />
       )}
       {actionError ? (
@@ -192,26 +201,23 @@ export function ChannelChat({
           {actionError}
         </Text>
       ) : null}
-      {status === "offline" && messages !== null ? (
-        <ConnectionLostNotice variant="bar" />
-      ) : null}
-      {status === "reconnecting" ? (
-        <Text
-          accessibilityRole="alert"
-          className="bg-surface-hover px-4 py-1 text-center text-[12px] text-content-muted"
-        >
-          {CHAT_RECONNECTING_NOTICE}
-        </Text>
-      ) : null}
       <MessageComposer
         placeholder={
           canSendMessages || isCheckingPermissions
             ? messageInputPlaceholder(channel.name)
             : SEND_MESSAGES_DENIED_PLACEHOLDER
         }
-        onSend={failed.onSend}
+        onSend={pending.onSend}
         uploadTarget={{ channelId: channel.id }}
-        disabled={!currentAuthor || status !== "ready" || !canSendMessages}
+        disabled={
+          !currentAuthor ||
+          !canSendMessages ||
+          !(
+            status === "ready" ||
+            status === "reconnecting" ||
+            status === "offline"
+          )
+        }
         editing={
           editingMessage
             ? {

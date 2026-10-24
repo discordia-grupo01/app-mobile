@@ -1,19 +1,19 @@
 import {
   canDeleteMessage,
   canEditMessage,
-  CHAT_RECONNECTING_NOTICE,
   dmInputPlaceholder,
   LOADING_MESSAGES_LABEL,
   type MessageAuthor,
   type SendDmResult,
 } from "@discordia/client-shared";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Text } from "react-native";
 
 import { useChannelMessages } from "../../messages/use-channel-messages";
-import { useFailedMessages } from "../../messages/useFailedMessages";
+import { usePendingMessages } from "../../messages/usePendingMessages";
 import { ChatStatusNotice } from "../../messages/components/ChatStatusNotice";
+import { ConnectionPill } from "../../messages/components/ConnectionPill";
 import { ConnectionLostNotice } from "../../messages/components/ConnectionLostNotice";
 import { DeleteMessageModal } from "../../messages/components/DeleteMessageModal";
 import { MessageActionsSheet } from "../../messages/components/MessageActionsSheet";
@@ -31,7 +31,10 @@ interface DmThreadProps {
   onSend: (
     content: string,
     attachmentIds?: readonly string[],
+    clientId?: string,
   ) => Promise<SendDmResult>;
+  /** La sala personal esta unida: solo entonces se puede enviar. */
+  isConnected: boolean;
 }
 
 /** Un borrador no tiene canal al que unirse: solo el composer. */
@@ -45,30 +48,33 @@ function DraftDmThread({
   currentAuthor,
   blockedByMe,
   onSend,
+  isConnected,
 }: DmThreadProps) {
-  const failed = useFailedMessages({
+  const pending = usePendingMessages({
     chatKey: partner.id,
     channelId: "",
     currentUserId: currentAuthor.id,
+    isReady: isConnected,
     send: onSend,
-    getLastMessageId: () => null,
   });
   return (
     <>
       <MessageList
         welcome={<DmWelcome partner={partner} />}
-        messages={failed.withFailed([])}
+        messages={pending.withPending([])}
         authors={{ [currentAuthor.id]: currentAuthor }}
         editingMessageId={null}
         hasMore={false}
         isLoadingOlder={false}
         onLoadOlder={() => {}}
         onRequestActions={() => {}}
+        onRetryMessage={pending.retry}
+        onDiscardMessage={pending.discard}
       />
       {blockedByMe ? <DmBlockedNotice /> : null}
       <MessageComposer
         placeholder={dmInputPlaceholder(partner.name)}
-        onSend={failed.onSend}
+        onSend={pending.onSend}
         uploadTarget={{ to: partner.id }}
         disabled={blockedByMe}
       />
@@ -88,6 +94,7 @@ function LiveDmThread({
   currentAuthor,
   blockedByMe,
   onSend,
+  isConnected,
 }: DmThreadProps & { conversationId: string }) {
   const {
     status,
@@ -100,13 +107,17 @@ function LiveDmThread({
     editMessage,
     deleteMessage,
   } = useChannelMessages({ id: conversationId });
-  const failed = useFailedMessages({
+  const pending = usePendingMessages({
     chatKey: conversationId,
     channelId: conversationId,
     currentUserId: currentAuthor.id,
+    isReady: isConnected,
     send: onSend,
-    getLastMessageId: () => messages?.at(-1)?.id ?? null,
   });
+  const reconcilePending = pending.reconcile;
+  useEffect(() => {
+    if (messages) reconcilePending(messages);
+  }, [messages, reconcilePending]);
   const authors = useMemo(
     () => ({ [partner.id]: partner, [currentAuthor.id]: currentAuthor }),
     [partner, currentAuthor],
@@ -148,22 +159,27 @@ function LiveDmThread({
 
   return (
     <>
+      {messages !== null ? (
+        <ConnectionPill status={status} onRetry={retry} />
+      ) : null}
       {messages === null ? (
         status === "offline" ? (
-          <ConnectionLostNotice variant="panel" />
+          <ConnectionLostNotice onRetry={retry} />
         ) : (
-          <ChatStatusNotice message={LOADING_MESSAGES_LABEL} />
+          <ChatStatusNotice message={LOADING_MESSAGES_LABEL} isLoading />
         )
       ) : (
         <MessageList
           welcome={<DmWelcome partner={partner} />}
-          messages={failed.withFailed(messages)}
+          messages={pending.withPending(messages)}
           authors={authors}
           editingMessageId={editingMessageId}
           hasMore={hasMore}
           isLoadingOlder={isLoadingOlder}
           onLoadOlder={loadOlder}
           onRequestActions={setActionsMessageId}
+          onRetryMessage={pending.retry}
+          onDiscardMessage={pending.discard}
         />
       )}
       {deleteError ? (
@@ -174,21 +190,10 @@ function LiveDmThread({
           {deleteError}
         </Text>
       ) : null}
-      {status === "offline" && messages !== null ? (
-        <ConnectionLostNotice variant="bar" />
-      ) : null}
-      {status === "reconnecting" ? (
-        <Text
-          accessibilityRole="alert"
-          className="bg-surface-hover px-4 py-1 text-center text-[12px] text-content-muted"
-        >
-          {CHAT_RECONNECTING_NOTICE}
-        </Text>
-      ) : null}
       {blockedByMe ? <DmBlockedNotice /> : null}
       <MessageComposer
         placeholder={dmInputPlaceholder(partner.name)}
-        onSend={failed.onSend}
+        onSend={pending.onSend}
         uploadTarget={{ to: partner.id }}
         disabled={blockedByMe}
         editing={
