@@ -20,13 +20,11 @@ import { useOptionalVoiceSession } from "../../../voice/voice-session-context";
 
 interface UserProfileBarProps {
   userName?: string | null;
-  serverId?: string | null;
   onLogout: () => void;
 }
 
 export function UserProfileBar({
   userName,
-  serverId,
   onLogout,
 }: UserProfileBarProps) {
   const colors = useThemeColors();
@@ -120,7 +118,6 @@ export function UserProfileBar({
 
       <OwnProfileModal
         visible={isProfileVisible}
-        serverId={serverId}
         onClose={() => setIsProfileVisible(false)}
       />
 
