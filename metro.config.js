@@ -23,6 +23,18 @@ const isFromPackageNeedingRealReactNative = (originModulePath) =>
     ),
   );
 
+// rn-emoji-keyboard usa InteractionManager, que RN 0.88 saco del core. Le damos un
+// react-native con un polyfill (ver src/lib/react-native-with-interaction-manager.js).
+const INTERACTION_MANAGER_SHIM = path.resolve(
+  __dirname,
+  "src/lib/react-native-with-interaction-manager.js",
+);
+
+const isFromEmojiKeyboard = (originModulePath) =>
+  originModulePath.includes(
+    `${path.sep}node_modules${path.sep}rn-emoji-keyboard${path.sep}`,
+  );
+
 const nativewindResolveRequest = nativewindConfig.resolver.resolveRequest;
 
 module.exports = {
@@ -30,6 +42,12 @@ module.exports = {
   resolver: {
     ...nativewindConfig.resolver,
     resolveRequest: (context, moduleName, platform) => {
+      if (
+        moduleName === "react-native" &&
+        isFromEmojiKeyboard(context.originModulePath)
+      ) {
+        return { type: "sourceFile", filePath: INTERACTION_MANAGER_SHIM };
+      }
       if (
         moduleName === "react-native" &&
         isFromPackageNeedingRealReactNative(context.originModulePath)

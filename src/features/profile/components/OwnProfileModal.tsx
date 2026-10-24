@@ -321,6 +321,10 @@ export function OwnProfileModal({
           </View>
         ) : null}
 
+        {imageError ? (
+          <Text className="text-danger text-[12px] mb-3">{imageError}</Text>
+        ) : null}
+
         <View className="mb-4">
           {editingField === "name" ? (
             <View className="flex-row items-center gap-2">
