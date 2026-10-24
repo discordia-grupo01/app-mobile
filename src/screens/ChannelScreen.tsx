@@ -1,6 +1,7 @@
 import {
   type AccessRevokedReason,
   type Channel,
+  isMemberMuted,
   type Role,
   type ServerSummary,
   VOICE_CONNECTING,
@@ -22,6 +23,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "../features/auth/auth-context";
 import { authorFromProfile } from "../features/messages/author";
 import { ChannelChat } from "../features/messages/components/ChannelChat";
+import { OwnProfileModal } from "../features/profile/components/OwnProfileModal";
+import { PublicProfileModal } from "../features/profile/components/PublicProfileModal";
 import { MembersSidebar } from "../features/servers/components/members/MembersSidebar";
 import { VoiceChannelView } from "../features/voice/VoiceChannelView";
 import { useServerVoice } from "../features/voice/useServerVoice";
@@ -82,6 +85,11 @@ export function ChannelScreen({
   const isText = channel.kind === "text";
   const insets = useSafeAreaInsets();
   const [isMembersVisible, setIsMembersVisible] = useState(false);
+  const [isOwnProfileVisible, setIsOwnProfileVisible] = useState(false);
+  const [viewing, setViewing] = useState<{
+    userId: string;
+    mutedUntil: string | null;
+  } | null>(null);
   const { user } = useAuth();
   const currentAuthor = useMemo(
     () => (user ? authorFromProfile(user) : null),
@@ -95,14 +103,18 @@ export function ChannelScreen({
       : voice.status === "reconnecting"
         ? VOICE_RECONNECTING
         : VOICE_CONNECTING;
+  const isModeratable =
+    viewing !== null &&
+    viewing.userId !== currentUserId &&
+    viewing.userId !== server.owner_id;
   const pillColor =
     voice.status === "connected" ? colors.success : colors.highlight;
 
   return (
     <View className="flex-1 bg-surface">
       <View
-        className="flex-row items-center gap-3 min-h-15 px-3 border-b border-b-line"
-        style={{ paddingTop: insets.top }}
+        className="flex-row items-center gap-3 px-3 border-b border-b-line"
+        style={{ paddingTop: insets.top, minHeight: insets.top + 60 }}
       >
         <TouchableOpacity
           onPress={onBack}
@@ -178,6 +190,7 @@ export function ChannelScreen({
       <MembersSidebar
         visible={isMembersVisible}
         serverId={serverId}
+        serverRoles={serverRoles}
         currentUserId={currentUserId}
         authToken={authToken}
         canManageRoles={canManageRoles}
@@ -185,6 +198,26 @@ export function ChannelScreen({
         canKickMembers={canKickMembers}
         canMuteMembers={canMuteMembers}
         onClose={() => setIsMembersVisible(false)}
+      />
+
+      <OwnProfileModal
+        visible={isOwnProfileVisible}
+        serverId={serverId}
+        onClose={() => setIsOwnProfileVisible(false)}
+      />
+
+      <PublicProfileModal
+        visible={viewing !== null}
+        userId={viewing?.userId ?? null}
+        authToken={authToken ?? null}
+        serverId={serverId}
+        canManageRoles={canManageRoles}
+        canBan={canBanMembers && isModeratable}
+        canKick={canKickMembers && isModeratable}
+        canMute={canMuteMembers && isModeratable}
+        mutedUntil={viewing?.mutedUntil ?? null}
+        canBlock={viewing !== null && viewing.userId !== currentUserId}
+        onClose={() => setViewing(null)}
       />
 
       {isText ? (
@@ -205,6 +238,19 @@ export function ChannelScreen({
             canAddReactions={canAddReactions}
             isCheckingPermissions={isCheckingChannelPermissions}
             onAccessRevoked={onAccessRevoked}
+            onOpenProfile={(userId, member) => {
+              if (userId === currentUserId) {
+                setIsOwnProfileVisible(true);
+                return;
+              }
+              setViewing({
+                userId,
+                mutedUntil:
+                  member && isMemberMuted(member)
+                    ? (member.muted_until ?? null)
+                    : null,
+              });
+            }}
           />
         </KeyboardAvoidingView>
       ) : (

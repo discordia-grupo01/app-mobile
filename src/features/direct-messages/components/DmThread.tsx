@@ -35,6 +35,7 @@ interface DmThreadProps {
   ) => Promise<SendDmResult>;
   /** La sala personal esta unida: solo entonces se puede enviar. */
   isConnected: boolean;
+  onOpenProfile: (userId: string) => void;
 }
 
 /** Un borrador no tiene canal al que unirse: solo el composer. */
@@ -49,6 +50,7 @@ function DraftDmThread({
   blockedByMe,
   onSend,
   isConnected,
+  onOpenProfile,
 }: DmThreadProps) {
   const pending = usePendingMessages({
     chatKey: partner.id,
@@ -70,6 +72,7 @@ function DraftDmThread({
         onRequestActions={() => {}}
         onRetryMessage={pending.retry}
         onDiscardMessage={pending.discard}
+        onOpenProfile={onOpenProfile}
       />
       {blockedByMe ? <DmBlockedNotice /> : null}
       <MessageComposer
@@ -95,6 +98,7 @@ function LiveDmThread({
   blockedByMe,
   onSend,
   isConnected,
+  onOpenProfile,
 }: DmThreadProps & { conversationId: string }) {
   const {
     status,
@@ -180,6 +184,7 @@ function LiveDmThread({
           onRequestActions={setActionsMessageId}
           onRetryMessage={pending.retry}
           onDiscardMessage={pending.discard}
+          onOpenProfile={onOpenProfile}
         />
       )}
       {deleteError ? (

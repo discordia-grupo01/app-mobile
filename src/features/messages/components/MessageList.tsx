@@ -31,6 +31,7 @@ interface MessageListProps {
   /** Reintenta / elimina un mensaje propio que no se pudo enviar (por su `client_id`). */
   onRetryMessage?: (clientId: string) => void;
   onDiscardMessage?: (clientId: string) => void;
+  onOpenProfile?: (userId: string) => void;
 }
 
 export function MessageList({
@@ -47,6 +48,7 @@ export function MessageList({
   onRequestActions,
   onRetryMessage,
   onDiscardMessage,
+  onOpenProfile,
 }: MessageListProps) {
   const newestFirst = useMemo(() => [...messages].reverse(), [messages]);
 
@@ -96,6 +98,7 @@ export function MessageList({
               }
               canAddReactions={canAddReactions}
               onRequestActions={() => onRequestActions(item.id)}
+              onOpenProfile={onOpenProfile}
               onRetry={
                 item.client_id && onRetryMessage
                   ? () => onRetryMessage(item.client_id!)

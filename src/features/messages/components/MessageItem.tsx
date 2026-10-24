@@ -62,6 +62,8 @@ interface MessageItemProps {
   /** Solo en un mensaje fallido. */
   onRetry?: () => void;
   onDiscard?: () => void;
+  /** Sin esto el nombre y la foto no son tocables. */
+  onOpenProfile?: (userId: string) => void;
 }
 
 export function MessageItem({
@@ -75,6 +77,7 @@ export function MessageItem({
   onRequestActions,
   onRetry,
   onDiscard,
+  onOpenProfile,
 }: MessageItemProps) {
   const { me } = useMessageMentions();
   const colors = useThemeColors();
@@ -138,14 +141,39 @@ export function MessageItem({
         }}
       />
       {isGroupStart ? (
-        <Avatar name={author.name} uri={author.avatarUrl} size={AVATAR_SIZE} />
+        onOpenProfile ? (
+          <Pressable
+            onPress={() => onOpenProfile(message.user_id)}
+            accessibilityRole="button"
+            accessibilityLabel={`Ver perfil de ${author.name}`}
+            className="h-fit"
+          >
+            <Avatar
+              name={author.name}
+              uri={author.avatarUrl}
+              size={AVATAR_SIZE}
+            />
+          </Pressable>
+        ) : (
+          <Avatar
+            name={author.name}
+            uri={author.avatarUrl}
+            size={AVATAR_SIZE}
+          />
+        )
       ) : (
         <View style={{ width: AVATAR_SIZE }} />
       )}
 
       <View className="min-w-0 flex-1">
         {isGroupStart ? (
-          <MessageHeader author={author} createdAt={message.inserted_at} />
+          <MessageHeader
+            author={author}
+            createdAt={message.inserted_at}
+            onOpenProfile={
+              onOpenProfile ? () => onOpenProfile(message.user_id) : undefined
+            }
+          />
         ) : null}
 
         {message.content || !message.attachments?.length ? (

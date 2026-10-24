@@ -16,6 +16,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { OwnProfileModal } from "../../profile/components/OwnProfileModal";
 import { PublicProfileModal } from "../../profile/components/PublicProfileModal";
 import { Avatar } from "../../../components/ui/Avatar";
 import { useThemeColors } from "../../../theme/theme-context";
@@ -44,13 +45,14 @@ export function DmConversationScreen({
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
   const [isProfileVisible, setIsProfileVisible] = useState(false);
+  const [isOwnProfileVisible, setIsOwnProfileVisible] = useState(false);
   const { partner, blockedByMe, conversationId } = summary;
 
   return (
     <View className="flex-1 bg-surface">
       <View
-        className="min-h-15 flex-row items-center gap-3 border-b border-b-line px-3"
-        style={{ paddingTop: insets.top }}
+        className="flex-row items-center gap-3 border-b border-b-line px-3"
+        style={{ paddingTop: insets.top, minHeight: insets.top + 60 }}
       >
         <TouchableOpacity
           onPress={onBack}
@@ -94,8 +96,18 @@ export function DmConversationScreen({
           blockedByMe={blockedByMe}
           onSend={onSend}
           isConnected={isConnected}
+          onOpenProfile={(userId) =>
+            userId === currentAuthor.id
+              ? setIsOwnProfileVisible(true)
+              : setIsProfileVisible(true)
+          }
         />
       </KeyboardAvoidingView>
+
+      <OwnProfileModal
+        visible={isOwnProfileVisible}
+        onClose={() => setIsOwnProfileVisible(false)}
+      />
 
       <PublicProfileModal
         visible={isProfileVisible}

@@ -8,6 +8,7 @@ import {
   type Channel,
   LOADING_MESSAGES_LABEL,
   type MentionSources,
+  type Member,
   messageInputPlaceholder,
   type MessageAuthor,
   resolveImageUrl,
@@ -50,6 +51,8 @@ interface ChannelChatProps {
   isCheckingPermissions?: boolean;
   /** El back cerro el canal: si fue por permisos, conviene recargar el servidor. */
   onAccessRevoked?: (reason: AccessRevokedReason) => void;
+  /** Toque en el nombre o la foto de un autor (puede ser el usuario actual). */
+  onOpenProfile?: (userId: string, member?: Member) => void;
 }
 
 export function ChannelChat({
@@ -64,6 +67,7 @@ export function ChannelChat({
   canAddReactions,
   isCheckingPermissions = false,
   onAccessRevoked,
+  onOpenProfile,
 }: ChannelChatProps) {
   const {
     status,
@@ -92,7 +96,12 @@ export function ChannelChat({
     if (messages) reconcilePending(messages);
   }, [messages, reconcilePending]);
   const members = useServerMembers(serverId);
-  const authors = useMessageAuthors(members, messages, currentAuthor);
+  const authors = useMessageAuthors(
+    members,
+    messages,
+    currentAuthor,
+    serverRoles,
+  );
   const [reactingToId, setReactingToId] = useState<string | null>(null);
   const [actionsMessageId, setActionsMessageId] = useState<string | null>(null);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
@@ -120,6 +129,7 @@ export function ChannelChat({
         authorFromMember(
           member,
           resolveImageUrl(member.profile?.avatar_url, env.apiUrl),
+          serverRoles,
         ),
       ),
       roles: serverRoles,
@@ -191,6 +201,15 @@ export function ChannelChat({
           onRequestActions={setActionsMessageId}
           onRetryMessage={pending.retry}
           onDiscardMessage={pending.discard}
+          onOpenProfile={
+            onOpenProfile
+              ? (userId) =>
+                  onOpenProfile(
+                    userId,
+                    members?.find((member) => member.user_id === userId),
+                  )
+              : undefined
+          }
         />
       )}
       {actionError ? (
