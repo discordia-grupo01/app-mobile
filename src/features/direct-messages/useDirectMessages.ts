@@ -69,6 +69,8 @@ export function useDirectMessages(
   const [isLoading, setIsLoading] = useState(true);
   const [partners, setPartners] = useState<Record<string, MessageAuthor>>({});
   const [activePartnerId, setActivePartnerId] = useState<string | null>(null);
+  // Cada reintento vuelve a abrir la sala personal (el socket pudo haberse rendido).
+  const [attempt, setAttempt] = useState(0);
 
   const userRoom = useRef<PhoenixChannel | null>(null);
   const isJoined = useRef(false);
@@ -94,6 +96,12 @@ export function useDirectMessages(
     [applyList],
   );
 
+  /** Vuelve a pedir la lista y a unir la sala de DMs, que no se reabre sola tras rendirse. */
+  const retry = useCallback(() => {
+    setAttempt((value) => value + 1);
+    return reload();
+  }, [reload]);
+
   const applyDm = useCallback(
     (payload: NewDmPayload) =>
       setConversations((prev) => applyNewDm(prev, payload, currentUserId)),
@@ -106,7 +114,7 @@ export function useDirectMessages(
     let release: (() => void) | null = null;
     let room: PhoenixChannel | null = null;
 
-    void listConversations().then(applyList);
+    if (attempt === 0) void listConversations().then(applyList);
 
     async function start() {
       const acquired = await acquireSocket();
@@ -148,7 +156,7 @@ export function useDirectMessages(
       room?.leave();
       release?.();
     };
-  }, [currentUserId, reload, applyList, applyDm]);
+  }, [currentUserId, reload, applyList, applyDm, attempt]);
 
   // El back solo devuelve ids: nombre y foto se piden una vez por usuario.
   useEffect(() => {
@@ -320,6 +328,7 @@ export function useDirectMessages(
     isLoading: isLoading || isResolvingPartners,
     loadError,
     reload,
+    retry,
     activeSummary,
     openConversation,
     closeConversation,
