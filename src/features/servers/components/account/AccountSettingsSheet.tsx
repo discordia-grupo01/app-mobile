@@ -82,7 +82,12 @@ export function AccountSettingsSheet({
   }
 
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={handleClose}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      statusBarTranslucent
+      onRequestClose={handleClose}
+    >
       <KeyboardAvoidingView
         className="flex-1 bg-surface-modal"
         style={{ paddingTop: insets.top }}

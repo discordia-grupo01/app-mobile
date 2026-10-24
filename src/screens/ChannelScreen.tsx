@@ -101,8 +101,8 @@ export function ChannelScreen({
   return (
     <View className="flex-1 bg-surface">
       <View
-        className="flex-row items-center gap-3 min-h-15 px-3 border-b border-b-line"
-        style={{ paddingTop: insets.top }}
+        className="flex-row items-center gap-3 px-3 border-b border-b-line"
+        style={{ paddingTop: insets.top, minHeight: insets.top + 60 }}
       >
         <TouchableOpacity
           onPress={onBack}
@@ -178,6 +178,7 @@ export function ChannelScreen({
       <MembersSidebar
         visible={isMembersVisible}
         serverId={serverId}
+        serverRoles={serverRoles}
         currentUserId={currentUserId}
         authToken={authToken}
         canManageRoles={canManageRoles}

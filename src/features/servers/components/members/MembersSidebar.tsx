@@ -1,5 +1,6 @@
 import {
   displayNameOf,
+  highestRoleOf,
   isMemberMuted,
   type Member,
   type MemberPageQuery,
@@ -8,6 +9,7 @@ import {
   MEMBERS_SEARCH_LABEL,
   MEMBERS_SEARCH_PLACEHOLDER,
   resolveImageUrl,
+  type Role,
 } from "@discordia/client-shared";
 
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -36,6 +38,8 @@ import { Avatar } from "../../../../components/ui/Avatar";
 interface MembersSidebarProps {
   visible: boolean;
   serverId: string;
+  /** Roles del servidor: el nombre toma el color del rol mas alto de cada miembro. */
+  serverRoles?: Role[];
   currentUserId?: string | null;
   authToken?: string | null;
   /** Owner, o miembro con el permiso MANAGE_ROLES via algún rol. */
@@ -52,6 +56,7 @@ interface MembersSidebarProps {
 export function MembersSidebar({
   visible,
   serverId,
+  serverRoles = [],
   currentUserId,
   authToken,
   canManageRoles = false,
@@ -167,6 +172,7 @@ export function MembersSidebar({
     const name = displayNameOf(member.profile);
     const avatarSrc = resolveImageUrl(member.profile?.avatar_url, env.apiUrl);
     const isSelf = member.user_id === currentUserId;
+    const roleColor = highestRoleOf(member.role_ids, serverRoles)?.color;
 
     return (
       <TouchableOpacity
@@ -186,6 +192,7 @@ export function MembersSidebar({
         <View className="flex-1">
           <Text
             className="text-[14px] font-semibold text-content"
+            style={roleColor ? { color: roleColor } : undefined}
             numberOfLines={1}
           >
             {name}

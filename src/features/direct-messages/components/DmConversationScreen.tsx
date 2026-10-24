@@ -49,8 +49,8 @@ export function DmConversationScreen({
   return (
     <View className="flex-1 bg-surface">
       <View
-        className="min-h-15 flex-row items-center gap-3 border-b border-b-line px-3"
-        style={{ paddingTop: insets.top }}
+        className="flex-row items-center gap-3 border-b border-b-line px-3"
+        style={{ paddingTop: insets.top, minHeight: insets.top + 60 }}
       >
         <TouchableOpacity
           onPress={onBack}

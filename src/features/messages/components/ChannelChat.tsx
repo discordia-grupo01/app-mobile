@@ -92,7 +92,12 @@ export function ChannelChat({
     if (messages) reconcilePending(messages);
   }, [messages, reconcilePending]);
   const members = useServerMembers(serverId);
-  const authors = useMessageAuthors(members, messages, currentAuthor);
+  const authors = useMessageAuthors(
+    members,
+    messages,
+    currentAuthor,
+    serverRoles,
+  );
   const [reactingToId, setReactingToId] = useState<string | null>(null);
   const [actionsMessageId, setActionsMessageId] = useState<string | null>(null);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
@@ -120,6 +125,7 @@ export function ChannelChat({
         authorFromMember(
           member,
           resolveImageUrl(member.profile?.avatar_url, env.apiUrl),
+          serverRoles,
         ),
       ),
       roles: serverRoles,
