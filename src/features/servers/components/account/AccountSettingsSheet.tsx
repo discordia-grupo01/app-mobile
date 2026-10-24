@@ -17,6 +17,7 @@ import { useThemeColors } from "../../../../theme/theme-context";
 import { AccountSettingsMenu } from "./account-settings/AccountSettingsMenu";
 import { AppearanceSettingsStep } from "./account-settings/AppearanceSettingsStep";
 import { SecuritySettingsStep } from "./account-settings/SecuritySettingsStep";
+import { LogoutConfirmModal } from "./LogoutConfirmModal";
 import { PinSetupPanel } from "./PinSetupPanel";
 import { TwoFactorPanel } from "./TwoFactorPanel";
 
@@ -42,6 +43,7 @@ interface AccountSettingsSheetProps {
   visible: boolean;
   isPinEnabled: boolean;
   onClose: () => void;
+  onLogout: () => void;
   theme: ThemeName;
   onSelectTheme: (preference: ThemeName) => void;
 }
@@ -50,12 +52,14 @@ export function AccountSettingsSheet({
   visible,
   isPinEnabled,
   onClose,
+  onLogout,
   theme,
   onSelectTheme,
 }: AccountSettingsSheetProps) {
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
   const [section, setSection] = useState<Section>("menu");
+  const [isConfirmVisible, setIsConfirmVisible] = useState(false);
   const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
 
   useEffect(() => {
@@ -65,6 +69,12 @@ export function AccountSettingsSheet({
   function handleClose() {
     setSection("menu");
     onClose();
+  }
+
+  function handleConfirmLogout() {
+    setIsConfirmVisible(false);
+    handleClose();
+    onLogout();
   }
 
   function goBack() {
@@ -112,6 +122,7 @@ export function AccountSettingsSheet({
             <AccountSettingsMenu
               onSelectAppearance={() => setSection("appearance")}
               onSelectSecurity={() => setSection("security")}
+              onLogout={() => setIsConfirmVisible(true)}
             />
           ) : section === "appearance" ? (
             <AppearanceSettingsStep selected={theme} onSelect={onSelectTheme} />
@@ -132,6 +143,12 @@ export function AccountSettingsSheet({
           )}
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <LogoutConfirmModal
+        visible={isConfirmVisible}
+        onClose={() => setIsConfirmVisible(false)}
+        onConfirm={handleConfirmLogout}
+      />
     </Modal>
   );
 }
