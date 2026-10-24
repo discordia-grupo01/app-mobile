@@ -27,7 +27,10 @@ interface DmConversationScreenProps {
   onSend: (
     content: string,
     attachmentIds?: readonly string[],
+    clientId?: string,
   ) => Promise<SendDmResult>;
+  /** La sala personal esta unida: solo entonces se puede enviar. */
+  isConnected: boolean;
   onBack: () => void;
 }
 
@@ -35,6 +38,7 @@ export function DmConversationScreen({
   currentAuthor,
   summary,
   onSend,
+  isConnected,
   onBack,
 }: DmConversationScreenProps) {
   const colors = useThemeColors();
@@ -89,6 +93,7 @@ export function DmConversationScreen({
           currentAuthor={currentAuthor}
           blockedByMe={blockedByMe}
           onSend={onSend}
+          isConnected={isConnected}
         />
       </KeyboardAvoidingView>
 

@@ -40,6 +40,8 @@ export function DirectMessagesScreen({
     openConversation,
     closeConversation,
     sendMessage,
+    isConnected,
+    retry,
   } = directMessages;
   const { candidates, isLoading: isLoadingCandidates } = useDmCandidates(
     servers,
@@ -53,6 +55,7 @@ export function DirectMessagesScreen({
         currentAuthor={currentAuthor}
         summary={activeSummary}
         onSend={sendMessage}
+        isConnected={isConnected}
         onBack={closeConversation}
       />
     );
@@ -74,6 +77,8 @@ export function DirectMessagesScreen({
         conversations={conversations}
         isLoading={isLoading}
         loadError={loadError}
+        isOffline={loadError !== null && !isConnected}
+        onRetryLoad={retry}
         activePartnerId={activeSummary?.partner.id ?? null}
         userName={userName}
         onSelect={openConversation}

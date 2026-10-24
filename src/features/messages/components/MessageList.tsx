@@ -28,6 +28,9 @@ interface MessageListProps {
   /** `ADD_REACTIONS` del usuario actual en el servidor. */
   canAddReactions?: boolean;
   onRequestActions: (messageId: string) => void;
+  /** Reintenta / elimina un mensaje propio que no se pudo enviar (por su `client_id`). */
+  onRetryMessage?: (clientId: string) => void;
+  onDiscardMessage?: (clientId: string) => void;
 }
 
 export function MessageList({
@@ -42,6 +45,8 @@ export function MessageList({
   onRequestReaction,
   canAddReactions = true,
   onRequestActions,
+  onRetryMessage,
+  onDiscardMessage,
 }: MessageListProps) {
   const newestFirst = useMemo(() => [...messages].reverse(), [messages]);
 
@@ -91,6 +96,16 @@ export function MessageList({
               }
               canAddReactions={canAddReactions}
               onRequestActions={() => onRequestActions(item.id)}
+              onRetry={
+                item.client_id && onRetryMessage
+                  ? () => onRetryMessage(item.client_id!)
+                  : undefined
+              }
+              onDiscard={
+                item.client_id && onDiscardMessage
+                  ? () => onDiscardMessage(item.client_id!)
+                  : undefined
+              }
             />
             {newDay ? (
               <View

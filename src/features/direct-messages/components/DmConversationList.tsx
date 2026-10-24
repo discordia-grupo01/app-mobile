@@ -18,11 +18,15 @@ import { UserProfileBar } from "../../servers/components/account/UserProfileBar"
 import { Avatar } from "../../../components/ui/Avatar";
 import { useThemeColors } from "../../../theme/theme-context";
 import { cn } from "../../../lib/cn";
+import { DmListError } from "./DmListError";
 
 interface DmConversationListProps {
   conversations: ConversationSummary[];
   isLoading: boolean;
   loadError: string | null;
+  /** La lista no cargo y tampoco hay conexion. */
+  isOffline: boolean;
+  onRetryLoad: () => void;
   activePartnerId: string | null;
   userName?: string | null;
   onSelect: (partnerId: string) => void;
@@ -34,6 +38,8 @@ export function DmConversationList({
   conversations,
   isLoading,
   loadError,
+  isOffline,
+  onRetryLoad,
   activePartnerId,
   userName,
   onSelect,
@@ -63,15 +69,15 @@ export function DmConversationList({
           <View className="items-center py-6">
             <ActivityIndicator color={colors.accentBright} />
           </View>
+        ) : conversations.length === 0 && loadError ? (
+          <DmListError
+            message={loadError}
+            isOffline={isOffline}
+            onRetry={onRetryLoad}
+          />
         ) : conversations.length === 0 ? (
-          <Text
-            accessibilityRole={loadError ? "alert" : undefined}
-            className={cn(
-              "px-2 py-3 text-[13px]",
-              loadError ? "text-danger" : "text-content-subtle",
-            )}
-          >
-            {loadError ?? NO_CONVERSATIONS_YET}
+          <Text className="px-2 py-3 text-[13px] text-content-subtle">
+            {NO_CONVERSATIONS_YET}
           </Text>
         ) : (
           conversations.map(
