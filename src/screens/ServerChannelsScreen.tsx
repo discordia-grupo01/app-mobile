@@ -756,11 +756,7 @@ export function ServerChannelsScreen({
             ) : null}
           </ScrollView>
 
-          <UserProfileBar
-            userName={userName}
-            serverId={server.id}
-            onLogout={onLogout}
-          />
+          <UserProfileBar userName={userName} onLogout={onLogout} />
         </View>
       </ChannelDragProvider>
 

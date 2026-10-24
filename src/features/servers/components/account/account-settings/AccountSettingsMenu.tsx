@@ -6,11 +6,13 @@ import { useThemeColors } from "../../../../../theme/theme-context";
 interface AccountSettingsMenuProps {
   onSelectAppearance: () => void;
   onSelectSecurity: () => void;
+  onLogout: () => void;
 }
 
 export function AccountSettingsMenu({
   onSelectAppearance,
   onSelectSecurity,
+  onLogout,
 }: AccountSettingsMenuProps) {
   const colors = useThemeColors();
 
@@ -56,6 +58,21 @@ export function AccountSettingsMenu({
           </Text>
         </View>
         <Feather name="chevron-right" size={18} color={colors.textSubtle} />
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        activeOpacity={0.75}
+        className="mt-3 flex-row items-center gap-4 rounded-2xl border border-line bg-surface-raised p-4"
+        onPress={onLogout}
+        accessibilityRole="button"
+        accessibilityLabel="Cerrar sesión"
+      >
+        <View className="w-11 h-11 rounded-xl items-center justify-center bg-[rgba(224,82,82,0.14)]">
+          <Feather name="log-out" size={20} color={colors.danger} />
+        </View>
+        <Text className="flex-1 text-[16px] font-bold text-danger">
+          Cerrar sesión
+        </Text>
       </TouchableOpacity>
 
       <Text className="mt-4 px-1 text-[12px] text-content-subtle">
