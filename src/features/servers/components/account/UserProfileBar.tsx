@@ -23,10 +23,7 @@ interface UserProfileBarProps {
   onLogout: () => void;
 }
 
-export function UserProfileBar({
-  userName,
-  onLogout,
-}: UserProfileBarProps) {
+export function UserProfileBar({ userName, onLogout }: UserProfileBarProps) {
   const colors = useThemeColors();
   const { user, isPinEnabled } = useAuth();
   const [isSettingsVisible, setIsSettingsVisible] = useState(false);
