@@ -11,11 +11,13 @@ import { cn } from "../../lib/cn";
 import { useThemeColors } from "../../theme/theme-context";
 
 type ButtonVariant = "primary" | "secondary" | "danger";
+type ButtonSize = "md" | "sm";
 
 interface ButtonProps extends TouchableOpacityProps {
   title: string;
   isLoading?: boolean;
   variant?: ButtonVariant;
+  size?: ButtonSize;
   iconRight?: keyof typeof Feather.glyphMap;
   iconLeft?: React.ReactNode;
   fullWidth?: boolean;
@@ -25,6 +27,11 @@ const CONTAINER_VARIANT: Record<ButtonVariant, string> = {
   primary: "bg-accent",
   secondary: "bg-surface-input border border-line",
   danger: "bg-danger-strong",
+};
+
+const CONTAINER_SIZE: Record<ButtonSize, string> = {
+  md: "min-h-12 rounded-xl p-3.5",
+  sm: "min-h-9 rounded-lg px-3 py-2",
 };
 
 const TEXT_VARIANT: Record<ButtonVariant, string> = {
@@ -38,6 +45,7 @@ export function Button({
   isLoading = false,
   disabled,
   variant = "primary",
+  size = "md",
   iconRight,
   iconLeft,
   fullWidth = true,
@@ -50,7 +58,8 @@ export function Button({
   return (
     <TouchableOpacity
       className={cn(
-        "min-h-12 items-center justify-center rounded-xl p-3.5",
+        "items-center justify-center",
+        CONTAINER_SIZE[size],
         fullWidth && "w-full",
         CONTAINER_VARIANT[variant],
         isButtonDisabled && "opacity-50",

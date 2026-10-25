@@ -5,6 +5,8 @@ import {
   type DeleteServerResult,
   hasPermission,
   type LeaveServerResult,
+  messageAuthorOf,
+  type PublicUser,
   type Role,
   type ServerSummary,
   SESSION_EXPIRED_MESSAGE,
@@ -50,6 +52,7 @@ import {
 import { useMyChannelPermissions } from "../features/channels/useMyChannelPermissions";
 import { useVoiceSession } from "../features/voice/voice-session-context";
 import { getLastLocation, setLastLocation } from "../lib/storage";
+import { avatarUriOf } from "../lib/userProfile";
 import { useStatusBarStyle, useThemeColors } from "../theme/theme-context";
 import { ChannelScreen } from "./ChannelScreen";
 import { DirectMessagesScreen } from "./DirectMessagesScreen";
@@ -369,6 +372,14 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
     setView("dm");
   }
 
+  function messageUser(profile: PublicUser) {
+    openConversation(
+      profile.id,
+      messageAuthorOf(profile.id, profile.name, avatarUriOf(profile)),
+    );
+    setView("dm");
+  }
+
   function selectServer(serverId: string) {
     setView("servers");
     setSelectedServerId(serverId);
@@ -521,6 +532,7 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
           serverRoles={serverRoles}
           myRoleIds={myRoleIds}
           onAccessRevoked={handleAccessRevoked}
+          onMessageUser={messageUser}
           onBack={closeChannel}
         />
       </View>,

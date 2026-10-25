@@ -4,6 +4,7 @@ import {
   isMemberMuted,
   type Member,
   type MemberPageQuery,
+  type PublicUser,
   MEMBERS_EMPTY_SEARCH,
   MEMBERS_LOADING_MORE,
   MEMBERS_SEARCH_LABEL,
@@ -51,6 +52,8 @@ interface MembersSidebarProps {
   canKickMembers?: boolean;
   /** Owner, o miembro con MANAGE_MESSAGES a nivel servidor: puede silenciar. */
   canMuteMembers?: boolean;
+  /** Abre un mensaje directo con el miembro (desde su perfil). */
+  onMessageUser?: (profile: PublicUser) => void;
   onClose: () => void;
 }
 
@@ -64,6 +67,7 @@ export function MembersSidebar({
   canBanMembers = false,
   canKickMembers = false,
   canMuteMembers = false,
+  onMessageUser,
   onClose,
 }: MembersSidebarProps) {
   const colors = useThemeColors();
@@ -348,6 +352,15 @@ export function MembersSidebar({
         onMuteChanged={reload}
         canBlock={viewingUserId !== currentUserId}
         onBanned={reload}
+        onSendMessage={
+          onMessageUser && viewingUserId !== currentUserId
+            ? (profile) => {
+                setViewingUserId(null);
+                onClose();
+                onMessageUser(profile);
+              }
+            : undefined
+        }
         onClose={() => setViewingUserId(null)}
       />
     </>
