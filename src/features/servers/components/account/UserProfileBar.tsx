@@ -74,51 +74,53 @@ export function UserProfileBar({ userName, onLogout }: UserProfileBarProps) {
           </View>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          className="w-10 h-10 rounded-[10px] items-center justify-center"
-          onPress={voice?.toggleMute}
-          disabled={!canSpeak}
-          style={{ opacity: canSpeak ? 1 : 0.5 }}
-          accessibilityRole="button"
-          accessibilityState={{ selected: isMicMuted, disabled: !canSpeak }}
-          accessibilityLabel={
-            !canSpeak
-              ? VOICE_MODERATOR_MUTED
-              : isMicMuted
-                ? VOICE_UNMUTE_LABEL
-                : VOICE_MUTE_LABEL
-          }
-        >
-          <Feather
-            name={isMicMuted ? "mic-off" : "mic"}
-            size={19}
-            color={isMicMuted ? colors.danger : colors.textSubtle}
-          />
-        </TouchableOpacity>
+        <View className="shrink-0 flex-row items-center gap-0.5">
+          <TouchableOpacity
+            className="w-9 h-9 rounded-[10px] items-center justify-center"
+            onPress={voice?.toggleMute}
+            disabled={!canSpeak}
+            style={{ opacity: canSpeak ? 1 : 0.5 }}
+            accessibilityRole="button"
+            accessibilityState={{ selected: isMicMuted, disabled: !canSpeak }}
+            accessibilityLabel={
+              !canSpeak
+                ? VOICE_MODERATOR_MUTED
+                : isMicMuted
+                  ? VOICE_UNMUTE_LABEL
+                  : VOICE_MUTE_LABEL
+            }
+          >
+            <Feather
+              name={isMicMuted ? "mic-off" : "mic"}
+              size={19}
+              color={isMicMuted ? colors.danger : colors.textSubtle}
+            />
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          className="w-10 h-10 rounded-[10px] items-center justify-center"
-          onPress={() => setIsDeafened((prev) => !prev)}
-          accessibilityRole="button"
-          accessibilityLabel={
-            isDeafened ? "Activar audio" : "Silenciar audio (ensordecer)"
-          }
-        >
-          <Feather
-            name="headphones"
-            size={19}
-            color={isDeafened ? colors.danger : colors.textSubtle}
-          />
-        </TouchableOpacity>
+          <TouchableOpacity
+            className="w-9 h-9 rounded-[10px] items-center justify-center"
+            onPress={() => setIsDeafened((prev) => !prev)}
+            accessibilityRole="button"
+            accessibilityLabel={
+              isDeafened ? "Activar audio" : "Silenciar audio (ensordecer)"
+            }
+          >
+            <Feather
+              name="headphones"
+              size={19}
+              color={isDeafened ? colors.danger : colors.textSubtle}
+            />
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          className="w-10 h-10 rounded-[10px] items-center justify-center"
-          onPress={() => setIsSettingsVisible(true)}
-          accessibilityRole="button"
-          accessibilityLabel="Configuración"
-        >
-          <Feather name="settings" size={21} color={colors.textSubtle} />
-        </TouchableOpacity>
+          <TouchableOpacity
+            className="w-9 h-9 rounded-[10px] items-center justify-center"
+            onPress={() => setIsSettingsVisible(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Configuración"
+          >
+            <Feather name="settings" size={21} color={colors.textSubtle} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <OwnProfileModal
