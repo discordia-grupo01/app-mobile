@@ -1,9 +1,9 @@
 import { Feather } from "@expo/vector-icons";
+import { type ComponentRef, type Ref, useState } from "react";
 import { TextInput, TouchableOpacity, View } from "react-native";
 
 import { cn } from "../../lib/cn";
 import { useThemeColors } from "../../theme/theme-context";
-import { useState } from "react";
 
 interface SearchInputProps {
   value: string;
@@ -11,6 +11,9 @@ interface SearchInputProps {
   /** Etiqueta para lectores de pantalla: el input no lleva label visible. */
   label: string;
   placeholder: string;
+  /** Boton "buscar" del teclado. */
+  onSubmit?: () => void;
+  inputRef?: Ref<ComponentRef<typeof TextInput>>;
 }
 
 /** Campo de busqueda con lupa y boton para limpiar. */
@@ -19,6 +22,8 @@ export function SearchInput({
   onChange,
   label,
   placeholder,
+  onSubmit,
+  inputRef,
 }: SearchInputProps) {
   const colors = useThemeColors();
   const [isFocused, setIsFocused] = useState(false);
@@ -34,6 +39,7 @@ export function SearchInput({
       {/* text-[14px] y no text-sm: text-sm agrega line-height, que en un
           TextInput desalinea el texto en iOS. */}
       <TextInput
+        ref={inputRef}
         value={value}
         onChangeText={onChange}
         placeholder={placeholder}
@@ -42,6 +48,7 @@ export function SearchInput({
         autoCapitalize="none"
         autoCorrect={false}
         returnKeyType="search"
+        onSubmitEditing={onSubmit}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
         className="flex-1 py-2.5 text-[14px] text-content"

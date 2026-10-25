@@ -64,6 +64,8 @@ interface MessageItemProps {
   onDiscard?: () => void;
   /** Sin esto el nombre y la foto no son tocables. */
   onOpenProfile?: (userId: string) => void;
+  /** Recien se salto a este mensaje (desde la busqueda). */
+  isFocused?: boolean;
 }
 
 export function MessageItem({
@@ -78,6 +80,7 @@ export function MessageItem({
   onRetry,
   onDiscard,
   onOpenProfile,
+  isFocused = false,
 }: MessageItemProps) {
   const { me } = useMessageMentions();
   const colors = useThemeColors();
@@ -113,15 +116,18 @@ export function MessageItem({
         delivery === "waiting" && "opacity-60",
       )}
       // El color viene de los tokens del tema: con una variable CSS no se puede aplicar transparencia.
-      style={
-        isMentioningMe
-          ? {
-              borderLeftWidth: 2,
-              borderLeftColor: colors.highlight,
-              backgroundColor: hexToRgba(colors.highlight, 0.1),
-            }
-          : undefined
-      }
+      style={[
+        isMentioningMe && {
+          borderLeftWidth: 2,
+          borderLeftColor: colors.highlight,
+          backgroundColor: hexToRgba(colors.highlight, 0.1),
+        },
+        isFocused && {
+          borderLeftWidth: 2,
+          borderLeftColor: colors.accentBright,
+          backgroundColor: hexToRgba(colors.accentBright, 0.15),
+        },
+      ]}
       accessibilityHint={
         delivery ? undefined : "Mantené presionado para más acciones"
       }

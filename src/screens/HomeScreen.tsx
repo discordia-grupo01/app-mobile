@@ -5,7 +5,9 @@ import {
   type DeleteServerResult,
   hasPermission,
   type LeaveServerResult,
+  type Message,
   messageAuthorOf,
+  type MessageJumpTarget,
   type PublicUser,
   type Role,
   type ServerSummary,
@@ -19,6 +21,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
@@ -78,6 +81,9 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(
     null,
   );
+  const [jumpTarget, setJumpTarget] = useState<MessageJumpTarget | null>(null);
+  const jumpNonce = useRef(0);
+  const clearJumpTarget = useCallback(() => setJumpTarget(null), []);
   // Se abre en Mensajes Directos: asi lo primero que se ve tras loguearse es la
   // lista de conversaciones y no un servidor.
   const [view, setView] = useState<MainView>("dm");
@@ -296,6 +302,15 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
   function closeChannel() {
     setLostChannel(null);
     setSelectedChannelId(null);
+  }
+
+  function openSearchResult(message: Message) {
+    setSelectedChannelId(message.channel_id);
+    setJumpTarget({
+      channelId: message.channel_id,
+      messageId: message.id,
+      nonce: ++jumpNonce.current,
+    });
   }
 
   const canManageChannels = hasPermission(
@@ -533,6 +548,9 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
           myRoleIds={myRoleIds}
           onAccessRevoked={handleAccessRevoked}
           onMessageUser={messageUser}
+          jumpTarget={jumpTarget}
+          onOpenSearchResult={openSearchResult}
+          onJumpHandled={clearJumpTarget}
           onBack={closeChannel}
         />
       </View>,
