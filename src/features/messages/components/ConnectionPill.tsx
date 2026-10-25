@@ -13,15 +13,13 @@ import { ActivityIndicator, Pressable, Text, View } from "react-native";
 
 import { useRetryAction } from "../../../hooks/useRetryAction";
 import { useThemeColors } from "../../../theme/theme-context";
+import { FloatingPill, PILL_CLASS } from "./FloatingPill";
 
 interface ConnectionPillProps {
   status: ChatStatus;
   /** Vuelve a conectar el chat; se ofrece cuando se agotaron los reintentos. */
   onRetry: () => void | Promise<unknown>;
 }
-
-const PILL_CLASS =
-  "max-w-full flex-row items-center gap-2 rounded-full border border-line bg-surface-hover px-3.5 py-1.5 shadow-lg";
 
 /**
  * Globito flotante arriba del chat con el estado de la conexion. Va encima de los
@@ -89,14 +87,5 @@ export function ConnectionPill({ status, onRetry }: ConnectionPillProps) {
 
   if (!pill) return null;
 
-  return (
-    <View pointerEvents="box-none" className="z-10 h-0">
-      <View
-        pointerEvents="box-none"
-        className="absolute inset-x-0 top-3 items-center px-4"
-      >
-        {pill}
-      </View>
-    </View>
-  );
+  return <FloatingPill position="top">{pill}</FloatingPill>;
 }

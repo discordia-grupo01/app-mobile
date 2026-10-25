@@ -1,5 +1,6 @@
 import {
   isMessageErrorCode,
+  type ListMessagesOptions,
   type ListMessagesResult,
   messageErrorFor,
   type MessageHistory,
@@ -28,16 +29,18 @@ export async function fetchSocketTicket(): Promise<SocketTicketResult> {
 /**
  * Una pagina del historial del canal (de mas viejo a mas nuevo). Para la pagina
  * anterior se pasa el `nextCursor` de la respuesta como `before`; para traer lo
- * posterior a un mensaje, su id como `after`.
+ * posterior a un mensaje, su id como `after`; para saltar a un mensaje, su id
+ * como `around`.
  */
 export async function fetchMessages(
   channelId: string,
-  options: { limit?: number; before?: string; after?: string } = {},
+  options: ListMessagesOptions = {},
 ): Promise<ListMessagesResult> {
   const query = new URLSearchParams();
   if (options.limit !== undefined) query.set("limit", String(options.limit));
   if (options.before) query.set("before", options.before);
   if (options.after) query.set("after", options.after);
+  if (options.around) query.set("around", options.around);
   const qs = query.toString();
 
   const result = await apiFetch<MessageHistory>(
@@ -62,5 +65,8 @@ export async function fetchMessages(
     ok: true,
     messages: result.data.messages,
     nextCursor: result.data.next_cursor,
+    ...(options.around
+      ? { newerCursor: result.data.newer_cursor ?? null }
+      : {}),
   };
 }

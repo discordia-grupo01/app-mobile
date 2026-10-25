@@ -2,6 +2,8 @@ import {
   type AccessRevokedReason,
   type Channel,
   isMemberMuted,
+  type Message,
+  type MessageJumpTarget,
   type PublicUser,
   type Role,
   type ServerSummary,
@@ -23,6 +25,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAuth } from "../features/auth/auth-context";
 import { authorFromProfile } from "../features/messages/author";
+import { MessageSearchButton } from "../features/message-search/components/MessageSearchButton";
 import { ChannelChat } from "../features/messages/components/ChannelChat";
 import { OwnProfileModal } from "../features/profile/components/OwnProfileModal";
 import { PublicProfileModal } from "../features/profile/components/PublicProfileModal";
@@ -59,6 +62,11 @@ interface ChannelScreenProps {
   onAccessRevoked?: (reason: AccessRevokedReason) => void;
   /** Abre un mensaje directo con alguien (desde su perfil). */
   onMessageUser?: (profile: PublicUser) => void;
+  /** Resultado de busqueda a mostrar: si es de este canal, se salta al mensaje. */
+  jumpTarget?: MessageJumpTarget | null;
+  /** Toque en un resultado de busqueda: abre su canal y salta al mensaje. */
+  onOpenSearchResult?: (message: Message) => void;
+  onJumpHandled?: () => void;
   onBack: () => void;
 }
 
@@ -82,6 +90,9 @@ export function ChannelScreen({
   myRoleIds = [],
   onAccessRevoked,
   onMessageUser,
+  jumpTarget = null,
+  onOpenSearchResult,
+  onJumpHandled,
   onBack,
 }: ChannelScreenProps) {
   const colors = useThemeColors();
@@ -181,6 +192,17 @@ export function ChannelScreen({
             color={colors.textMuted}
           />
         </TouchableOpacity>
+        {onOpenSearchResult ? (
+          <MessageSearchButton
+            serverId={serverId}
+            serverName={server.name}
+            channels={server.channels}
+            currentAuthor={currentAuthor}
+            serverRoles={serverRoles}
+            myRoleIds={myRoleIds}
+            onOpenResult={onOpenSearchResult}
+          />
+        ) : null}
         <TouchableOpacity
           onPress={() => setIsMembersVisible(true)}
           className="w-8.5 h-8.5 items-center justify-center"
@@ -251,6 +273,10 @@ export function ChannelScreen({
             canAddReactions={canAddReactions}
             isCheckingPermissions={isCheckingChannelPermissions}
             onAccessRevoked={onAccessRevoked}
+            jumpTarget={
+              jumpTarget?.channelId === channel.id ? jumpTarget : null
+            }
+            onJumpHandled={onJumpHandled}
             onOpenProfile={(userId, member) => {
               if (userId === currentUserId) {
                 setIsOwnProfileVisible(true);
