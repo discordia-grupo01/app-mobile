@@ -1,4 +1,5 @@
 import {
+  ACTIVITY_STATUS_LABEL,
   resolveImageUrl,
   VOICE_MODERATOR_MUTED,
   VOICE_MUTE_LABEL,
@@ -13,6 +14,8 @@ import { env } from "../../../../lib/env";
 import { useThemeColors, useTheme } from "../../../../theme/theme-context";
 import { useAuth } from "../../../auth/auth-context";
 import { OwnProfileModal } from "../../../profile/components/OwnProfileModal";
+import { ActivityStatusDot } from "../../../profile/components/ActivityStatusDot";
+import { usePresenceOf } from "../../../presence/PresenceContext";
 import { Avatar } from "../../../../components/ui/Avatar";
 import { AccountSettingsSheet } from "./AccountSettingsSheet";
 import { VoiceConnectedStrip } from "../../../voice/components/sidebar/VoiceConnectedStrip";
@@ -37,6 +40,7 @@ export function UserProfileBar({ userName, onLogout }: UserProfileBarProps) {
   const displayName = (user?.name ?? userName)?.trim() || "Mi cuenta";
   const avatarSrc = resolveImageUrl(user?.avatar_url, env.apiUrl);
   const statusText = user?.status_text?.trim();
+  const activityStatus = usePresenceOf(user?.id);
 
   return (
     <>
@@ -51,7 +55,11 @@ export function UserProfileBar({ userName, onLogout }: UserProfileBarProps) {
         >
           <View className="relative">
             <Avatar name={displayName} uri={avatarSrc} size={44} />
-            <View className="absolute -right-[1px] -bottom-[1px] w-[13px] h-[13px] rounded-[7px] bg-success border-2 border-surface-panel" />
+            <ActivityStatusDot
+              status={activityStatus}
+              size={13}
+              className="absolute -right-[1px] -bottom-[1px] border-surface-panel"
+            />
           </View>
           <View className="flex-1 mr-1">
             <Text
@@ -61,56 +69,58 @@ export function UserProfileBar({ userName, onLogout }: UserProfileBarProps) {
               {displayName}
             </Text>
             <Text className="text-[13px] text-content-subtle" numberOfLines={1}>
-              {statusText || "En línea"}
+              {statusText || ACTIVITY_STATUS_LABEL[activityStatus]}
             </Text>
           </View>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          className="w-10 h-10 rounded-[10px] items-center justify-center"
-          onPress={voice?.toggleMute}
-          disabled={!canSpeak}
-          style={{ opacity: canSpeak ? 1 : 0.5 }}
-          accessibilityRole="button"
-          accessibilityState={{ selected: isMicMuted, disabled: !canSpeak }}
-          accessibilityLabel={
-            !canSpeak
-              ? VOICE_MODERATOR_MUTED
-              : isMicMuted
-                ? VOICE_UNMUTE_LABEL
-                : VOICE_MUTE_LABEL
-          }
-        >
-          <Feather
-            name={isMicMuted ? "mic-off" : "mic"}
-            size={19}
-            color={isMicMuted ? colors.danger : colors.textSubtle}
-          />
-        </TouchableOpacity>
+        <View className="shrink-0 flex-row items-center gap-0.5">
+          <TouchableOpacity
+            className="w-9 h-9 rounded-[10px] items-center justify-center"
+            onPress={voice?.toggleMute}
+            disabled={!canSpeak}
+            style={{ opacity: canSpeak ? 1 : 0.5 }}
+            accessibilityRole="button"
+            accessibilityState={{ selected: isMicMuted, disabled: !canSpeak }}
+            accessibilityLabel={
+              !canSpeak
+                ? VOICE_MODERATOR_MUTED
+                : isMicMuted
+                  ? VOICE_UNMUTE_LABEL
+                  : VOICE_MUTE_LABEL
+            }
+          >
+            <Feather
+              name={isMicMuted ? "mic-off" : "mic"}
+              size={19}
+              color={isMicMuted ? colors.danger : colors.textSubtle}
+            />
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          className="w-10 h-10 rounded-[10px] items-center justify-center"
-          onPress={() => setIsDeafened((prev) => !prev)}
-          accessibilityRole="button"
-          accessibilityLabel={
-            isDeafened ? "Activar audio" : "Silenciar audio (ensordecer)"
-          }
-        >
-          <Feather
-            name="headphones"
-            size={19}
-            color={isDeafened ? colors.danger : colors.textSubtle}
-          />
-        </TouchableOpacity>
+          <TouchableOpacity
+            className="w-9 h-9 rounded-[10px] items-center justify-center"
+            onPress={() => setIsDeafened((prev) => !prev)}
+            accessibilityRole="button"
+            accessibilityLabel={
+              isDeafened ? "Activar audio" : "Silenciar audio (ensordecer)"
+            }
+          >
+            <Feather
+              name="headphones"
+              size={19}
+              color={isDeafened ? colors.danger : colors.textSubtle}
+            />
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          className="w-10 h-10 rounded-[10px] items-center justify-center"
-          onPress={() => setIsSettingsVisible(true)}
-          accessibilityRole="button"
-          accessibilityLabel="Configuración"
-        >
-          <Feather name="settings" size={21} color={colors.textSubtle} />
-        </TouchableOpacity>
+          <TouchableOpacity
+            className="w-9 h-9 rounded-[10px] items-center justify-center"
+            onPress={() => setIsSettingsVisible(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Configuración"
+          >
+            <Feather name="settings" size={21} color={colors.textSubtle} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <OwnProfileModal

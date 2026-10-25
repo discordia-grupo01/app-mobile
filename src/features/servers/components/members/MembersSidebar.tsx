@@ -4,6 +4,7 @@ import {
   isMemberMuted,
   type Member,
   type MemberPageQuery,
+  type PublicUser,
   MEMBERS_EMPTY_SEARCH,
   MEMBERS_LOADING_MORE,
   MEMBERS_SEARCH_LABEL,
@@ -32,6 +33,7 @@ import { env } from "../../../../lib/env";
 import { useThemeColors } from "../../../../theme/theme-context";
 import { OwnProfileModal } from "../../../profile/components/OwnProfileModal";
 import { PublicProfileModal } from "../../../profile/components/PublicProfileModal";
+import { UserActivityStatusDot } from "../../../profile/components/ActivityStatusDot";
 import { listMembers } from "../../api";
 import { Avatar } from "../../../../components/ui/Avatar";
 
@@ -50,6 +52,8 @@ interface MembersSidebarProps {
   canKickMembers?: boolean;
   /** Owner, o miembro con MANAGE_MESSAGES a nivel servidor: puede silenciar. */
   canMuteMembers?: boolean;
+  /** Abre un mensaje directo con el miembro (desde su perfil). */
+  onMessageUser?: (profile: PublicUser) => void;
   onClose: () => void;
 }
 
@@ -63,6 +67,7 @@ export function MembersSidebar({
   canBanMembers = false,
   canKickMembers = false,
   canMuteMembers = false,
+  onMessageUser,
   onClose,
 }: MembersSidebarProps) {
   const colors = useThemeColors();
@@ -185,9 +190,10 @@ export function MembersSidebar({
       >
         <View className="relative">
           <Avatar name={name} uri={avatarSrc} size={36} borderRadius={18} />
-          {/* Estado de actividad mock ("en línea"): todavía no hay presencia
-              real en identify-service */}
-          <View className="absolute -right-[1px] -bottom-[1px] w-3 h-3 rounded-md bg-success border-2 border-surface-sunken" />
+          <UserActivityStatusDot
+            userId={member.user_id}
+            className="absolute -right-[1px] -bottom-[1px] border-surface-sunken"
+          />
         </View>
         <View className="flex-1">
           <Text
@@ -346,6 +352,15 @@ export function MembersSidebar({
         onMuteChanged={reload}
         canBlock={viewingUserId !== currentUserId}
         onBanned={reload}
+        onSendMessage={
+          onMessageUser && viewingUserId !== currentUserId
+            ? (profile) => {
+                setViewingUserId(null);
+                onClose();
+                onMessageUser(profile);
+              }
+            : undefined
+        }
         onClose={() => setViewingUserId(null)}
       />
     </>

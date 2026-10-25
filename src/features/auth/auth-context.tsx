@@ -39,6 +39,7 @@ import {
   requestEmailConfirmationService,
 } from "./service";
 import { verifyTwoFactorService } from "../two-factor/service";
+import { closeSocket } from "../messages/socket";
 
 interface AuthContextValue {
   user: User | null;
@@ -205,6 +206,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await logoutService();
     } catch {}
+    // Sin esperar a que se desmonte la home: los demas te ven desconectado ya.
+    closeSocket();
 
     setToken(null);
     setUser(null);

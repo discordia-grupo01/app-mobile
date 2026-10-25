@@ -199,25 +199,35 @@ export function MessageComposer({
           onPress={pickFiles}
           disabled={disabled || isSending || editing !== null}
         />
-        <TextInput
-          ref={inputRef}
-          // Con menciones el texto va como hijos (cada tramo con su estilo); sin ellas, como `value`.
-          value={draft.segments ? undefined : draft.text}
-          onChangeText={(text) => {
-            draft.handleChangeText(text);
-            setSendError(undefined);
-          }}
-          onSelectionChange={draft.handleSelectionChange}
-          selection={draft.selection}
-          editable={!disabled && !isSending}
-          multiline
-          placeholder={placeholder}
-          placeholderTextColor={colors.textSubtle}
-          accessibilityLabel={placeholder}
-          className="max-h-32 min-h-10 flex-1 py-2.5 text-[15px] text-content"
-        >
-          {draft.segments ? draftChildren : null}
-        </TextInput>
+        <View className="relative flex-1 justify-center">
+          {/* El placeholder nativo de un input multilinea no se corta con "…": este si. */}
+          {draft.text.length === 0 ? (
+            <Text
+              pointerEvents="none"
+              numberOfLines={1}
+              className="absolute inset-x-0 text-[15px] text-content-subtle"
+            >
+              {placeholder}
+            </Text>
+          ) : null}
+          <TextInput
+            ref={inputRef}
+            // Con menciones el texto va como hijos (cada tramo con su estilo); sin ellas, como `value`.
+            value={draft.segments ? undefined : draft.text}
+            onChangeText={(text) => {
+              draft.handleChangeText(text);
+              setSendError(undefined);
+            }}
+            onSelectionChange={draft.handleSelectionChange}
+            selection={draft.selection}
+            editable={!disabled && !isSending}
+            multiline
+            accessibilityLabel={placeholder}
+            className="max-h-32 min-h-10 px-0 py-2.5 text-[15px] text-content"
+          >
+            {draft.segments ? draftChildren : null}
+          </TextInput>
+        </View>
         <ComposerIconButton
           name="smile"
           label={EMOJI_PICKER_LABEL}

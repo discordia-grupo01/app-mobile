@@ -2,6 +2,7 @@ import {
   type AccessRevokedReason,
   type Channel,
   isMemberMuted,
+  type PublicUser,
   type Role,
   type ServerSummary,
   VOICE_CONNECTING,
@@ -56,6 +57,8 @@ interface ChannelScreenProps {
   serverRoles?: Role[];
   myRoleIds?: string[];
   onAccessRevoked?: (reason: AccessRevokedReason) => void;
+  /** Abre un mensaje directo con alguien (desde su perfil). */
+  onMessageUser?: (profile: PublicUser) => void;
   onBack: () => void;
 }
 
@@ -78,6 +81,7 @@ export function ChannelScreen({
   serverRoles = [],
   myRoleIds = [],
   onAccessRevoked,
+  onMessageUser,
   onBack,
 }: ChannelScreenProps) {
   const colors = useThemeColors();
@@ -197,6 +201,7 @@ export function ChannelScreen({
         canBanMembers={canBanMembers}
         canKickMembers={canKickMembers}
         canMuteMembers={canMuteMembers}
+        onMessageUser={onMessageUser}
         onClose={() => setIsMembersVisible(false)}
       />
 
@@ -217,6 +222,14 @@ export function ChannelScreen({
         canMute={canMuteMembers && isModeratable}
         mutedUntil={viewing?.mutedUntil ?? null}
         canBlock={viewing !== null && viewing.userId !== currentUserId}
+        onSendMessage={
+          onMessageUser && viewing !== null && viewing.userId !== currentUserId
+            ? (profile) => {
+                setViewing(null);
+                onMessageUser(profile);
+              }
+            : undefined
+        }
         onClose={() => setViewing(null)}
       />
 

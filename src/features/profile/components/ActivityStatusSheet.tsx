@@ -16,11 +16,11 @@ import {
 } from "react-native";
 
 import { useThemeColors } from "../../../theme/theme-context";
-import { activityStatusColor } from "./activityStatusColor";
+import { ActivityStatusDot } from "./ActivityStatusDot";
 
 interface ActivityStatusSheetProps {
   visible: boolean;
-  status: ActivityStatusChoice;
+  status: ActivityStatusChoice | null;
   onClose: () => void;
   onSelect: (status: ActivityStatusChoice) => void;
 }
@@ -62,14 +62,10 @@ export function ActivityStatusSheet({
                   selected ? "bg-surface-input" : ""
                 }`}
               >
-                <View
-                  className="w-2.5 h-2.5 rounded-full"
-                  style={{
-                    backgroundColor: activityStatusColor(
-                      colors,
-                      displayedStatus(choice),
-                    ),
-                  }}
+                <ActivityStatusDot
+                  status={displayedStatus(choice)}
+                  size={10}
+                  ringWidth={0}
                 />
                 <View className="flex-1">
                   <Text className="text-[15px] font-bold text-content">

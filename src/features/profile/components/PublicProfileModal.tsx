@@ -2,6 +2,7 @@ import {
   isMemberMuted,
   mutedUntilLabel,
   type PublicUser,
+  SEND_MESSAGE_LABEL,
   unmuteSuccessNotice,
 } from "@discordia/client-shared";
 
@@ -23,11 +24,15 @@ import { KickMemberModal } from "../../moderation/components/KickMemberModal";
 import { MuteMemberModal } from "../../moderation/components/MuteMemberModal";
 import { useThemeColors } from "../../../theme/theme-context";
 import { Avatar } from "../../../components/ui/Avatar";
+import { Button } from "../../../components/ui/Button";
 import { MemberRoleBadges } from "../../roles/components/MemberRoleBadges";
 import { getPublicProfile } from "../service";
 import { MutualServersList } from "./MutualServersList";
 import { ProfileBanner } from "./ProfileBanner";
 import { useBlockedUsersContext } from "../../blocks/blocked-users-context";
+import { usePresenceContext } from "../../presence/PresenceContext";
+import { useLoadPresence } from "../../presence/useLoadPresence";
+import { UserActivityStatusDot } from "./ActivityStatusDot";
 import { BlockUserModal } from "./BlockUserModal";
 import { MemberActionsSheet } from "./MemberActionsSheet";
 import { ModalShell } from "../../../components/ui/ModalShell";
@@ -51,6 +56,8 @@ interface PublicProfileModalProps {
   canBlock?: boolean;
   /** Se dispara al banear o expulsar: el miembro ya no esta en el servidor. */
   onBanned?: () => void;
+  /** Sin esto no se muestra "Enviar mensaje" (por ejemplo, en tu propio perfil). */
+  onSendMessage?: (profile: PublicUser) => void;
   onClose: () => void;
 }
 
@@ -67,6 +74,7 @@ export function PublicProfileModal({
   onMuteChanged,
   canBlock = false,
   onBanned,
+  onSendMessage,
   onClose,
 }: PublicProfileModalProps) {
   const colors = useThemeColors();
@@ -83,6 +91,8 @@ export function PublicProfileModal({
   const [isBlockOpen, setIsBlockOpen] = useState(false);
   const [isActionsOpen, setIsActionsOpen] = useState(false);
   const { blockedIds, blockUser, unblockUser } = useBlockedUsersContext();
+  const { store: presenceStore } = usePresenceContext();
+  useLoadPresence(presenceStore, visible && userId ? [userId] : []);
 
   const key = `${visible}::${userId}`;
   const [lastKey, setLastKey] = useState(key);
@@ -249,6 +259,22 @@ export function PublicProfileModal({
               ) : null}
             </View>
 
+            {onSendMessage ? (
+              <Button
+                title={SEND_MESSAGE_LABEL}
+                size="sm"
+                onPress={() => onSendMessage(profile)}
+                iconLeft={
+                  <Feather
+                    name="message-circle"
+                    size={16}
+                    color={colors.onAccent}
+                  />
+                }
+                className="mb-4"
+              />
+            ) : null}
+
             <View className="h-px bg-line mb-4" />
 
             <View className="mb-4">
@@ -284,7 +310,12 @@ export function PublicProfileModal({
                   borderRadius={36}
                 />
               </View>
-              <View className="absolute right-0 bottom-0 w-4.5 h-4.5 rounded-[9px] bg-success border-[3px] border-surface-modal" />
+              <UserActivityStatusDot
+                userId={profile.id}
+                size={18}
+                ringWidth={3}
+                className="absolute right-0 bottom-1 border-surface-modal"
+              />
             </View>
           </View>
         </>
