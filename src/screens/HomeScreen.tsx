@@ -12,7 +12,13 @@ import {
 
 import { Feather } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -20,6 +26,14 @@ import { LoadingScreen } from "../components/ui/LoadingScreen";
 import { useLoadingGate } from "../hooks/useLoadingGate";
 import { useDirectMessages } from "../features/direct-messages/useDirectMessages";
 import { useMentions } from "../features/mentions/useMentions";
+import { PresenceProvider } from "../features/presence/PresenceContext";
+import { useIdleReporter } from "../features/presence/useIdleReporter";
+import { useLoadPresence } from "../features/presence/useLoadPresence";
+import {
+  usePresenceProviderValue,
+  usePresenceSession,
+} from "../features/presence/usePresenceSession";
+import { useServerPresence } from "../features/presence/useServerPresence";
 import { AddServerSheet } from "../features/servers/components/rail/AddServerSheet";
 import { CreateServerModal } from "../features/servers/components/server/CreateServerModal";
 import { EmptyState } from "../features/servers/components/home/EmptyState";
@@ -154,10 +168,25 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
     [user],
   );
   const mentions = useMentions(currentAuthor?.id ?? null);
+  const presence = usePresenceSession(currentAuthor?.id ?? null);
   const directMessages = useDirectMessages(currentAuthor, view === "dm", {
     onMention: mentions.receive,
     onRejoined: mentions.reload,
+    ...presence.userRoomCallbacks,
   });
+  const presenceValue = usePresenceProviderValue(
+    presence.store,
+    directMessages.pushToUserRoom,
+  );
+  useIdleReporter(presence.store, directMessages.pushToUserRoom);
+  useLoadPresence(
+    presence.store,
+    directMessages.conversations.map((c) => c.partner.id),
+  );
+  useServerPresence(presence.store, selectedServer?.id ?? null);
+  const withPresence = (screen: ReactNode) => (
+    <PresenceProvider value={presenceValue}>{screen}</PresenceProvider>
+  );
   const unreadDmCount = directMessages.conversations.filter(
     (c) => c.isUnread,
   ).length;
@@ -429,7 +458,7 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
   }
 
   if (view === "dm") {
-    return (
+    return withPresence(
       <View className="flex-1">
         <StatusBar style={statusBarStyle} />
         <DirectMessagesScreen
@@ -465,12 +494,12 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
           onClose={() => setIsJoinModalVisible(false)}
           onJoined={addAndSelect}
         />
-      </View>
+      </View>,
     );
   }
 
   if (selectedServer && selectedChannel) {
-    return (
+    return withPresence(
       <View className="flex-1">
         <StatusBar style={statusBarStyle} />
         <ChannelScreen
@@ -494,12 +523,12 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
           onAccessRevoked={handleAccessRevoked}
           onBack={closeChannel}
         />
-      </View>
+      </View>,
     );
   }
 
   if (selectedServer) {
-    return (
+    return withPresence(
       <View className="flex-1">
         <StatusBar style={statusBarStyle} />
         <ServerChannelsScreen
@@ -552,12 +581,12 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
           onClose={() => setIsJoinModalVisible(false)}
           onJoined={addAndSelect}
         />
-      </View>
+      </View>,
     );
   }
 
   if (servers.length > 0) {
-    return (
+    return withPresence(
       <View className="flex-1">
         <StatusBar style={statusBarStyle} />
         <ServerPickerScreen
@@ -593,11 +622,11 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
           onClose={() => setIsJoinModalVisible(false)}
           onJoined={addAndSelect}
         />
-      </View>
+      </View>,
     );
   }
 
-  return (
+  return withPresence(
     <View className="flex-1 bg-surface-servers">
       <StatusBar style={statusBarStyle} />
       <View
@@ -633,6 +662,6 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
         onClose={() => setIsJoinModalVisible(false)}
         onJoined={addAndSelect}
       />
-    </View>
+    </View>,
   );
 }

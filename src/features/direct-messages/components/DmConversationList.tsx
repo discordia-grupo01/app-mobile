@@ -18,6 +18,7 @@ import { UserProfileBar } from "../../servers/components/account/UserProfileBar"
 import { Avatar } from "../../../components/ui/Avatar";
 import { useThemeColors } from "../../../theme/theme-context";
 import { cn } from "../../../lib/cn";
+import { UserActivityStatusDot } from "../../profile/components/ActivityStatusDot";
 import { DmListError } from "./DmListError";
 
 interface DmConversationListProps {
@@ -99,11 +100,17 @@ export function DmConversationList({
                     isActive && "bg-accent/20",
                   )}
                 >
-                  <Avatar
-                    name={partner.name}
-                    uri={partner.avatarUrl}
-                    size={38}
-                  />
+                  <View className="relative">
+                    <Avatar
+                      name={partner.name}
+                      uri={partner.avatarUrl}
+                      size={38}
+                    />
+                    <UserActivityStatusDot
+                      userId={partner.id}
+                      className="absolute -right-[1px] -bottom-[1px] border-surface-sunken"
+                    />
+                  </View>
                   <View className="min-w-0 flex-1">
                     <View className="flex-row items-center justify-between gap-1">
                       <Text

@@ -1,5 +1,4 @@
 import {
-  displayedStatus,
   type ActivityStatusChoice,
   CANCEL_NAME_EDIT_LABEL,
   CHANGE_AVATAR_LABEL,
@@ -35,7 +34,8 @@ import { useThemeColors } from "../../../theme/theme-context";
 import { useAuth } from "../../auth/auth-context";
 import { Avatar } from "../../../components/ui/Avatar";
 import { MemberRoleBadges } from "../../roles/components/MemberRoleBadges";
-import { activityStatusColor } from "./activityStatusColor";
+import { useOwnStatus, usePresenceOf } from "../../presence/PresenceContext";
+import { ActivityStatusDot } from "./ActivityStatusDot";
 import { ActivityStatusRow } from "./ActivityStatusRow";
 import { CustomStatusEditor } from "./CustomStatusEditor";
 import { MemberSince } from "./MemberSince";
@@ -77,8 +77,9 @@ export function OwnProfileModal({
   const [isAvatarMenuOpen, setIsAvatarMenuOpen] = useState(false);
   const scrollViewRef = useRef<ComponentRef<typeof ScrollView>>(null);
 
-  const [activityStatus, setActivityStatus] =
-    useState<ActivityStatusChoice>("online");
+  const { choice: ownChoice, setOwnStatus } = useOwnStatus();
+  const displayedOwnStatus = usePresenceOf(user?.id);
+  const [statusError, setStatusError] = useState("");
 
   if (visible !== wasVisible) {
     setWasVisible(visible);
@@ -93,11 +94,17 @@ export function OwnProfileModal({
       setIsUploadingAvatar(false);
       setImagePreview(null);
       setIsAvatarMenuOpen(false);
-      setActivityStatus("online");
+      setStatusError("");
     }
   }
 
   if (!user) return null;
+
+  async function changeActivityStatus(choice: ActivityStatusChoice) {
+    setStatusError("");
+    const result = await setOwnStatus(choice);
+    if (!result.ok) setStatusError(result.message);
+  }
 
   const avatarSrc =
     imagePreview ?? resolveImageUrl(user.avatar_url, env.apiUrl);
@@ -389,8 +396,9 @@ export function OwnProfileModal({
 
         <View className="mb-4">
           <ActivityStatusRow
-            status={activityStatus}
-            onChange={setActivityStatus}
+            status={ownChoice}
+            error={statusError}
+            onChange={changeActivityStatus}
           />
         </View>
 
@@ -513,14 +521,11 @@ export function OwnProfileModal({
               </View>
             ) : null}
           </View>
-          <View
-            className="absolute right-0.5 bottom-0.5 w-4.5 h-4.5 rounded-[9px] border-[3px] border-surface-modal"
-            style={{
-              backgroundColor: activityStatusColor(
-                colors,
-                displayedStatus(activityStatus),
-              ),
-            }}
+          <ActivityStatusDot
+            status={displayedOwnStatus}
+            size={18}
+            ringWidth={3}
+            className="absolute right-0.5 bottom-0.5 border-surface-modal"
           />
         </TouchableOpacity>
         {imageError ? (

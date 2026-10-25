@@ -28,6 +28,9 @@ import { getPublicProfile } from "../service";
 import { MutualServersList } from "./MutualServersList";
 import { ProfileBanner } from "./ProfileBanner";
 import { useBlockedUsersContext } from "../../blocks/blocked-users-context";
+import { usePresenceContext } from "../../presence/PresenceContext";
+import { useLoadPresence } from "../../presence/useLoadPresence";
+import { UserActivityStatusDot } from "./ActivityStatusDot";
 import { BlockUserModal } from "./BlockUserModal";
 import { MemberActionsSheet } from "./MemberActionsSheet";
 import { ModalShell } from "../../../components/ui/ModalShell";
@@ -83,6 +86,8 @@ export function PublicProfileModal({
   const [isBlockOpen, setIsBlockOpen] = useState(false);
   const [isActionsOpen, setIsActionsOpen] = useState(false);
   const { blockedIds, blockUser, unblockUser } = useBlockedUsersContext();
+  const { store: presenceStore } = usePresenceContext();
+  useLoadPresence(presenceStore, visible && userId ? [userId] : []);
 
   const key = `${visible}::${userId}`;
   const [lastKey, setLastKey] = useState(key);
@@ -284,7 +289,12 @@ export function PublicProfileModal({
                   borderRadius={36}
                 />
               </View>
-              <View className="absolute right-0 bottom-0 w-4.5 h-4.5 rounded-[9px] bg-success border-[3px] border-surface-modal" />
+              <UserActivityStatusDot
+                userId={profile.id}
+                size={18}
+                ringWidth={3}
+                className="absolute right-0 bottom-0 border-surface-modal"
+              />
             </View>
           </View>
         </>

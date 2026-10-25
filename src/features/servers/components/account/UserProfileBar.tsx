@@ -1,4 +1,5 @@
 import {
+  ACTIVITY_STATUS_LABEL,
   resolveImageUrl,
   VOICE_MODERATOR_MUTED,
   VOICE_MUTE_LABEL,
@@ -13,6 +14,8 @@ import { env } from "../../../../lib/env";
 import { useThemeColors, useTheme } from "../../../../theme/theme-context";
 import { useAuth } from "../../../auth/auth-context";
 import { OwnProfileModal } from "../../../profile/components/OwnProfileModal";
+import { ActivityStatusDot } from "../../../profile/components/ActivityStatusDot";
+import { usePresenceOf } from "../../../presence/PresenceContext";
 import { Avatar } from "../../../../components/ui/Avatar";
 import { AccountSettingsSheet } from "./AccountSettingsSheet";
 import { VoiceConnectedStrip } from "../../../voice/components/sidebar/VoiceConnectedStrip";
@@ -37,6 +40,7 @@ export function UserProfileBar({ userName, onLogout }: UserProfileBarProps) {
   const displayName = (user?.name ?? userName)?.trim() || "Mi cuenta";
   const avatarSrc = resolveImageUrl(user?.avatar_url, env.apiUrl);
   const statusText = user?.status_text?.trim();
+  const activityStatus = usePresenceOf(user?.id);
 
   return (
     <>
@@ -51,7 +55,11 @@ export function UserProfileBar({ userName, onLogout }: UserProfileBarProps) {
         >
           <View className="relative">
             <Avatar name={displayName} uri={avatarSrc} size={44} />
-            <View className="absolute -right-[1px] -bottom-[1px] w-[13px] h-[13px] rounded-[7px] bg-success border-2 border-surface-panel" />
+            <ActivityStatusDot
+              status={activityStatus}
+              size={13}
+              className="absolute -right-[1px] -bottom-[1px] border-surface-panel"
+            />
           </View>
           <View className="flex-1 mr-1">
             <Text
@@ -61,7 +69,7 @@ export function UserProfileBar({ userName, onLogout }: UserProfileBarProps) {
               {displayName}
             </Text>
             <Text className="text-[13px] text-content-subtle" numberOfLines={1}>
-              {statusText || "En línea"}
+              {statusText || ACTIVITY_STATUS_LABEL[activityStatus]}
             </Text>
           </View>
         </TouchableOpacity>
