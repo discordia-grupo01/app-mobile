@@ -8,6 +8,7 @@ import {
   NETWORK_ERROR_MESSAGE,
   OWN_PROFILE_LOAD_FAILED,
   PROFILE_LOAD_FAILED,
+  PROFILE_UNAVAILABLE,
   PROFILE_UPDATE_FAILED,
   type PublicUser,
   SESSION_EXPIRED_MESSAGE,
@@ -40,6 +41,9 @@ export async function getPublicProfile(
   const result = await apiFetch<PublicUser>(`/v1/users/${userId}`, {
     method: "GET",
   });
+  if (!result.ok && result.status === 404) {
+    return { ok: false, message: PROFILE_UNAVAILABLE, unavailable: true };
+  }
   if (!result.ok) {
     return {
       ok: false,

@@ -1,6 +1,7 @@
 import {
   isMemberMuted,
   mutedUntilLabel,
+  PROFILE_UNAVAILABLE,
   type PublicUser,
   SEND_MESSAGE_LABEL,
   unmuteSuccessNotice,
@@ -80,6 +81,7 @@ export function PublicProfileModal({
   const colors = useThemeColors();
   const [profile, setProfile] = useState<PublicUser | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
+  const [isUnavailable, setIsUnavailable] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isBanOpen, setIsBanOpen] = useState(false);
   const [isKickOpen, setIsKickOpen] = useState(false);
@@ -102,6 +104,7 @@ export function PublicProfileModal({
     if (visible && userId) {
       setProfile(null);
       setErrorMessage("");
+      setIsUnavailable(false);
       setIsLoading(true);
       setIsBanOpen(false);
       setIsBlockOpen(false);
@@ -118,7 +121,8 @@ export function PublicProfileModal({
       if (cancelled) return;
       setIsLoading(false);
       if (!result.ok) {
-        setErrorMessage(result.message);
+        if (result.unavailable) setIsUnavailable(true);
+        else setErrorMessage(result.message);
         return;
       }
       setProfile(result.user);
@@ -162,18 +166,19 @@ export function PublicProfileModal({
   }
 
   const isMuted = isMemberMuted({ muted_until: currentMutedUntil });
+  const isProfileUnavailable = isUnavailable || Boolean(profile?.is_suspended);
   const hasModeratorActions =
     Boolean(serverId) && (canBan || canKick || canMute);
   const hasMemberActions =
     Boolean(profile) &&
-    !profile?.is_suspended &&
+    !isProfileUnavailable &&
     (hasModeratorActions || canBlock);
 
   return (
     <ModalShell visible={visible} onClose={onClose} className="max-w-100">
       <ProfileBanner
         onClose={onClose}
-        dimmed={profile?.is_suspended}
+        dimmed={isProfileUnavailable}
         action={
           hasMemberActions ? (
             <TouchableOpacity
@@ -201,7 +206,7 @@ export function PublicProfileModal({
         }
       />
 
-      {profile?.is_suspended ? (
+      {isProfileUnavailable ? (
         <View className="items-center gap-2.5 px-6 py-8">
           <View className="w-14 h-14 rounded-[28px] items-center justify-center bg-[rgba(224,82,82,0.1)] border border-[rgba(224,82,82,0.3)] mb-1">
             <Feather name="alert-circle" size={26} color={colors.danger} />
@@ -210,8 +215,7 @@ export function PublicProfileModal({
             Perfil no disponible
           </Text>
           <Text className="text-[13px] leading-[19px] text-content-subtle text-center max-w-60">
-            Este usuario fue suspendido por el equipo de moderación y su perfil
-            no es accesible.
+            {PROFILE_UNAVAILABLE} Es posible que la cuenta haya sido suspendida.
           </Text>
         </View>
       ) : isLoading || !profile ? (
