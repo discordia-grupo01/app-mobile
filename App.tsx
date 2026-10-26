@@ -7,6 +7,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { LoadingScreen } from "./src/components/ui/LoadingScreen";
 import type { AuthMode } from "./src/features/auth/components/AuthTabs";
 import { AuthProvider, useAuth } from "./src/features/auth/auth-context";
+import { AccountSuspendedModal } from "./src/features/auth/components/AccountSuspendedModal";
 import { BlockedUsersProvider } from "./src/features/blocks/blocked-users-context";
 import { useEmailConfirmation } from "./src/features/auth/use-email-confirmation";
 import { VoiceSessionProvider } from "./src/features/voice/voice-session-context";
@@ -128,6 +129,7 @@ export default function App() {
       <ThemeProvider>
         <AuthProvider>
           <AppContent />
+          <AccountSuspendedModal />
         </AuthProvider>
       </ThemeProvider>
     </SafeAreaProvider>

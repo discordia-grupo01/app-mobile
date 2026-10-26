@@ -61,6 +61,8 @@ interface AuthContextValue {
   requestEmailConfirmation: (email: string) => Promise<EmailConfirmationResult>;
   logout: () => Promise<void>;
   updateUser: (user: User) => void;
+  isAccountSuspended: boolean;
+  acknowledgeSuspension: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -70,6 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPinEnabled, setIsPinEnabledState] = useState(false);
+  const [isAccountSuspended, setIsAccountSuspended] = useState(false);
 
   useEffect(() => {
     setAuthEventHandlers({
@@ -80,6 +83,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       onSessionExpired: () => {
         setToken(null);
         setUser(null);
+      },
+      onAccountSuspended: () => {
+        getToken()
+          .then((storedToken) => {
+            if (storedToken) setIsAccountSuspended(true);
+          })
+          .catch(() => {});
       },
     });
 
@@ -218,6 +228,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (userId !== undefined) await clearPendingMessages(String(userId));
   }, [userId]);
 
+  const acknowledgeSuspension = useCallback(async (): Promise<void> => {
+    await logout();
+    setIsAccountSuspended(false);
+  }, [logout]);
+
   const setPinEnabled = useCallback(async (enabled: boolean): Promise<void> => {
     setIsPinEnabledState(enabled);
     try {
@@ -247,6 +262,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       requestEmailConfirmation,
       logout,
       updateUser,
+      isAccountSuspended,
+      acknowledgeSuspension,
     }),
     [
       user,
@@ -262,6 +279,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       requestEmailConfirmation,
       logout,
       updateUser,
+      isAccountSuspended,
+      acknowledgeSuspension,
     ],
   );
 
