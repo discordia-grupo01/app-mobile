@@ -1,4 +1,5 @@
 import {
+  isAccountSuspended,
   networkFailure,
   toApiResult,
   type ApiResult,
@@ -15,6 +16,7 @@ interface RefreshResponseBody {
 type AuthEventHandlers = {
   onTokenRefreshed?: (token: string, user: unknown) => void;
   onSessionExpired?: () => void;
+  onAccountSuspended?: () => void;
 };
 
 let authEventHandlers: AuthEventHandlers = {};
@@ -27,6 +29,14 @@ let refreshPromise: Promise<string | null> | null = null;
 const AUTH_PATHS_WITHOUT_RETRY = new Set([
   "/v1/login",
   "/v1/login/2fa",
+  "/v1/logout",
+]);
+
+const SUSPENSION_EXEMPT_PATHS = new Set([
+  "/v1/login",
+  "/v1/login/2fa",
+  "/v1/pin/login",
+  "/v1/oauth/google",
   "/v1/logout",
 ]);
 
@@ -48,7 +58,13 @@ async function doRefresh(): Promise<string | null> {
     });
 
     if (!res.ok) {
-      authEventHandlers.onSessionExpired?.();
+      const body: unknown = await res.json().catch(() => null);
+      const failure = toApiResult(res.status, body);
+      if (!failure.ok && isAccountSuspended(failure)) {
+        authEventHandlers.onAccountSuspended?.();
+      } else {
+        authEventHandlers.onSessionExpired?.();
+      }
       return null;
     }
 
@@ -120,5 +136,13 @@ export async function apiFetchWithBody<T = unknown>(
     body = await res.json();
   } catch {}
 
-  return { result: toApiResult<T>(res.status, body), body };
+  const result = toApiResult<T>(res.status, body);
+  if (
+    !result.ok &&
+    !SUSPENSION_EXEMPT_PATHS.has(path) &&
+    isAccountSuspended(result)
+  ) {
+    authEventHandlers.onAccountSuspended?.();
+  }
+  return { result, body };
 }

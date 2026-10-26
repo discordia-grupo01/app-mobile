@@ -1,4 +1,5 @@
 import {
+  ACCOUNT_SUSPENDED_MESSAGE,
   type AuthResponse,
   type EmailConfirmationResult,
   EMAIL_ALREADY_REGISTERED,
@@ -9,6 +10,7 @@ import {
   INVALID_CREDENTIALS,
   INVALID_DATA_MESSAGE,
   INVALID_EMAIL_MESSAGE,
+  isAccountSuspended,
   isTwoFactorChallenge,
   type LoginResultWithToken,
   type LoginValues,
@@ -75,6 +77,9 @@ export async function loginService(
   );
 
   if (!result.ok) {
+    if (isAccountSuspended(result)) {
+      return { ok: false, message: ACCOUNT_SUSPENDED_MESSAGE };
+    }
     if (result.status === 403 || result.code === "EMAIL_NOT_VERIFIED") {
       return { ok: false, message: EMAIL_NOT_VERIFIED };
     }
