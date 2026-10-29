@@ -48,6 +48,12 @@
       "expo-status-bar",
       "expo-font",
       "expo-asset"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "527de20a-3bfc-4961-82ec-39312984d118"
+      }
+    },
+    "owner": "g1-discordias-team"
   }
 }
