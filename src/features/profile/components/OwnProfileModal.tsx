@@ -13,7 +13,6 @@ import {
 
 import { Feather } from "@expo/vector-icons";
 import * as ImageManipulator from "expo-image-manipulator";
-import * as ImagePicker from "expo-image-picker";
 import { useRef, useState, type ComponentRef } from "react";
 import {
   ActivityIndicator,
@@ -28,6 +27,7 @@ import {
 } from "react-native";
 
 import { Button } from "../../../components/ui/Button";
+import { pickImageFromLibrary } from "../../../lib/pickImageFromLibrary";
 import { cn } from "../../../lib/cn";
 import { env } from "../../../lib/env";
 import { useThemeColors } from "../../../theme/theme-context";
@@ -235,23 +235,10 @@ export function OwnProfileModal({
 
   async function pickAvatar() {
     setImageError("");
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert(
-        "Permiso necesario",
-        "Necesitamos acceso a tus imágenes para cambiar tu foto de perfil.",
-      );
-      return;
-    }
+    const picked = await pickImageFromLibrary("cambiar tu foto de perfil");
+    if (!picked) return;
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      quality: 0.8,
-    });
-    if (result.canceled || !result.assets?.[0]) return;
-
-    const asset = result.assets[0];
-    const type = asset.mimeType ?? "image/jpeg";
+    const { asset, mimeType: type } = picked;
     const avatarError = validateAvatar({
       mimeType: type,
       sizeBytes: asset.fileSize ?? 0,
