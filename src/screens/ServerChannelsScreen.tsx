@@ -72,7 +72,7 @@ import { useThemeColors } from "../theme/theme-context";
 const HEADER_HEIGHT = 52;
 const BANNER_HEIGHT = 88;
 const UNCATEGORIZED_KEY = "none";
-const SECTION_GAP = 18;
+const SECTION_GAP = 12;
 
 interface ServerChannelsScreenProps {
   server: ServerSummary;
@@ -84,7 +84,6 @@ interface ServerChannelsScreenProps {
   canManageChannels?: boolean;
   canManageRoles?: boolean;
   canManageServer?: boolean;
-  /** Editar las palabras prohibidas (en la configuracion del servidor). */
   canManageMessages?: boolean;
   canBanMembers?: boolean;
   canInvite?: boolean;
@@ -685,7 +684,7 @@ export function ServerChannelsScreen({
 
           <ScrollView
             className="flex-1"
-            contentContainerClassName="px-2.5 pt-3.5 pb-3 gap-4.5"
+            contentContainerClassName="px-2.5 pt-3.5 pb-3 gap-3"
             scrollEnabled={!isChannelDragActive && !isCategoryDragActive}
           >
             {uncategorized.length > 0 ? (

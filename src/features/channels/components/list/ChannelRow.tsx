@@ -47,7 +47,7 @@ export function ChannelRow({
               ? `${channel.name}, ${unreadMentions} menciones sin leer`
               : undefined
           }
-          className="flex-1 flex-row items-center gap-2.5 rounded-lg px-2.5 py-[11px]"
+          className="flex-1 flex-row items-center gap-2.5 rounded-lg px-2.5 py-[10px]"
           style={
             isVoiceConnected
               ? { backgroundColor: withAlpha(colors.success, 0.14) }
