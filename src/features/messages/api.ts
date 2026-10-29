@@ -6,6 +6,7 @@ import {
   type MessageHistory,
   MESSAGES_LOAD_FAILED,
   SESSION_EXPIRED_MESSAGE,
+  isAccountSuspended,
   type SocketTicketResult,
 } from "@discordia/client-shared";
 
@@ -23,7 +24,12 @@ export async function fetchSocketTicket(): Promise<SocketTicketResult> {
   if (result.ok && typeof result.data?.ticket === "string") {
     return { ok: true, ticket: result.data.ticket };
   }
-  return { ok: false, sessionExpired: !result.ok && result.status === 401 };
+  if (result.ok) return { ok: false, sessionExpired: false };
+  return {
+    ok: false,
+    sessionExpired: result.status === 401,
+    accountSuspended: isAccountSuspended(result),
+  };
 }
 
 /**
