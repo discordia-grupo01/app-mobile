@@ -40,7 +40,7 @@ import {
 } from "../features/presence/usePresenceSession";
 import { useServerPresence } from "../features/presence/useServerPresence";
 import { AddServerSheet } from "../features/servers/components/rail/AddServerSheet";
-import { CreateServerModal } from "../features/servers/components/server/CreateServerModal";
+import { CreateServerModal } from "../features/servers/components/server/create/CreateServerModal";
 import { EmptyState } from "../features/servers/components/home/EmptyState";
 import { JoinServerModal } from "../features/servers/components/server/JoinServerModal";
 import { useAuth } from "../features/auth/auth-context";

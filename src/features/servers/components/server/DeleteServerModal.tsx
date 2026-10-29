@@ -4,7 +4,6 @@ import {
   type DeleteServerResult,
   deleteServerConfirmBody,
   deleteServerTitle,
-  matchesServerNameForDeletion,
 } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
@@ -16,6 +15,7 @@ import { useThemeColors } from "../../../../theme/theme-context";
 import { Button } from "../../../../components/ui/Button";
 import { ModalShell } from "../../../../components/ui/ModalShell";
 import { ModalCloseButton } from "../../../../components/ui/ModalCloseButton";
+import { useDeleteServerConfirm } from "../../useDeleteServerConfirm";
 
 interface DeleteServerFieldsProps {
   serverName: string;
@@ -121,37 +121,16 @@ export function DeleteServerModal({
   onClose,
   onConfirm,
 }: DeleteServerModalProps) {
-  const [typedName, setTypedName] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState("");
+  const deletion = useDeleteServerConfirm({
+    serverName,
+    onConfirm,
+    onDeleted: onClose,
+  });
   const [wasVisible, setWasVisible] = useState(visible);
 
   if (visible !== wasVisible) {
     setWasVisible(visible);
-    if (visible) {
-      setTypedName("");
-      setError("");
-      setIsSubmitting(false);
-    }
-  }
-
-  const canSubmit =
-    matchesServerNameForDeletion(serverName, typedName) && !isSubmitting;
-
-  async function handleConfirm() {
-    if (!canSubmit) return;
-
-    setError("");
-    setIsSubmitting(true);
-    const result = await onConfirm(typedName.trim());
-    setIsSubmitting(false);
-
-    if (!result.ok) {
-      setError(result.fieldErrors?.confirm_name ?? result.message);
-      return;
-    }
-
-    onClose();
+    if (visible) deletion.reset();
   }
 
   return (
@@ -164,13 +143,13 @@ export function DeleteServerModal({
 
       <DeleteServerFields
         serverName={serverName}
-        typedName={typedName}
-        onTypedNameChange={setTypedName}
-        error={error}
-        canSubmit={canSubmit}
-        isSubmitting={isSubmitting}
+        typedName={deletion.typedName}
+        onTypedNameChange={deletion.setTypedName}
+        error={deletion.error}
+        canSubmit={deletion.canSubmit}
+        isSubmitting={deletion.isSubmitting}
         onCancel={onClose}
-        onConfirm={handleConfirm}
+        onConfirm={deletion.confirm}
       />
     </ModalShell>
   );
