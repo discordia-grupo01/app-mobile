@@ -48,7 +48,7 @@ import {
 } from "../features/channels/ChannelSettingsModal";
 import { InviteLinkModal } from "../features/servers/components/server/InviteLinkModal";
 import { LeaveServerModal } from "../features/servers/components/server/LeaveServerModal";
-import { ServerSettingsModal } from "../features/servers/components/server/ServerSettingsModal";
+import { ServerSettingsModal } from "../features/servers/components/server/settings/ServerSettingsModal";
 import { TransferOwnershipModal } from "../features/servers/components/server/TransferOwnershipModal";
 import { BanIcon } from "../features/bans/components/BanIcon";
 import { BansModal } from "../features/bans/components/BansModal";
@@ -737,6 +737,7 @@ export function ServerChannelsScreen({
                 categories={sortedCategories}
                 onReorder={handleCategoriesReordered}
                 onDragActiveChange={setIsCategoryDragActive}
+                gap={SECTION_GAP}
                 renderCategory={(category, panHandlers) =>
                   renderCategorySection(category, panHandlers)
                 }
