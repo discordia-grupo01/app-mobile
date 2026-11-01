@@ -44,6 +44,9 @@ import { leaveVoiceSession, requestVoiceToken } from "./api";
 // colapsa a `never`; pasando el genérico explícito vuelven a tiparse las props y el ref.
 type EmbedWebView = WebView<object>;
 
+// Tope para esperar a que la pagina cierre la sala de LiveKit al salir.
+const LEAVE_DISCONNECT_TIMEOUT_MS = 3000;
+
 const VOICE_EMBED_URL = env.webUrl
   ? `${env.webUrl.replace(/\/$/, "")}${VOICE_EMBED_PATH}`
   : null;
@@ -106,6 +109,7 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
   const pendingRef = useRef<VoiceBridgeCommand[]>([]);
   const sentMutedForMeRef = useRef<readonly string[]>([]);
   const attemptRef = useRef(0);
+  const leaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sharingIds = screenSharingIds(state.participants);
   if (sharingIds.join("|") !== lastSharingIds.join("|")) {
     setLastSharingIds(sharingIds);
@@ -130,6 +134,10 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const closeBridge = useCallback(() => {
+    if (leaveTimeoutRef.current) {
+      clearTimeout(leaveTimeoutRef.current);
+      leaveTimeoutRef.current = null;
+    }
     attemptRef.current += 1;
     isReadyRef.current = false;
     pendingRef.current = [];
@@ -176,10 +184,27 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
     [closeBridge, end],
   );
 
+  const disconnectThenClose = useCallback(() => {
+    send({ type: "disconnect" });
+    dispatch({ type: "ended", notice: null });
+    setIsEmbedPainted(false);
+    leaveTimeoutRef.current = setTimeout(
+      closeBridge,
+      LEAVE_DISCONNECT_TIMEOUT_MS,
+    );
+  }, [send, closeBridge]);
+
+  useEffect(() => {
+    const leaveTimeout = leaveTimeoutRef;
+    return () => {
+      if (leaveTimeout.current) clearTimeout(leaveTimeout.current);
+    };
+  }, []);
+
   const leave = useCallback(async () => {
     const channelId = stateRef.current.target?.channelId;
-    send({ type: "disconnect" });
-    end(null);
+    if (isReadyRef.current && !leaveTimeoutRef.current) disconnectThenClose();
+    else end(null);
     if (!channelId) return;
 
     const result = await leaveVoiceSession(channelId);
@@ -187,10 +212,14 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
     if (!result.ok && stateRef.current.target === null) {
       dispatch({ type: "ended", notice: result.message });
     }
-  }, [end, send]);
+  }, [end, disconnectThenClose]);
 
   const handleEvent = useCallback(
     (event: VoiceBridgeEvent) => {
+      if (leaveTimeoutRef.current) {
+        if (isLeaveSettledEvent(event)) closeBridge();
+        return;
+      }
       switch (event.type) {
         case "ready": {
           isReadyRef.current = true;
@@ -237,7 +266,7 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
           return;
       }
     },
-    [end, send],
+    [end, send, closeBridge],
   );
 
   const onMessage = useCallback(
@@ -421,6 +450,14 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
         </View>
       ) : null}
     </VoiceSessionContext.Provider>
+  );
+}
+
+function isLeaveSettledEvent(event: VoiceBridgeEvent): boolean {
+  return (
+    event.type === "disconnected" ||
+    event.type === "error" ||
+    (event.type === "status" && event.status === "idle")
   );
 }
 
