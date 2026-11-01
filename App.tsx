@@ -1,6 +1,7 @@
 import "./global.css";
 
-import { useCallback, useState } from "react";
+import { lockAsync, OrientationLock } from "expo-screen-orientation";
+import { useCallback, useEffect, useState } from "react";
 import { View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
@@ -124,6 +125,11 @@ function AppContent() {
 }
 
 export default function App() {
+  // La app va en vertical; solo la pantalla grande de una llamada gira.
+  useEffect(() => {
+    void lockAsync(OrientationLock.PORTRAIT_UP).catch(() => undefined);
+  }, []);
+
   return (
     <SafeAreaProvider>
       <ThemeProvider>

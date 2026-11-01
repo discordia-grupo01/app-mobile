@@ -39,6 +39,8 @@ import { avatarUriOf } from "../../lib/userProfile";
 import { useTheme, useThemeColors } from "../../theme/theme-context";
 import { useAuth } from "../auth/auth-context";
 import { leaveVoiceSession, requestVoiceToken } from "./api";
+import { ExpandedCallOverlay } from "./components/call/ExpandedCallOverlay";
+import { useExpandedCall } from "./useExpandedCall";
 
 // react-native-webview 14 declara `WebView<P = undefined>` y `WebViewProps & undefined`
 // colapsa a `never`; pasando el genérico explícito vuelven a tiparse las props y el ref.
@@ -132,6 +134,21 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
       `window.dispatchEvent(new MessageEvent("message",{data:${data}}));true;`,
     );
   }, []);
+
+  const {
+    expandedIdentity,
+    expand: expandParticipant,
+    collapse: collapseExpanded,
+  } = useExpandedCall({
+    participants: state.participants,
+    isBridgeOpen: bridge !== null,
+    send,
+  });
+  const expandedParticipant = expandedIdentity
+    ? state.participants.find(
+        (participant) => participant.identity === expandedIdentity,
+      )
+    : undefined;
 
   const closeBridge = useCallback(() => {
     if (leaveTimeoutRef.current) {
@@ -251,6 +268,10 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
         case "pinRequested":
           setPinnedIdentity(event.identity);
           return;
+        case "expandRequested":
+          if (event.identity) expandParticipant(event.identity);
+          else collapseExpanded();
+          return;
         case "disconnected":
           end(voiceDisconnectMessage(event.reason));
           return;
@@ -266,7 +287,7 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
           return;
       }
     },
-    [end, send, closeBridge],
+    [end, send, closeBridge, expandParticipant, collapseExpanded],
   );
 
   const onMessage = useCallback(
@@ -311,7 +332,7 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!bridge) return;
-    send({ type: "setAppearance", theme, localAvatarUrl });
+    send({ type: "setAppearance", theme, localAvatarUrl, canExpand: true });
   }, [bridge, theme, localAvatarUrl, send]);
 
   useEffect(() => {
@@ -418,18 +439,24 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
           }
         >
           <View
-            pointerEvents={callStage && isEmbedPainted ? "auto" : "none"}
+            pointerEvents={
+              callStage && isEmbedPainted && !expandedParticipant
+                ? "auto"
+                : "none"
+            }
             style={
-              callStage
-                ? {
-                    position: "absolute",
-                    left: callStage.x - overlayOrigin.x,
-                    top: callStage.y - overlayOrigin.y,
-                    width: callStage.width,
-                    height: callStage.height,
-                    opacity: isEmbedPainted ? 1 : 0,
-                  }
-                : styles.hidden
+              expandedParticipant
+                ? StyleSheet.absoluteFill
+                : callStage
+                  ? {
+                      position: "absolute",
+                      left: callStage.x - overlayOrigin.x,
+                      top: callStage.y - overlayOrigin.y,
+                      width: callStage.width,
+                      height: callStage.height,
+                      opacity: isEmbedPainted ? 1 : 0,
+                    }
+                  : styles.hidden
             }
           >
             <WebView<object>
@@ -447,6 +474,14 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
               style={{ backgroundColor: colors.bgChat }}
             />
           </View>
+          {expandedParticipant ? (
+            <ExpandedCallOverlay
+              key={expandedParticipant.identity}
+              name={expandedParticipant.name}
+              source={expandedParticipant.screenSharing ? "screen" : "camera"}
+              onExit={collapseExpanded}
+            />
+          ) : null}
         </View>
       ) : null}
     </VoiceSessionContext.Provider>
