@@ -77,6 +77,7 @@ export function useServerVoice(server: ServerSummary) {
     status: state.status,
     liveParticipants,
     presence,
+    callStartsByChannel: socketPresence.startsByChannel,
     participantsFor,
   };
 }

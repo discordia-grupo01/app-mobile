@@ -153,6 +153,10 @@ export function ServerChannelsScreen({
   function voicePropsOf(channel: Channel) {
     return {
       isVoiceConnected: channel.id === voice.voiceChannelId,
+      callStartedAt:
+        channel.kind === "voice"
+          ? voice.callStartsByChannel[channel.id]
+          : undefined,
       voiceParticipants:
         channel.kind === "voice" ? voice.participantsFor(channel.id) : [],
       isVoiceExpanded: expandedVoiceChannels.has(channel.id),

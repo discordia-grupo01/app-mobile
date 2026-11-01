@@ -90,6 +90,7 @@ describe("listVoiceParticipants", () => {
       channels: [
         {
           channel_id: "c1",
+          started_at: "2026-11-01T16:00:00.123Z",
           participants: [{ participant_id: "u1", name: "Ana" }],
         },
       ],
@@ -102,6 +103,7 @@ describe("listVoiceParticipants", () => {
     expect(await listVoiceParticipants("s 1")).toEqual({
       ok: true,
       byChannel: { c1: [{ participant_id: "u1", name: "Ana" }] },
+      startsByChannel: { c1: Date.parse("2026-11-01T16:00:00.123Z") },
     });
     expect(mockedFetch).toHaveBeenCalledWith(
       "/api/voice/participants?server_id=s%201",

@@ -6,6 +6,7 @@ import { Text, TouchableOpacity, View } from "react-native";
 import { cn } from "../../../../lib/cn";
 import { withAlpha } from "../../../../lib/color";
 import { useThemeColors } from "../../../../theme/theme-context";
+import { CallDuration } from "../../../voice/components/sidebar/CallDuration";
 import { VoiceChannelParticipants } from "../../../voice/components/sidebar/VoiceChannelParticipants";
 import type { SidebarVoiceParticipant } from "../../../voice/useServerVoice";
 
@@ -16,6 +17,8 @@ interface ChannelRowProps {
   onPress: () => void;
   onOptions: () => void;
   isVoiceConnected?: boolean;
+  /** Canal de voz con llamada en curso: desde cuando (ms). */
+  callStartedAt?: number;
   voiceParticipants?: readonly SidebarVoiceParticipant[];
   isVoiceExpanded?: boolean;
   onToggleVoiceExpanded?: () => void;
@@ -28,6 +31,7 @@ export function ChannelRow({
   onPress,
   onOptions,
   isVoiceConnected = false,
+  callStartedAt,
   voiceParticipants = [],
   isVoiceExpanded = false,
   onToggleVoiceExpanded,
@@ -69,6 +73,15 @@ export function ChannelRow({
           >
             {channel.name}
           </Text>
+          {callStartedAt !== undefined ? (
+            <CallDuration
+              startedAt={callStartedAt}
+              className={cn(
+                "text-[13px] text-content-subtle",
+                isVoiceConnected && "text-success",
+              )}
+            />
+          ) : null}
         </TouchableOpacity>
         {canManage ? (
           <TouchableOpacity

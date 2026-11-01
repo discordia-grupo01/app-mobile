@@ -1,4 +1,5 @@
 import {
+  callStartsByChannel,
   type LeaveVoiceResult,
   presenceByChannel,
   VOICE_CONNECT_FAILED,
@@ -58,7 +59,11 @@ export async function listVoiceParticipants(
     VOICE_PARTICIPANTS_FAILED,
   );
   return result.ok
-    ? { ok: true, byChannel: presenceByChannel(result.data) }
+    ? {
+        ok: true,
+        byChannel: presenceByChannel(result.data),
+        startsByChannel: callStartsByChannel(result.data),
+      }
     : result;
 }
 
