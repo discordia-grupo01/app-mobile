@@ -6,7 +6,7 @@ import {
   withLivePresence,
 } from "@discordia/client-shared";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import { avatarUriOf } from "../../lib/userProfile";
 import { useAuth } from "../auth/auth-context";
@@ -24,7 +24,7 @@ export interface SidebarVoiceParticipant {
 }
 
 export function useServerVoice(server: ServerSummary) {
-  const { state } = useVoiceSession();
+  const { state, leaveSettledCount } = useVoiceSession();
   const { user } = useAuth();
 
   const voiceChannelId =
@@ -36,6 +36,14 @@ export function useServerVoice(server: ServerSummary) {
   );
 
   const socketPresence = useVoicePresence(server.id);
+  const { refresh: refreshPresence } = socketPresence;
+
+  const lastLeaveSettled = useRef(leaveSettledCount);
+  useEffect(() => {
+    if (leaveSettledCount === lastLeaveSettled.current) return;
+    lastLeaveSettled.current = leaveSettledCount;
+    refreshPresence();
+  }, [leaveSettledCount, refreshPresence]);
 
   const presence: VoicePresenceByChannel = useMemo(
     () =>
