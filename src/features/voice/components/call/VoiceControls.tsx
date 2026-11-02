@@ -11,6 +11,10 @@ import {
   VOICE_MUTE_LABEL,
   VOICE_PARTICIPANTS_BUTTON,
   VOICE_PARTICIPANTS_OPEN,
+  VOICE_SCREEN_SHARE,
+  VOICE_SCREEN_SHARE_START,
+  VOICE_SCREEN_SHARE_STOP,
+  VOICE_SCREEN_SHARING,
   VOICE_UNMUTE,
   VOICE_UNMUTE_LABEL,
 } from "@discordia/client-shared";
@@ -29,9 +33,13 @@ interface VoiceControlsProps {
   muted: boolean;
   canSpeak: boolean;
   cameraOn: boolean;
+  screenSharing: boolean;
+  /** `false` en Expo Go: el boton no aparece. */
+  canScreenShare: boolean;
   bottomInset: number;
   onToggleMute: () => void;
   onToggleCamera: () => void;
+  onToggleScreenShare: () => void;
   onShowParticipants: () => void;
   onLeave: () => void;
 }
@@ -40,9 +48,12 @@ export function VoiceControls({
   muted,
   canSpeak,
   cameraOn,
+  screenSharing,
+  canScreenShare,
   bottomInset,
   onToggleMute,
   onToggleCamera,
+  onToggleScreenShare,
   onShowParticipants,
   onLeave,
 }: VoiceControlsProps) {
@@ -82,6 +93,18 @@ export function VoiceControls({
           isSelected={cameraOn}
           onPress={onToggleCamera}
         />
+        {canScreenShare || screenSharing ? (
+          <ControlButton
+            icon="monitor"
+            label={screenSharing ? VOICE_SCREEN_SHARING : VOICE_SCREEN_SHARE}
+            accessibilityLabel={
+              screenSharing ? VOICE_SCREEN_SHARE_STOP : VOICE_SCREEN_SHARE_START
+            }
+            tone="neutral"
+            isSelected={screenSharing}
+            onPress={onToggleScreenShare}
+          />
+        ) : null}
 
         <ControlButton
           icon="users"

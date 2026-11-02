@@ -145,6 +145,18 @@ Si usan VS Code con la extension oficial de Prettier, tambien formatea al guarda
 
 El CI corre `npm run format:check` como red de seguridad (falla si encuentra archivos sin formatear), por si alguien clono sin activar el hook.
 
+## APK de Android (EAS Build) y compartir pantalla
+
+La app corre en Expo Go (la VM) y tambien como APK generado con EAS Build:
+
+```bash
+eas build -p android --profile preview
+```
+
+Las `EXPO_PUBLIC_*` del APK salen de `eas.json`, no de `.env` (EAS no sube archivos ignorados por git).
+
+Compartir pantalla solo existe en el APK de Android: la llamada corre en un WebView que no puede capturar la pantalla, asi que el APK abre una segunda conexion nativa a la sala con `@livekit/react-native`, con la identidad `<id>:screen`, que solo publica la pantalla (ver `src/features/voice/screen-share/`). En Expo Go esos modulos nativos no existen: el boton no aparece y la llamada anda igual que siempre. Por eso LiveKit nativo nunca se importa arriba de un archivo, se carga con `loadLiveKitNative()` recien al compartir. Cualquier cambio en dependencias nativas o en los plugins de `app.json` necesita un build nuevo del APK.
+
 ## Notas
 
 - Las requests siempre van al Gateway (Kong), nunca directo a un microservicio (ADR-006).

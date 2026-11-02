@@ -40,6 +40,8 @@ import { useTheme, useThemeColors } from "../../theme/theme-context";
 import { useAuth } from "../auth/auth-context";
 import { leaveVoiceSession, requestVoiceToken } from "./api";
 import { ExpandedCallOverlay } from "./components/call/ExpandedCallOverlay";
+import { isNativeScreenShareAvailable } from "./screen-share/livekit-native";
+import { useNativeScreenShare } from "./screen-share/useNativeScreenShare";
 import { useExpandedCall } from "./useExpandedCall";
 
 // react-native-webview 14 declara `WebView<P = undefined>` y `WebViewProps & undefined`
@@ -69,6 +71,9 @@ interface VoiceSessionValue {
   leave: () => void;
   toggleMute: () => void;
   toggleCamera: () => void;
+  /** Solo en el APK de Android con la llamada conectada y permiso de hablar. */
+  canScreenShare: boolean;
+  toggleScreenShare: () => void;
   setCallStage: (frame: CallStageFrame | null) => void;
   toggleMutedForMe: (identity: string) => void;
   pinnedIdentity: string | null;
@@ -123,6 +128,15 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     stateRef.current = state;
   });
+
+  const screenShare = useNativeScreenShare(
+    useCallback((notice: string | null) => {
+      if (notice) setMediaError(notice);
+      if (stateRef.current.screenSharing) {
+        dispatch({ type: "toggle_screen_share" });
+      }
+    }, []),
+  );
 
   const send = useCallback((command: VoiceBridgeCommand) => {
     if (!isReadyRef.current) {
@@ -255,6 +269,9 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
           return;
         case "speakPermission":
           dispatch({ type: "speak_permission", allowed: event.allowed });
+          if (!event.allowed && stateRef.current.screenSharing) {
+            dispatch({ type: "toggle_screen_share" });
+          }
           return;
         case "cameraStopped":
           if (stateRef.current.cameraOn) dispatch({ type: "toggle_camera" });
@@ -303,7 +320,24 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
     send({ type: "connect", url: bridge.url, token: bridge.token });
   }, [bridge, send]);
 
-  const { muted, cameraOn, mutedForMe } = state;
+  const { muted, cameraOn, screenSharing, mutedForMe } = state;
+  const targetChannelId = state.target?.channelId ?? null;
+  const { start: startScreenShare, stop: stopScreenShare } = screenShare;
+
+  // Corre mientras haya llamada y pantalla compartida: salir, cambiar de canal
+  // o apagarla la corta (el reducer apaga `screenSharing` en esos casos).
+  useEffect(() => {
+    if (!bridge || !screenSharing || !targetChannelId) return;
+    void startScreenShare(targetChannelId);
+    return stopScreenShare;
+  }, [
+    bridge,
+    screenSharing,
+    targetChannelId,
+    startScreenShare,
+    stopScreenShare,
+  ]);
+
   useEffect(() => {
     if (!bridge) return;
     send({ type: "setMicrophoneEnabled", enabled: !muted });
@@ -364,6 +398,14 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
     setMediaError(null);
     dispatch({ type: "toggle_camera" });
   }, []);
+  const toggleScreenShare = useCallback(() => {
+    setMediaError(null);
+    dispatch({ type: "toggle_screen_share" });
+  }, []);
+  const canScreenShare =
+    isNativeScreenShareAvailable &&
+    state.status === "connected" &&
+    state.canSpeak;
   const toggleMutedForMe = useCallback(
     (identity: string) => dispatch({ type: "toggle_muted_for_me", identity }),
     [],
@@ -394,6 +436,8 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
       leave: startLeave,
       toggleMute,
       toggleCamera,
+      canScreenShare,
+      toggleScreenShare,
       setCallStage,
       toggleMutedForMe,
       pinnedIdentity,
@@ -412,6 +456,8 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
       startLeave,
       toggleMute,
       toggleCamera,
+      canScreenShare,
+      toggleScreenShare,
       toggleMutedForMe,
       pinnedIdentity,
       isParticipantsOpen,

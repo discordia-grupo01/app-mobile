@@ -5,10 +5,13 @@ import {
   VOICE_CONNECT_FAILED,
   VOICE_LEAVE_FAILED,
   VOICE_PARTICIPANTS_FAILED,
+  VOICE_SCREEN_SHARE_FAILED,
   voiceErrorCodeOf,
   voiceErrorMessage,
   type VoiceParticipantsResponse,
   type VoiceParticipantsResult,
+  type VoiceScreenShareToken,
+  type VoiceScreenShareTokenResult,
   type VoiceToken,
   type VoiceTokenResult,
 } from "@discordia/client-shared";
@@ -35,6 +38,17 @@ export async function requestVoiceToken(
     "/api/voice/token",
     { method: "POST", body: JSON.stringify({ channel_id: channelId }) },
     VOICE_CONNECT_FAILED,
+  );
+  return result.ok ? { ok: true, token: result.data } : result;
+}
+
+export async function requestScreenShareToken(
+  channelId: string,
+): Promise<VoiceScreenShareTokenResult> {
+  const result = await voiceRequest<VoiceScreenShareToken>(
+    "/api/voice/screen-token",
+    { method: "POST", body: JSON.stringify({ channel_id: channelId }) },
+    VOICE_SCREEN_SHARE_FAILED,
   );
   return result.ok ? { ok: true, token: result.data } : result;
 }
