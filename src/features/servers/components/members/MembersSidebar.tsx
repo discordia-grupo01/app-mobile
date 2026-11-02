@@ -31,6 +31,7 @@ import { SearchInput } from "../../../../components/ui/SearchInput";
 import { useMemberScroll } from "../../../../hooks/useMemberScroll";
 import { env } from "../../../../lib/env";
 import { useThemeColors } from "../../../../theme/theme-context";
+import { useAuth } from "../../../auth/auth-context";
 import { OwnProfileModal } from "../../../profile/components/OwnProfileModal";
 import { PublicProfileModal } from "../../../profile/components/PublicProfileModal";
 import { UserActivityStatusDot } from "../../../profile/components/ActivityStatusDot";
@@ -71,6 +72,7 @@ export function MembersSidebar({
   onClose,
 }: MembersSidebarProps) {
   const colors = useThemeColors();
+  const { user: ownUser } = useAuth();
   const [search, setSearch] = useState("");
   const [isOwnProfileVisible, setIsOwnProfileVisible] = useState(false);
   const [viewingUserId, setViewingUserId] = useState<string | null>(null);
@@ -174,9 +176,13 @@ export function MembersSidebar({
   }
 
   function renderMemberRow(member: Member) {
-    const name = displayNameOf(member.profile);
-    const avatarSrc = resolveImageUrl(member.profile?.avatar_url, env.apiUrl);
     const isSelf = member.user_id === currentUserId;
+    // La fila propia muestra el perfil recien editado (auth-context), no la
+    // copia que vino con la lista: asi la foto y el estado se actualizan al
+    // cerrar el modal de perfil sin recargar la lista.
+    const profile = isSelf && ownUser ? ownUser : member.profile;
+    const name = displayNameOf(profile);
+    const avatarSrc = resolveImageUrl(profile?.avatar_url, env.apiUrl);
     const roleColor = highestRoleOf(member.role_ids, serverRoles)?.color;
 
     return (
@@ -209,15 +215,13 @@ export function MembersSidebar({
               </Text>
             ) : null}
           </Text>
-          {member.profile?.status_text ? (
+          {profile?.status_text ? (
             <Text
               className="text-[12px] text-content-subtle mt-[1px]"
               numberOfLines={1}
             >
-              {member.profile.status_emoji
-                ? `${member.profile.status_emoji} `
-                : ""}
-              {member.profile.status_text}
+              {profile.status_emoji ? `${profile.status_emoji} ` : ""}
+              {profile.status_text}
             </Text>
           ) : null}
         </View>
