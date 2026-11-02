@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "app-mobile",
+    "name": "Discordia",
     "slug": "app-mobile",
     "scheme": "discordia",
     "version": "1.0.0",
@@ -12,7 +12,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#072B40",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
