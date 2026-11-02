@@ -93,9 +93,12 @@ export function VoiceChannelView({
         muted={state.muted}
         canSpeak={state.canSpeak}
         cameraOn={state.cameraOn}
+        screenSharing={state.screenSharing}
+        canScreenShare={voice.canScreenShare}
         bottomInset={bottomInset}
         onToggleMute={voice.toggleMute}
         onToggleCamera={voice.toggleCamera}
+        onToggleScreenShare={voice.toggleScreenShare}
         onShowParticipants={voice.openParticipants}
         onLeave={voice.leave}
       />
