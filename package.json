@@ -14,6 +14,7 @@
     "expo-asset": "~58.0.19",
     "expo-audio": "~58.0.11",
     "expo-auth-session": "~58.0.16",
+    "expo-build-properties": "~58.0.12",
     "expo-clipboard": "~58.0.4",
     "expo-constants": "~58.0.14",
     "expo-document-picker": "~58.0.4",
