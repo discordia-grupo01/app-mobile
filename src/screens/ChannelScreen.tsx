@@ -16,7 +16,6 @@ import { Feather } from "@expo/vector-icons";
 import { useMemo, useState } from "react";
 import {
   KeyboardAvoidingView,
-  Platform,
   Text,
   TouchableOpacity,
   View,
@@ -258,7 +257,9 @@ export function ChannelScreen({
       {isText ? (
         <KeyboardAvoidingView
           className="flex-1"
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          // Con edge-to-edge (obligatorio en Android desde SDK 54) `adjustResize`
+          // ya no achica la ventana en el APK: sin padding el teclado tapa el input.
+          behavior="padding"
         >
           <ChannelChat
             key={channel.id}

@@ -9,7 +9,6 @@ import { Feather } from "@expo/vector-icons";
 import { useState } from "react";
 import {
   KeyboardAvoidingView,
-  Platform,
   Text,
   TouchableOpacity,
   View,
@@ -94,7 +93,9 @@ export function DmConversationScreen({
 
       <KeyboardAvoidingView
         className="flex-1"
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        // Con edge-to-edge (obligatorio en Android desde SDK 54) `adjustResize`
+        // ya no achica la ventana en el APK: sin padding el teclado tapa el input.
+        behavior="padding"
       >
         <DmThread
           key={conversationId ?? partner.id}
