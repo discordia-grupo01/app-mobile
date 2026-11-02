@@ -6,6 +6,7 @@ import {
 } from "@discordia/client-shared";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { AppState } from "react-native";
 
 import { listVoiceParticipants } from "./api";
 import { connectVoicePresence } from "./socket";
@@ -132,7 +133,12 @@ export function useVoicePresence(serverId: string | null): ServerPresence & {
       rejoined: refresh,
     });
 
+    const appState = AppState.addEventListener("change", (next) => {
+      if (next === "active") refresh();
+    });
+
     return () => {
+      appState.remove();
       disconnect();
       requestId.current += 1;
     };
