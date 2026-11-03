@@ -13,6 +13,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { UserProfileBar } from "../../servers/components/account/UserProfileBar";
 import { Avatar } from "../../../components/ui/Avatar";
@@ -48,10 +49,14 @@ export function DmConversationList({
   onLogout,
 }: DmConversationListProps) {
   const colors = useThemeColors();
+  const insets = useSafeAreaInsets();
 
   return (
     <View className="flex-1 bg-surface-sunken">
-      <View className="min-h-13 flex-row items-center justify-between border-b border-b-line px-4">
+      <View
+        className="flex-row items-center justify-between border-b border-b-line px-4"
+        style={{ paddingTop: insets.top, minHeight: insets.top + 52 }}
+      >
         <Text className="text-[15px] font-bold text-content">
           {DIRECT_MESSAGES_TITLE}
         </Text>
