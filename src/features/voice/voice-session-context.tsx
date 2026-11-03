@@ -1,5 +1,6 @@
 import {
   initialVoiceSessionState,
+  ownerOfScreenShareIdentity,
   parseVoiceBridgeEvent,
   pinOnScreenShareChange,
   screenSharingIds,
@@ -12,6 +13,7 @@ import {
   type VoiceBridgeCommand,
   type VoiceBridgeEvent,
   voiceDisconnectMessage,
+  voiceScreenTileName,
   voiceSessionReducer,
   type VoiceSessionState,
   type VoiceSessionTarget,
@@ -158,9 +160,14 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
     isBridgeOpen: bridge !== null,
     send,
   });
-  const expandedParticipant = expandedIdentity
+  // Se amplia un tile: la camara de alguien o su pantalla (`<id>:screen`).
+  const expandedScreenOwner = expandedIdentity
+    ? ownerOfScreenShareIdentity(expandedIdentity)
+    : null;
+  const expandedOwnerId = expandedScreenOwner ?? expandedIdentity;
+  const expandedParticipant = expandedOwnerId
     ? state.participants.find(
-        (participant) => participant.identity === expandedIdentity,
+        (participant) => participant.identity === expandedOwnerId,
       )
     : undefined;
 
@@ -522,9 +529,16 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
           </View>
           {expandedParticipant ? (
             <ExpandedCallOverlay
-              key={expandedParticipant.identity}
-              name={expandedParticipant.name}
-              source={expandedParticipant.screenSharing ? "screen" : "camera"}
+              key={expandedIdentity}
+              name={
+                expandedScreenOwner
+                  ? voiceScreenTileName(
+                      expandedParticipant.name,
+                      expandedParticipant.isLocal,
+                    )
+                  : expandedParticipant.name
+              }
+              source={expandedScreenOwner ? "screen" : "camera"}
               onExit={collapseExpanded}
             />
           ) : null}

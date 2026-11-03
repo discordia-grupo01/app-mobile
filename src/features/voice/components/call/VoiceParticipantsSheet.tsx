@@ -9,10 +9,13 @@ import {
   VOICE_SCREEN_SHARING,
   VOICE_UNMUTE_FOR_ME,
   VOICE_UNPIN,
+  isScreenShareIdentity,
   voiceConnectedCount,
   voiceParticipantName,
-  voicePinLabel,
+  voiceParticipantRows,
   voiceSidebarPreview,
+  voiceTileName,
+  voiceTilePinLabel,
   type VoiceParticipant,
 } from "@discordia/client-shared";
 
@@ -55,6 +58,7 @@ export function VoiceParticipantsSheet({
 }: VoiceParticipantsSheetProps) {
   const colors = useThemeColors();
   const { shown } = voiceSidebarPreview(participants, participants.length);
+  const rows = voiceParticipantRows(shown);
 
   return (
     <Modal
@@ -89,7 +93,7 @@ export function VoiceParticipantsSheet({
           </View>
 
           <ScrollView contentContainerStyle={{ paddingHorizontal: 10 }}>
-            {shown.map((participant) => (
+            {rows.map((participant) => (
               <ParticipantRow
                 key={participant.identity}
                 participant={participant}
@@ -138,6 +142,33 @@ function ParticipantRow({
     mutedForMe,
   } = participant;
   const muteForMeLabel = mutedForMe ? VOICE_UNMUTE_FOR_ME : VOICE_MUTE_FOR_ME;
+  const pinButton = (
+    <PinButton
+      label={voiceTilePinLabel(participant, isPinned)}
+      isPinned={isPinned}
+      onPress={onTogglePin}
+    />
+  );
+
+  if (isScreenShareIdentity(participant.identity)) {
+    return (
+      <View className="flex-row items-center gap-3 rounded-xl px-2 py-2">
+        <View
+          className="h-10 w-10 items-center justify-center rounded-full"
+          style={{ backgroundColor: withAlpha(colors.accent, 0.18) }}
+        >
+          <Feather name="monitor" size={17} color={colors.accent} />
+        </View>
+        <Text
+          className="min-w-0 flex-1 text-[15px] font-semibold text-content"
+          numberOfLines={1}
+        >
+          {voiceTileName(participant)}
+        </Text>
+        {pinButton}
+      </View>
+    );
+  }
 
   return (
     <View className="flex-row items-center gap-3 rounded-xl px-2 py-2">
@@ -212,27 +243,41 @@ function ParticipantRow({
           />
         </TouchableOpacity>
       )}
-      <TouchableOpacity
-        onPress={onTogglePin}
-        activeOpacity={0.7}
-        accessibilityRole="button"
-        accessibilityState={{ selected: isPinned }}
-        accessibilityLabel={voicePinLabel(name, isPinned)}
+      {pinButton}
+    </View>
+  );
+}
+
+function PinButton({
+  label,
+  isPinned,
+  onPress,
+}: {
+  label: string;
+  isPinned: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityState={{ selected: isPinned }}
+      accessibilityLabel={label}
+      className={cn(
+        "rounded-lg px-3 py-2",
+        isPinned ? "bg-accent" : "bg-surface-input",
+      )}
+    >
+      <Text
         className={cn(
-          "rounded-lg px-3 py-2",
-          isPinned ? "bg-accent" : "bg-surface-input",
+          "text-[12px] font-semibold",
+          isPinned ? "text-on-accent" : "text-content-muted",
         )}
       >
-        <Text
-          className={cn(
-            "text-[12px] font-semibold",
-            isPinned ? "text-on-accent" : "text-content-muted",
-          )}
-        >
-          {isPinned ? VOICE_UNPIN : VOICE_PIN}
-        </Text>
-      </TouchableOpacity>
-    </View>
+        {isPinned ? VOICE_UNPIN : VOICE_PIN}
+      </Text>
+    </TouchableOpacity>
   );
 }
 

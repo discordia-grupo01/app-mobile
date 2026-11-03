@@ -14,23 +14,25 @@ const ana: VoiceParticipant = {
 };
 
 describe("expandedIdentityAfter", () => {
-  it("sigue mostrando a quien todavia comparte o tiene camara", () => {
-    expect(expandedIdentityAfter("u-ana", [ana])).toBe("u-ana");
-    expect(
-      expandedIdentityAfter("u-ana", [
-        { ...ana, screenSharing: false, cameraOn: true },
-      ]),
-    ).toBe("u-ana");
+  it("sigue mostrando la pantalla mientras la comparte", () => {
+    expect(expandedIdentityAfter("u-ana:screen", [ana])).toBe("u-ana:screen");
+  });
+
+  it("sigue mostrando la camara mientras la tenga prendida", () => {
+    expect(expandedIdentityAfter("u-ana", [{ ...ana, cameraOn: true }])).toBe(
+      "u-ana",
+    );
   });
 
   it("sale sola si la persona apaga el video", () => {
     expect(
-      expandedIdentityAfter("u-ana", [{ ...ana, screenSharing: false }]),
+      expandedIdentityAfter("u-ana:screen", [{ ...ana, screenSharing: false }]),
     ).toBeNull();
+    expect(expandedIdentityAfter("u-ana", [ana])).toBeNull();
   });
 
   it("sale sola si la persona se fue de la llamada", () => {
-    expect(expandedIdentityAfter("u-ana", [])).toBeNull();
+    expect(expandedIdentityAfter("u-ana:screen", [])).toBeNull();
   });
 
   it("sin nadie ampliado no hace nada", () => {

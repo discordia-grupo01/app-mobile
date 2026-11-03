@@ -27,7 +27,7 @@ import { cn } from "../../../../lib/cn";
 import { withAlpha } from "../../../../lib/color";
 import { useThemeColors } from "../../../../theme/theme-context";
 
-type ControlTone = "neutral" | "danger";
+type ControlTone = "neutral" | "danger" | "accent";
 
 interface VoiceControlsProps {
   muted: boolean;
@@ -100,7 +100,7 @@ export function VoiceControls({
             accessibilityLabel={
               screenSharing ? VOICE_SCREEN_SHARE_STOP : VOICE_SCREEN_SHARE_START
             }
-            tone="neutral"
+            tone={screenSharing ? "accent" : "neutral"}
             isSelected={screenSharing}
             onPress={onToggleScreenShare}
           />
@@ -142,7 +142,18 @@ function toneBackground(
   }
   if (tone === "danger")
     return { backgroundColor: withAlpha(colors.danger, 0.12) };
+  if (tone === "accent")
+    return { backgroundColor: withAlpha(colors.accent, 0.18) };
   return {};
+}
+
+function toneColor(
+  tone: ControlTone,
+  colors: ReturnType<typeof useThemeColors>,
+): string {
+  if (tone === "danger") return colors.danger;
+  if (tone === "accent") return colors.accent;
+  return colors.textMuted;
 }
 
 function ControlButton({
@@ -165,7 +176,7 @@ function ControlButton({
   onPress: () => void;
 }) {
   const colors = useThemeColors();
-  const iconColor = tone === "danger" ? colors.danger : colors.textMuted;
+  const iconColor = toneColor(tone, colors);
 
   return (
     <TouchableOpacity
@@ -188,8 +199,9 @@ function ControlButton({
         className={cn(
           "text-[11px]",
           isLeave ? "font-semibold" : "font-medium",
-          tone === "neutral" ? "text-content-subtle" : "text-danger",
+          tone === "neutral" && "text-content-subtle",
         )}
+        style={tone === "neutral" ? undefined : { color: iconColor }}
       >
         {label}
       </Text>
