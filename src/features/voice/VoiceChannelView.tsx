@@ -22,6 +22,7 @@ import { useThemeColors } from "../../theme/theme-context";
 import { useAuth } from "../auth/auth-context";
 import { useVoiceSession } from "./voice-session-context";
 import { VoiceNotice } from "./components/VoiceNotice";
+import { channelTargetOf } from "./channel-target";
 import { CallStage } from "./components/call/CallStage";
 import { VoiceControls } from "./components/call/VoiceControls";
 import { VoiceParticipantsSheet } from "./components/call/VoiceParticipantsSheet";
@@ -55,7 +56,7 @@ export function VoiceChannelView({
   const { state } = voice;
   const { user } = useAuth();
 
-  if (state.target?.channelId !== channel.id || !user) {
+  if (channelTargetOf(state.target)?.channelId !== channel.id || !user) {
     return (
       <VoiceLobby
         channelName={channel.name}
@@ -68,6 +69,7 @@ export function VoiceChannelView({
         onDismissNotice={voice.dismissNotice}
         onJoin={() =>
           voice.join({
+            kind: "channel",
             serverId,
             serverName,
             channelId: channel.id,
