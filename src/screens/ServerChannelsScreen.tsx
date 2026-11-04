@@ -2,10 +2,13 @@ import {
   BANS_TITLE,
   type Category,
   type Channel,
+  channelHasNotifications,
   channelsOfCategory,
   type DeleteServerResult,
+  isChannelMuted,
   isUnassignedCategory,
   type LeaveServerResult,
+  NOTIFICATION_SETTINGS_MENU_LABEL,
   type OwnershipTransfer,
   type Role,
   type ServerSummary,
@@ -38,6 +41,9 @@ import { DraggableCategoryList } from "../features/servers/components/category/D
 import { CreateChannelModal } from "../features/channels/components/create/CreateChannelModal";
 import { DeleteChannelModal } from "../features/channels/components/delete/DeleteChannelModal";
 import { ChannelRow } from "../features/channels/components/list/ChannelRow";
+import { NotificationSettingsSheet } from "../features/notifications/components/NotificationSettingsSheet";
+import { useOptionalNotificationSettings } from "../features/notifications/NotificationSettingsContext";
+import type { NotificationTarget } from "../features/notifications/useNotificationTarget";
 import {
   DRAG_ROW_HEIGHT,
   DraggableChannelList,
@@ -197,6 +203,9 @@ export function ServerChannelsScreen({
     section: ChannelSettingsSection;
   } | null>(null);
   const [deletingChannel, setDeletingChannel] = useState<Channel | null>(null);
+  const [notificationTarget, setNotificationTarget] =
+    useState<NotificationTarget | null>(null);
+  const notificationSettings = useOptionalNotificationSettings();
   const [dragError, setDragError] = useState("");
   const [isChannelDragActive, setIsChannelDragActive] = useState(false);
   const [isCategoryDragActive, setIsCategoryDragActive] = useState(false);
@@ -397,17 +406,35 @@ export function ServerChannelsScreen({
     }
   }
 
+  function hasOptionsFor(channel: Channel): boolean {
+    return (
+      canOpenChannelOptions ||
+      (notificationSettings !== null && channelHasNotifications(channel))
+    );
+  }
+
+  function channelRowPropsOf(channel: Channel) {
+    return {
+      channel,
+      hasOptions: hasOptionsFor(channel),
+      unreadMentions: unreadMentionsByChannel[channel.id],
+      isMuted:
+        notificationSettings !== null &&
+        isChannelMuted(notificationSettings.settings, channel.id),
+      ...voicePropsOf(channel),
+      onPress: () => onSelectChannel(channel.id),
+      onOptions: () => setChannelOptionsFor(channel),
+    };
+  }
+
+  function openNotificationSettings(target: NotificationTarget) {
+    setChannelOptionsFor(null);
+    setNotificationTarget(target);
+  }
+
   function renderChannelList(channels: Channel[]) {
     return channels.map((channel) => (
-      <ChannelRow
-        key={channel.id}
-        channel={channel}
-        canManage={canOpenChannelOptions}
-        unreadMentions={unreadMentionsByChannel[channel.id]}
-        {...voicePropsOf(channel)}
-        onPress={() => onSelectChannel(channel.id)}
-        onOptions={() => setChannelOptionsFor(channel)}
-      />
+      <ChannelRow key={channel.id} {...channelRowPropsOf(channel)} />
     ));
   }
 
@@ -473,14 +500,7 @@ export function ServerChannelsScreen({
                 onDragActiveChange={setIsChannelDragActive}
                 rowHeightOf={rowHeightOf}
                 renderChannel={(channel) => (
-                  <ChannelRow
-                    channel={channel}
-                    canManage={canOpenChannelOptions}
-                    unreadMentions={unreadMentionsByChannel[channel.id]}
-                    {...voicePropsOf(channel)}
-                    onPress={() => onSelectChannel(channel.id)}
-                    onOptions={() => setChannelOptionsFor(channel)}
-                  />
+                  <ChannelRow {...channelRowPropsOf(channel)} />
                 )}
               />
             ) : (
@@ -509,7 +529,7 @@ export function ServerChannelsScreen({
         renderChannel={(channel) => (
           <ChannelRow
             channel={channel}
-            canManage={false}
+            hasOptions={false}
             onPress={() => {}}
             onOptions={() => {}}
           />
@@ -593,6 +613,21 @@ export function ServerChannelsScreen({
                     icon="user-plus"
                     label="Invitar miembros"
                     onPress={runFromMenu(() => setIsInviteModalVisible(true))}
+                  />
+                ) : null}
+
+                {notificationSettings ? (
+                  <ServerMenuItem
+                    icon="bell"
+                    label={NOTIFICATION_SETTINGS_MENU_LABEL}
+                    onPress={runFromMenu(() =>
+                      setNotificationTarget({
+                        scope: "server",
+                        targetId: server.id,
+                        serverId: server.id,
+                        name: server.name,
+                      }),
+                    )}
                   />
                 ) : null}
 
@@ -710,14 +745,7 @@ export function ServerChannelsScreen({
                     onDragActiveChange={setIsChannelDragActive}
                     rowHeightOf={rowHeightOf}
                     renderChannel={(channel) => (
-                      <ChannelRow
-                        channel={channel}
-                        canManage={canOpenChannelOptions}
-                        unreadMentions={unreadMentionsByChannel[channel.id]}
-                        {...voicePropsOf(channel)}
-                        onPress={() => onSelectChannel(channel.id)}
-                        onOptions={() => setChannelOptionsFor(channel)}
-                      />
+                      <ChannelRow {...channelRowPropsOf(channel)} />
                     )}
                   />
                 ) : (
@@ -855,24 +883,39 @@ export function ServerChannelsScreen({
           onClose={() => setIsBansModalVisible(false)}
         />
       ) : null}
-      {canOpenChannelOptions ? (
-        <ChannelOptionsSheet
-          visible={channelOptionsFor !== null}
-          channel={channelOptionsFor}
-          canManageChannel={canManageChannels}
-          canManagePermissions={canManageRoles}
-          onClose={() => setChannelOptionsFor(null)}
-          onEdit={() => openChannelSettings(channelOptionsFor, "overview")}
-          onOverridePermissions={() =>
-            openChannelSettings(channelOptionsFor, "permissions")
-          }
-          onDelete={() => {
-            const channel = channelOptionsFor;
-            setChannelOptionsFor(null);
-            setDeletingChannel(channel);
-          }}
-        />
-      ) : null}
+      <ChannelOptionsSheet
+        visible={channelOptionsFor !== null}
+        channel={channelOptionsFor}
+        canManageChannel={canManageChannels}
+        canManagePermissions={canManageRoles}
+        onNotifications={
+          notificationSettings &&
+          channelOptionsFor &&
+          channelHasNotifications(channelOptionsFor)
+            ? () =>
+                openNotificationSettings({
+                  scope: "channel",
+                  targetId: channelOptionsFor.id,
+                  serverId: server.id,
+                  name: channelOptionsFor.name,
+                })
+            : undefined
+        }
+        onClose={() => setChannelOptionsFor(null)}
+        onEdit={() => openChannelSettings(channelOptionsFor, "overview")}
+        onOverridePermissions={() =>
+          openChannelSettings(channelOptionsFor, "permissions")
+        }
+        onDelete={() => {
+          const channel = channelOptionsFor;
+          setChannelOptionsFor(null);
+          setDeletingChannel(channel);
+        }}
+      />
+      <NotificationSettingsSheet
+        target={notificationTarget}
+        onClose={() => setNotificationTarget(null)}
+      />
       {settingsTarget && settingsChannel ? (
         <ChannelSettingsModal
           key={settingsChannel.id}

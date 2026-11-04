@@ -1,4 +1,7 @@
-import { type Channel } from "@discordia/client-shared";
+import {
+  type Channel,
+  NOTIFICATION_SETTINGS_MUTED_TITLE,
+} from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
 import { Text, TouchableOpacity, View } from "react-native";
@@ -12,8 +15,9 @@ import type { SidebarVoiceParticipant } from "../../../voice/useServerVoice";
 
 interface ChannelRowProps {
   channel: Channel;
-  canManage: boolean;
+  hasOptions: boolean;
   unreadMentions?: number;
+  isMuted?: boolean;
   onPress: () => void;
   onOptions: () => void;
   isVoiceConnected?: boolean;
@@ -26,8 +30,9 @@ interface ChannelRowProps {
 
 export function ChannelRow({
   channel,
-  canManage,
+  hasOptions,
   unreadMentions = 0,
+  isMuted = false,
   onPress,
   onOptions,
   isVoiceConnected = false,
@@ -73,6 +78,14 @@ export function ChannelRow({
           >
             {channel.name}
           </Text>
+          {isMuted ? (
+            <Feather
+              name="bell-off"
+              size={13}
+              color={colors.textSubtle}
+              accessibilityLabel={NOTIFICATION_SETTINGS_MUTED_TITLE}
+            />
+          ) : null}
           {callStartedAt !== undefined ? (
             <CallDuration
               startedAt={callStartedAt}
@@ -83,7 +96,7 @@ export function ChannelRow({
             />
           ) : null}
         </TouchableOpacity>
-        {canManage ? (
+        {hasOptions ? (
           <TouchableOpacity
             onPress={onOptions}
             className="px-2 py-2"
