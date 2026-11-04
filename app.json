@@ -3,7 +3,7 @@
     "name": "Discordia",
     "slug": "app-mobile",
     "scheme": "discordia",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -29,7 +29,7 @@
       ],
       "package": "com.g1discordia.appmobile",
       "googleServicesFile": "./google-services.json",
-      "versionCode": 2
+      "versionCode": 3
     },
     "web": {
       "favicon": "./assets/favicon.png"
