@@ -1,6 +1,13 @@
 import {
+  type AcceptPrivateCallResult,
   callStartsByChannel,
   type LeaveVoiceResult,
+  parseAcceptedPrivateCall,
+  parsePrivateCall,
+  PRIVATE_CALL_ACCEPT_FAILED,
+  PRIVATE_CALL_END_FAILED,
+  PRIVATE_CALL_START_FAILED,
+  type PrivateCallActionResult,
   presenceByChannel,
   VOICE_CONNECT_FAILED,
   VOICE_LEAVE_FAILED,
@@ -10,6 +17,7 @@ import {
   voiceErrorMessage,
   type VoiceParticipantsResponse,
   type VoiceParticipantsResult,
+  type StartPrivateCallResult,
   type VoiceScreenShareToken,
   type VoiceScreenShareTokenResult,
   type VoiceToken,
@@ -96,4 +104,69 @@ export async function fetchVoiceSocketTicket(): Promise<
     ok: false,
     sessionExpired: result.status === 401,
   };
+}
+
+export async function startPrivateCall(
+  recipientId: string,
+  conversationId: string,
+): Promise<StartPrivateCallResult> {
+  const result = await voiceRequest<unknown>(
+    "/api/voice/calls",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        recipient_id: recipientId,
+        conversation_id: conversationId,
+      }),
+    },
+    PRIVATE_CALL_START_FAILED,
+  );
+  if (!result.ok) return result;
+  const call = parsePrivateCall(result.data);
+  return call
+    ? { ok: true, call }
+    : { ok: false, message: PRIVATE_CALL_START_FAILED };
+}
+
+export async function acceptPrivateCall(
+  callId: string,
+): Promise<AcceptPrivateCallResult> {
+  const result = await voiceRequest<unknown>(
+    privateCallPath(callId, "accept"),
+    { method: "POST" },
+    PRIVATE_CALL_ACCEPT_FAILED,
+  );
+  if (!result.ok) return result;
+  const call = parseAcceptedPrivateCall(result.data);
+  return call
+    ? { ok: true, call }
+    : { ok: false, message: PRIVATE_CALL_ACCEPT_FAILED };
+}
+
+export function rejectPrivateCall(
+  callId: string,
+): Promise<PrivateCallActionResult> {
+  return endPrivateCall(callId, "reject");
+}
+
+export function finishPrivateCall(
+  callId: string,
+): Promise<PrivateCallActionResult> {
+  return endPrivateCall(callId, "finish");
+}
+
+function privateCallPath(callId: string, action: string): string {
+  return `/api/voice/calls/${encodeURIComponent(callId)}/${action}`;
+}
+
+async function endPrivateCall(
+  callId: string,
+  action: "reject" | "finish",
+): Promise<PrivateCallActionResult> {
+  const result = await voiceRequest<unknown>(
+    privateCallPath(callId, action),
+    { method: "POST" },
+    PRIVATE_CALL_END_FAILED,
+  );
+  return result.ok ? { ok: true } : result;
 }
