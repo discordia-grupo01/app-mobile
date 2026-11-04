@@ -11,6 +11,7 @@ import { AuthProvider, useAuth } from "./src/features/auth/auth-context";
 import { AccountSuspendedModal } from "./src/features/auth/components/AccountSuspendedModal";
 import { BlockedUsersProvider } from "./src/features/blocks/blocked-users-context";
 import { useEmailConfirmation } from "./src/features/auth/use-email-confirmation";
+import { configurePushNotifications } from "./src/features/push/notification-handler";
 import { VoiceSessionProvider } from "./src/features/voice/voice-session-context";
 
 import { ForgotPasswordScreen } from "./src/screens/ForgotPasswordScreen";
@@ -20,6 +21,8 @@ import { PinEntryScreen } from "./src/screens/PinEntryScreen";
 import { RegisterScreen } from "./src/screens/RegisterScreen";
 import { ConfirmEmailScreen } from "./src/screens/ConfirmEmailScreen";
 import { ThemeProvider } from "./src/theme/theme-context";
+
+configurePushNotifications();
 
 type AuthScreen = AuthMode | "forgot-password" | "confirm-email";
 

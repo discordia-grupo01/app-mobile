@@ -40,6 +40,7 @@ import {
 } from "./service";
 import { verifyTwoFactorService } from "../two-factor/service";
 import { closeSocket } from "../messages/socket";
+import { unregisterOnLogout } from "../push/registration";
 
 interface AuthContextValue {
   user: User | null;
@@ -213,6 +214,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const userId = user?.id;
   const logout = useCallback(async (): Promise<void> => {
+    if (userId !== undefined) await unregisterOnLogout(String(userId));
     try {
       await logoutService();
     } catch {}

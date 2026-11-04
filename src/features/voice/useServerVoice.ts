@@ -10,6 +10,7 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import { avatarUriOf } from "../../lib/userProfile";
 import { useAuth } from "../auth/auth-context";
+import { channelTargetOf } from "./channel-target";
 import { useVoiceSession } from "./voice-session-context";
 import { useVoicePresence } from "./useVoicePresence";
 
@@ -27,8 +28,9 @@ export function useServerVoice(server: ServerSummary) {
   const { state, leaveSettledCount } = useVoiceSession();
   const { user } = useAuth();
 
+  const channelTarget = channelTargetOf(state.target);
   const voiceChannelId =
-    state.target?.serverId === server.id ? state.target.channelId : null;
+    channelTarget?.serverId === server.id ? channelTarget.channelId : null;
 
   const liveParticipants = useMemo(
     () => (voiceChannelId ? voiceParticipantsOf(state) : []),
