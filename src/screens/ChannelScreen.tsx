@@ -26,6 +26,7 @@ import { useAuth } from "../features/auth/auth-context";
 import { authorFromProfile } from "../features/messages/author";
 import { MessageSearchButton } from "../features/message-search/components/MessageSearchButton";
 import { ChannelChat } from "../features/messages/components/ChannelChat";
+import { ChannelNotificationsButton } from "../features/notifications/components/ChannelNotificationsButton";
 import { OwnProfileModal } from "../features/profile/components/OwnProfileModal";
 import { PublicProfileModal } from "../features/profile/components/PublicProfileModal";
 import { MembersSidebar } from "../features/servers/components/members/MembersSidebar";
@@ -202,6 +203,7 @@ export function ChannelScreen({
             onOpenResult={onOpenSearchResult}
           />
         ) : null}
+        <ChannelNotificationsButton channel={channel} serverId={serverId} />
         <TouchableOpacity
           onPress={() => setIsMembersVisible(true)}
           className="w-8.5 h-8.5 items-center justify-center"
