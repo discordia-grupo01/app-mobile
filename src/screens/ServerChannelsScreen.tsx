@@ -41,9 +41,9 @@ import { DraggableCategoryList } from "../features/servers/components/category/D
 import { CreateChannelModal } from "../features/channels/components/create/CreateChannelModal";
 import { DeleteChannelModal } from "../features/channels/components/delete/DeleteChannelModal";
 import { ChannelRow } from "../features/channels/components/list/ChannelRow";
-import { NotificationSettingsSheet } from "../features/notifications/components/NotificationSettingsSheet";
+import { NotificationSettingsSheet } from "../features/notifications/components/settings/NotificationSettingsSheet";
 import { useOptionalNotificationSettings } from "../features/notifications/NotificationSettingsContext";
-import type { NotificationTarget } from "../features/notifications/useNotificationTarget";
+import type { NotificationTarget } from "../features/notifications/components/settings/useNotificationTarget";
 import {
   DRAG_ROW_HEIGHT,
   DraggableChannelList,

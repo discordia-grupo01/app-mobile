@@ -27,7 +27,7 @@ import { useAuth } from "../features/auth/auth-context";
 import { authorFromProfile } from "../features/messages/author";
 import { MessageSearchButton } from "../features/message-search/components/MessageSearchButton";
 import { ChannelChat } from "../features/messages/components/ChannelChat";
-import { ChannelNotificationsButton } from "../features/notifications/components/ChannelNotificationsButton";
+import { ChannelNotificationsButton } from "../features/notifications/components/settings/ChannelNotificationsButton";
 import { OwnProfileModal } from "../features/profile/components/OwnProfileModal";
 import { PublicProfileModal } from "../features/profile/components/PublicProfileModal";
 import { MembersSidebar } from "../features/servers/components/members/MembersSidebar";

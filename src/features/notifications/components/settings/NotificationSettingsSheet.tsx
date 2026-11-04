@@ -23,12 +23,12 @@ import {
   View,
 } from "react-native";
 
-import { FormErrorBanner } from "../../../components/ui/FormErrorBanner";
-import { useThemeColors } from "../../../theme/theme-context";
+import { FormErrorBanner } from "../../../../components/ui/FormErrorBanner";
+import { useThemeColors } from "../../../../theme/theme-context";
 import {
   type NotificationTarget,
   useNotificationTarget,
-} from "../useNotificationTarget";
+} from "./useNotificationTarget";
 import { NotificationLevelOption } from "./NotificationLevelOption";
 
 interface NotificationSettingsSheetProps {
