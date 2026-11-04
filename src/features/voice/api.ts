@@ -20,6 +20,7 @@ import {
   type StartPrivateCallResult,
   type VoiceScreenShareToken,
   type VoiceScreenShareTokenResult,
+  type VoiceSessionTarget,
   type VoiceToken,
   type VoiceTokenResult,
 } from "@discordia/client-shared";
@@ -51,14 +52,30 @@ export async function requestVoiceToken(
 }
 
 export async function requestScreenShareToken(
-  channelId: string,
+  target: VoiceSessionTarget,
 ): Promise<VoiceScreenShareTokenResult> {
+  const [path, options] = screenShareRequestOf(target);
   const result = await voiceRequest<VoiceScreenShareToken>(
-    "/api/voice/screen-token",
-    { method: "POST", body: JSON.stringify({ channel_id: channelId }) },
+    path,
+    options,
     VOICE_SCREEN_SHARE_FAILED,
   );
   return result.ok ? { ok: true, token: result.data } : result;
+}
+
+function screenShareRequestOf(
+  target: VoiceSessionTarget,
+): [path: string, options: RequestInit] {
+  if (target.kind === "private_call") {
+    return [privateCallPath(target.callId, "screen-token"), { method: "POST" }];
+  }
+  return [
+    "/api/voice/screen-token",
+    {
+      method: "POST",
+      body: JSON.stringify({ channel_id: target.channelId }),
+    },
+  ];
 }
 
 export async function leaveVoiceSession(
