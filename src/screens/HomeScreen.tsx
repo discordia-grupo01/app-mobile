@@ -9,6 +9,7 @@ import {
   messageAuthorOf,
   type MessageJumpTarget,
   type PublicUser,
+  type PushTarget,
   type Role,
   type ServerSummary,
   SESSION_EXPIRED_MESSAGE,
@@ -53,6 +54,8 @@ import {
   listMyServers,
 } from "../features/servers/api";
 import { useMyChannelPermissions } from "../features/channels/useMyChannelPermissions";
+import { usePushNotificationTap } from "../features/push/notification-handler";
+import { usePushDeviceSync } from "../features/push/use-push-notifications";
 import { useVoiceSession } from "../features/voice/voice-session-context";
 import { getLastLocation, setLastLocation } from "../lib/storage";
 import { avatarUriOf } from "../lib/userProfile";
@@ -225,6 +228,27 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
       cancelled = true;
     };
   }, [isRestored, isLoadingServers, userId, servers, openConversation]);
+
+  usePushDeviceSync(userId);
+  const handlePushTarget = useCallback(
+    (target: PushTarget) => {
+      if (target.kind === "direct") {
+        openConversation(target.partnerId);
+        setView("dm");
+        return;
+      }
+      const server = servers.find((item) => item.id === target.serverId);
+      if (!server) return;
+      setView("servers");
+      setSelectedServerId(server.id);
+      setSelectedChannelId(
+        server.channels.find((channel) => channel.id === target.channelId)
+          ?.id ?? null,
+      );
+    },
+    [servers, openConversation],
+  );
+  usePushNotificationTap(isRestored && !isLoadingServers, handlePushTarget);
 
   const activePartnerId = directMessages.activeSummary?.partner.id ?? null;
   useEffect(() => {
