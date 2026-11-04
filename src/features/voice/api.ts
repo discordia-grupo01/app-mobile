@@ -1,6 +1,13 @@
 import {
+  type AcceptPrivateCallResult,
   callStartsByChannel,
   type LeaveVoiceResult,
+  parseAcceptedPrivateCall,
+  parsePrivateCall,
+  PRIVATE_CALL_ACCEPT_FAILED,
+  PRIVATE_CALL_END_FAILED,
+  PRIVATE_CALL_START_FAILED,
+  type PrivateCallActionResult,
   presenceByChannel,
   VOICE_CONNECT_FAILED,
   VOICE_LEAVE_FAILED,
@@ -10,8 +17,10 @@ import {
   voiceErrorMessage,
   type VoiceParticipantsResponse,
   type VoiceParticipantsResult,
+  type StartPrivateCallResult,
   type VoiceScreenShareToken,
   type VoiceScreenShareTokenResult,
+  type VoiceSessionTarget,
   type VoiceToken,
   type VoiceTokenResult,
 } from "@discordia/client-shared";
@@ -43,14 +52,30 @@ export async function requestVoiceToken(
 }
 
 export async function requestScreenShareToken(
-  channelId: string,
+  target: VoiceSessionTarget,
 ): Promise<VoiceScreenShareTokenResult> {
+  const [path, options] = screenShareRequestOf(target);
   const result = await voiceRequest<VoiceScreenShareToken>(
-    "/api/voice/screen-token",
-    { method: "POST", body: JSON.stringify({ channel_id: channelId }) },
+    path,
+    options,
     VOICE_SCREEN_SHARE_FAILED,
   );
   return result.ok ? { ok: true, token: result.data } : result;
+}
+
+function screenShareRequestOf(
+  target: VoiceSessionTarget,
+): [path: string, options: RequestInit] {
+  if (target.kind === "private_call") {
+    return [privateCallPath(target.callId, "screen-token"), { method: "POST" }];
+  }
+  return [
+    "/api/voice/screen-token",
+    {
+      method: "POST",
+      body: JSON.stringify({ channel_id: target.channelId }),
+    },
+  ];
 }
 
 export async function leaveVoiceSession(
@@ -96,4 +121,69 @@ export async function fetchVoiceSocketTicket(): Promise<
     ok: false,
     sessionExpired: result.status === 401,
   };
+}
+
+export async function startPrivateCall(
+  recipientId: string,
+  conversationId: string,
+): Promise<StartPrivateCallResult> {
+  const result = await voiceRequest<unknown>(
+    "/api/voice/calls",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        recipient_id: recipientId,
+        conversation_id: conversationId,
+      }),
+    },
+    PRIVATE_CALL_START_FAILED,
+  );
+  if (!result.ok) return result;
+  const call = parsePrivateCall(result.data);
+  return call
+    ? { ok: true, call }
+    : { ok: false, message: PRIVATE_CALL_START_FAILED };
+}
+
+export async function acceptPrivateCall(
+  callId: string,
+): Promise<AcceptPrivateCallResult> {
+  const result = await voiceRequest<unknown>(
+    privateCallPath(callId, "accept"),
+    { method: "POST" },
+    PRIVATE_CALL_ACCEPT_FAILED,
+  );
+  if (!result.ok) return result;
+  const call = parseAcceptedPrivateCall(result.data);
+  return call
+    ? { ok: true, call }
+    : { ok: false, message: PRIVATE_CALL_ACCEPT_FAILED };
+}
+
+export function rejectPrivateCall(
+  callId: string,
+): Promise<PrivateCallActionResult> {
+  return endPrivateCall(callId, "reject");
+}
+
+export function finishPrivateCall(
+  callId: string,
+): Promise<PrivateCallActionResult> {
+  return endPrivateCall(callId, "finish");
+}
+
+function privateCallPath(callId: string, action: string): string {
+  return `/api/voice/calls/${encodeURIComponent(callId)}/${action}`;
+}
+
+async function endPrivateCall(
+  callId: string,
+  action: "reject" | "finish",
+): Promise<PrivateCallActionResult> {
+  const result = await voiceRequest<unknown>(
+    privateCallPath(callId, action),
+    { method: "POST" },
+    PRIVATE_CALL_END_FAILED,
+  );
+  return result.ok ? { ok: true } : result;
 }
