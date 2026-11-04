@@ -19,6 +19,7 @@ import { OwnProfileModal } from "../../profile/components/OwnProfileModal";
 import { PublicProfileModal } from "../../profile/components/PublicProfileModal";
 import { UserActivityStatusDot } from "../../profile/components/ActivityStatusDot";
 import { Avatar } from "../../../components/ui/Avatar";
+import { DmCallButton } from "../../private-call/components/DmCallButton";
 import { useThemeColors } from "../../../theme/theme-context";
 import { DmThread } from "./DmThread";
 
@@ -89,14 +90,14 @@ export function DmConversationScreen({
             </Text>
           </View>
         ) : null}
+        <DmCallButton
+          partner={partner}
+          conversationId={conversationId}
+          blockedByMe={blockedByMe}
+        />
       </View>
 
-      <KeyboardAvoidingView
-        className="flex-1"
-        // Con edge-to-edge (obligatorio en Android desde SDK 54) `adjustResize`
-        // ya no achica la ventana en el APK: sin padding el teclado tapa el input.
-        behavior="padding"
-      >
+      <KeyboardAvoidingView className="flex-1" behavior="padding">
         <DmThread
           key={conversationId ?? partner.id}
           conversationId={conversationId}

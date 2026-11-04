@@ -18,6 +18,7 @@ import { ActivityStatusDot } from "../../../profile/components/ActivityStatusDot
 import { usePresenceOf } from "../../../presence/PresenceContext";
 import { Avatar } from "../../../../components/ui/Avatar";
 import { AccountSettingsSheet } from "./AccountSettingsSheet";
+import { PrivateCallStrip } from "../../../private-call/components/PrivateCallStrip";
 import { VoiceConnectedStrip } from "../../../voice/components/sidebar/VoiceConnectedStrip";
 import { useOptionalVoiceSession } from "../../../voice/voice-session-context";
 
@@ -45,6 +46,7 @@ export function UserProfileBar({ userName, onLogout }: UserProfileBarProps) {
   return (
     <>
       <VoiceConnectedStrip />
+      <PrivateCallStrip />
       <View className="flex-row items-center gap-2 px-3.5 py-3.5 border-t border-t-line bg-surface-panel">
         <TouchableOpacity
           className="flex-1 flex-row items-center gap-2 min-w-0"
