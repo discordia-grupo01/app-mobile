@@ -42,6 +42,8 @@ interface PrivateCallValue {
   start: (partner: PrivateCallPartner, conversationId: string) => void;
   accept: () => void;
   decline: () => void;
+  acceptFromPush: (callId: string, callerId: string) => void;
+  declineFromPush: (callId: string) => void;
   cancel: () => void;
   hangUp: () => void;
   minimize: () => void;
@@ -235,6 +237,36 @@ export function PrivateCallProvider({
     dispatch({ type: "closed" });
   }, []);
 
+  const acceptFromPush = useCallback(
+    (callId: string, callerId: string) => {
+      const current = stateRef.current;
+      if (current.call?.call_id === callId) {
+        if (current.phase === "incoming") accept();
+        return;
+      }
+      if (isPrivateCallBusy(current)) return;
+
+      void Promise.all([
+        resolvePartnerRef.current(callerId),
+        acceptPrivateCall(callId),
+      ]).then(([partner, result]) => {
+        if (!result.ok) {
+          dispatch({ type: "failed", message: result.message });
+          return;
+        }
+        dispatch({ type: "incoming", call: result.call, partner });
+        dispatch({ type: "accept_requested" });
+        dispatch({ type: "accepted", call: result.call });
+      });
+    },
+    [accept],
+  );
+
+  const declineFromPush = useCallback((callId: string) => {
+    void rejectPrivateCall(callId);
+    if (stateRef.current.call?.call_id === callId) dispatch({ type: "closed" });
+  }, []);
+
   const cancel = useCallback(() => {
     const { call } = stateRef.current;
     if (call) void rejectPrivateCall(call.call_id);
@@ -265,6 +297,8 @@ export function PrivateCallProvider({
       start,
       accept,
       decline,
+      acceptFromPush,
+      declineFromPush,
       cancel,
       hangUp,
       minimize,
@@ -279,6 +313,8 @@ export function PrivateCallProvider({
       start,
       accept,
       decline,
+      acceptFromPush,
+      declineFromPush,
       cancel,
       hangUp,
       minimize,
