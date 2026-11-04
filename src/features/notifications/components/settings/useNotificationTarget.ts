@@ -11,7 +11,7 @@ import {
 
 import { useState } from "react";
 
-import { useOptionalNotificationSettings } from "./NotificationSettingsContext";
+import { useOptionalNotificationSettings } from "../../NotificationSettingsContext";
 
 export interface NotificationTarget {
   scope: "channel" | "server";

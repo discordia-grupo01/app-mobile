@@ -7,8 +7,8 @@ import {
 import { Feather } from "@expo/vector-icons";
 import { Text, TouchableOpacity, View } from "react-native";
 
-import { cn } from "../../../lib/cn";
-import { useThemeColors } from "../../../theme/theme-context";
+import { cn } from "../../../../lib/cn";
+import { useThemeColors } from "../../../../theme/theme-context";
 
 interface NotificationLevelOptionProps {
   level: NotificationLevel;

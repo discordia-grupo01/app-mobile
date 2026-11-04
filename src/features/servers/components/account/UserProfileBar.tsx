@@ -17,6 +17,7 @@ import { OwnProfileModal } from "../../../profile/components/OwnProfileModal";
 import { ActivityStatusDot } from "../../../profile/components/ActivityStatusDot";
 import { usePresenceOf } from "../../../presence/PresenceContext";
 import { Avatar } from "../../../../components/ui/Avatar";
+import { NotificationsButton } from "../../../notifications/components/center/NotificationsButton";
 import { AccountSettingsSheet } from "./AccountSettingsSheet";
 import { PrivateCallStrip } from "../../../private-call/components/PrivateCallStrip";
 import { VoiceConnectedStrip } from "../../../voice/components/sidebar/VoiceConnectedStrip";
@@ -77,6 +78,8 @@ export function UserProfileBar({ userName, onLogout }: UserProfileBarProps) {
         </TouchableOpacity>
 
         <View className="shrink-0 flex-row items-center gap-0.5">
+          <NotificationsButton />
+
           <TouchableOpacity
             className="w-9 h-9 rounded-[10px] items-center justify-center"
             onPress={voice?.toggleMute}

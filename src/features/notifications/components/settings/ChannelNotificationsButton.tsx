@@ -9,8 +9,8 @@ import { Feather } from "@expo/vector-icons";
 import { useState } from "react";
 import { TouchableOpacity } from "react-native";
 
-import { useThemeColors } from "../../../theme/theme-context";
-import { useOptionalNotificationSettings } from "../NotificationSettingsContext";
+import { useThemeColors } from "../../../../theme/theme-context";
+import { useOptionalNotificationSettings } from "../../NotificationSettingsContext";
 import { NotificationSettingsSheet } from "./NotificationSettingsSheet";
 
 interface ChannelNotificationsButtonProps {

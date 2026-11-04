@@ -1,5 +1,9 @@
 import {
+  type ListNotificationHistoryResult,
   type ListNotificationSettingsResult,
+  NOTIFICATIONS_LOAD_FAILED,
+  type NotificationHistoryQuery,
+  type NotificationHistoryResponse,
   NOTIFICATION_SETTINGS_LOAD_FAILED,
   NOTIFICATION_SETTINGS_SAVE_FAILED,
   type NotificationSettingsPatch,
@@ -9,6 +13,29 @@ import {
 } from "@discordia/client-shared";
 
 import { apiFetch } from "../../lib/api-client";
+
+export async function listNotificationHistory({
+  limit,
+  before,
+}: NotificationHistoryQuery = {}): Promise<ListNotificationHistoryResult> {
+  const query = new URLSearchParams();
+  if (limit !== undefined) query.set("limit", String(limit));
+  if (before) query.set("before", before);
+  const qs = query.toString();
+
+  const result = await apiFetch<NotificationHistoryResponse>(
+    `/v1/notifications/history${qs ? `?${qs}` : ""}`,
+    { method: "GET" },
+  );
+  if (!result.ok || !Array.isArray(result.data?.items)) {
+    return { ok: false, message: NOTIFICATIONS_LOAD_FAILED };
+  }
+  return {
+    ok: true,
+    items: result.data.items,
+    nextCursor: result.data.next_cursor ?? null,
+  };
+}
 
 export async function listNotificationSettings(): Promise<ListNotificationSettingsResult> {
   const result = await apiFetch<NotificationSettingsResponse>(
