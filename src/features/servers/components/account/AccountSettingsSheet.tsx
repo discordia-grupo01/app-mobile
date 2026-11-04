@@ -16,16 +16,19 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useThemeColors } from "../../../../theme/theme-context";
 import { AccountSettingsMenu } from "./account-settings/AccountSettingsMenu";
 import { AppearanceSettingsStep } from "./account-settings/AppearanceSettingsStep";
+import { PushSettingsStep } from "./account-settings/PushSettingsStep";
 import { SecuritySettingsStep } from "./account-settings/SecuritySettingsStep";
 import { LogoutConfirmModal } from "./LogoutConfirmModal";
 import { PinSetupPanel } from "./PinSetupPanel";
 import { TwoFactorPanel } from "./TwoFactorPanel";
 
-type Section = "menu" | "appearance" | "security" | "two-factor" | "pin";
+type Section =
+  "menu" | "appearance" | "notifications" | "security" | "two-factor" | "pin";
 
 const TITLES: Record<Section, string> = {
   menu: "Configuración",
   appearance: "Apariencia",
+  notifications: "Notificaciones",
   security: "Seguridad",
   "two-factor": "Verificación en dos pasos",
   pin: "PIN de acceso rápido",
@@ -34,6 +37,7 @@ const TITLES: Record<Section, string> = {
 const BACK_TARGET: Record<Section, Section> = {
   menu: "menu",
   appearance: "menu",
+  notifications: "menu",
   security: "menu",
   "two-factor": "security",
   pin: "security",
@@ -126,11 +130,14 @@ export function AccountSettingsSheet({
           {section === "menu" ? (
             <AccountSettingsMenu
               onSelectAppearance={() => setSection("appearance")}
+              onSelectNotifications={() => setSection("notifications")}
               onSelectSecurity={() => setSection("security")}
               onLogout={() => setIsConfirmVisible(true)}
             />
           ) : section === "appearance" ? (
             <AppearanceSettingsStep selected={theme} onSelect={onSelectTheme} />
+          ) : section === "notifications" ? (
+            <PushSettingsStep />
           ) : section === "security" ? (
             <SecuritySettingsStep
               isPinEnabled={isPinEnabled}
