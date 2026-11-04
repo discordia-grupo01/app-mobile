@@ -14,6 +14,7 @@ interface DraggableCategoryListProps {
   ) => React.ReactNode;
   onReorder: (orderedIds: string[]) => void;
   onDragActiveChange?: (active: boolean) => void;
+  gap?: number;
 }
 
 export function DraggableCategoryList({
@@ -21,6 +22,7 @@ export function DraggableCategoryList({
   renderCategory,
   onReorder,
   onDragActiveChange,
+  gap = 0,
 }: DraggableCategoryListProps) {
   const categoryIds = categories.map((category) => category.id);
   const idsKey = categoryIds.join("|");
@@ -56,13 +58,14 @@ export function DraggableCategoryList({
     let acc = 0;
     for (const id of ids) {
       map.set(id, acc);
-      acc += heightOf(id);
+      acc += heightOf(id) + gap;
     }
     return map;
   }
 
   function totalHeight(ids: string[]): number {
-    return ids.reduce((sum, id) => sum + heightOf(id), 0);
+    const rows = ids.reduce((sum, id) => sum + heightOf(id), 0);
+    return rows + gap * Math.max(ids.length - 1, 0);
   }
 
   const startTopRef = useRef(0);
@@ -86,7 +89,7 @@ export function DraggableCategoryList({
         targetIndex = i;
         break;
       }
-      acc += otherHeight;
+      acc += otherHeight + gap;
     }
 
     const next = [...others];

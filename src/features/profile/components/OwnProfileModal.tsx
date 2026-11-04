@@ -1,5 +1,4 @@
 import {
-  displayedStatus,
   type ActivityStatusChoice,
   CANCEL_NAME_EDIT_LABEL,
   CHANGE_AVATAR_LABEL,
@@ -7,13 +6,13 @@ import {
   MAX_DESCRIPTION,
   MAX_NAME,
   NO_DESCRIPTION_YET,
+  REMOVE_AVATAR_LABEL,
   resolveImageUrl,
   validateAvatar,
 } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
 import * as ImageManipulator from "expo-image-manipulator";
-import * as ImagePicker from "expo-image-picker";
 import { useRef, useState, type ComponentRef } from "react";
 import {
   ActivityIndicator,
@@ -21,19 +20,22 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  Pressable,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 
 import { Button } from "../../../components/ui/Button";
+import { pickImageFromLibrary } from "../../../lib/pickImageFromLibrary";
 import { cn } from "../../../lib/cn";
 import { env } from "../../../lib/env";
 import { useThemeColors } from "../../../theme/theme-context";
 import { useAuth } from "../../auth/auth-context";
 import { Avatar } from "../../../components/ui/Avatar";
 import { MemberRoleBadges } from "../../roles/components/MemberRoleBadges";
-import { activityStatusColor } from "./activityStatusColor";
+import { useOwnStatus, usePresenceOf } from "../../presence/PresenceContext";
+import { ActivityStatusDot } from "./ActivityStatusDot";
 import { ActivityStatusRow } from "./ActivityStatusRow";
 import { CustomStatusEditor } from "./CustomStatusEditor";
 import { MemberSince } from "./MemberSince";
@@ -43,7 +45,6 @@ import type { PickedProfileImage } from "../types";
 import { ModalShell } from "../../../components/ui/ModalShell";
 
 const MAX_AVATAR_DIMENSION = 1024;
-const REMOVE_AVATAR_LABEL = "Eliminar foto de perfil";
 
 type EditingField = "name" | "description" | null;
 
@@ -73,10 +74,12 @@ export function OwnProfileModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isAvatarMenuOpen, setIsAvatarMenuOpen] = useState(false);
   const scrollViewRef = useRef<ComponentRef<typeof ScrollView>>(null);
 
-  const [activityStatus, setActivityStatus] =
-    useState<ActivityStatusChoice>("online");
+  const { choice: ownChoice, setOwnStatus } = useOwnStatus();
+  const displayedOwnStatus = usePresenceOf(user?.id);
+  const [statusError, setStatusError] = useState("");
 
   if (visible !== wasVisible) {
     setWasVisible(visible);
@@ -90,14 +93,22 @@ export function OwnProfileModal({
       setIsSubmitting(false);
       setIsUploadingAvatar(false);
       setImagePreview(null);
-      setActivityStatus("online");
+      setIsAvatarMenuOpen(false);
+      setStatusError("");
     }
   }
 
   if (!user) return null;
 
+  async function changeActivityStatus(choice: ActivityStatusChoice) {
+    setStatusError("");
+    const result = await setOwnStatus(choice);
+    if (!result.ok) setStatusError(result.message);
+  }
+
   const avatarSrc =
     imagePreview ?? resolveImageUrl(user.avatar_url, env.apiUrl);
+  const hasAvatar = Boolean(avatarSrc);
 
   async function submitProfile(overrides: {
     name?: string;
@@ -189,9 +200,19 @@ export function OwnProfileModal({
     if (ok) setEditingField(null);
   }
 
+  function handleAvatarPress() {
+    if (hasAvatar) setIsAvatarMenuOpen((open) => !open);
+    else pickAvatar();
+  }
+
+  function pickNewAvatar() {
+    setIsAvatarMenuOpen(false);
+    pickAvatar();
+  }
+
   function removeAvatar() {
-    const currentUser = user;
-    if (!currentUser || (!currentUser.avatar_url && !imagePreview)) return;
+    setIsAvatarMenuOpen(false);
+    if (!hasAvatar) return;
     Alert.alert(
       REMOVE_AVATAR_LABEL,
       "La foto se eliminará y se mostrará tu avatar con inicial.",
@@ -214,23 +235,10 @@ export function OwnProfileModal({
 
   async function pickAvatar() {
     setImageError("");
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert(
-        "Permiso necesario",
-        "Necesitamos acceso a tus imágenes para cambiar tu foto de perfil.",
-      );
-      return;
-    }
+    const picked = await pickImageFromLibrary("cambiar tu foto de perfil");
+    if (!picked) return;
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      quality: 0.8,
-    });
-    if (result.canceled || !result.assets?.[0]) return;
-
-    const asset = result.assets[0];
-    const type = asset.mimeType ?? "image/jpeg";
+    const { asset, mimeType: type } = picked;
     const avatarError = validateAvatar({
       mimeType: type,
       sizeBytes: asset.fileSize ?? 0,
@@ -375,8 +383,9 @@ export function OwnProfileModal({
 
         <View className="mb-4">
           <ActivityStatusRow
-            status={activityStatus}
-            onChange={setActivityStatus}
+            status={ownChoice}
+            error={statusError}
+            onChange={changeActivityStatus}
           />
         </View>
 
@@ -467,10 +476,18 @@ export function OwnProfileModal({
         ) : null}
       </ScrollView>
 
+      {isAvatarMenuOpen ? (
+        <Pressable
+          accessibilityLabel="Cerrar menú"
+          onPress={() => setIsAvatarMenuOpen(false)}
+          className="absolute inset-0 z-10"
+        />
+      ) : null}
+
       <View className="absolute top-18 left-5.5 z-10">
         <TouchableOpacity
           activeOpacity={0.85}
-          onPress={pickAvatar}
+          onPress={handleAvatarPress}
           className="w-20 h-20"
           accessibilityLabel={CHANGE_AVATAR_LABEL}
         >
@@ -491,34 +508,42 @@ export function OwnProfileModal({
               </View>
             ) : null}
           </View>
-          <View
-            className="absolute right-0.5 bottom-0.5 w-4.5 h-4.5 rounded-[9px] border-[3px] border-surface-modal"
-            style={{
-              backgroundColor: activityStatusColor(
-                colors,
-                displayedStatus(activityStatus),
-              ),
-            }}
+          <ActivityStatusDot
+            status={displayedOwnStatus}
+            size={18}
+            ringWidth={3}
+            className="absolute right-0.5 bottom-0.5 border-surface-modal"
           />
         </TouchableOpacity>
+        {imageError ? (
+          <Text className="text-danger text-[12px] mt-1.5">{imageError}</Text>
+        ) : null}
+        {isAvatarMenuOpen ? (
+          <View className="absolute left-0 top-21 z-20 w-56 rounded-xl border border-line bg-surface-modal p-1.5 shadow-xl">
+            <TouchableOpacity
+              onPress={pickNewAvatar}
+              accessibilityRole="menuitem"
+              className="flex-row items-center gap-2.5 rounded-lg px-2.5 py-2.5"
+            >
+              <Feather name="camera" size={16} color={colors.text} />
+              <Text className="text-[14px] font-medium text-content">
+                {CHANGE_AVATAR_LABEL}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={removeAvatar}
+              disabled={isUploadingAvatar}
+              accessibilityRole="menuitem"
+              className="flex-row items-center gap-2.5 rounded-lg px-2.5 py-2.5"
+            >
+              <Feather name="trash-2" size={16} color={colors.danger} />
+              <Text className="text-[14px] font-medium text-danger">
+                {REMOVE_AVATAR_LABEL}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
       </View>
-
-      {user.avatar_url || imagePreview ? (
-        <View className="absolute top-28 right-5.5 z-10">
-          <TouchableOpacity
-            onPress={removeAvatar}
-            disabled={isUploadingAvatar}
-            activeOpacity={0.7}
-            accessibilityLabel={REMOVE_AVATAR_LABEL}
-            className="flex-row items-center gap-1.5 rounded-lg border border-[rgba(224,82,82,0.3)] bg-[rgba(224,82,82,0.1)] px-2.5 py-1.5"
-          >
-            <Feather name="trash-2" size={14} color={colors.danger} />
-            <Text className="text-danger text-[12px] font-semibold">
-              Eliminar foto
-            </Text>
-          </TouchableOpacity>
-        </View>
-      ) : null}
     </ModalShell>
   );
 }

@@ -13,16 +13,22 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { UserProfileBar } from "../../servers/components/account/UserProfileBar";
 import { Avatar } from "../../../components/ui/Avatar";
 import { useThemeColors } from "../../../theme/theme-context";
 import { cn } from "../../../lib/cn";
+import { UserActivityStatusDot } from "../../profile/components/ActivityStatusDot";
+import { DmListError } from "./DmListError";
 
 interface DmConversationListProps {
   conversations: ConversationSummary[];
   isLoading: boolean;
   loadError: string | null;
+  /** La lista no cargo y tampoco hay conexion. */
+  isOffline: boolean;
+  onRetryLoad: () => void;
   activePartnerId: string | null;
   userName?: string | null;
   onSelect: (partnerId: string) => void;
@@ -34,6 +40,8 @@ export function DmConversationList({
   conversations,
   isLoading,
   loadError,
+  isOffline,
+  onRetryLoad,
   activePartnerId,
   userName,
   onSelect,
@@ -41,10 +49,14 @@ export function DmConversationList({
   onLogout,
 }: DmConversationListProps) {
   const colors = useThemeColors();
+  const insets = useSafeAreaInsets();
 
   return (
     <View className="flex-1 bg-surface-sunken">
-      <View className="min-h-13 flex-row items-center justify-between border-b border-b-line px-4">
+      <View
+        className="flex-row items-center justify-between border-b border-b-line px-4"
+        style={{ paddingTop: insets.top, minHeight: insets.top + 52 }}
+      >
         <Text className="text-[15px] font-bold text-content">
           {DIRECT_MESSAGES_TITLE}
         </Text>
@@ -63,15 +75,15 @@ export function DmConversationList({
           <View className="items-center py-6">
             <ActivityIndicator color={colors.accentBright} />
           </View>
+        ) : conversations.length === 0 && loadError ? (
+          <DmListError
+            message={loadError}
+            isOffline={isOffline}
+            onRetry={onRetryLoad}
+          />
         ) : conversations.length === 0 ? (
-          <Text
-            accessibilityRole={loadError ? "alert" : undefined}
-            className={cn(
-              "px-2 py-3 text-[13px]",
-              loadError ? "text-danger" : "text-content-subtle",
-            )}
-          >
-            {loadError ?? NO_CONVERSATIONS_YET}
+          <Text className="px-2 py-3 text-[13px] text-content-subtle">
+            {NO_CONVERSATIONS_YET}
           </Text>
         ) : (
           conversations.map(
@@ -93,11 +105,17 @@ export function DmConversationList({
                     isActive && "bg-accent/20",
                   )}
                 >
-                  <Avatar
-                    name={partner.name}
-                    uri={partner.avatarUrl}
-                    size={38}
-                  />
+                  <View className="relative">
+                    <Avatar
+                      name={partner.name}
+                      uri={partner.avatarUrl}
+                      size={38}
+                    />
+                    <UserActivityStatusDot
+                      userId={partner.id}
+                      className="absolute -right-[1px] -bottom-[1px] border-surface-sunken"
+                    />
+                  </View>
                   <View className="min-w-0 flex-1">
                     <View className="flex-row items-center justify-between gap-1">
                       <Text

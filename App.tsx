@@ -1,14 +1,17 @@
 import "./global.css";
 
-import { useCallback, useState } from "react";
+import { lockAsync, OrientationLock } from "expo-screen-orientation";
+import { useCallback, useEffect, useState } from "react";
 import { View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { LoadingScreen } from "./src/components/ui/LoadingScreen";
 import type { AuthMode } from "./src/features/auth/components/AuthTabs";
 import { AuthProvider, useAuth } from "./src/features/auth/auth-context";
+import { AccountSuspendedModal } from "./src/features/auth/components/AccountSuspendedModal";
 import { BlockedUsersProvider } from "./src/features/blocks/blocked-users-context";
 import { useEmailConfirmation } from "./src/features/auth/use-email-confirmation";
+import { configurePushNotifications } from "./src/features/push/notification-handler";
 import { VoiceSessionProvider } from "./src/features/voice/voice-session-context";
 
 import { ForgotPasswordScreen } from "./src/screens/ForgotPasswordScreen";
@@ -18,6 +21,8 @@ import { PinEntryScreen } from "./src/screens/PinEntryScreen";
 import { RegisterScreen } from "./src/screens/RegisterScreen";
 import { ConfirmEmailScreen } from "./src/screens/ConfirmEmailScreen";
 import { ThemeProvider } from "./src/theme/theme-context";
+
+configurePushNotifications();
 
 type AuthScreen = AuthMode | "forgot-password" | "confirm-email";
 
@@ -123,11 +128,17 @@ function AppContent() {
 }
 
 export default function App() {
+  // La app va en vertical; solo la pantalla grande de una llamada gira.
+  useEffect(() => {
+    void lockAsync(OrientationLock.PORTRAIT_UP).catch(() => undefined);
+  }, []);
+
   return (
     <SafeAreaProvider>
       <ThemeProvider>
         <AuthProvider>
           <AppContent />
+          <AccountSuspendedModal />
         </AuthProvider>
       </ThemeProvider>
     </SafeAreaProvider>

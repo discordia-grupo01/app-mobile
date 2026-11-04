@@ -16,15 +16,19 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useThemeColors } from "../../../../theme/theme-context";
 import { AccountSettingsMenu } from "./account-settings/AccountSettingsMenu";
 import { AppearanceSettingsStep } from "./account-settings/AppearanceSettingsStep";
+import { PushSettingsStep } from "./account-settings/PushSettingsStep";
 import { SecuritySettingsStep } from "./account-settings/SecuritySettingsStep";
+import { LogoutConfirmModal } from "./LogoutConfirmModal";
 import { PinSetupPanel } from "./PinSetupPanel";
 import { TwoFactorPanel } from "./TwoFactorPanel";
 
-type Section = "menu" | "appearance" | "security" | "two-factor" | "pin";
+type Section =
+  "menu" | "appearance" | "notifications" | "security" | "two-factor" | "pin";
 
 const TITLES: Record<Section, string> = {
   menu: "Configuración",
   appearance: "Apariencia",
+  notifications: "Notificaciones",
   security: "Seguridad",
   "two-factor": "Verificación en dos pasos",
   pin: "PIN de acceso rápido",
@@ -33,6 +37,7 @@ const TITLES: Record<Section, string> = {
 const BACK_TARGET: Record<Section, Section> = {
   menu: "menu",
   appearance: "menu",
+  notifications: "menu",
   security: "menu",
   "two-factor": "security",
   pin: "security",
@@ -42,6 +47,7 @@ interface AccountSettingsSheetProps {
   visible: boolean;
   isPinEnabled: boolean;
   onClose: () => void;
+  onLogout: () => void;
   theme: ThemeName;
   onSelectTheme: (preference: ThemeName) => void;
 }
@@ -50,12 +56,14 @@ export function AccountSettingsSheet({
   visible,
   isPinEnabled,
   onClose,
+  onLogout,
   theme,
   onSelectTheme,
 }: AccountSettingsSheetProps) {
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
   const [section, setSection] = useState<Section>("menu");
+  const [isConfirmVisible, setIsConfirmVisible] = useState(false);
   const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
 
   useEffect(() => {
@@ -67,12 +75,23 @@ export function AccountSettingsSheet({
     onClose();
   }
 
+  function handleConfirmLogout() {
+    setIsConfirmVisible(false);
+    handleClose();
+    onLogout();
+  }
+
   function goBack() {
     setSection(BACK_TARGET[section]);
   }
 
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={handleClose}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      statusBarTranslucent
+      onRequestClose={handleClose}
+    >
       <KeyboardAvoidingView
         className="flex-1 bg-surface-modal"
         style={{ paddingTop: insets.top }}
@@ -111,10 +130,14 @@ export function AccountSettingsSheet({
           {section === "menu" ? (
             <AccountSettingsMenu
               onSelectAppearance={() => setSection("appearance")}
+              onSelectNotifications={() => setSection("notifications")}
               onSelectSecurity={() => setSection("security")}
+              onLogout={() => setIsConfirmVisible(true)}
             />
           ) : section === "appearance" ? (
             <AppearanceSettingsStep selected={theme} onSelect={onSelectTheme} />
+          ) : section === "notifications" ? (
+            <PushSettingsStep />
           ) : section === "security" ? (
             <SecuritySettingsStep
               isPinEnabled={isPinEnabled}
@@ -132,6 +155,12 @@ export function AccountSettingsSheet({
           )}
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <LogoutConfirmModal
+        visible={isConfirmVisible}
+        onClose={() => setIsConfirmVisible(false)}
+        onConfirm={handleConfirmLogout}
+      />
     </Modal>
   );
 }

@@ -1,13 +1,16 @@
 import {
   displayNameOf,
+  highestRoleOf,
   isMemberMuted,
   type Member,
   type MemberPageQuery,
+  type PublicUser,
   MEMBERS_EMPTY_SEARCH,
   MEMBERS_LOADING_MORE,
   MEMBERS_SEARCH_LABEL,
   MEMBERS_SEARCH_PLACEHOLDER,
   resolveImageUrl,
+  type Role,
 } from "@discordia/client-shared";
 
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -28,14 +31,18 @@ import { SearchInput } from "../../../../components/ui/SearchInput";
 import { useMemberScroll } from "../../../../hooks/useMemberScroll";
 import { env } from "../../../../lib/env";
 import { useThemeColors } from "../../../../theme/theme-context";
+import { useAuth } from "../../../auth/auth-context";
 import { OwnProfileModal } from "../../../profile/components/OwnProfileModal";
 import { PublicProfileModal } from "../../../profile/components/PublicProfileModal";
+import { UserActivityStatusDot } from "../../../profile/components/ActivityStatusDot";
 import { listMembers } from "../../api";
 import { Avatar } from "../../../../components/ui/Avatar";
 
 interface MembersSidebarProps {
   visible: boolean;
   serverId: string;
+  /** Roles del servidor: el nombre toma el color del rol mas alto de cada miembro. */
+  serverRoles?: Role[];
   currentUserId?: string | null;
   authToken?: string | null;
   /** Owner, o miembro con el permiso MANAGE_ROLES via algún rol. */
@@ -46,21 +53,26 @@ interface MembersSidebarProps {
   canKickMembers?: boolean;
   /** Owner, o miembro con MANAGE_MESSAGES a nivel servidor: puede silenciar. */
   canMuteMembers?: boolean;
+  /** Abre un mensaje directo con el miembro (desde su perfil). */
+  onMessageUser?: (profile: PublicUser) => void;
   onClose: () => void;
 }
 
 export function MembersSidebar({
   visible,
   serverId,
+  serverRoles = [],
   currentUserId,
   authToken,
   canManageRoles = false,
   canBanMembers = false,
   canKickMembers = false,
   canMuteMembers = false,
+  onMessageUser,
   onClose,
 }: MembersSidebarProps) {
   const colors = useThemeColors();
+  const { user: ownUser } = useAuth();
   const [search, setSearch] = useState("");
   const [isOwnProfileVisible, setIsOwnProfileVisible] = useState(false);
   const [viewingUserId, setViewingUserId] = useState<string | null>(null);
@@ -164,9 +176,14 @@ export function MembersSidebar({
   }
 
   function renderMemberRow(member: Member) {
-    const name = displayNameOf(member.profile);
-    const avatarSrc = resolveImageUrl(member.profile?.avatar_url, env.apiUrl);
     const isSelf = member.user_id === currentUserId;
+    // La fila propia muestra el perfil recien editado (auth-context), no la
+    // copia que vino con la lista: asi la foto y el estado se actualizan al
+    // cerrar el modal de perfil sin recargar la lista.
+    const profile = isSelf && ownUser ? ownUser : member.profile;
+    const name = displayNameOf(profile);
+    const avatarSrc = resolveImageUrl(profile?.avatar_url, env.apiUrl);
+    const roleColor = highestRoleOf(member.role_ids, serverRoles)?.color;
 
     return (
       <TouchableOpacity
@@ -179,13 +196,15 @@ export function MembersSidebar({
       >
         <View className="relative">
           <Avatar name={name} uri={avatarSrc} size={36} borderRadius={18} />
-          {/* Estado de actividad mock ("en línea"): todavía no hay presencia
-              real en identify-service */}
-          <View className="absolute -right-[1px] -bottom-[1px] w-3 h-3 rounded-md bg-success border-2 border-surface-sunken" />
+          <UserActivityStatusDot
+            userId={member.user_id}
+            className="absolute -right-[1px] -bottom-[1px] border-surface-sunken"
+          />
         </View>
         <View className="flex-1">
           <Text
             className="text-[14px] font-semibold text-content"
+            style={roleColor ? { color: roleColor } : undefined}
             numberOfLines={1}
           >
             {name}
@@ -196,15 +215,13 @@ export function MembersSidebar({
               </Text>
             ) : null}
           </Text>
-          {member.profile?.status_text ? (
+          {profile?.status_text ? (
             <Text
               className="text-[12px] text-content-subtle mt-[1px]"
               numberOfLines={1}
             >
-              {member.profile.status_emoji
-                ? `${member.profile.status_emoji} `
-                : ""}
-              {member.profile.status_text}
+              {profile.status_emoji ? `${profile.status_emoji} ` : ""}
+              {profile.status_text}
             </Text>
           ) : null}
         </View>
@@ -339,6 +356,15 @@ export function MembersSidebar({
         onMuteChanged={reload}
         canBlock={viewingUserId !== currentUserId}
         onBanned={reload}
+        onSendMessage={
+          onMessageUser && viewingUserId !== currentUserId
+            ? (profile) => {
+                setViewingUserId(null);
+                onClose();
+                onMessageUser(profile);
+              }
+            : undefined
+        }
         onClose={() => setViewingUserId(null)}
       />
     </>

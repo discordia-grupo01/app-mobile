@@ -1,6 +1,10 @@
 import {
   type AccessRevokedReason,
   type Channel,
+  isMemberMuted,
+  type Message,
+  type MessageJumpTarget,
+  type PublicUser,
   type Role,
   type ServerSummary,
   VOICE_CONNECTING,
@@ -12,7 +16,6 @@ import { Feather } from "@expo/vector-icons";
 import { useMemo, useState } from "react";
 import {
   KeyboardAvoidingView,
-  Platform,
   Text,
   TouchableOpacity,
   View,
@@ -21,7 +24,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAuth } from "../features/auth/auth-context";
 import { authorFromProfile } from "../features/messages/author";
+import { MessageSearchButton } from "../features/message-search/components/MessageSearchButton";
 import { ChannelChat } from "../features/messages/components/ChannelChat";
+import { OwnProfileModal } from "../features/profile/components/OwnProfileModal";
+import { PublicProfileModal } from "../features/profile/components/PublicProfileModal";
 import { MembersSidebar } from "../features/servers/components/members/MembersSidebar";
 import { VoiceChannelView } from "../features/voice/VoiceChannelView";
 import { useServerVoice } from "../features/voice/useServerVoice";
@@ -53,6 +59,13 @@ interface ChannelScreenProps {
   serverRoles?: Role[];
   myRoleIds?: string[];
   onAccessRevoked?: (reason: AccessRevokedReason) => void;
+  /** Abre un mensaje directo con alguien (desde su perfil). */
+  onMessageUser?: (profile: PublicUser) => void;
+  /** Resultado de busqueda a mostrar: si es de este canal, se salta al mensaje. */
+  jumpTarget?: MessageJumpTarget | null;
+  /** Toque en un resultado de busqueda: abre su canal y salta al mensaje. */
+  onOpenSearchResult?: (message: Message) => void;
+  onJumpHandled?: () => void;
   onBack: () => void;
 }
 
@@ -75,6 +88,10 @@ export function ChannelScreen({
   serverRoles = [],
   myRoleIds = [],
   onAccessRevoked,
+  onMessageUser,
+  jumpTarget = null,
+  onOpenSearchResult,
+  onJumpHandled,
   onBack,
 }: ChannelScreenProps) {
   const colors = useThemeColors();
@@ -82,6 +99,11 @@ export function ChannelScreen({
   const isText = channel.kind === "text";
   const insets = useSafeAreaInsets();
   const [isMembersVisible, setIsMembersVisible] = useState(false);
+  const [isOwnProfileVisible, setIsOwnProfileVisible] = useState(false);
+  const [viewing, setViewing] = useState<{
+    userId: string;
+    mutedUntil: string | null;
+  } | null>(null);
   const { user } = useAuth();
   const currentAuthor = useMemo(
     () => (user ? authorFromProfile(user) : null),
@@ -95,14 +117,18 @@ export function ChannelScreen({
       : voice.status === "reconnecting"
         ? VOICE_RECONNECTING
         : VOICE_CONNECTING;
+  const isModeratable =
+    viewing !== null &&
+    viewing.userId !== currentUserId &&
+    viewing.userId !== server.owner_id;
   const pillColor =
     voice.status === "connected" ? colors.success : colors.highlight;
 
   return (
     <View className="flex-1 bg-surface">
       <View
-        className="flex-row items-center gap-3 min-h-15 px-3 border-b border-b-line"
-        style={{ paddingTop: insets.top }}
+        className="flex-row items-center gap-3 px-3 border-b border-b-line"
+        style={{ paddingTop: insets.top, minHeight: insets.top + 60 }}
       >
         <TouchableOpacity
           onPress={onBack}
@@ -165,6 +191,17 @@ export function ChannelScreen({
             color={colors.textMuted}
           />
         </TouchableOpacity>
+        {onOpenSearchResult ? (
+          <MessageSearchButton
+            serverId={serverId}
+            serverName={server.name}
+            channels={server.channels}
+            currentAuthor={currentAuthor}
+            serverRoles={serverRoles}
+            myRoleIds={myRoleIds}
+            onOpenResult={onOpenSearchResult}
+          />
+        ) : null}
         <TouchableOpacity
           onPress={() => setIsMembersVisible(true)}
           className="w-8.5 h-8.5 items-center justify-center"
@@ -178,19 +215,51 @@ export function ChannelScreen({
       <MembersSidebar
         visible={isMembersVisible}
         serverId={serverId}
+        serverRoles={serverRoles}
         currentUserId={currentUserId}
         authToken={authToken}
         canManageRoles={canManageRoles}
         canBanMembers={canBanMembers}
         canKickMembers={canKickMembers}
         canMuteMembers={canMuteMembers}
+        onMessageUser={onMessageUser}
         onClose={() => setIsMembersVisible(false)}
+      />
+
+      <OwnProfileModal
+        visible={isOwnProfileVisible}
+        serverId={serverId}
+        onClose={() => setIsOwnProfileVisible(false)}
+      />
+
+      <PublicProfileModal
+        visible={viewing !== null}
+        userId={viewing?.userId ?? null}
+        authToken={authToken ?? null}
+        serverId={serverId}
+        canManageRoles={canManageRoles}
+        canBan={canBanMembers && isModeratable}
+        canKick={canKickMembers && isModeratable}
+        canMute={canMuteMembers && isModeratable}
+        mutedUntil={viewing?.mutedUntil ?? null}
+        canBlock={viewing !== null && viewing.userId !== currentUserId}
+        onSendMessage={
+          onMessageUser && viewing !== null && viewing.userId !== currentUserId
+            ? (profile) => {
+                setViewing(null);
+                onMessageUser(profile);
+              }
+            : undefined
+        }
+        onClose={() => setViewing(null)}
       />
 
       {isText ? (
         <KeyboardAvoidingView
           className="flex-1"
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          // Con edge-to-edge (obligatorio en Android desde SDK 54) `adjustResize`
+          // ya no achica la ventana en el APK: sin padding el teclado tapa el input.
+          behavior="padding"
         >
           <ChannelChat
             key={channel.id}
@@ -205,6 +274,23 @@ export function ChannelScreen({
             canAddReactions={canAddReactions}
             isCheckingPermissions={isCheckingChannelPermissions}
             onAccessRevoked={onAccessRevoked}
+            jumpTarget={
+              jumpTarget?.channelId === channel.id ? jumpTarget : null
+            }
+            onJumpHandled={onJumpHandled}
+            onOpenProfile={(userId, member) => {
+              if (userId === currentUserId) {
+                setIsOwnProfileVisible(true);
+                return;
+              }
+              setViewing({
+                userId,
+                mutedUntil:
+                  member && isMemberMuted(member)
+                    ? (member.muted_until ?? null)
+                    : null,
+              });
+            }}
           />
         </KeyboardAvoidingView>
       ) : (

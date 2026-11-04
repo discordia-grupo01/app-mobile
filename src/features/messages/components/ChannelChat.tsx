@@ -1,41 +1,37 @@
 import {
   type AccessRevokedReason,
   ADD_REACTION_LABEL,
-  authorFromMember,
-  buildMentionResolver,
   canDeleteMessage,
   canEditMessage,
-  CHAT_RECONNECTING_NOTICE,
   type Channel,
   LOADING_MESSAGES_LABEL,
-  type MentionSources,
+  type Member,
   messageInputPlaceholder,
   type MessageAuthor,
-  resolveImageUrl,
+  type MessageJumpTarget,
   type Role,
   SEND_MESSAGES_DENIED_PLACEHOLDER,
 } from "@discordia/client-shared";
 
-import { useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Text } from "react-native";
 
-import { env } from "../../../lib/env";
 import { useServerMembers } from "../../servers/useServerMembers";
 import { useChannelMessages } from "../use-channel-messages";
-import { useFailedMessages } from "../useFailedMessages";
+import { usePendingMessages } from "../usePendingMessages";
 import { useMessageAuthors } from "../useMessageAuthors";
+import { useMessageMentionsValue } from "../useMessageMentionsValue";
 import { ChannelWelcome } from "./ChannelWelcome";
 import { ChatStatusNotice } from "./ChatStatusNotice";
+import { ConnectionPill } from "./ConnectionPill";
 import { ConnectionLostNotice } from "./ConnectionLostNotice";
 import { DeleteMessageModal } from "./DeleteMessageModal";
 import { EmojiPickerSheet } from "./EmojiPickerSheet";
-import {
-  MessageMentionsProvider,
-  type MessageMentionsValue,
-} from "./MentionsContext";
+import { MessageMentionsProvider } from "./MentionsContext";
 import { MessageActionsSheet } from "./MessageActionsSheet";
 import { MessageComposer } from "./MessageComposer";
 import { MessageList } from "./MessageList";
+import { ViewingPastBar } from "./ViewingPastBar";
 
 interface ChannelChatProps {
   serverId: string;
@@ -50,6 +46,12 @@ interface ChannelChatProps {
   isCheckingPermissions?: boolean;
   /** El back cerro el canal: si fue por permisos, conviene recargar el servidor. */
   onAccessRevoked?: (reason: AccessRevokedReason) => void;
+  /** Toque en el nombre o la foto de un autor (puede ser el usuario actual). */
+  onOpenProfile?: (userId: string, member?: Member) => void;
+  /** Resultado de busqueda a mostrar en este canal. */
+  jumpTarget?: MessageJumpTarget | null;
+  /** El salto ya se hizo: quien lo pidio lo descarta para no repetirlo al volver al canal. */
+  onJumpHandled?: () => void;
 }
 
 export function ChannelChat({
@@ -64,6 +66,9 @@ export function ChannelChat({
   canAddReactions,
   isCheckingPermissions = false,
   onAccessRevoked,
+  onOpenProfile,
+  jumpTarget = null,
+  onJumpHandled,
 }: ChannelChatProps) {
   const {
     status,
@@ -72,6 +77,12 @@ export function ChannelChat({
     hasMore,
     isLoadingOlder,
     loadOlder,
+    hasNewer,
+    isLoadingNewer,
+    loadNewer,
+    jumpToMessage,
+    jumpToPresent,
+    focusedMessage,
     retry,
     sendMessage,
     toggleReaction,
@@ -80,15 +91,24 @@ export function ChannelChat({
   } = useChannelMessages(channel, currentAuthor?.id ?? null, {
     onAccessRevoked,
   });
-  const failed = useFailedMessages({
+  const pending = usePendingMessages({
     chatKey: channel.id,
     channelId: channel.id,
     currentUserId: currentAuthor?.id ?? null,
+    isReady: status === "ready",
     send: sendMessage,
-    getLastMessageId: () => messages?.at(-1)?.id ?? null,
   });
+  const reconcilePending = pending.reconcile;
+  useEffect(() => {
+    if (messages) reconcilePending(messages);
+  }, [messages, reconcilePending]);
   const members = useServerMembers(serverId);
-  const authors = useMessageAuthors(members, messages, currentAuthor);
+  const authors = useMessageAuthors(
+    members,
+    messages,
+    currentAuthor,
+    serverRoles,
+  );
   const [reactingToId, setReactingToId] = useState<string | null>(null);
   const [actionsMessageId, setActionsMessageId] = useState<string | null>(null);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
@@ -96,6 +116,22 @@ export function ChannelChat({
     null,
   );
   const [actionError, setActionError] = useState<string | null>(null);
+
+  // Se salta recien con el historial cargado: si no, la primera carga de lo
+  // ultimo se mezclaria con el tramo del pasado.
+  const isLoaded = messages !== null;
+  const handledJump = useRef<number | null>(null);
+  useEffect(() => {
+    if (!jumpTarget || !isLoaded || handledJump.current === jumpTarget.nonce) {
+      return;
+    }
+    handledJump.current = jumpTarget.nonce;
+    onJumpHandled?.();
+    setActionError(null);
+    void jumpToMessage(jumpTarget.messageId).then((result) => {
+      if (!result.ok) setActionError(result.message);
+    });
+  }, [jumpTarget, isLoaded, jumpToMessage, onJumpHandled]);
 
   async function handleDelete(messageId: string) {
     setActionError(null);
@@ -109,31 +145,14 @@ export function ChannelChat({
     if (!result.ok) setActionError(result.message);
   }
 
-  const currentUserId = currentAuthor?.id ?? null;
-  const mentions = useMemo<MessageMentionsValue>(() => {
-    const sources: MentionSources = {
-      members: (members ?? []).map((member) =>
-        authorFromMember(
-          member,
-          resolveImageUrl(member.profile?.avatar_url, env.apiUrl),
-        ),
-      ),
-      roles: serverRoles,
-      canMentionEveryone,
-    };
-    return {
-      resolveMention: buildMentionResolver(authors, serverRoles),
-      sources,
-      me: { userId: currentUserId, roleIds: myRoleIds },
-    };
-  }, [
-    authors,
+  const mentions = useMessageMentionsValue({
     members,
+    authors,
     serverRoles,
     canMentionEveryone,
-    currentUserId,
+    currentUserId: currentAuthor?.id ?? null,
     myRoleIds,
-  ]);
+  });
 
   // Estados de los que no se sale solos: el canal no se puede mostrar.
   if (statusMessage && status !== "ready") {
@@ -163,27 +182,48 @@ export function ChannelChat({
 
   return (
     <MessageMentionsProvider value={mentions}>
+      {messages !== null ? (
+        <ConnectionPill status={status} onRetry={retry} />
+      ) : null}
       {messages === null ? (
         status === "offline" ? (
-          <ConnectionLostNotice variant="panel" />
+          <ConnectionLostNotice onRetry={retry} />
         ) : (
-          <ChatStatusNotice message={LOADING_MESSAGES_LABEL} />
+          <ChatStatusNotice message={LOADING_MESSAGES_LABEL} isLoading />
         )
       ) : (
         <MessageList
           welcome={<ChannelWelcome channelName={channel.name} />}
-          messages={failed.withFailed(messages)}
+          messages={hasNewer ? messages : pending.withPending(messages)}
           authors={authors}
           editingMessageId={editingMessageId}
           hasMore={hasMore}
           isLoadingOlder={isLoadingOlder}
           onLoadOlder={loadOlder}
+          hasNewer={hasNewer}
+          isLoadingNewer={isLoadingNewer}
+          onLoadNewer={loadNewer}
+          focusedMessage={focusedMessage}
           onToggleReaction={handleToggleReaction}
           onRequestReaction={setReactingToId}
           canAddReactions={canAddReactions}
           onRequestActions={setActionsMessageId}
+          onRetryMessage={pending.retry}
+          onDiscardMessage={pending.discard}
+          onOpenProfile={
+            onOpenProfile
+              ? (userId) =>
+                  onOpenProfile(
+                    userId,
+                    members?.find((member) => member.user_id === userId),
+                  )
+              : undefined
+          }
         />
       )}
+      {hasNewer && messages !== null ? (
+        <ViewingPastBar onJumpToPresent={jumpToPresent} />
+      ) : null}
       {actionError ? (
         <Text
           accessibilityRole="alert"
@@ -192,26 +232,27 @@ export function ChannelChat({
           {actionError}
         </Text>
       ) : null}
-      {status === "offline" && messages !== null ? (
-        <ConnectionLostNotice variant="bar" />
-      ) : null}
-      {status === "reconnecting" ? (
-        <Text
-          accessibilityRole="alert"
-          className="bg-surface-hover px-4 py-1 text-center text-[12px] text-content-muted"
-        >
-          {CHAT_RECONNECTING_NOTICE}
-        </Text>
-      ) : null}
       <MessageComposer
         placeholder={
           canSendMessages || isCheckingPermissions
             ? messageInputPlaceholder(channel.name)
             : SEND_MESSAGES_DENIED_PLACEHOLDER
         }
-        onSend={failed.onSend}
+        onSend={(...args) => {
+          // Lo propio llega por el socket, que no agrega nada mientras se ve el pasado.
+          jumpToPresent();
+          return pending.onSend(...args);
+        }}
         uploadTarget={{ channelId: channel.id }}
-        disabled={!currentAuthor || status !== "ready" || !canSendMessages}
+        disabled={
+          !currentAuthor ||
+          !canSendMessages ||
+          !(
+            status === "ready" ||
+            status === "reconnecting" ||
+            status === "offline"
+          )
+        }
         editing={
           editingMessage
             ? {

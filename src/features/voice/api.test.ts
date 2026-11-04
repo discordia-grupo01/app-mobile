@@ -1,6 +1,8 @@
 import {
   VOICE_CONNECT_FAILED,
   VOICE_PARTICIPANTS_FAILED,
+  VOICE_SCREEN_SHARE_FAILED,
+  VOICE_SCREEN_SHARE_FORBIDDEN,
   voiceErrorMessage,
 } from "@discordia/client-shared";
 
@@ -10,6 +12,7 @@ import {
   fetchVoiceSocketTicket,
   leaveVoiceSession,
   listVoiceParticipants,
+  requestScreenShareToken,
   requestVoiceToken,
 } from "./api";
 
@@ -90,6 +93,7 @@ describe("listVoiceParticipants", () => {
       channels: [
         {
           channel_id: "c1",
+          started_at: "2026-11-01T16:00:00.123Z",
           participants: [{ participant_id: "u1", name: "Ana" }],
         },
       ],
@@ -102,6 +106,7 @@ describe("listVoiceParticipants", () => {
     expect(await listVoiceParticipants("s 1")).toEqual({
       ok: true,
       byChannel: { c1: [{ participant_id: "u1", name: "Ana" }] },
+      startsByChannel: { c1: Date.parse("2026-11-01T16:00:00.123Z") },
     });
     expect(mockedFetch).toHaveBeenCalledWith(
       "/api/voice/participants?server_id=s%201",
@@ -141,6 +146,42 @@ describe("listVoiceParticipants", () => {
         ok: false,
         sessionExpired: true,
       });
+    });
+  });
+});
+
+describe("requestScreenShareToken", () => {
+  it("pide el token de pantalla con el id en el cuerpo", async () => {
+    const token = { identity: "u1:screen", token: "jwt", url: "wss://lk" };
+    mockedFetch.mockResolvedValue({
+      result: { ok: true, status: 200, data: token },
+      body: token,
+    });
+
+    expect(await requestScreenShareToken("c1")).toEqual({ ok: true, token });
+    expect(mockedFetch).toHaveBeenCalledWith("/api/voice/screen-token", {
+      method: "POST",
+      body: JSON.stringify({ channel_id: "c1" }),
+    });
+  });
+
+  it("explica que un silenciado no puede compartir", async () => {
+    mockedFetch.mockResolvedValue(
+      failure(403, { error: "voice_screen_share_forbidden" }),
+    );
+
+    expect(await requestScreenShareToken("c1")).toEqual({
+      ok: false,
+      message: VOICE_SCREEN_SHARE_FORBIDDEN,
+    });
+  });
+
+  it("sin codigo conocido usa el error generico de pantalla", async () => {
+    mockedFetch.mockResolvedValue(failure(500, {}));
+
+    expect(await requestScreenShareToken("c1")).toEqual({
+      ok: false,
+      message: VOICE_SCREEN_SHARE_FAILED,
     });
   });
 });

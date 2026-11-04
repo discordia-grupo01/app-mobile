@@ -5,6 +5,11 @@ import {
   type DeleteServerResult,
   hasPermission,
   type LeaveServerResult,
+  type Message,
+  messageAuthorOf,
+  type MessageJumpTarget,
+  type PublicUser,
+  type PushTarget,
   type Role,
   type ServerSummary,
   SESSION_EXPIRED_MESSAGE,
@@ -12,7 +17,14 @@ import {
 
 import { Feather } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -20,8 +32,16 @@ import { LoadingScreen } from "../components/ui/LoadingScreen";
 import { useLoadingGate } from "../hooks/useLoadingGate";
 import { useDirectMessages } from "../features/direct-messages/useDirectMessages";
 import { useMentions } from "../features/mentions/useMentions";
+import { PresenceProvider } from "../features/presence/PresenceContext";
+import { useIdleReporter } from "../features/presence/useIdleReporter";
+import { useLoadPresence } from "../features/presence/useLoadPresence";
+import {
+  usePresenceProviderValue,
+  usePresenceSession,
+} from "../features/presence/usePresenceSession";
+import { useServerPresence } from "../features/presence/useServerPresence";
 import { AddServerSheet } from "../features/servers/components/rail/AddServerSheet";
-import { CreateServerModal } from "../features/servers/components/server/CreateServerModal";
+import { CreateServerModal } from "../features/servers/components/server/create/CreateServerModal";
 import { EmptyState } from "../features/servers/components/home/EmptyState";
 import { JoinServerModal } from "../features/servers/components/server/JoinServerModal";
 import { useAuth } from "../features/auth/auth-context";
@@ -34,11 +54,15 @@ import {
   listMyServers,
 } from "../features/servers/api";
 import { useMyChannelPermissions } from "../features/channels/useMyChannelPermissions";
+import { usePushNotificationTap } from "../features/push/notification-handler";
+import { usePushDeviceSync } from "../features/push/use-push-notifications";
 import { useVoiceSession } from "../features/voice/voice-session-context";
 import { getLastLocation, setLastLocation } from "../lib/storage";
+import { avatarUriOf } from "../lib/userProfile";
 import { useStatusBarStyle, useThemeColors } from "../theme/theme-context";
 import { ChannelScreen } from "./ChannelScreen";
 import { DirectMessagesScreen } from "./DirectMessagesScreen";
+import { channelTargetOf } from "../features/voice/channel-target";
 import { ServerChannelsScreen } from "./ServerChannelsScreen";
 import { ServerPickerScreen } from "./ServerPickerScreen";
 
@@ -61,6 +85,9 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(
     null,
   );
+  const [jumpTarget, setJumpTarget] = useState<MessageJumpTarget | null>(null);
+  const jumpNonce = useRef(0);
+  const clearJumpTarget = useCallback(() => setJumpTarget(null), []);
   // Se abre en Mensajes Directos: asi lo primero que se ve tras loguearse es la
   // lista de conversaciones y no un servidor.
   const [view, setView] = useState<MainView>("dm");
@@ -122,7 +149,7 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
 
   // Si el canal de la llamada ya no esta (se borro, saliste del servidor o
   // perdiste el acceso), se corta.
-  const voiceTarget = voice.state.target;
+  const voiceTarget = channelTargetOf(voice.state.target);
   const leaveVoice = voice.leave;
   const isVoiceChannelGone =
     voiceTarget !== null &&
@@ -154,10 +181,25 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
     [user],
   );
   const mentions = useMentions(currentAuthor?.id ?? null);
+  const presence = usePresenceSession(currentAuthor?.id ?? null);
   const directMessages = useDirectMessages(currentAuthor, view === "dm", {
     onMention: mentions.receive,
     onRejoined: mentions.reload,
+    ...presence.userRoomCallbacks,
   });
+  const presenceValue = usePresenceProviderValue(
+    presence.store,
+    directMessages.pushToUserRoom,
+  );
+  useIdleReporter(presence.store, directMessages.pushToUserRoom);
+  useLoadPresence(
+    presence.store,
+    directMessages.conversations.map((c) => c.partner.id),
+  );
+  useServerPresence(presence.store, selectedServer?.id ?? null);
+  const withPresence = (screen: ReactNode) => (
+    <PresenceProvider value={presenceValue}>{screen}</PresenceProvider>
+  );
   const unreadDmCount = directMessages.conversations.filter(
     (c) => c.isUnread,
   ).length;
@@ -187,6 +229,27 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
       cancelled = true;
     };
   }, [isRestored, isLoadingServers, userId, servers, openConversation]);
+
+  usePushDeviceSync(userId);
+  const handlePushTarget = useCallback(
+    (target: PushTarget) => {
+      if (target.kind === "direct") {
+        openConversation(target.partnerId);
+        setView("dm");
+        return;
+      }
+      const server = servers.find((item) => item.id === target.serverId);
+      if (!server) return;
+      setView("servers");
+      setSelectedServerId(server.id);
+      setSelectedChannelId(
+        server.channels.find((channel) => channel.id === target.channelId)
+          ?.id ?? null,
+      );
+    },
+    [servers, openConversation],
+  );
+  usePushNotificationTap(isRestored && !isLoadingServers, handlePushTarget);
 
   const activePartnerId = directMessages.activeSummary?.partner.id ?? null;
   useEffect(() => {
@@ -266,6 +329,15 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
     setSelectedChannelId(null);
   }
 
+  function openSearchResult(message: Message) {
+    setSelectedChannelId(message.channel_id);
+    setJumpTarget({
+      channelId: message.channel_id,
+      messageId: message.id,
+      nonce: ++jumpNonce.current,
+    });
+  }
+
   const canManageChannels = hasPermission(
     { isOwner, roles: myRoles },
     "MANAGE_CHANNELS",
@@ -337,6 +409,14 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
   }, [openChannelId, openChannelUnread, markChannelRead]);
 
   function handleOpenDirectMessages() {
+    setView("dm");
+  }
+
+  function messageUser(profile: PublicUser) {
+    openConversation(
+      profile.id,
+      messageAuthorOf(profile.id, profile.name, avatarUriOf(profile)),
+    );
     setView("dm");
   }
 
@@ -429,7 +509,7 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
   }
 
   if (view === "dm") {
-    return (
+    return withPresence(
       <View className="flex-1">
         <StatusBar style={statusBarStyle} />
         <DirectMessagesScreen
@@ -465,12 +545,12 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
           onClose={() => setIsJoinModalVisible(false)}
           onJoined={addAndSelect}
         />
-      </View>
+      </View>,
     );
   }
 
   if (selectedServer && selectedChannel) {
-    return (
+    return withPresence(
       <View className="flex-1">
         <StatusBar style={statusBarStyle} />
         <ChannelScreen
@@ -492,14 +572,18 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
           serverRoles={serverRoles}
           myRoleIds={myRoleIds}
           onAccessRevoked={handleAccessRevoked}
+          onMessageUser={messageUser}
+          jumpTarget={jumpTarget}
+          onOpenSearchResult={openSearchResult}
+          onJumpHandled={clearJumpTarget}
           onBack={closeChannel}
         />
-      </View>
+      </View>,
     );
   }
 
   if (selectedServer) {
-    return (
+    return withPresence(
       <View className="flex-1">
         <StatusBar style={statusBarStyle} />
         <ServerChannelsScreen
@@ -552,12 +636,12 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
           onClose={() => setIsJoinModalVisible(false)}
           onJoined={addAndSelect}
         />
-      </View>
+      </View>,
     );
   }
 
   if (servers.length > 0) {
-    return (
+    return withPresence(
       <View className="flex-1">
         <StatusBar style={statusBarStyle} />
         <ServerPickerScreen
@@ -593,11 +677,11 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
           onClose={() => setIsJoinModalVisible(false)}
           onJoined={addAndSelect}
         />
-      </View>
+      </View>,
     );
   }
 
-  return (
+  return withPresence(
     <View className="flex-1 bg-surface-servers">
       <StatusBar style={statusBarStyle} />
       <View
@@ -633,6 +717,6 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
         onClose={() => setIsJoinModalVisible(false)}
         onJoined={addAndSelect}
       />
-    </View>
+    </View>,
   );
 }

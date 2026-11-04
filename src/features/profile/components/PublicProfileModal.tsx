@@ -1,7 +1,9 @@
 import {
   isMemberMuted,
   mutedUntilLabel,
+  PROFILE_UNAVAILABLE,
   type PublicUser,
+  SEND_MESSAGE_LABEL,
   unmuteSuccessNotice,
 } from "@discordia/client-shared";
 
@@ -23,11 +25,15 @@ import { KickMemberModal } from "../../moderation/components/KickMemberModal";
 import { MuteMemberModal } from "../../moderation/components/MuteMemberModal";
 import { useThemeColors } from "../../../theme/theme-context";
 import { Avatar } from "../../../components/ui/Avatar";
+import { Button } from "../../../components/ui/Button";
 import { MemberRoleBadges } from "../../roles/components/MemberRoleBadges";
 import { getPublicProfile } from "../service";
 import { MutualServersList } from "./MutualServersList";
 import { ProfileBanner } from "./ProfileBanner";
 import { useBlockedUsersContext } from "../../blocks/blocked-users-context";
+import { usePresenceContext } from "../../presence/PresenceContext";
+import { useLoadPresence } from "../../presence/useLoadPresence";
+import { UserActivityStatusDot } from "./ActivityStatusDot";
 import { BlockUserModal } from "./BlockUserModal";
 import { MemberActionsSheet } from "./MemberActionsSheet";
 import { ModalShell } from "../../../components/ui/ModalShell";
@@ -51,6 +57,8 @@ interface PublicProfileModalProps {
   canBlock?: boolean;
   /** Se dispara al banear o expulsar: el miembro ya no esta en el servidor. */
   onBanned?: () => void;
+  /** Sin esto no se muestra "Enviar mensaje" (por ejemplo, en tu propio perfil). */
+  onSendMessage?: (profile: PublicUser) => void;
   onClose: () => void;
 }
 
@@ -67,11 +75,13 @@ export function PublicProfileModal({
   onMuteChanged,
   canBlock = false,
   onBanned,
+  onSendMessage,
   onClose,
 }: PublicProfileModalProps) {
   const colors = useThemeColors();
   const [profile, setProfile] = useState<PublicUser | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
+  const [isUnavailable, setIsUnavailable] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isBanOpen, setIsBanOpen] = useState(false);
   const [isKickOpen, setIsKickOpen] = useState(false);
@@ -83,6 +93,8 @@ export function PublicProfileModal({
   const [isBlockOpen, setIsBlockOpen] = useState(false);
   const [isActionsOpen, setIsActionsOpen] = useState(false);
   const { blockedIds, blockUser, unblockUser } = useBlockedUsersContext();
+  const { store: presenceStore } = usePresenceContext();
+  useLoadPresence(presenceStore, visible && userId ? [userId] : []);
 
   const key = `${visible}::${userId}`;
   const [lastKey, setLastKey] = useState(key);
@@ -92,6 +104,7 @@ export function PublicProfileModal({
     if (visible && userId) {
       setProfile(null);
       setErrorMessage("");
+      setIsUnavailable(false);
       setIsLoading(true);
       setIsBanOpen(false);
       setIsBlockOpen(false);
@@ -108,7 +121,8 @@ export function PublicProfileModal({
       if (cancelled) return;
       setIsLoading(false);
       if (!result.ok) {
-        setErrorMessage(result.message);
+        if (result.unavailable) setIsUnavailable(true);
+        else setErrorMessage(result.message);
         return;
       }
       setProfile(result.user);
@@ -152,18 +166,19 @@ export function PublicProfileModal({
   }
 
   const isMuted = isMemberMuted({ muted_until: currentMutedUntil });
+  const isProfileUnavailable = isUnavailable || Boolean(profile?.is_suspended);
   const hasModeratorActions =
     Boolean(serverId) && (canBan || canKick || canMute);
   const hasMemberActions =
     Boolean(profile) &&
-    !profile?.is_suspended &&
+    !isProfileUnavailable &&
     (hasModeratorActions || canBlock);
 
   return (
     <ModalShell visible={visible} onClose={onClose} className="max-w-100">
       <ProfileBanner
         onClose={onClose}
-        dimmed={profile?.is_suspended}
+        dimmed={isProfileUnavailable}
         action={
           hasMemberActions ? (
             <TouchableOpacity
@@ -191,7 +206,7 @@ export function PublicProfileModal({
         }
       />
 
-      {profile?.is_suspended ? (
+      {isProfileUnavailable ? (
         <View className="items-center gap-2.5 px-6 py-8">
           <View className="w-14 h-14 rounded-[28px] items-center justify-center bg-[rgba(224,82,82,0.1)] border border-[rgba(224,82,82,0.3)] mb-1">
             <Feather name="alert-circle" size={26} color={colors.danger} />
@@ -200,8 +215,7 @@ export function PublicProfileModal({
             Perfil no disponible
           </Text>
           <Text className="text-[13px] leading-[19px] text-content-subtle text-center max-w-60">
-            Este usuario fue suspendido por el equipo de moderación y su perfil
-            no es accesible.
+            {PROFILE_UNAVAILABLE} Es posible que la cuenta haya sido suspendida.
           </Text>
         </View>
       ) : isLoading || !profile ? (
@@ -249,6 +263,22 @@ export function PublicProfileModal({
               ) : null}
             </View>
 
+            {onSendMessage ? (
+              <Button
+                title={SEND_MESSAGE_LABEL}
+                size="sm"
+                onPress={() => onSendMessage(profile)}
+                iconLeft={
+                  <Feather
+                    name="message-circle"
+                    size={16}
+                    color={colors.onAccent}
+                  />
+                }
+                className="mb-4"
+              />
+            ) : null}
+
             <View className="h-px bg-line mb-4" />
 
             <View className="mb-4">
@@ -284,7 +314,12 @@ export function PublicProfileModal({
                   borderRadius={36}
                 />
               </View>
-              <View className="absolute right-0 bottom-0 w-4.5 h-4.5 rounded-[9px] bg-success border-[3px] border-surface-modal" />
+              <UserActivityStatusDot
+                userId={profile.id}
+                size={18}
+                ringWidth={3}
+                className="absolute right-0 bottom-1 border-surface-modal"
+              />
             </View>
           </View>
         </>

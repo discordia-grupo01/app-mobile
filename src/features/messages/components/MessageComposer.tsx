@@ -31,6 +31,10 @@ import { useMessageMentions } from "./MentionsContext";
 
 const COUNTER_THRESHOLD = MAX_MESSAGE_LENGTH - 200;
 
+// TODO: mover a client-shared (messages/chat) en la proxima release.
+const ATTACHMENT_PICKER_FAILED =
+  "No se pudo abrir el selector de archivos. Intentá de nuevo.";
+
 interface MessageComposerProps {
   placeholder: string;
   onSend: (
@@ -150,11 +154,23 @@ export function MessageComposer({
   }
 
   async function pickFiles() {
-    const result = await DocumentPicker.getDocumentAsync({
-      multiple: true,
-      type: [...ALLOWED_ATTACHMENT_TYPES],
-      copyToCacheDirectory: true,
-    });
+    let result: DocumentPicker.DocumentPickerResult;
+    try {
+      result = await DocumentPicker.getDocumentAsync({
+        multiple: true,
+        type: [...ALLOWED_ATTACHMENT_TYPES],
+        copyToCacheDirectory: true,
+        // Por defecto el picker lee cada archivo entero a base64 y no se usa:
+        // los bytes se suben desde `uri`.
+        base64: false,
+      });
+    } catch (err) {
+      // En el APK un rechazo sin catch no se ve en ningun lado: lo mostramos
+      // y queda en `adb logcat -s ReactNativeJS` con el motivo real.
+      console.warn("pickFiles: getDocumentAsync failed", err);
+      setSendError(ATTACHMENT_PICKER_FAILED);
+      return;
+    }
     if (result.canceled) return;
 
     const known = new Set(attachments.map((file) => file.uri));
@@ -199,25 +215,35 @@ export function MessageComposer({
           onPress={pickFiles}
           disabled={disabled || isSending || editing !== null}
         />
-        <TextInput
-          ref={inputRef}
-          // Con menciones el texto va como hijos (cada tramo con su estilo); sin ellas, como `value`.
-          value={draft.segments ? undefined : draft.text}
-          onChangeText={(text) => {
-            draft.handleChangeText(text);
-            setSendError(undefined);
-          }}
-          onSelectionChange={draft.handleSelectionChange}
-          selection={draft.selection}
-          editable={!disabled && !isSending}
-          multiline
-          placeholder={placeholder}
-          placeholderTextColor={colors.textSubtle}
-          accessibilityLabel={placeholder}
-          className="max-h-32 min-h-10 flex-1 py-2.5 text-[15px] text-content"
-        >
-          {draft.segments ? draftChildren : null}
-        </TextInput>
+        <View className="relative flex-1 justify-center">
+          {/* El placeholder nativo de un input multilinea no se corta con "…": este si. */}
+          {draft.text.length === 0 ? (
+            <Text
+              pointerEvents="none"
+              numberOfLines={1}
+              className="absolute inset-x-0 text-[15px] text-content-subtle"
+            >
+              {placeholder}
+            </Text>
+          ) : null}
+          <TextInput
+            ref={inputRef}
+            // Con menciones el texto va como hijos (cada tramo con su estilo); sin ellas, como `value`.
+            value={draft.segments ? undefined : draft.text}
+            onChangeText={(text) => {
+              draft.handleChangeText(text);
+              setSendError(undefined);
+            }}
+            onSelectionChange={draft.handleSelectionChange}
+            selection={draft.selection}
+            editable={!disabled && !isSending}
+            multiline
+            accessibilityLabel={placeholder}
+            className="max-h-32 min-h-10 px-0 py-2.5 text-[15px] text-content"
+          >
+            {draft.segments ? draftChildren : null}
+          </TextInput>
+        </View>
         <ComposerIconButton
           name="smile"
           label={EMOJI_PICKER_LABEL}

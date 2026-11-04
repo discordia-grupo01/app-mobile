@@ -9,14 +9,15 @@ import { Feather } from "@expo/vector-icons";
 import { useState } from "react";
 import {
   KeyboardAvoidingView,
-  Platform,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { OwnProfileModal } from "../../profile/components/OwnProfileModal";
 import { PublicProfileModal } from "../../profile/components/PublicProfileModal";
+import { UserActivityStatusDot } from "../../profile/components/ActivityStatusDot";
 import { Avatar } from "../../../components/ui/Avatar";
 import { useThemeColors } from "../../../theme/theme-context";
 import { DmThread } from "./DmThread";
@@ -27,7 +28,10 @@ interface DmConversationScreenProps {
   onSend: (
     content: string,
     attachmentIds?: readonly string[],
+    clientId?: string,
   ) => Promise<SendDmResult>;
+  /** La sala personal esta unida: solo entonces se puede enviar. */
+  isConnected: boolean;
   onBack: () => void;
 }
 
@@ -35,18 +39,20 @@ export function DmConversationScreen({
   currentAuthor,
   summary,
   onSend,
+  isConnected,
   onBack,
 }: DmConversationScreenProps) {
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
   const [isProfileVisible, setIsProfileVisible] = useState(false);
+  const [isOwnProfileVisible, setIsOwnProfileVisible] = useState(false);
   const { partner, blockedByMe, conversationId } = summary;
 
   return (
     <View className="flex-1 bg-surface">
       <View
-        className="min-h-15 flex-row items-center gap-3 border-b border-b-line px-3"
-        style={{ paddingTop: insets.top }}
+        className="flex-row items-center gap-3 border-b border-b-line px-3"
+        style={{ paddingTop: insets.top, minHeight: insets.top + 60 }}
       >
         <TouchableOpacity
           onPress={onBack}
@@ -61,7 +67,14 @@ export function DmConversationScreen({
           accessibilityRole="button"
           accessibilityLabel={`Ver perfil de ${partner.name}`}
         >
-          <Avatar name={partner.name} uri={partner.avatarUrl} size={30} />
+          <View className="relative">
+            <Avatar name={partner.name} uri={partner.avatarUrl} size={30} />
+            <UserActivityStatusDot
+              userId={partner.id}
+              size={11}
+              className="absolute -right-[1px] -bottom-[1px] border-surface"
+            />
+          </View>
           <Text
             className="flex-1 text-[17px] font-bold text-content"
             numberOfLines={1}
@@ -80,7 +93,9 @@ export function DmConversationScreen({
 
       <KeyboardAvoidingView
         className="flex-1"
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        // Con edge-to-edge (obligatorio en Android desde SDK 54) `adjustResize`
+        // ya no achica la ventana en el APK: sin padding el teclado tapa el input.
+        behavior="padding"
       >
         <DmThread
           key={conversationId ?? partner.id}
@@ -89,8 +104,19 @@ export function DmConversationScreen({
           currentAuthor={currentAuthor}
           blockedByMe={blockedByMe}
           onSend={onSend}
+          isConnected={isConnected}
+          onOpenProfile={(userId) =>
+            userId === currentAuthor.id
+              ? setIsOwnProfileVisible(true)
+              : setIsProfileVisible(true)
+          }
         />
       </KeyboardAvoidingView>
+
+      <OwnProfileModal
+        visible={isOwnProfileVisible}
+        onClose={() => setIsOwnProfileVisible(false)}
+      />
 
       <PublicProfileModal
         visible={isProfileVisible}

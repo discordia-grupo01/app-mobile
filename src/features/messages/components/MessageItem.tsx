@@ -1,4 +1,5 @@
 import {
+  DISCARD_MESSAGE_LABEL,
   hexToRgba,
   mentionsPerson,
   MESSAGE_EDITED_LABEL,
@@ -6,6 +7,8 @@ import {
   type Message,
   type MessageAuthor,
   type MessageMentions,
+  RETRY_LABEL,
+  SENDING_LABEL,
 } from "@discordia/client-shared";
 
 import { useState } from "react";
@@ -56,6 +59,13 @@ interface MessageItemProps {
   canAddReactions?: boolean;
   /** Mantener presionado: abre el menu de reaccionar/editar/eliminar. */
   onRequestActions: () => void;
+  /** Solo en un mensaje fallido. */
+  onRetry?: () => void;
+  onDiscard?: () => void;
+  /** Sin esto el nombre y la foto no son tocables. */
+  onOpenProfile?: (userId: string) => void;
+  /** Recien se salto a este mensaje (desde la busqueda). */
+  isFocused?: boolean;
 }
 
 export function MessageItem({
@@ -67,6 +77,10 @@ export function MessageItem({
   onRequestReaction,
   canAddReactions = true,
   onRequestActions,
+  onRetry,
+  onDiscard,
+  onOpenProfile,
+  isFocused = false,
 }: MessageItemProps) {
   const { me } = useMessageMentions();
   const colors = useThemeColors();
@@ -99,17 +113,21 @@ export function MessageItem({
         isGroupStart && "mt-4",
         isEditing && "bg-surface-hover",
         delivery === "failed" && "border-l-2 border-l-danger bg-danger/5",
+        delivery === "waiting" && "opacity-60",
       )}
       // El color viene de los tokens del tema: con una variable CSS no se puede aplicar transparencia.
-      style={
-        isMentioningMe
-          ? {
-              borderLeftWidth: 2,
-              borderLeftColor: colors.highlight,
-              backgroundColor: hexToRgba(colors.highlight, 0.1),
-            }
-          : undefined
-      }
+      style={[
+        isMentioningMe && {
+          borderLeftWidth: 2,
+          borderLeftColor: colors.highlight,
+          backgroundColor: hexToRgba(colors.highlight, 0.1),
+        },
+        isFocused && {
+          borderLeftWidth: 2,
+          borderLeftColor: colors.accentBright,
+          backgroundColor: hexToRgba(colors.accentBright, 0.15),
+        },
+      ]}
       accessibilityHint={
         delivery ? undefined : "Mantené presionado para más acciones"
       }
@@ -129,14 +147,39 @@ export function MessageItem({
         }}
       />
       {isGroupStart ? (
-        <Avatar name={author.name} uri={author.avatarUrl} size={AVATAR_SIZE} />
+        onOpenProfile ? (
+          <Pressable
+            onPress={() => onOpenProfile(message.user_id)}
+            accessibilityRole="button"
+            accessibilityLabel={`Ver perfil de ${author.name}`}
+            className="h-fit"
+          >
+            <Avatar
+              name={author.name}
+              uri={author.avatarUrl}
+              size={AVATAR_SIZE}
+            />
+          </Pressable>
+        ) : (
+          <Avatar
+            name={author.name}
+            uri={author.avatarUrl}
+            size={AVATAR_SIZE}
+          />
+        )
       ) : (
         <View style={{ width: AVATAR_SIZE }} />
       )}
 
       <View className="min-w-0 flex-1">
         {isGroupStart ? (
-          <MessageHeader author={author} createdAt={message.inserted_at} />
+          <MessageHeader
+            author={author}
+            createdAt={message.inserted_at}
+            onOpenProfile={
+              onOpenProfile ? () => onOpenProfile(message.user_id) : undefined
+            }
+          />
         ) : null}
 
         {message.content || !message.attachments?.length ? (
@@ -158,15 +201,47 @@ export function MessageItem({
           <MessageAttachments attachments={message.attachments} />
         ) : null}
 
-        {delivery === "failed" ? (
-          <View
-            accessibilityRole="alert"
-            className="mt-0.5 flex-row items-center gap-1"
+        {delivery === "waiting" ? (
+          <Text
+            accessibilityRole="text"
+            className="mt-0.5 text-[12px] text-content-subtle"
           >
-            <Feather name="alert-circle" size={13} color={colors.danger} />
-            <Text className="flex-1 text-[12px] text-danger">
-              {message.delivery_error || MESSAGE_NOT_SENT_LABEL}
-            </Text>
+            {SENDING_LABEL}
+          </Text>
+        ) : null}
+
+        {delivery === "failed" ? (
+          <View accessibilityRole="alert" className="mt-0.5">
+            <View className="flex-row items-center gap-1">
+              <Feather name="alert-circle" size={13} color={colors.danger} />
+              <Text className="flex-1 text-[12px] text-danger">
+                {message.delivery_error || MESSAGE_NOT_SENT_LABEL}
+              </Text>
+            </View>
+            <View className="mt-1 flex-row items-center gap-4">
+              {onRetry ? (
+                <Pressable
+                  onPress={onRetry}
+                  accessibilityRole="button"
+                  hitSlop={8}
+                >
+                  <Text className="text-[13px] font-semibold text-danger underline">
+                    {RETRY_LABEL}
+                  </Text>
+                </Pressable>
+              ) : null}
+              {onDiscard ? (
+                <Pressable
+                  onPress={onDiscard}
+                  accessibilityRole="button"
+                  hitSlop={8}
+                >
+                  <Text className="text-[13px] font-semibold text-danger underline">
+                    {DISCARD_MESSAGE_LABEL}
+                  </Text>
+                </Pressable>
+              ) : null}
+            </View>
           </View>
         ) : null}
 

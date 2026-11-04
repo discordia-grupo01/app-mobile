@@ -5,7 +5,7 @@ import { Animated, PanResponder, StyleSheet, View } from "react-native";
 
 import { useChannelDrag } from "./ChannelDragContext";
 
-export const DRAG_ROW_HEIGHT = 48;
+export const DRAG_ROW_HEIGHT = 44;
 
 interface DraggableChannelListProps {
   channels: Channel[];

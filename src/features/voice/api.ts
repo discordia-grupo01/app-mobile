@@ -1,13 +1,17 @@
 import {
+  callStartsByChannel,
   type LeaveVoiceResult,
   presenceByChannel,
   VOICE_CONNECT_FAILED,
   VOICE_LEAVE_FAILED,
   VOICE_PARTICIPANTS_FAILED,
+  VOICE_SCREEN_SHARE_FAILED,
   voiceErrorCodeOf,
   voiceErrorMessage,
   type VoiceParticipantsResponse,
   type VoiceParticipantsResult,
+  type VoiceScreenShareToken,
+  type VoiceScreenShareTokenResult,
   type VoiceToken,
   type VoiceTokenResult,
 } from "@discordia/client-shared";
@@ -38,6 +42,17 @@ export async function requestVoiceToken(
   return result.ok ? { ok: true, token: result.data } : result;
 }
 
+export async function requestScreenShareToken(
+  channelId: string,
+): Promise<VoiceScreenShareTokenResult> {
+  const result = await voiceRequest<VoiceScreenShareToken>(
+    "/api/voice/screen-token",
+    { method: "POST", body: JSON.stringify({ channel_id: channelId }) },
+    VOICE_SCREEN_SHARE_FAILED,
+  );
+  return result.ok ? { ok: true, token: result.data } : result;
+}
+
 export async function leaveVoiceSession(
   channelId: string,
 ): Promise<LeaveVoiceResult> {
@@ -58,7 +73,11 @@ export async function listVoiceParticipants(
     VOICE_PARTICIPANTS_FAILED,
   );
   return result.ok
-    ? { ok: true, byChannel: presenceByChannel(result.data) }
+    ? {
+        ok: true,
+        byChannel: presenceByChannel(result.data),
+        startsByChannel: callStartsByChannel(result.data),
+      }
     : result;
 }
 

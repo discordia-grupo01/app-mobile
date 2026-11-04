@@ -1,0 +1,19 @@
+{
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "local"
+  },
+  "build": {
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://discordia-g1.duckdns.org",
+        "EXPO_PUBLIC_WEB_URL": "https://web-client-chi-inky.vercel.app",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "281658109667-mkufhifih95pfcdhihaue40571uq1iq4.apps.googleusercontent.com"
+      }
+    }
+  }
+}

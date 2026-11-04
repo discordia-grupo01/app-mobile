@@ -6,10 +6,11 @@ import {
   withLivePresence,
 } from "@discordia/client-shared";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import { avatarUriOf } from "../../lib/userProfile";
 import { useAuth } from "../auth/auth-context";
+import { channelTargetOf } from "./channel-target";
 import { useVoiceSession } from "./voice-session-context";
 import { useVoicePresence } from "./useVoicePresence";
 
@@ -24,11 +25,12 @@ export interface SidebarVoiceParticipant {
 }
 
 export function useServerVoice(server: ServerSummary) {
-  const { state } = useVoiceSession();
+  const { state, leaveSettledCount } = useVoiceSession();
   const { user } = useAuth();
 
+  const channelTarget = channelTargetOf(state.target);
   const voiceChannelId =
-    state.target?.serverId === server.id ? state.target.channelId : null;
+    channelTarget?.serverId === server.id ? channelTarget.channelId : null;
 
   const liveParticipants = useMemo(
     () => (voiceChannelId ? voiceParticipantsOf(state) : []),
@@ -36,6 +38,14 @@ export function useServerVoice(server: ServerSummary) {
   );
 
   const socketPresence = useVoicePresence(server.id);
+  const { refresh: refreshPresence } = socketPresence;
+
+  const lastLeaveSettled = useRef(leaveSettledCount);
+  useEffect(() => {
+    if (leaveSettledCount === lastLeaveSettled.current) return;
+    lastLeaveSettled.current = leaveSettledCount;
+    refreshPresence();
+  }, [leaveSettledCount, refreshPresence]);
 
   const presence: VoicePresenceByChannel = useMemo(
     () =>
@@ -77,6 +87,7 @@ export function useServerVoice(server: ServerSummary) {
     status: state.status,
     liveParticipants,
     presence,
+    callStartsByChannel: socketPresence.startsByChannel,
     participantsFor,
   };
 }

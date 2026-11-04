@@ -20,6 +20,7 @@ import {
 } from "react";
 
 import { refreshAccessToken, setAuthEventHandlers } from "../../lib/api-client";
+import { clearPendingMessages } from "../../lib/pending-messages";
 import {
   clearSession,
   getPinEnabled,
@@ -38,6 +39,8 @@ import {
   requestEmailConfirmationService,
 } from "./service";
 import { verifyTwoFactorService } from "../two-factor/service";
+import { closeSocket } from "../messages/socket";
+import { unregisterOnLogout } from "../push/registration";
 
 interface AuthContextValue {
   user: User | null;
@@ -59,6 +62,8 @@ interface AuthContextValue {
   requestEmailConfirmation: (email: string) => Promise<EmailConfirmationResult>;
   logout: () => Promise<void>;
   updateUser: (user: User) => void;
+  isAccountSuspended: boolean;
+  acknowledgeSuspension: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -68,6 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPinEnabled, setIsPinEnabledState] = useState(false);
+  const [isAccountSuspended, setIsAccountSuspended] = useState(false);
 
   useEffect(() => {
     setAuthEventHandlers({
@@ -78,6 +84,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       onSessionExpired: () => {
         setToken(null);
         setUser(null);
+      },
+      onAccountSuspended: () => {
+        getToken()
+          .then((storedToken) => {
+            if (storedToken) setIsAccountSuspended(true);
+          })
+          .catch(() => {});
       },
     });
 
@@ -199,10 +212,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const userId = user?.id;
   const logout = useCallback(async (): Promise<void> => {
+    if (userId !== undefined) await unregisterOnLogout(String(userId));
     try {
       await logoutService();
     } catch {}
+    // Sin esperar a que se desmonte la home: los demas te ven desconectado ya.
+    closeSocket();
 
     setToken(null);
     setUser(null);
@@ -210,7 +227,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await clearSession();
     } catch {}
-  }, []);
+    if (userId !== undefined) await clearPendingMessages(String(userId));
+  }, [userId]);
+
+  const acknowledgeSuspension = useCallback(async (): Promise<void> => {
+    await logout();
+    setIsAccountSuspended(false);
+  }, [logout]);
 
   const setPinEnabled = useCallback(async (enabled: boolean): Promise<void> => {
     setIsPinEnabledState(enabled);
@@ -241,6 +264,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       requestEmailConfirmation,
       logout,
       updateUser,
+      isAccountSuspended,
+      acknowledgeSuspension,
     }),
     [
       user,
@@ -256,6 +281,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       requestEmailConfirmation,
       logout,
       updateUser,
+      isAccountSuspended,
+      acknowledgeSuspension,
     ],
   );
 

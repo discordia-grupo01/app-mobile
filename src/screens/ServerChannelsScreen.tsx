@@ -48,7 +48,7 @@ import {
 } from "../features/channels/ChannelSettingsModal";
 import { InviteLinkModal } from "../features/servers/components/server/InviteLinkModal";
 import { LeaveServerModal } from "../features/servers/components/server/LeaveServerModal";
-import { ServerSettingsModal } from "../features/servers/components/server/ServerSettingsModal";
+import { ServerSettingsModal } from "../features/servers/components/server/settings/ServerSettingsModal";
 import { TransferOwnershipModal } from "../features/servers/components/server/TransferOwnershipModal";
 import { BanIcon } from "../features/bans/components/BanIcon";
 import { BansModal } from "../features/bans/components/BansModal";
@@ -72,7 +72,7 @@ import { useThemeColors } from "../theme/theme-context";
 const HEADER_HEIGHT = 52;
 const BANNER_HEIGHT = 88;
 const UNCATEGORIZED_KEY = "none";
-const SECTION_GAP = 18;
+const SECTION_GAP = 12;
 
 interface ServerChannelsScreenProps {
   server: ServerSummary;
@@ -84,7 +84,6 @@ interface ServerChannelsScreenProps {
   canManageChannels?: boolean;
   canManageRoles?: boolean;
   canManageServer?: boolean;
-  /** Editar las palabras prohibidas (en la configuracion del servidor). */
   canManageMessages?: boolean;
   canBanMembers?: boolean;
   canInvite?: boolean;
@@ -154,6 +153,10 @@ export function ServerChannelsScreen({
   function voicePropsOf(channel: Channel) {
     return {
       isVoiceConnected: channel.id === voice.voiceChannelId,
+      callStartedAt:
+        channel.kind === "voice"
+          ? voice.callStartsByChannel[channel.id]
+          : undefined,
       voiceParticipants:
         channel.kind === "voice" ? voice.participantsFor(channel.id) : [],
       isVoiceExpanded: expandedVoiceChannels.has(channel.id),
@@ -685,7 +688,7 @@ export function ServerChannelsScreen({
 
           <ScrollView
             className="flex-1"
-            contentContainerClassName="px-2.5 pt-3.5 pb-3 gap-4.5"
+            contentContainerClassName="px-2.5 pt-3.5 pb-3 gap-3"
             scrollEnabled={!isChannelDragActive && !isCategoryDragActive}
           >
             {uncategorized.length > 0 ? (
@@ -737,6 +740,7 @@ export function ServerChannelsScreen({
                 categories={sortedCategories}
                 onReorder={handleCategoriesReordered}
                 onDragActiveChange={setIsCategoryDragActive}
+                gap={SECTION_GAP}
                 renderCategory={(category, panHandlers) =>
                   renderCategorySection(category, panHandlers)
                 }
@@ -756,11 +760,7 @@ export function ServerChannelsScreen({
             ) : null}
           </ScrollView>
 
-          <UserProfileBar
-            userName={userName}
-            serverId={server.id}
-            onLogout={onLogout}
-          />
+          <UserProfileBar userName={userName} onLogout={onLogout} />
         </View>
       </ChannelDragProvider>
 

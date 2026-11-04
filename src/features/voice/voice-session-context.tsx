@@ -1,5 +1,6 @@
 import {
   initialVoiceSessionState,
+  ownerOfScreenShareIdentity,
   parseVoiceBridgeEvent,
   pinOnScreenShareChange,
   screenSharingIds,
@@ -12,9 +13,10 @@ import {
   type VoiceBridgeCommand,
   type VoiceBridgeEvent,
   voiceDisconnectMessage,
+  voiceScreenTileName,
   voiceSessionReducer,
   type VoiceSessionState,
-  type VoiceSessionTarget,
+  type VoiceChannelTarget,
 } from "@discordia/client-shared";
 
 import { requestRecordingPermissionsAsync } from "expo-audio";
@@ -39,10 +41,18 @@ import { avatarUriOf } from "../../lib/userProfile";
 import { useTheme, useThemeColors } from "../../theme/theme-context";
 import { useAuth } from "../auth/auth-context";
 import { leaveVoiceSession, requestVoiceToken } from "./api";
+import { ExpandedCallOverlay } from "./components/call/ExpandedCallOverlay";
+import { channelTargetOf } from "./channel-target";
+import { isNativeScreenShareAvailable } from "./screen-share/livekit-native";
+import { useNativeScreenShare } from "./screen-share/useNativeScreenShare";
+import { useExpandedCall } from "./useExpandedCall";
 
 // react-native-webview 14 declara `WebView<P = undefined>` y `WebViewProps & undefined`
 // colapsa a `never`; pasando el genérico explícito vuelven a tiparse las props y el ref.
 type EmbedWebView = WebView<object>;
+
+// Tope para esperar a que la pagina cierre la sala de LiveKit al salir.
+const LEAVE_DISCONNECT_TIMEOUT_MS = 3000;
 
 const VOICE_EMBED_URL = env.webUrl
   ? `${env.webUrl.replace(/\/$/, "")}${VOICE_EMBED_PATH}`
@@ -60,10 +70,13 @@ interface VoiceSessionValue {
   isAvailable: boolean;
   mediaError: string | null;
   leaveSettledCount: number;
-  join: (target: VoiceSessionTarget) => void;
+  join: (target: VoiceChannelTarget) => void;
   leave: () => void;
   toggleMute: () => void;
   toggleCamera: () => void;
+  /** Solo en el APK de Android con la llamada conectada y permiso de hablar. */
+  canScreenShare: boolean;
+  toggleScreenShare: () => void;
   setCallStage: (frame: CallStageFrame | null) => void;
   toggleMutedForMe: (identity: string) => void;
   pinnedIdentity: string | null;
@@ -106,6 +119,7 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
   const pendingRef = useRef<VoiceBridgeCommand[]>([]);
   const sentMutedForMeRef = useRef<readonly string[]>([]);
   const attemptRef = useRef(0);
+  const leaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sharingIds = screenSharingIds(state.participants);
   if (sharingIds.join("|") !== lastSharingIds.join("|")) {
     setLastSharingIds(sharingIds);
@@ -118,6 +132,15 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
     stateRef.current = state;
   });
 
+  const screenShare = useNativeScreenShare(
+    useCallback((notice: string | null) => {
+      if (notice) setMediaError(notice);
+      if (stateRef.current.screenSharing) {
+        dispatch({ type: "toggle_screen_share" });
+      }
+    }, []),
+  );
+
   const send = useCallback((command: VoiceBridgeCommand) => {
     if (!isReadyRef.current) {
       pendingRef.current.push(command);
@@ -129,7 +152,31 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
+  const {
+    expandedIdentity,
+    expand: expandParticipant,
+    collapse: collapseExpanded,
+  } = useExpandedCall({
+    participants: state.participants,
+    isBridgeOpen: bridge !== null,
+    send,
+  });
+  // Se amplia un tile: la camara de alguien o su pantalla (`<id>:screen`).
+  const expandedScreenOwner = expandedIdentity
+    ? ownerOfScreenShareIdentity(expandedIdentity)
+    : null;
+  const expandedOwnerId = expandedScreenOwner ?? expandedIdentity;
+  const expandedParticipant = expandedOwnerId
+    ? state.participants.find(
+        (participant) => participant.identity === expandedOwnerId,
+      )
+    : undefined;
+
   const closeBridge = useCallback(() => {
+    if (leaveTimeoutRef.current) {
+      clearTimeout(leaveTimeoutRef.current);
+      leaveTimeoutRef.current = null;
+    }
     attemptRef.current += 1;
     isReadyRef.current = false;
     pendingRef.current = [];
@@ -150,9 +197,12 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
   );
 
   const join = useCallback(
-    async (target: VoiceSessionTarget) => {
+    async (target: VoiceChannelTarget) => {
       if (!VOICE_EMBED_URL) return;
-      if (stateRef.current.target?.channelId === target.channelId) return;
+      if (
+        channelTargetOf(stateRef.current.target)?.channelId === target.channelId
+      )
+        return;
 
       closeBridge();
       const attempt = attemptRef.current;
@@ -176,10 +226,27 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
     [closeBridge, end],
   );
 
-  const leave = useCallback(async () => {
-    const channelId = stateRef.current.target?.channelId;
+  const disconnectThenClose = useCallback(() => {
     send({ type: "disconnect" });
-    end(null);
+    dispatch({ type: "ended", notice: null });
+    setIsEmbedPainted(false);
+    leaveTimeoutRef.current = setTimeout(
+      closeBridge,
+      LEAVE_DISCONNECT_TIMEOUT_MS,
+    );
+  }, [send, closeBridge]);
+
+  useEffect(() => {
+    const leaveTimeout = leaveTimeoutRef;
+    return () => {
+      if (leaveTimeout.current) clearTimeout(leaveTimeout.current);
+    };
+  }, []);
+
+  const leave = useCallback(async () => {
+    const channelId = channelTargetOf(stateRef.current.target)?.channelId;
+    if (isReadyRef.current && !leaveTimeoutRef.current) disconnectThenClose();
+    else end(null);
     if (!channelId) return;
 
     const result = await leaveVoiceSession(channelId);
@@ -187,10 +254,14 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
     if (!result.ok && stateRef.current.target === null) {
       dispatch({ type: "ended", notice: result.message });
     }
-  }, [end, send]);
+  }, [end, disconnectThenClose]);
 
   const handleEvent = useCallback(
     (event: VoiceBridgeEvent) => {
+      if (leaveTimeoutRef.current) {
+        if (isLeaveSettledEvent(event)) closeBridge();
+        return;
+      }
       switch (event.type) {
         case "ready": {
           isReadyRef.current = true;
@@ -209,6 +280,9 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
           return;
         case "speakPermission":
           dispatch({ type: "speak_permission", allowed: event.allowed });
+          if (!event.allowed && stateRef.current.screenSharing) {
+            dispatch({ type: "toggle_screen_share" });
+          }
           return;
         case "cameraStopped":
           if (stateRef.current.cameraOn) dispatch({ type: "toggle_camera" });
@@ -221,6 +295,10 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
           return;
         case "pinRequested":
           setPinnedIdentity(event.identity);
+          return;
+        case "expandRequested":
+          if (event.identity) expandParticipant(event.identity);
+          else collapseExpanded();
           return;
         case "disconnected":
           end(voiceDisconnectMessage(event.reason));
@@ -237,7 +315,7 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
           return;
       }
     },
-    [end, send],
+    [end, send, closeBridge, expandParticipant, collapseExpanded],
   );
 
   const onMessage = useCallback(
@@ -253,7 +331,24 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
     send({ type: "connect", url: bridge.url, token: bridge.token });
   }, [bridge, send]);
 
-  const { muted, cameraOn, mutedForMe } = state;
+  const { muted, cameraOn, screenSharing, mutedForMe } = state;
+  const targetChannelId = channelTargetOf(state.target)?.channelId ?? null;
+  const { start: startScreenShare, stop: stopScreenShare } = screenShare;
+
+  // Corre mientras haya llamada y pantalla compartida: salir, cambiar de canal
+  // o apagarla la corta (el reducer apaga `screenSharing` en esos casos).
+  useEffect(() => {
+    if (!bridge || !screenSharing || !targetChannelId) return;
+    void startScreenShare(targetChannelId);
+    return stopScreenShare;
+  }, [
+    bridge,
+    screenSharing,
+    targetChannelId,
+    startScreenShare,
+    stopScreenShare,
+  ]);
+
   useEffect(() => {
     if (!bridge) return;
     send({ type: "setMicrophoneEnabled", enabled: !muted });
@@ -282,7 +377,7 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!bridge) return;
-    send({ type: "setAppearance", theme, localAvatarUrl });
+    send({ type: "setAppearance", theme, localAvatarUrl, canExpand: true });
   }, [bridge, theme, localAvatarUrl, send]);
 
   useEffect(() => {
@@ -314,6 +409,14 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
     setMediaError(null);
     dispatch({ type: "toggle_camera" });
   }, []);
+  const toggleScreenShare = useCallback(() => {
+    setMediaError(null);
+    dispatch({ type: "toggle_screen_share" });
+  }, []);
+  const canScreenShare =
+    isNativeScreenShareAvailable &&
+    state.status === "connected" &&
+    state.canSpeak;
   const toggleMutedForMe = useCallback(
     (identity: string) => dispatch({ type: "toggle_muted_for_me", identity }),
     [],
@@ -329,7 +432,7 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
     [],
   );
   const startJoin = useCallback(
-    (target: VoiceSessionTarget) => void join(target),
+    (target: VoiceChannelTarget) => void join(target),
     [join],
   );
   const startLeave = useCallback(() => void leave(), [leave]);
@@ -344,6 +447,8 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
       leave: startLeave,
       toggleMute,
       toggleCamera,
+      canScreenShare,
+      toggleScreenShare,
       setCallStage,
       toggleMutedForMe,
       pinnedIdentity,
@@ -362,6 +467,8 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
       startLeave,
       toggleMute,
       toggleCamera,
+      canScreenShare,
+      toggleScreenShare,
       toggleMutedForMe,
       pinnedIdentity,
       isParticipantsOpen,
@@ -389,18 +496,24 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
           }
         >
           <View
-            pointerEvents={callStage && isEmbedPainted ? "auto" : "none"}
+            pointerEvents={
+              callStage && isEmbedPainted && !expandedParticipant
+                ? "auto"
+                : "none"
+            }
             style={
-              callStage
-                ? {
-                    position: "absolute",
-                    left: callStage.x - overlayOrigin.x,
-                    top: callStage.y - overlayOrigin.y,
-                    width: callStage.width,
-                    height: callStage.height,
-                    opacity: isEmbedPainted ? 1 : 0,
-                  }
-                : styles.hidden
+              expandedParticipant
+                ? StyleSheet.absoluteFill
+                : callStage
+                  ? {
+                      position: "absolute",
+                      left: callStage.x - overlayOrigin.x,
+                      top: callStage.y - overlayOrigin.y,
+                      width: callStage.width,
+                      height: callStage.height,
+                      opacity: isEmbedPainted ? 1 : 0,
+                    }
+                  : styles.hidden
             }
           >
             <WebView<object>
@@ -418,9 +531,32 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
               style={{ backgroundColor: colors.bgChat }}
             />
           </View>
+          {expandedParticipant ? (
+            <ExpandedCallOverlay
+              key={expandedIdentity}
+              name={
+                expandedScreenOwner
+                  ? voiceScreenTileName(
+                      expandedParticipant.name,
+                      expandedParticipant.isLocal,
+                    )
+                  : expandedParticipant.name
+              }
+              source={expandedScreenOwner ? "screen" : "camera"}
+              onExit={collapseExpanded}
+            />
+          ) : null}
         </View>
       ) : null}
     </VoiceSessionContext.Provider>
+  );
+}
+
+function isLeaveSettledEvent(event: VoiceBridgeEvent): boolean {
+  return (
+    event.type === "disconnected" ||
+    event.type === "error" ||
+    (event.type === "status" && event.status === "idle")
   );
 }
 

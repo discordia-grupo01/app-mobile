@@ -11,6 +11,10 @@ import {
   VOICE_MUTE_LABEL,
   VOICE_PARTICIPANTS_BUTTON,
   VOICE_PARTICIPANTS_OPEN,
+  VOICE_SCREEN_SHARE,
+  VOICE_SCREEN_SHARE_START,
+  VOICE_SCREEN_SHARE_STOP,
+  VOICE_SCREEN_SHARING,
   VOICE_UNMUTE,
   VOICE_UNMUTE_LABEL,
 } from "@discordia/client-shared";
@@ -23,15 +27,19 @@ import { cn } from "../../../../lib/cn";
 import { withAlpha } from "../../../../lib/color";
 import { useThemeColors } from "../../../../theme/theme-context";
 
-type ControlTone = "neutral" | "danger";
+type ControlTone = "neutral" | "danger" | "accent";
 
 interface VoiceControlsProps {
   muted: boolean;
   canSpeak: boolean;
   cameraOn: boolean;
+  screenSharing: boolean;
+  /** `false` en Expo Go: el boton no aparece. */
+  canScreenShare: boolean;
   bottomInset: number;
   onToggleMute: () => void;
   onToggleCamera: () => void;
+  onToggleScreenShare: () => void;
   onShowParticipants: () => void;
   onLeave: () => void;
 }
@@ -40,9 +48,12 @@ export function VoiceControls({
   muted,
   canSpeak,
   cameraOn,
+  screenSharing,
+  canScreenShare,
   bottomInset,
   onToggleMute,
   onToggleCamera,
+  onToggleScreenShare,
   onShowParticipants,
   onLeave,
 }: VoiceControlsProps) {
@@ -82,6 +93,18 @@ export function VoiceControls({
           isSelected={cameraOn}
           onPress={onToggleCamera}
         />
+        {canScreenShare || screenSharing ? (
+          <ControlButton
+            icon="monitor"
+            label={screenSharing ? VOICE_SCREEN_SHARING : VOICE_SCREEN_SHARE}
+            accessibilityLabel={
+              screenSharing ? VOICE_SCREEN_SHARE_STOP : VOICE_SCREEN_SHARE_START
+            }
+            tone={screenSharing ? "accent" : "neutral"}
+            isSelected={screenSharing}
+            onPress={onToggleScreenShare}
+          />
+        ) : null}
 
         <ControlButton
           icon="users"
@@ -119,7 +142,18 @@ function toneBackground(
   }
   if (tone === "danger")
     return { backgroundColor: withAlpha(colors.danger, 0.12) };
+  if (tone === "accent")
+    return { backgroundColor: withAlpha(colors.accent, 0.18) };
   return {};
+}
+
+function toneColor(
+  tone: ControlTone,
+  colors: ReturnType<typeof useThemeColors>,
+): string {
+  if (tone === "danger") return colors.danger;
+  if (tone === "accent") return colors.accent;
+  return colors.textMuted;
 }
 
 function ControlButton({
@@ -142,7 +176,7 @@ function ControlButton({
   onPress: () => void;
 }) {
   const colors = useThemeColors();
-  const iconColor = tone === "danger" ? colors.danger : colors.textMuted;
+  const iconColor = toneColor(tone, colors);
 
   return (
     <TouchableOpacity
@@ -165,8 +199,9 @@ function ControlButton({
         className={cn(
           "text-[11px]",
           isLeave ? "font-semibold" : "font-medium",
-          tone === "neutral" ? "text-content-subtle" : "text-danger",
+          tone === "neutral" && "text-content-subtle",
         )}
+        style={tone === "neutral" ? undefined : { color: iconColor }}
       >
         {label}
       </Text>
