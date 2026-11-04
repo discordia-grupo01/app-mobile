@@ -80,10 +80,6 @@ interface VoiceSessionValue {
   leave: () => void;
   toggleMute: () => void;
   toggleCamera: () => void;
-  /**
-   * Solo en el APK de Android, con la llamada (canal o privada) conectada y
-   * permiso de hablar.
-   */
   canScreenShare: boolean;
   toggleScreenShare: () => void;
   setCallStage: (frame: CallStageFrame | null) => void;
@@ -575,11 +571,6 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
               onContentProcessDidTerminate={() => end(VOICE_CONNECTION_LOST)}
               mediaPlaybackRequiresUserAction={false}
               allowsInlineMediaPlayback
-              // En la llamada privada la pagina carga escondida en 1x1 px. Con
-              // el "ajustar a la pantalla" de Android ese zoom quedaba fijo y
-              // la grilla se veia chica al mostrarla.
-              scalesPageToFit={false}
-              setBuiltInZoomControls={false}
               mediaCapturePermissionGrantType="grant"
               javaScriptEnabled
               style={{ backgroundColor: colors.bgChat }}
@@ -615,7 +606,14 @@ function isLeaveSettledEvent(event: VoiceBridgeEvent): boolean {
 }
 
 const styles = StyleSheet.create({
-  hidden: { position: "absolute", width: 1, height: 1, opacity: 0 },
+  hidden: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    opacity: 0,
+  },
 });
 
 export function useVoiceSession(): VoiceSessionValue {
