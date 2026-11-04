@@ -28,6 +28,7 @@
         "android.permission.POST_NOTIFICATIONS"
       ],
       "package": "com.g1discordia.appmobile",
+      "googleServicesFile": "./google-services.json",
       "versionCode": 2
     },
     "web": {
@@ -35,6 +36,13 @@
     },
     "plugins": [
       "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/android-icon-monochrome.png",
+          "color": "#072B40"
+        }
+      ],
       "expo-web-browser",
       [
         "expo-audio",
