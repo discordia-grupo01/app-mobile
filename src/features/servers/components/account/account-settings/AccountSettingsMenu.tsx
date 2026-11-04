@@ -67,7 +67,7 @@ export function AccountSettingsMenu({
         className="flex-row items-center gap-4 rounded-2xl border border-line bg-surface-raised p-4"
         onPress={onSelectSecurity}
       >
-        <View className="w-11 h-11 rounded-xl items-center justify-center bg-[rgba(36,92,107,0.3)]">
+        <View className="w-11 h-11 rounded-xl items-center justify-center bg-[rgba(107,149,189,0.15)]">
           <Feather name="shield" size={20} color={colors.sky} />
         </View>
         <View className="flex-1">
@@ -89,7 +89,7 @@ export function AccountSettingsMenu({
         className="flex-row items-center gap-4 rounded-2xl border border-line bg-surface-raised p-4"
         onPress={onSelectStatus}
       >
-        <View className="w-11 h-11 rounded-xl items-center justify-center bg-info/15">
+        <View className="w-11 h-11 rounded-xl items-center justify-center bg-[rgba(107,149,189,0.15)]">
           <Feather name="activity" size={20} color={colors.sky} />
         </View>
         <View className="flex-1">

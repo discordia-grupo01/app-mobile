@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { resolveServerIconUrl } from "../../api";
 import { cn } from "../../../../lib/cn";
-import { useThemeColors } from "../../../../theme/theme-context";
+import { useTheme, useThemeColors } from "../../../../theme/theme-context";
 import { Avatar } from "../../../../components/ui/Avatar";
 import { CountBadge } from "../../../../components/ui/CountBadge";
 
@@ -71,6 +71,7 @@ export function ServerRail({
   onSelectServer,
   onAddServer,
 }: ServerRailProps) {
+  const { theme } = useTheme();
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
 
@@ -111,7 +112,13 @@ export function ServerRail({
         ) : null}
       </View>
 
-      <View className="w-8 h-px bg-line-strong my-0.5" />
+      <View
+        className="w-8 h-px my-0.5"
+        style={{
+          backgroundColor:
+            theme === "light" ? colors.borderOnAccent : colors.borderStrong,
+        }}
+      />
 
       {servers.map((item) => (
         <ServerRailIcon
