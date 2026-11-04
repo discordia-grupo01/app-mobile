@@ -575,6 +575,11 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
               onContentProcessDidTerminate={() => end(VOICE_CONNECTION_LOST)}
               mediaPlaybackRequiresUserAction={false}
               allowsInlineMediaPlayback
+              // En la llamada privada la pagina carga escondida en 1x1 px. Con
+              // el "ajustar a la pantalla" de Android ese zoom quedaba fijo y
+              // la grilla se veia chica al mostrarla.
+              scalesPageToFit={false}
+              setBuiltInZoomControls={false}
               mediaCapturePermissionGrantType="grant"
               javaScriptEnabled
               style={{ backgroundColor: colors.bgChat }}
