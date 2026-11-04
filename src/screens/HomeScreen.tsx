@@ -62,6 +62,7 @@ import { avatarUriOf } from "../lib/userProfile";
 import { useStatusBarStyle, useThemeColors } from "../theme/theme-context";
 import { ChannelScreen } from "./ChannelScreen";
 import { DirectMessagesScreen } from "./DirectMessagesScreen";
+import { channelTargetOf } from "../features/voice/channel-target";
 import { ServerChannelsScreen } from "./ServerChannelsScreen";
 import { ServerPickerScreen } from "./ServerPickerScreen";
 
@@ -148,7 +149,7 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
 
   // Si el canal de la llamada ya no esta (se borro, saliste del servidor o
   // perdiste el acceso), se corta.
-  const voiceTarget = voice.state.target;
+  const voiceTarget = channelTargetOf(voice.state.target);
   const leaveVoice = voice.leave;
   const isVoiceChannelGone =
     voiceTarget !== null &&

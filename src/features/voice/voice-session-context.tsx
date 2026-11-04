@@ -16,7 +16,7 @@ import {
   voiceScreenTileName,
   voiceSessionReducer,
   type VoiceSessionState,
-  type VoiceSessionTarget,
+  type VoiceChannelTarget,
 } from "@discordia/client-shared";
 
 import { requestRecordingPermissionsAsync } from "expo-audio";
@@ -42,6 +42,7 @@ import { useTheme, useThemeColors } from "../../theme/theme-context";
 import { useAuth } from "../auth/auth-context";
 import { leaveVoiceSession, requestVoiceToken } from "./api";
 import { ExpandedCallOverlay } from "./components/call/ExpandedCallOverlay";
+import { channelTargetOf } from "./channel-target";
 import { isNativeScreenShareAvailable } from "./screen-share/livekit-native";
 import { useNativeScreenShare } from "./screen-share/useNativeScreenShare";
 import { useExpandedCall } from "./useExpandedCall";
@@ -69,7 +70,7 @@ interface VoiceSessionValue {
   isAvailable: boolean;
   mediaError: string | null;
   leaveSettledCount: number;
-  join: (target: VoiceSessionTarget) => void;
+  join: (target: VoiceChannelTarget) => void;
   leave: () => void;
   toggleMute: () => void;
   toggleCamera: () => void;
@@ -196,9 +197,12 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
   );
 
   const join = useCallback(
-    async (target: VoiceSessionTarget) => {
+    async (target: VoiceChannelTarget) => {
       if (!VOICE_EMBED_URL) return;
-      if (stateRef.current.target?.channelId === target.channelId) return;
+      if (
+        channelTargetOf(stateRef.current.target)?.channelId === target.channelId
+      )
+        return;
 
       closeBridge();
       const attempt = attemptRef.current;
@@ -240,7 +244,7 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const leave = useCallback(async () => {
-    const channelId = stateRef.current.target?.channelId;
+    const channelId = channelTargetOf(stateRef.current.target)?.channelId;
     if (isReadyRef.current && !leaveTimeoutRef.current) disconnectThenClose();
     else end(null);
     if (!channelId) return;
@@ -328,7 +332,7 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
   }, [bridge, send]);
 
   const { muted, cameraOn, screenSharing, mutedForMe } = state;
-  const targetChannelId = state.target?.channelId ?? null;
+  const targetChannelId = channelTargetOf(state.target)?.channelId ?? null;
   const { start: startScreenShare, stop: stopScreenShare } = screenShare;
 
   // Corre mientras haya llamada y pantalla compartida: salir, cambiar de canal
@@ -428,7 +432,7 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
     [],
   );
   const startJoin = useCallback(
-    (target: VoiceSessionTarget) => void join(target),
+    (target: VoiceChannelTarget) => void join(target),
     [join],
   );
   const startLeave = useCallback(() => void leave(), [leave]);

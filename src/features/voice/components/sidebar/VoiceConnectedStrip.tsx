@@ -13,6 +13,7 @@ import { cn } from "../../../../lib/cn";
 import { withAlpha } from "../../../../lib/color";
 import { useThemeColors } from "../../../../theme/theme-context";
 import { useOptionalVoiceSession } from "../../voice-session-context";
+import { channelTargetOf } from "../../channel-target";
 import { VoiceNotice } from "../VoiceNotice";
 
 const STATUS_LABEL = {
@@ -24,7 +25,7 @@ const STATUS_LABEL = {
 export function VoiceConnectedStrip() {
   const colors = useThemeColors();
   const voice = useOptionalVoiceSession();
-  const target = voice?.state.target;
+  const target = channelTargetOf(voice?.state.target);
   if (voice && !target && voice.state.notice) {
     return (
       <View className="px-3.5 py-2 border-t border-t-line">
