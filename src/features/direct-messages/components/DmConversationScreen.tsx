@@ -19,6 +19,7 @@ import { OwnProfileModal } from "../../profile/components/OwnProfileModal";
 import { PublicProfileModal } from "../../profile/components/PublicProfileModal";
 import { UserActivityStatusDot } from "../../profile/components/ActivityStatusDot";
 import { Avatar } from "../../../components/ui/Avatar";
+import { HeaderThemeToggle } from "../../../components/ui/HeaderThemeToggle";
 import { DmCallButton } from "../../private-call/components/DmCallButton";
 import { useThemeColors } from "../../../theme/theme-context";
 import { DmThread } from "./DmThread";
@@ -90,6 +91,7 @@ export function DmConversationScreen({
             </Text>
           </View>
         ) : null}
+        <HeaderThemeToggle />
         <DmCallButton
           partner={partner}
           conversationId={conversationId}
