@@ -1,9 +1,12 @@
 import {
   addUnreadMention,
   clearChannelMentions,
+  filterHighlightedMentions,
   type MentionEventPayload,
   mergeUnreadMentions,
+  NO_NOTIFICATION_SETTINGS,
   NO_UNREAD_MENTIONS,
+  type NotificationSettings,
   type UnreadMentions,
   unreadByChannel,
   unreadByServer,
@@ -13,7 +16,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { listUnreadMentions, markChannelMentionsRead } from "./api";
 
-export function useMentions(currentUserId: string | null) {
+export function useMentions(
+  currentUserId: string | null,
+  settings: NotificationSettings = NO_NOTIFICATION_SETTINGS,
+) {
   const [unread, setUnread] = useState<UnreadMentions>(NO_UNREAD_MENTIONS);
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -44,8 +50,27 @@ export function useMentions(currentUserId: string | null) {
     void markChannelMentionsRead(channelId);
   }, []);
 
-  const byChannel = useMemo(() => unreadByChannel(unread), [unread]);
-  const byServer = useMemo(() => unreadByServer(unread), [unread]);
+  const isUnread = useCallback(
+    (messageId: string) => messageId in unread,
+    [unread],
+  );
 
-  return { byChannel, byServer, isLoaded, receive, reload, markChannelRead };
+  const allByChannel = useMemo(() => unreadByChannel(unread), [unread]);
+  const highlighted = useMemo(
+    () => filterHighlightedMentions(unread, settings),
+    [unread, settings],
+  );
+  const byChannel = useMemo(() => unreadByChannel(highlighted), [highlighted]);
+  const byServer = useMemo(() => unreadByServer(highlighted), [highlighted]);
+
+  return {
+    allByChannel,
+    byChannel,
+    byServer,
+    isLoaded,
+    isUnread,
+    receive,
+    reload,
+    markChannelRead,
+  };
 }
