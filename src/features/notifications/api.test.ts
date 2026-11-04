@@ -1,4 +1,5 @@
 import {
+  NOTIFICATIONS_LOAD_FAILED,
   NOTIFICATION_SETTINGS_LOAD_FAILED,
   NOTIFICATION_SETTINGS_SAVE_FAILED,
 } from "@discordia/client-shared";
@@ -6,6 +7,7 @@ import {
 import { apiFetch } from "../../lib/api-client";
 
 import {
+  listNotificationHistory,
   listNotificationSettings,
   updateChannelNotificationSettings,
   updateServerNotificationSettings,
@@ -114,5 +116,54 @@ describe("guardar configuración", () => {
     expect(
       await updateChannelNotificationSettings("c1", { level: "all" }),
     ).toEqual({ ok: false, message: NOTIFICATION_SETTINGS_SAVE_FAILED });
+  });
+});
+
+describe("listNotificationHistory", () => {
+  it("pide la página con limit y before y renombra el cursor", async () => {
+    mockedFetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { items: [], next_cursor: "123_abc" },
+    });
+
+    const result = await listNotificationHistory({
+      limit: 20,
+      before: "99_x",
+    });
+
+    expect(mockedFetch).toHaveBeenCalledWith(
+      "/v1/notifications/history?limit=20&before=99_x",
+      { method: "GET" },
+    );
+    expect(result).toEqual({ ok: true, items: [], nextCursor: "123_abc" });
+  });
+
+  it("sin parámetros no agrega query", async () => {
+    mockedFetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { items: [], next_cursor: null },
+    });
+
+    await listNotificationHistory();
+
+    expect(mockedFetch).toHaveBeenCalledWith("/v1/notifications/history", {
+      method: "GET",
+    });
+  });
+
+  it("si falla devuelve el texto de error del centro", async () => {
+    mockedFetch.mockResolvedValue({
+      ok: false,
+      status: 503,
+      code: "HISTORY_UNAVAILABLE",
+      message: "x",
+    });
+
+    expect(await listNotificationHistory()).toEqual({
+      ok: false,
+      message: NOTIFICATIONS_LOAD_FAILED,
+    });
   });
 });

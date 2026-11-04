@@ -1,6 +1,6 @@
 import { apiFetch } from "../../lib/api-client";
 
-import { fetchMessages } from "./api";
+import { fetchMessages, lookupMessages } from "./api";
 
 jest.mock("../../lib/api-client", () => ({ apiFetch: jest.fn() }));
 
@@ -42,5 +42,22 @@ describe("fetchMessages con around", () => {
       messages: [],
       nextCursor: null,
     });
+  });
+});
+
+describe("lookupMessages", () => {
+  it("pide los mensajes por id separados por coma", async () => {
+    mockedFetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { messages: [] },
+    });
+
+    const result = await lookupMessages(["a", "b"]);
+
+    expect(mockedFetch).toHaveBeenCalledWith("/v1/messages?ids=a%2Cb", {
+      method: "GET",
+    });
+    expect(result).toEqual({ ok: true, messages: [] });
   });
 });
