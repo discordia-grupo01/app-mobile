@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { PlatformStatusStep } from "../../../platform-status/components/PlatformStatusStep";
 import { useThemeColors } from "../../../../theme/theme-context";
 import { AccountSettingsMenu } from "./account-settings/AccountSettingsMenu";
 import { AppearanceSettingsStep } from "./account-settings/AppearanceSettingsStep";
@@ -21,7 +22,8 @@ import { LogoutConfirmModal } from "./LogoutConfirmModal";
 import { PinSetupPanel } from "./PinSetupPanel";
 import { TwoFactorPanel } from "./TwoFactorPanel";
 
-type Section = "menu" | "appearance" | "security" | "two-factor" | "pin";
+type Section =
+  "menu" | "appearance" | "security" | "two-factor" | "pin" | "status";
 
 const TITLES: Record<Section, string> = {
   menu: "Configuración",
@@ -29,6 +31,7 @@ const TITLES: Record<Section, string> = {
   security: "Seguridad",
   "two-factor": "Verificación en dos pasos",
   pin: "PIN de acceso rápido",
+  status: "Estado de la plataforma",
 };
 
 const BACK_TARGET: Record<Section, Section> = {
@@ -37,6 +40,7 @@ const BACK_TARGET: Record<Section, Section> = {
   security: "menu",
   "two-factor": "security",
   pin: "security",
+  status: "menu",
 };
 
 interface AccountSettingsSheetProps {
@@ -127,6 +131,7 @@ export function AccountSettingsSheet({
             <AccountSettingsMenu
               onSelectAppearance={() => setSection("appearance")}
               onSelectSecurity={() => setSection("security")}
+              onSelectStatus={() => setSection("status")}
               onLogout={() => setIsConfirmVisible(true)}
             />
           ) : section === "appearance" ? (
@@ -137,6 +142,8 @@ export function AccountSettingsSheet({
               onOpenTwoFactor={() => setSection("two-factor")}
               onOpenPinSetup={() => setSection("pin")}
             />
+          ) : section === "status" ? (
+            <PlatformStatusStep />
           ) : section === "two-factor" ? (
             <TwoFactorPanel onClose={goBack} scrollRef={scrollRef} />
           ) : (

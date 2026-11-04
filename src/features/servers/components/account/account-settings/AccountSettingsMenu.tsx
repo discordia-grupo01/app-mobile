@@ -6,20 +6,22 @@ import { useThemeColors } from "../../../../../theme/theme-context";
 interface AccountSettingsMenuProps {
   onSelectAppearance: () => void;
   onSelectSecurity: () => void;
+  onSelectStatus: () => void;
   onLogout: () => void;
 }
 
 export function AccountSettingsMenu({
   onSelectAppearance,
   onSelectSecurity,
+  onSelectStatus,
   onLogout,
 }: AccountSettingsMenuProps) {
   const colors = useThemeColors();
 
   return (
     <View className="px-4.5 pt-5">
-      <Text className="mb-4 text-[14px] leading-[19px] text-content-muted">
-        Elegí qué aspecto de tu cuenta querés configurar.
+      <Text className="mb-2.5 px-1 text-[14px] font-semibold text-content-muted">
+        Mi cuenta
       </Text>
 
       <TouchableOpacity
@@ -60,9 +62,31 @@ export function AccountSettingsMenu({
         <Feather name="chevron-right" size={18} color={colors.textSubtle} />
       </TouchableOpacity>
 
+      <Text className="mb-2.5 mt-6 px-1 text-[14px] font-semibold text-content-muted">
+        Plataforma
+      </Text>
       <TouchableOpacity
         activeOpacity={0.75}
-        className="mt-3 flex-row items-center gap-4 rounded-2xl border border-line bg-surface-raised p-4"
+        className="flex-row items-center gap-4 rounded-2xl border border-line bg-surface-raised p-4"
+        onPress={onSelectStatus}
+      >
+        <View className="w-11 h-11 rounded-xl items-center justify-center bg-info/15">
+          <Feather name="activity" size={20} color={colors.sky} />
+        </View>
+        <View className="flex-1">
+          <Text className="text-[16px] font-bold text-content mb-0.5">
+            Estado de la plataforma
+          </Text>
+          <Text className="text-[13px] text-content-subtle">
+            Servicios e incidentes
+          </Text>
+        </View>
+        <Feather name="chevron-right" size={18} color={colors.textSubtle} />
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        activeOpacity={0.75}
+        className="mt-6 flex-row items-center gap-4 rounded-2xl border border-line bg-surface-raised p-4"
         onPress={onLogout}
         accessibilityRole="button"
         accessibilityLabel="Cerrar sesión"
