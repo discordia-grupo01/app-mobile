@@ -22,7 +22,6 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Button } from "../../components/ui/Button";
 import { FormErrorBanner } from "../../components/ui/FormErrorBanner";
@@ -34,6 +33,7 @@ import { useChannelOverrides } from "./useChannelOverrides";
 import { ChannelOverviewStep } from "./components/overview/ChannelOverviewStep";
 import { ChannelPermissionsStep } from "./components/permissions/ChannelPermissionsStep";
 import { useChannelOverviewForm } from "./components/overview/useChannelOverviewForm";
+import { useModalInsets } from "../platform-status/hooks/useModalInsets";
 
 export type ChannelSettingsSection = "overview" | "permissions";
 type SettingsStep = "list" | ChannelSettingsSection;
@@ -132,7 +132,7 @@ export function ChannelSettingsModal({
   onDelete,
 }: ChannelSettingsModalProps) {
   const colors = useThemeColors();
-  const insets = useSafeAreaInsets();
+  const insets = useModalInsets();
   const { height: windowHeight } = useWindowDimensions();
 
   const canOpen = (section: ChannelSettingsSection) =>

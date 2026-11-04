@@ -11,7 +11,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { PlatformStatusStep } from "../../../platform-status/components/PlatformStatusStep";
 import { useThemeColors } from "../../../../theme/theme-context";
@@ -21,6 +20,7 @@ import { SecuritySettingsStep } from "./account-settings/SecuritySettingsStep";
 import { LogoutConfirmModal } from "./LogoutConfirmModal";
 import { PinSetupPanel } from "./PinSetupPanel";
 import { TwoFactorPanel } from "./TwoFactorPanel";
+import { useModalInsets } from "../../../platform-status/hooks/useModalInsets";
 
 type Section =
   "menu" | "appearance" | "security" | "two-factor" | "pin" | "status";
@@ -61,7 +61,7 @@ export function AccountSettingsSheet({
   onSelectTheme,
 }: AccountSettingsSheetProps) {
   const colors = useThemeColors();
-  const insets = useSafeAreaInsets();
+  const insets = useModalInsets();
   const [section, setSection] = useState<Section>("menu");
   const [isConfirmVisible, setIsConfirmVisible] = useState(false);
   const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);

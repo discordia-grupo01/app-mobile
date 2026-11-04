@@ -6,6 +6,7 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 
+import { DeviceInsetsContext } from "../hooks/useModalInsets";
 import { usePlatformStatus } from "../hooks/usePlatformStatus";
 import {
   PlatformStatusBanner,
@@ -25,32 +26,34 @@ export function PlatformStatusLayer({ children }: { children: ReactNode }) {
     data !== null && data.incidents.length > 0 && hiddenKey !== noticeKey;
 
   return (
-    <View className="flex-1">
-      <SafeAreaInsetsContext.Provider
-        value={
-          isBannerVisible
-            ? { ...insets, top: insets.top + STATUS_BANNER_HEIGHT }
-            : insets
-        }
-      >
-        {children}
-      </SafeAreaInsetsContext.Provider>
-      {data && isBannerVisible ? (
-        <PlatformStatusBanner
-          status={data.status}
-          incidents={data.incidents}
-          top={insets.top}
-          onOpenDetails={() => setIsDetailsOpen(true)}
-          onHide={() => setHiddenKey(noticeKey)}
-        />
-      ) : null}
-      {data ? (
-        <PlatformStatusModal
-          visible={isDetailsOpen}
-          data={data}
-          onClose={() => setIsDetailsOpen(false)}
-        />
-      ) : null}
-    </View>
+    <DeviceInsetsContext.Provider value={insets}>
+      <View className="flex-1">
+        <SafeAreaInsetsContext.Provider
+          value={
+            isBannerVisible
+              ? { ...insets, top: insets.top + STATUS_BANNER_HEIGHT }
+              : insets
+          }
+        >
+          {children}
+        </SafeAreaInsetsContext.Provider>
+        {data && isBannerVisible ? (
+          <PlatformStatusBanner
+            status={data.status}
+            incidents={data.incidents}
+            top={insets.top}
+            onOpenDetails={() => setIsDetailsOpen(true)}
+            onHide={() => setHiddenKey(noticeKey)}
+          />
+        ) : null}
+        {data ? (
+          <PlatformStatusModal
+            visible={isDetailsOpen}
+            data={data}
+            onClose={() => setIsDetailsOpen(false)}
+          />
+        ) : null}
+      </View>
+    </DeviceInsetsContext.Provider>
   );
 }
