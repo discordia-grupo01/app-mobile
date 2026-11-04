@@ -4,7 +4,6 @@ import {
 } from "@discordia/client-shared";
 import { useState } from "react";
 import { KeyboardAvoidingView, Modal, Platform } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useDeleteServerConfirm } from "../../../useDeleteServerConfirm";
 import { useServerSettingsForm } from "../../../useServerSettingsForm";
@@ -13,6 +12,7 @@ import { DeleteServerStep } from "./DeleteServerStep";
 import { ServerProfileStep } from "./ServerProfileStep";
 import { SettingsHeader, type SettingsStep } from "./SettingsHeader";
 import { SettingsMenuStep } from "./SettingsMenuStep";
+import { useModalInsets } from "../../../../platform-status/hooks/useModalInsets";
 
 interface ServerSettingsModalProps {
   visible: boolean;
@@ -88,7 +88,7 @@ export function ServerSettingsModal({
   visible,
   ...bodyProps
 }: ServerSettingsModalProps) {
-  const insets = useSafeAreaInsets();
+  const insets = useModalInsets();
   const [openCount, setOpenCount] = useState(0);
   const [wasVisible, setWasVisible] = useState(visible);
 

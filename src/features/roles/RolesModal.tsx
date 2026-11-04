@@ -2,7 +2,6 @@ import { outranksRole, type Role } from "@discordia/client-shared";
 
 import { useState } from "react";
 import { Text, useWindowDimensions, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ModalShell } from "../../components/ui/ModalShell";
 
@@ -20,12 +19,12 @@ import { RoleMembersStep } from "./components/members/RoleMembersStep";
 import { useRoleMembers } from "./components/members/useRoleMembers";
 import { type Step } from "./constants";
 import { useToast } from "./useToast";
+import { useModalInsets } from "../platform-status/hooks/useModalInsets";
 
 interface RolesModalProps {
   visible: boolean;
   serverId: string;
   serverName: string;
-  /** Rango jerárquico del usuario actual (#56): decide qué roles puede arrastrar. */
   isOwner: boolean;
   myRoles: Role[];
   onClose: () => void;
@@ -39,7 +38,7 @@ export function RolesModal({
   myRoles,
   onClose,
 }: RolesModalProps) {
-  const insets = useSafeAreaInsets();
+  const insets = useModalInsets();
   const { height: windowHeight } = useWindowDimensions();
 
   const [step, setStep] = useState<Step>("list");

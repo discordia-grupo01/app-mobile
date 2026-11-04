@@ -11,8 +11,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { PlatformStatusStep } from "../../../platform-status/components/PlatformStatusStep";
 import { useThemeColors } from "../../../../theme/theme-context";
 import { AccountSettingsMenu } from "./account-settings/AccountSettingsMenu";
 import { AppearanceSettingsStep } from "./account-settings/AppearanceSettingsStep";
@@ -21,9 +21,16 @@ import { SecuritySettingsStep } from "./account-settings/SecuritySettingsStep";
 import { LogoutConfirmModal } from "./LogoutConfirmModal";
 import { PinSetupPanel } from "./PinSetupPanel";
 import { TwoFactorPanel } from "./TwoFactorPanel";
+import { useModalInsets } from "../../../platform-status/hooks/useModalInsets";
 
 type Section =
-  "menu" | "appearance" | "notifications" | "security" | "two-factor" | "pin";
+  | "menu"
+  | "appearance"
+  | "notifications"
+  | "security"
+  | "two-factor"
+  | "pin"
+  | "status";
 
 const TITLES: Record<Section, string> = {
   menu: "Configuración",
@@ -32,6 +39,7 @@ const TITLES: Record<Section, string> = {
   security: "Seguridad",
   "two-factor": "Verificación en dos pasos",
   pin: "PIN de acceso rápido",
+  status: "Estado de la plataforma",
 };
 
 const BACK_TARGET: Record<Section, Section> = {
@@ -41,6 +49,7 @@ const BACK_TARGET: Record<Section, Section> = {
   security: "menu",
   "two-factor": "security",
   pin: "security",
+  status: "menu",
 };
 
 interface AccountSettingsSheetProps {
@@ -61,7 +70,7 @@ export function AccountSettingsSheet({
   onSelectTheme,
 }: AccountSettingsSheetProps) {
   const colors = useThemeColors();
-  const insets = useSafeAreaInsets();
+  const insets = useModalInsets();
   const [section, setSection] = useState<Section>("menu");
   const [isConfirmVisible, setIsConfirmVisible] = useState(false);
   const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
@@ -132,6 +141,7 @@ export function AccountSettingsSheet({
               onSelectAppearance={() => setSection("appearance")}
               onSelectNotifications={() => setSection("notifications")}
               onSelectSecurity={() => setSection("security")}
+              onSelectStatus={() => setSection("status")}
               onLogout={() => setIsConfirmVisible(true)}
             />
           ) : section === "appearance" ? (
@@ -144,6 +154,8 @@ export function AccountSettingsSheet({
               onOpenTwoFactor={() => setSection("two-factor")}
               onOpenPinSetup={() => setSection("pin")}
             />
+          ) : section === "status" ? (
+            <PlatformStatusStep />
           ) : section === "two-factor" ? (
             <TwoFactorPanel onClose={goBack} scrollRef={scrollRef} />
           ) : (

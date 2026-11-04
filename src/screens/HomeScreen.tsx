@@ -33,6 +33,7 @@ import { useLoadingGate } from "../hooks/useLoadingGate";
 import { useDirectMessages } from "../features/direct-messages/useDirectMessages";
 import { useMentions } from "../features/mentions/useMentions";
 import { PresenceProvider } from "../features/presence/PresenceContext";
+import { PlatformStatusLayer } from "../features/platform-status/components/PlatformStatusLayer";
 import { useIdleReporter } from "../features/presence/useIdleReporter";
 import { useLoadPresence } from "../features/presence/useLoadPresence";
 import {
@@ -198,7 +199,9 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
   );
   useServerPresence(presence.store, selectedServer?.id ?? null);
   const withPresence = (screen: ReactNode) => (
-    <PresenceProvider value={presenceValue}>{screen}</PresenceProvider>
+    <PresenceProvider value={presenceValue}>
+      <PlatformStatusLayer>{screen}</PlatformStatusLayer>
+    </PresenceProvider>
   );
   const unreadDmCount = directMessages.conversations.filter(
     (c) => c.isUnread,
