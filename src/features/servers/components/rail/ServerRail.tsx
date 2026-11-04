@@ -1,4 +1,4 @@
-import { type ServerSummary } from "@discordia/client-shared";
+import { isServerMuted, type ServerSummary } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { resolveServerIconUrl } from "../../api";
 import { cn } from "../../../../lib/cn";
+import { useOptionalNotificationSettings } from "../../../notifications/NotificationSettingsContext";
 import { useThemeColors } from "../../../../theme/theme-context";
 import { Avatar } from "../../../../components/ui/Avatar";
 import { CountBadge } from "../../../../components/ui/CountBadge";
@@ -34,11 +35,15 @@ function ServerRailIcon({
   unreadMentions: number;
   onPress: () => void;
 }) {
+  const notificationSettings = useOptionalNotificationSettings();
+  const isMuted =
+    notificationSettings !== null &&
+    isServerMuted(notificationSettings.settings, item.id);
   return (
     <TouchableOpacity
       activeOpacity={0.75}
       onPress={onPress}
-      className="items-center justify-center"
+      className={cn("items-center justify-center", isMuted && "opacity-60")}
       style={styles.iconWrap}
     >
       {active ? (
