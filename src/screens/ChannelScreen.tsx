@@ -22,10 +22,12 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { HeaderThemeToggle } from "../components/ui/HeaderThemeToggle";
 import { useAuth } from "../features/auth/auth-context";
 import { authorFromProfile } from "../features/messages/author";
 import { MessageSearchButton } from "../features/message-search/components/MessageSearchButton";
 import { ChannelChat } from "../features/messages/components/ChannelChat";
+import { ChannelNotificationsButton } from "../features/notifications/components/settings/ChannelNotificationsButton";
 import { OwnProfileModal } from "../features/profile/components/OwnProfileModal";
 import { PublicProfileModal } from "../features/profile/components/PublicProfileModal";
 import { MembersSidebar } from "../features/servers/components/members/MembersSidebar";
@@ -33,7 +35,7 @@ import { VoiceChannelView } from "../features/voice/VoiceChannelView";
 import { useServerVoice } from "../features/voice/useServerVoice";
 import { cn } from "../lib/cn";
 import { withAlpha } from "../lib/color";
-import { useTheme, useThemeColors } from "../theme/theme-context";
+import { useThemeColors } from "../theme/theme-context";
 
 interface ChannelScreenProps {
   channel: Channel;
@@ -95,7 +97,6 @@ export function ChannelScreen({
   onBack,
 }: ChannelScreenProps) {
   const colors = useThemeColors();
-  const { theme, setTheme } = useTheme();
   const isText = channel.kind === "text";
   const insets = useSafeAreaInsets();
   const [isMembersVisible, setIsMembersVisible] = useState(false);
@@ -177,20 +178,7 @@ export function ChannelScreen({
             </View>
           ) : null}
         </View>
-        <TouchableOpacity
-          onPress={() => setTheme(theme === "dark" ? "light" : "dark")}
-          className="w-8.5 h-8.5 items-center justify-center"
-          accessibilityLabel={
-            theme === "dark" ? "Cambiar a tema claro" : "Cambiar a tema oscuro"
-          }
-          accessibilityRole="button"
-        >
-          <Feather
-            name={theme === "dark" ? "sun" : "moon"}
-            size={20}
-            color={colors.textMuted}
-          />
-        </TouchableOpacity>
+        <HeaderThemeToggle />
         {onOpenSearchResult ? (
           <MessageSearchButton
             serverId={serverId}
@@ -202,6 +190,7 @@ export function ChannelScreen({
             onOpenResult={onOpenSearchResult}
           />
         ) : null}
+        <ChannelNotificationsButton channel={channel} serverId={serverId} />
         <TouchableOpacity
           onPress={() => setIsMembersVisible(true)}
           className="w-8.5 h-8.5 items-center justify-center"

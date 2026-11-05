@@ -12,6 +12,7 @@ import { AccountSuspendedModal } from "./src/features/auth/components/AccountSus
 import { BlockedUsersProvider } from "./src/features/blocks/blocked-users-context";
 import { useEmailConfirmation } from "./src/features/auth/use-email-confirmation";
 import { configurePushNotifications } from "./src/features/push/notification-handler";
+import { PrivateCallRoot } from "./src/features/private-call/components/PrivateCallRoot";
 import { VoiceSessionProvider } from "./src/features/voice/voice-session-context";
 
 import { ForgotPasswordScreen } from "./src/screens/ForgotPasswordScreen";
@@ -93,7 +94,9 @@ function AppContent() {
     return (
       <BlockedUsersProvider>
         <VoiceSessionProvider>
-          <HomeScreen resumesLoader={hasShownLoader} />
+          <PrivateCallRoot>
+            <HomeScreen resumesLoader={hasShownLoader} />
+          </PrivateCallRoot>
         </VoiceSessionProvider>
       </BlockedUsersProvider>
     );

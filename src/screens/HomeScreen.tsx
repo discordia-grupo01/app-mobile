@@ -22,6 +22,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useReducer,
   useRef,
   useState,
 } from "react";
@@ -32,6 +33,12 @@ import { LoadingScreen } from "../components/ui/LoadingScreen";
 import { useLoadingGate } from "../hooks/useLoadingGate";
 import { useDirectMessages } from "../features/direct-messages/useDirectMessages";
 import { useMentions } from "../features/mentions/useMentions";
+import { notificationTargetOf } from "../features/notifications/history/historyHelpers";
+import { NotificationCenterModal } from "../features/notifications/components/center/NotificationCenterModal";
+import { NotificationSettingsProvider } from "../features/notifications/NotificationSettingsContext";
+import { NotificationsProvider } from "../features/notifications/NotificationsContext";
+import { useNotificationCenter } from "../features/notifications/useNotificationCenter";
+import { useNotificationSettings } from "../features/notifications/useNotificationSettings";
 import { PresenceProvider } from "../features/presence/PresenceContext";
 import { PlatformStatusLayer } from "../features/platform-status/components/PlatformStatusLayer";
 import { useIdleReporter } from "../features/presence/useIdleReporter";
@@ -137,7 +144,6 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
     };
   }, [token, updateUser]);
 
-  // Tocar "Voz conectada" (desde cualquier vista) abre el canal de la llamada.
   const voiceFocus = voice.state.focus;
   const [seenFocusNonce, setSeenFocusNonce] = useState(voiceFocus?.nonce);
   if (voiceFocus && voiceFocus.nonce !== seenFocusNonce) {
@@ -148,8 +154,6 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
     setLostChannel(null);
   }
 
-  // Si el canal de la llamada ya no esta (se borro, saliste del servidor o
-  // perdiste el acceso), se corta.
   const voiceTarget = channelTargetOf(voice.state.target);
   const leaveVoice = voice.leave;
   const isVoiceChannelGone =
@@ -175,16 +179,32 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
     selectedServer != null &&
     String(user.id) === selectedServer.owner_id;
 
-  // Se pide una sola vez y sobrevive a cambiar de vista, asi el contador de
-  // no leidos del riel no se resetea al entrar y salir de Mensajes Directos.
   const currentAuthor = useMemo(
     () => (user ? authorFromProfile(user) : null),
     [user],
   );
-  const mentions = useMentions(currentAuthor?.id ?? null);
+  const notificationSettings = useNotificationSettings(
+    currentAuthor?.id ?? null,
+  );
+  const mentions = useMentions(
+    currentAuthor?.id ?? null,
+    notificationSettings.settings,
+  );
+  const { settings, setChannel, setServer } = notificationSettings;
+  const notificationSettingsValue = useMemo(
+    () => ({ settings, setChannel, setServer }),
+    [settings, setChannel, setServer],
+  );
   const presence = usePresenceSession(currentAuthor?.id ?? null);
+  const [activitySignal, bumpActivity] = useReducer(
+    (signal: number) => signal + 1,
+    0,
+  );
   const directMessages = useDirectMessages(currentAuthor, view === "dm", {
-    onMention: mentions.receive,
+    onMention: (payload) => {
+      mentions.receive(payload);
+      bumpActivity();
+    },
     onRejoined: mentions.reload,
     ...presence.userRoomCallbacks,
   });
@@ -198,11 +218,6 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
     directMessages.conversations.map((c) => c.partner.id),
   );
   useServerPresence(presence.store, selectedServer?.id ?? null);
-  const withPresence = (screen: ReactNode) => (
-    <PresenceProvider value={presenceValue}>
-      <PlatformStatusLayer>{screen}</PlatformStatusLayer>
-    </PresenceProvider>
-  );
   const unreadDmCount = directMessages.conversations.filter(
     (c) => c.isUnread,
   ).length;
@@ -404,12 +419,51 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
 
   const openChannelId = selectedChannel?.id ?? null;
   const openChannelUnread = openChannelId
-    ? (mentions.byChannel[openChannelId] ?? 0)
+    ? (mentions.allByChannel[openChannelId] ?? 0)
     : 0;
   const { markChannelRead } = mentions;
   useEffect(() => {
     if (openChannelId && openChannelUnread > 0) markChannelRead(openChannelId);
   }, [openChannelId, openChannelUnread, markChannelRead]);
+
+  const notificationCenter = useNotificationCenter({
+    userId: currentAuthor?.id ?? null,
+    mentions,
+    conversations: directMessages.conversations,
+    areConversationsLoading: directMessages.isLoading,
+    activitySignal,
+    openChannelId: view === "servers" ? openChannelId : null,
+    openConversationId:
+      view === "dm"
+        ? (directMessages.activeSummary?.conversationId ?? null)
+        : null,
+  });
+  const notificationsValue = useMemo(
+    () => ({
+      unreadCount: notificationCenter.reads.unreadCount,
+      open: notificationCenter.open,
+    }),
+    [notificationCenter.reads.unreadCount, notificationCenter.open],
+  );
+
+  const withPresence = (screen: ReactNode) => (
+    <PresenceProvider value={presenceValue}>
+      <NotificationSettingsProvider value={notificationSettingsValue}>
+        <NotificationsProvider value={notificationsValue}>
+          <PlatformStatusLayer>{screen}</PlatformStatusLayer>
+          <NotificationCenterModal
+            center={notificationCenter}
+            servers={servers}
+            me={currentAuthor}
+            onOpenItem={(item) => {
+              const target = notificationTargetOf(item);
+              if (target) handlePushTarget(target);
+            }}
+          />
+        </NotificationsProvider>
+      </NotificationSettingsProvider>
+    </PresenceProvider>
+  );
 
   function handleOpenDirectMessages() {
     setView("dm");

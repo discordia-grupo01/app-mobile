@@ -13,7 +13,7 @@ import {
 
 import { Feather } from "@expo/vector-icons";
 import * as ImageManipulator from "expo-image-manipulator";
-import { useRef, useState, type ComponentRef } from "react";
+import { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -43,6 +43,7 @@ import { ProfileBanner } from "./ProfileBanner";
 import { clearStatus, updateOwnProfile, updateStatus } from "../service";
 import type { PickedProfileImage } from "../types";
 import { ModalShell } from "../../../components/ui/ModalShell";
+import { useRevealOnKeyboard } from "../useRevealOnKeyboard";
 
 const MAX_AVATAR_DIMENSION = 1024;
 
@@ -75,7 +76,9 @@ export function OwnProfileModal({
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isAvatarMenuOpen, setIsAvatarMenuOpen] = useState(false);
-  const scrollViewRef = useRef<ComponentRef<typeof ScrollView>>(null);
+  const { scrollViewRef, onSectionLayout, reveal } = useRevealOnKeyboard<
+    "status" | "description"
+  >();
 
   const { choice: ownChoice, setOwnStatus } = useOwnStatus();
   const displayedOwnStatus = usePresenceOf(user?.id);
@@ -168,10 +171,7 @@ export function OwnProfileModal({
     setDescriptionDraft(user!.description);
     setGlobalError("");
     setEditingField("description");
-    setTimeout(
-      () => scrollViewRef.current?.scrollToEnd({ animated: true }),
-      50,
-    );
+    reveal("description");
   }
 
   function cancelEditing() {
@@ -389,17 +389,18 @@ export function OwnProfileModal({
           />
         </View>
 
-        <View className="mb-4">
+        <View className="mb-4" onLayout={onSectionLayout("status")}>
           <CustomStatusEditor
             statusText={user.status_text}
             onSave={saveCustomStatus}
             onClear={clearCustomStatus}
+            onStartEditing={() => reveal("status")}
           />
         </View>
 
         <View className="h-px bg-line mb-4" />
 
-        <View className="mb-4">
+        <View className="mb-4" onLayout={onSectionLayout("description")}>
           <View className="flex-row items-center justify-between mb-1.5">
             <Text className="text-[11px] font-bold tracking-[1.2px] text-content-subtle">
               SOBRE MÍ

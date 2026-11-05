@@ -1,6 +1,7 @@
 import {
   VOICE_SCREEN_SHARE_DENIED,
   VOICE_SCREEN_SHARE_FAILED,
+  type VoiceSessionTarget,
 } from "@discordia/client-shared";
 
 import type { LocalTrackPublication, Room } from "livekit-client";
@@ -32,7 +33,7 @@ export function useNativeScreenShare(
   }, []);
 
   const start = useCallback(
-    async (channelId: string) => {
+    async (target: VoiceSessionTarget) => {
       stop();
       const attempt = attemptRef.current;
       const isCurrent = () => attempt === attemptRef.current;
@@ -42,7 +43,7 @@ export function useNativeScreenShare(
         onStoppedRef.current(notice);
       };
 
-      const result = await requestScreenShareToken(channelId);
+      const result = await requestScreenShareToken(target);
       if (!isCurrent()) return;
       if (!result.ok) {
         onStoppedRef.current(result.message);
