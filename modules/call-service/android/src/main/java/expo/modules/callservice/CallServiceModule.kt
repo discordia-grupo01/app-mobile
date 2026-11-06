@@ -33,7 +33,7 @@ class CallServiceModule : Module() {
     }
 
     Function("stop") {
-      val context = appContext.reactContext ?: return@Function
+      val context = appContext.reactContext ?: return@Function false
       context.stopService(Intent(context, CallForegroundService::class.java))
     }
   }
