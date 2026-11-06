@@ -9,7 +9,9 @@ import {
   type NotificationSettingsPatch,
   type NotificationSettingsResponse,
   type NotificationSettingState,
+  type SocketTicketResult,
   type UpdateNotificationSettingsResult,
+  isAccountSuspended,
 } from "@discordia/client-shared";
 
 import { apiFetch } from "../../lib/api-client";
@@ -95,4 +97,20 @@ function isSettingsResponse(
     Array.isArray(data?.preferences?.servers) &&
     Array.isArray(data?.preferences?.channels)
   );
+}
+
+export async function fetchUnreadSocketTicket(): Promise<SocketTicketResult> {
+  const result = await apiFetch<{ ticket?: string }>(
+    "/v1/notifications/socket-tickets",
+    { method: "POST" },
+  );
+  if (result.ok && typeof result.data?.ticket === "string") {
+    return { ok: true, ticket: result.data.ticket };
+  }
+  if (result.ok) return { ok: false, sessionExpired: false };
+  return {
+    ok: false,
+    sessionExpired: result.status === 401,
+    accountSuspended: isAccountSuspended(result),
+  };
 }
