@@ -35,6 +35,7 @@ import { useAuth } from "../../auth/auth-context";
 import { Avatar } from "../../../components/ui/Avatar";
 import { MemberRoleBadges } from "../../roles/components/MemberRoleBadges";
 import { useOwnStatus, usePresenceOf } from "../../presence/PresenceContext";
+import { PremiumPill } from "../../billing/components/shared/PremiumPill";
 import { ActivityStatusDot } from "./ActivityStatusDot";
 import { ActivityStatusRow } from "./ActivityStatusRow";
 import { CustomStatusEditor } from "./CustomStatusEditor";
@@ -364,6 +365,7 @@ export function OwnProfileModal({
               >
                 {user.name}
               </Text>
+              {user.premium ? <PremiumPill /> : null}
               <TouchableOpacity
                 onPress={startEditingName}
                 accessibilityLabel="Editar nombre"

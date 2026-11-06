@@ -9,7 +9,7 @@ export function PremiumPill() {
     <View
       accessible
       accessibilityLabel={BILLING_COPY.premiumPillLabel}
-      className="flex-row items-center gap-1 self-start rounded-full border px-2 py-1"
+      className="flex-row items-center gap-1 rounded-full border px-2 py-1"
       style={{
         borderColor: withAlpha(LOGO.yellow, 0.3),
         backgroundColor: withAlpha(LOGO.yellow, 0.1),

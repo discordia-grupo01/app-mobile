@@ -113,7 +113,7 @@ export function PremiumShowcase({ premium, onManage }: PremiumShowcaseProps) {
               {benefit.description}
             </Text>
             {benefit.id === "badge" ? (
-              <View className="mt-3">
+              <View className="mt-3 items-start">
                 <PremiumPill />
               </View>
             ) : null}

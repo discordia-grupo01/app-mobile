@@ -28,6 +28,7 @@ import { Avatar } from "../../../components/ui/Avatar";
 import { Button } from "../../../components/ui/Button";
 import { MemberRoleBadges } from "../../roles/components/MemberRoleBadges";
 import { getPublicProfile } from "../service";
+import { PremiumPill } from "../../billing/components/shared/PremiumPill";
 import { MutualServersList } from "./MutualServersList";
 import { ProfileBanner } from "./ProfileBanner";
 import { useBlockedUsersContext } from "../../blocks/blocked-users-context";
@@ -236,12 +237,15 @@ export function PublicProfileModal({
             keyboardShouldPersistTaps="handled"
           >
             <View className="mb-4">
-              <Text
-                className="text-[18px] font-bold text-content"
-                numberOfLines={1}
-              >
-                {profile.name}
-              </Text>
+              <View className="flex-row items-center gap-1.5">
+                <Text
+                  className="shrink text-[18px] font-bold text-content"
+                  numberOfLines={1}
+                >
+                  {profile.name}
+                </Text>
+                {profile.premium ? <PremiumPill /> : null}
+              </View>
               {isMuted && currentMutedUntil ? (
                 <View className="mt-1 flex-row items-center gap-1.5">
                   <Feather name="mic-off" size={12} color={colors.danger} />
