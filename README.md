@@ -157,6 +157,8 @@ Las `EXPO_PUBLIC_*` del APK salen de `eas.json`, no de `.env` (EAS no sube archi
 
 Compartir pantalla solo existe en el APK de Android: la llamada corre en un WebView que no puede capturar la pantalla, asi que el APK abre una segunda conexion nativa a la sala con `@livekit/react-native`, con la identidad `<id>:screen`, que solo publica la pantalla (ver `src/features/voice/screen-share/`). En Expo Go esos modulos nativos no existen: el boton no aparece y la llamada anda igual que siempre. Por eso LiveKit nativo nunca se importa arriba de un archivo, se carga con `loadLiveKitNative()` recien al compartir. Cualquier cambio en dependencias nativas o en los plugins de `app.json` necesita un build nuevo del APK.
 
+Para que el microfono siga andando con la app minimizada, el APK levanta un servicio en primer plano de tipo `microphone|mediaPlayback` mientras la llamada esta conectada (modulo local `modules/call-service`, usado desde `useCallForegroundService`). Muestra la notificacion fija "En llamada" y se corta al salir de la llamada. Si se desliza la app desde recientes, Android cierra el WebView y la llamada termina. En Expo Go el modulo no existe y no hace nada.
+
 ## Notas
 
 - Las requests siempre van al Gateway (Kong), nunca directo a un microservicio (ADR-006).
