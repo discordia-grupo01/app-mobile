@@ -50,6 +50,7 @@ import { channelTargetOf } from "./channel-target";
 import { participantProfilesOf } from "./participant-profiles";
 import { isNativeScreenShareAvailable } from "./screen-share/livekit-native";
 import { useNativeScreenShare } from "./screen-share/useNativeScreenShare";
+import { useCallForegroundService } from "./useCallForegroundService";
 import { useExpandedCall } from "./useExpandedCall";
 
 type EmbedWebView = WebView<object>;
@@ -372,6 +373,14 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
 
   const { muted, cameraOn, screenSharing, mutedForMe, target } = state;
   const { start: startScreenShare, stop: stopScreenShare } = screenShare;
+
+  // Desde que conecta (y aunque este reconectando) el microfono tiene que
+  // seguir andando con la app minimizada.
+  useCallForegroundService(
+    bridge && state.status !== "connecting" && state.status !== "idle"
+      ? target
+      : null,
+  );
 
   // Corre mientras haya llamada y pantalla compartida: salir, cambiar de
   // llamada o apagarla la corta (el reducer apaga `screenSharing` en esos casos).
