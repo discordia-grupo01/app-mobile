@@ -11,7 +11,14 @@ import {
 } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
-import { FlatList, Modal, Text, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  FlatList,
+  Modal,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 import { Button } from "../../../../components/ui/Button";
 import { useThemeColors } from "../../../../theme/theme-context";
@@ -41,7 +48,16 @@ export function NotificationCenterModal({
 }: NotificationCenterModalProps) {
   const colors = useThemeColors();
   const insets = useModalInsets();
-  const { history, reads, isOpen, close } = center;
+  const {
+    history,
+    reads,
+    isOpen,
+    close,
+    markAllRead,
+    canMarkAllRead,
+    isMarkingAll,
+    markAllError,
+  } = center;
   const view = useNotificationCenterView(history, reads, me);
 
   function open(item: NotificationHistoryItem) {
@@ -107,14 +123,26 @@ export function NotificationCenterModal({
             {NOTIFICATIONS_TITLE}
           </Text>
           <TouchableOpacity
-            onPress={reads.markAllRead}
-            disabled={reads.unreadCount === 0}
+            onPress={() => void markAllRead()}
+            disabled={!canMarkAllRead}
             accessibilityRole="button"
             accessibilityLabel={NOTIFICATIONS_MARK_ALL_READ_LABEL}
+            accessibilityState={{
+              disabled: !canMarkAllRead,
+              busy: isMarkingAll,
+            }}
             className="h-9 w-9 items-center justify-center rounded-full border border-line bg-surface-input"
-            style={reads.unreadCount === 0 ? { opacity: 0.4 } : undefined}
+            style={canMarkAllRead ? undefined : { opacity: 0.4 }}
           >
-            <Feather name="check-square" size={16} color={colors.textSubtle} />
+            {isMarkingAll ? (
+              <ActivityIndicator size="small" color={colors.textSubtle} />
+            ) : (
+              <Feather
+                name="check-square"
+                size={16}
+                color={colors.textSubtle}
+              />
+            )}
           </TouchableOpacity>
           <TouchableOpacity
             onPress={close}
@@ -125,6 +153,15 @@ export function NotificationCenterModal({
             <Feather name="x" size={16} color={colors.textSubtle} />
           </TouchableOpacity>
         </View>
+
+        {markAllError ? (
+          <Text
+            accessibilityRole="alert"
+            className="px-4 pb-2 text-[13px] text-danger"
+          >
+            {markAllError}
+          </Text>
+        ) : null}
 
         <NotificationTabs
           value={view.tab}
