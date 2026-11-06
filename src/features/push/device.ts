@@ -3,6 +3,7 @@ import * as Device from "expo-device";
 import {
   AndroidImportance,
   AndroidNotificationVisibility,
+  deleteNotificationChannelAsync,
   getExpoPushTokenAsync,
   getPermissionsAsync,
   requestPermissionsAsync,
@@ -13,7 +14,13 @@ import { Platform } from "react-native";
 
 export type PushPermission = "granted" | "askable" | "denied";
 
-const ANDROID_CHANNEL_ID = "default";
+// Los canales de Android no cambian de sonido una vez creados: el viejo
+// "default" (sonido del sistema) se reemplaza por "messages".
+const LEGACY_CHANNEL_ID = "default";
+const MESSAGES_CHANNEL_ID = "messages";
+const MESSAGE_SOUND = "nuevo_mensaje.wav";
+const INCOMING_CALL_CHANNEL_ID = "private_calls";
+const INCOMING_CALL_SOUND = "llamada_entrante.wav";
 
 function toPermission(response: NotificationPermissionsStatus): PushPermission {
   if (response.granted) return "granted";
@@ -40,11 +47,20 @@ export async function requestPushPermission(): Promise<PushPermission> {
 
 export async function ensureNotificationChannel(): Promise<void> {
   if (Platform.OS !== "android") return;
-  await setNotificationChannelAsync(ANDROID_CHANNEL_ID, {
-    name: "Notificaciones",
+  await deleteNotificationChannelAsync(LEGACY_CHANNEL_ID);
+  await setNotificationChannelAsync(MESSAGES_CHANNEL_ID, {
+    name: "Mensajes",
     importance: AndroidImportance.HIGH,
+    sound: MESSAGE_SOUND,
     vibrationPattern: [0, 250, 250, 250],
     lockscreenVisibility: AndroidNotificationVisibility.PRIVATE,
+  });
+  await setNotificationChannelAsync(INCOMING_CALL_CHANNEL_ID, {
+    name: "Llamadas entrantes",
+    importance: AndroidImportance.MAX,
+    sound: INCOMING_CALL_SOUND,
+    vibrationPattern: [0, 800, 400, 800, 400, 800],
+    lockscreenVisibility: AndroidNotificationVisibility.PUBLIC,
   });
 }
 

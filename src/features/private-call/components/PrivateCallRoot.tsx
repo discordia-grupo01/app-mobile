@@ -6,6 +6,7 @@ import { useCallPartnerResolver } from "../useCallPartnerResolver";
 import { PrivateCallBanner } from "./PrivateCallBanner";
 import { PrivateCallNotice } from "./PrivateCallNotice";
 import { PrivateCallPushActions } from "./PrivateCallPushActions";
+import { PrivateCallRingtone } from "./PrivateCallRingtone";
 import { PrivateCallScreen } from "./PrivateCallScreen";
 
 export function PrivateCallRoot({ children }: { children: ReactNode }) {
@@ -22,6 +23,7 @@ export function PrivateCallRoot({ children }: { children: ReactNode }) {
       <PrivateCallNotice />
       <PrivateCallScreen />
       <PrivateCallPushActions />
+      <PrivateCallRingtone />
     </PrivateCallProvider>
   );
 }

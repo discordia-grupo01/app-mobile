@@ -40,7 +40,11 @@
         "expo-notifications",
         {
           "icon": "./assets/notification-icon.png",
-          "color": "#4889C4"
+          "color": "#4889C4",
+          "sounds": [
+            "./assets/sounds/llamada_entrante.wav",
+            "./assets/sounds/nuevo_mensaje.wav"
+          ]
         }
       ],
       "expo-web-browser",
