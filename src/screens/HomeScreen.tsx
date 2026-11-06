@@ -193,7 +193,19 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
       mentions.receive(payload);
       bumpActivity();
     },
-    onRejoined: mentions.reload,
+    onRejoined: () => {
+      mentions.reload();
+      void listMyServers().then((result) => {
+        if (result.ok) setServers(result.servers);
+      });
+    },
+    onServerLeft: ({ server_id }) => {
+      setServers((prev) => prev.filter((server) => server.id !== server_id));
+      if (selectedServerId !== server_id) return;
+      setSelectedServerId(null);
+      setSelectedChannelId(null);
+      setView("dm");
+    },
     ...presence.userRoomCallbacks,
   });
   const presenceValue = usePresenceProviderValue(
