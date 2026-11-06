@@ -38,7 +38,6 @@ export function NotificationLevelOption({
       className={cn(
         "flex-row items-center gap-3 px-4 py-3",
         !isLast && "border-b border-line",
-        disabled && "opacity-60",
       )}
     >
       <View className="flex-1">
