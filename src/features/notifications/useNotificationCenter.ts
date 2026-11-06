@@ -1,4 +1,7 @@
-import type { ConversationSummary } from "@discordia/client-shared";
+import {
+  type ConversationSummary,
+  NOTIFICATIONS_MARK_ALL_READ_FAILED,
+} from "@discordia/client-shared";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -16,6 +19,10 @@ interface NotificationCenterInput {
     isLoaded: boolean;
     isUnread: (messageId: string) => boolean;
   };
+  unread: {
+    hasUnread: boolean;
+    markAllRead: () => Promise<boolean>;
+  };
   conversations: readonly ConversationSummary[];
   areConversationsLoading: boolean;
   activitySignal: number;
@@ -26,6 +33,7 @@ interface NotificationCenterInput {
 export function useNotificationCenter({
   userId,
   mentions,
+  unread,
   conversations,
   areConversationsLoading,
   activitySignal,
@@ -79,14 +87,42 @@ export function useNotificationCenter({
     if (openConversationId) markConversationRead(openConversationId);
   }, [openConversationId, history.items, markConversationRead]);
 
+  const [isMarkingAll, setIsMarkingAll] = useState(false);
+  const [markAllError, setMarkAllError] = useState<string | null>(null);
+  const { markAllRead: markHistoryRead } = reads;
+  const { hasUnread: hasUnreadChannels, markAllRead: markChannelsRead } =
+    unread;
+  const markAllRead = useCallback(async () => {
+    markHistoryRead();
+    setMarkAllError(null);
+    if (!hasUnreadChannels) return;
+    setIsMarkingAll(true);
+    const ok = await markChannelsRead();
+    setIsMarkingAll(false);
+    if (!ok) setMarkAllError(NOTIFICATIONS_MARK_ALL_READ_FAILED);
+  }, [markHistoryRead, hasUnreadChannels, markChannelsRead]);
+  const canMarkAllRead =
+    !isMarkingAll && (reads.unreadCount > 0 || hasUnreadChannels);
+
   const { refresh } = history;
   const open = useCallback(() => {
     void refresh();
+    setMarkAllError(null);
     setIsOpen(true);
   }, [refresh]);
   const close = useCallback(() => setIsOpen(false), []);
 
-  return { history, reads, isOpen, open, close };
+  return {
+    history,
+    reads,
+    isOpen,
+    open,
+    close,
+    markAllRead,
+    canMarkAllRead,
+    isMarkingAll,
+    markAllError,
+  };
 }
 
 export type NotificationCenterState = ReturnType<typeof useNotificationCenter>;
