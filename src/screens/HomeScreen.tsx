@@ -54,7 +54,7 @@ import { EmptyState } from "../features/servers/components/home/EmptyState";
 import { JoinServerModal } from "../features/servers/components/server/JoinServerModal";
 import { useAuth } from "../features/auth/auth-context";
 import { authorFromProfile } from "../features/messages/author";
-import { getOwnProfile } from "../features/profile/service";
+import { useOwnProfileSync } from "../features/profile/useOwnProfileSync";
 import { listMemberRoles, listRoles } from "../features/roles/api";
 import {
   deleteServer,
@@ -84,11 +84,11 @@ interface HomeScreenProps {
 export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
   const colors = useThemeColors();
   const statusBarStyle = useStatusBarStyle();
-  const { user, token, logout, updateUser } = useAuth();
+  const { user, token, logout } = useAuth();
   const insets = useSafeAreaInsets();
   const [servers, setServers] = useState<ServerSummary[]>([]);
   const [isLoadingServers, setIsLoadingServers] = useState(true);
-  const [isProfileLoaded, setIsProfileLoaded] = useState(false);
+  const { isLoaded: isProfileLoaded } = useOwnProfileSync();
   const [selectedServerId, setSelectedServerId] = useState<string | null>(null);
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(
     null,
@@ -130,19 +130,6 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
       cancelled = true;
     };
   }, []);
-
-  useEffect(() => {
-    if (!token) return;
-    let cancelled = false;
-    getOwnProfile().then((result) => {
-      if (cancelled) return;
-      if (result.ok) updateUser(result.user);
-      setIsProfileLoaded(true);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [token, updateUser]);
 
   const voiceFocus = voice.state.focus;
   const [seenFocusNonce, setSeenFocusNonce] = useState(voiceFocus?.nonce);
