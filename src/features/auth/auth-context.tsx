@@ -39,6 +39,7 @@ import {
   requestEmailConfirmationService,
 } from "./service";
 import { verifyTwoFactorService } from "../two-factor/service";
+import { sameUser } from "./sameUser";
 import { closeSocket } from "../messages/socket";
 import { unregisterOnLogout } from "../push/registration";
 
@@ -243,7 +244,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const updateUser = useCallback((updated: User): void => {
-    setUser(updated);
+    setUser((current) => (sameUser(current, updated) ? current : updated));
     updateStoredUser(updated).catch(() => {});
   }, []);
 

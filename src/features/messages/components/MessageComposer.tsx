@@ -1,23 +1,21 @@
 import {
   ATTACH_FILE_LABEL,
-  ALLOWED_ATTACHMENT_TYPES,
   type AttachmentTarget,
   decodeMentions,
   EMOJI_PICKER_LABEL,
   MAX_MESSAGE_LENGTH,
   SEND_MESSAGE_LABEL,
-  validateAttachment,
-  validateAttachmentCount,
   validateMessageContent,
 } from "@discordia/client-shared";
 
-import * as DocumentPicker from "expo-document-picker";
 import { useEffect, useRef, useState, type ComponentRef } from "react";
 import { Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { cn } from "../../../lib/cn";
+import { useAttachmentPicker } from "../../attachments/useAttachmentPicker";
 import { useAttachmentUploads } from "../../attachments/useAttachmentUploads";
+import { useOwnPremium } from "../../billing/useOwnPremium";
 import { useThemeColors } from "../../../theme/theme-context";
 import type { SendMessageResult } from "../use-channel-messages";
 import { useMentionDraft } from "../useMentionDraft";
@@ -30,10 +28,6 @@ import { MentionSuggestions } from "./MentionSuggestions";
 import { useMessageMentions } from "./MentionsContext";
 
 const COUNTER_THRESHOLD = MAX_MESSAGE_LENGTH - 200;
-
-// TODO: mover a client-shared (messages/chat) en la proxima release.
-const ATTACHMENT_PICKER_FAILED =
-  "No se pudo abrir el selector de archivos. Intentá de nuevo.";
 
 interface MessageComposerProps {
   placeholder: string;
@@ -62,9 +56,13 @@ export function MessageComposer({
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [sendError, setSendError] = useState<string | undefined>();
   const [isSending, setIsSending] = useState(false);
-  const [attachments, setAttachments] = useState<
-    DocumentPicker.DocumentPickerAsset[]
-  >([]);
+  const premium = useOwnPremium();
+  const {
+    attachments,
+    pick: pickFiles,
+    remove: removeAttachment,
+    clear: clearAttachments,
+  } = useAttachmentPicker({ premium, onError: setSendError });
   const inputRef = useRef<ComponentRef<typeof TextInput>>(null);
   const { uploadAll, forget } = useAttachmentUploads();
 
@@ -149,45 +147,8 @@ export function MessageComposer({
 
   function clearDraft() {
     draft.reset();
-    setAttachments([]);
+    clearAttachments();
     forget();
-  }
-
-  async function pickFiles() {
-    let result: DocumentPicker.DocumentPickerResult;
-    try {
-      result = await DocumentPicker.getDocumentAsync({
-        multiple: true,
-        type: [...ALLOWED_ATTACHMENT_TYPES],
-        copyToCacheDirectory: true,
-        // Por defecto el picker lee cada archivo entero a base64 y no se usa:
-        // los bytes se suben desde `uri`.
-        base64: false,
-      });
-    } catch (err) {
-      // En el APK un rechazo sin catch no se ve en ningun lado: lo mostramos
-      // y queda en `adb logcat -s ReactNativeJS` con el motivo real.
-      console.warn("pickFiles: getDocumentAsync failed", err);
-      setSendError(ATTACHMENT_PICKER_FAILED);
-      return;
-    }
-    if (result.canceled) return;
-
-    const known = new Set(attachments.map((file) => file.uri));
-    const fresh = result.assets.filter((file) => !known.has(file.uri));
-    const toFile = (file: DocumentPicker.DocumentPickerAsset) => ({
-      type: file.mimeType ?? "",
-      size: file.size ?? 1,
-    });
-    const rejected = fresh
-      .map((file) => validateAttachment(toFile(file)))
-      .find((error) => error !== undefined);
-    const valid = fresh.filter((file) => !validateAttachment(toFile(file)));
-    const overLimit = validateAttachmentCount(attachments.length, valid.length);
-    if (overLimit) return setSendError(overLimit);
-
-    setSendError(rejected);
-    setAttachments((prev) => [...prev, ...valid]);
   }
 
   return (
@@ -203,9 +164,7 @@ export function MessageComposer({
       <AttachmentChips
         attachments={editing ? [] : attachments}
         disabled={isSending}
-        onRemove={(uri) =>
-          setAttachments((prev) => prev.filter((file) => file.uri !== uri))
-        }
+        onRemove={removeAttachment}
       />
       <View className="flex-row items-end rounded-[10px] border border-line bg-surface-input px-1.5 py-1">
         <ComposerIconButton

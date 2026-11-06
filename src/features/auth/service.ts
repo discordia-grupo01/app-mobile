@@ -32,6 +32,8 @@ import {
 } from "@discordia/client-shared";
 
 import { apiFetch } from "../../lib/api-client";
+
+const RETURN_TO_APP = "app";
 import { getOrCreateDeviceId } from "../../lib/device-id";
 
 export async function registerService(
@@ -43,6 +45,7 @@ export async function registerService(
       name: values.name.trim(),
       email: values.email.trim(),
       password: values.password,
+      return_to: RETURN_TO_APP,
     }),
   });
 
@@ -109,7 +112,7 @@ export async function requestEmailConfirmationService(
 ): Promise<EmailConfirmationResult> {
   const result = await apiFetch<{ message: string }>("/v1/email-confirmation", {
     method: "POST",
-    body: JSON.stringify({ email: email.trim() }),
+    body: JSON.stringify({ email: email.trim(), return_to: RETURN_TO_APP }),
   });
 
   if (!result.ok) {
