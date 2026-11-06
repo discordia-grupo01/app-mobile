@@ -468,7 +468,9 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
     <PresenceProvider value={presenceValue}>
       <NotificationSettingsProvider value={notificationSettingsValue}>
         <NotificationsProvider value={notificationsValue}>
-          <PlatformStatusLayer>{screen}</PlatformStatusLayer>
+          <PlatformStatusLayer refreshSignal={unread.statusRevision}>
+            {screen}
+          </PlatformStatusLayer>
           <NotificationCenterModal
             center={notificationCenter}
             servers={servers}
