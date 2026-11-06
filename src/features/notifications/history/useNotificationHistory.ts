@@ -100,7 +100,7 @@ export function useNotificationHistory(userId: string | null) {
   }, [status, reload]);
 
   return {
-    items,
+    items: items as readonly NotificationHistoryItem[],
     status,
     error,
     hasMore: nextCursor !== null,
