@@ -12,6 +12,13 @@ import {
   View,
 } from "react-native";
 
+import { BillingSettings } from "../../../billing/BillingSettings";
+import { BillingTabs } from "../../../billing/components/navigation/BillingTabs";
+import { BILLING_COPY } from "../../../billing/billingCopy";
+import {
+  type BillingSection,
+  isBillingSection,
+} from "../../../billing/billingSections";
 import { PlatformStatusStep } from "../../../platform-status/components/PlatformStatusStep";
 import { useThemeColors } from "../../../../theme/theme-context";
 import { AccountSettingsMenu } from "./account-settings/AccountSettingsMenu";
@@ -30,7 +37,8 @@ type Section =
   | "security"
   | "two-factor"
   | "pin"
-  | "status";
+  | "status"
+  | BillingSection;
 
 const TITLES: Record<Section, string> = {
   menu: "Configuración",
@@ -40,6 +48,10 @@ const TITLES: Record<Section, string> = {
   "two-factor": "Verificación en dos pasos",
   pin: "PIN de acceso rápido",
   status: "Estado de la plataforma",
+  premium: "Premium",
+  subscriptions: BILLING_COPY.subscriptionsTitle,
+  points: BILLING_COPY.pointsTitle,
+  transactions: BILLING_COPY.transactionsTitle,
 };
 
 const BACK_TARGET: Record<Section, Section> = {
@@ -50,6 +62,10 @@ const BACK_TARGET: Record<Section, Section> = {
   "two-factor": "security",
   pin: "security",
   status: "menu",
+  premium: "menu",
+  subscriptions: "menu",
+  points: "menu",
+  transactions: "menu",
 };
 
 interface AccountSettingsSheetProps {
@@ -142,6 +158,7 @@ export function AccountSettingsSheet({
               onSelectNotifications={() => setSection("notifications")}
               onSelectSecurity={() => setSection("security")}
               onSelectStatus={() => setSection("status")}
+              onSelectBilling={setSection}
               onLogout={() => setIsConfirmVisible(true)}
             />
           ) : section === "appearance" ? (
@@ -156,6 +173,13 @@ export function AccountSettingsSheet({
             />
           ) : section === "status" ? (
             <PlatformStatusStep />
+          ) : isBillingSection(section) ? (
+            <View className="pt-4">
+              <BillingTabs active={section} onSelect={setSection} />
+              <View className="px-4.5 pt-5">
+                <BillingSettings tab={section} onNavigate={setSection} />
+              </View>
+            </View>
           ) : section === "two-factor" ? (
             <TwoFactorPanel onClose={goBack} scrollRef={scrollRef} />
           ) : (
