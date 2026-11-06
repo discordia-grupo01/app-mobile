@@ -14,9 +14,15 @@ import {
 } from "./PlatformStatusBanner";
 import { PlatformStatusModal } from "./PlatformStatusModal";
 
-export function PlatformStatusLayer({ children }: { children: ReactNode }) {
+export function PlatformStatusLayer({
+  children,
+  refreshSignal = 0,
+}: {
+  children: ReactNode;
+  refreshSignal?: number;
+}) {
   const insets = useSafeAreaInsets();
-  const { state } = usePlatformStatus();
+  const { state } = usePlatformStatus(refreshSignal);
   const [hiddenKey, setHiddenKey] = useState<string | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
