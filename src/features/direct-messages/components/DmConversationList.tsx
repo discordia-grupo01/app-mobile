@@ -101,10 +101,13 @@ export function DmConversationList({
                   onPress={() => onSelect(partner.id)}
                   activeOpacity={0.75}
                   className={cn(
-                    "mb-0.5 flex-row items-center gap-2.5 rounded-lg px-2 py-2.5",
+                    "relative mb-0.5 flex-row items-center gap-2.5 rounded-lg px-2 py-2.5",
                     isActive && "bg-accent/20",
                   )}
                 >
+                  {isUnread ? (
+                    <View className="absolute left-0 top-1/2 -mt-1 h-2 w-1 rounded-r-full bg-content" />
+                  ) : null}
                   <View className="relative">
                     <Avatar
                       name={partner.name}
@@ -119,7 +122,10 @@ export function DmConversationList({
                   <View className="min-w-0 flex-1">
                     <View className="flex-row items-center justify-between gap-1">
                       <Text
-                        className="flex-1 text-[15px] font-semibold text-content"
+                        className={cn(
+                          "flex-1 text-[15px] font-semibold text-content",
+                          isUnread && "font-bold",
+                        )}
                         numberOfLines={1}
                       >
                         {partner.name}
@@ -141,9 +147,6 @@ export function DmConversationList({
                       </Text>
                     ) : null}
                   </View>
-                  {isUnread ? (
-                    <View className="h-2 w-2 rounded-full bg-danger" />
-                  ) : null}
                 </TouchableOpacity>
               );
             },

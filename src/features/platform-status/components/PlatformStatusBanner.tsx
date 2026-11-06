@@ -8,13 +8,9 @@ import {
 import { Feather } from "@expo/vector-icons";
 import { Pressable, Text, TouchableOpacity, View } from "react-native";
 
-import { useThemeColors } from "../../../theme/theme-context";
-import {
-  STATUS_BAR_INK,
-  STATUS_BAR_LINK_LINE,
-  STATUS_TONES,
-  statusBarBackground,
-} from "./statusTone";
+import { withAlpha } from "../../../lib/color";
+import { useTheme, useThemeColors } from "../../../theme/theme-context";
+import { STATUS_TONES } from "./statusTone";
 
 export const STATUS_BANNER_HEIGHT = 40;
 
@@ -34,16 +30,20 @@ export function PlatformStatusBanner({
   onOpenDetails,
   onHide,
 }: PlatformStatusBannerProps) {
+  const { theme } = useTheme();
   const colors = useThemeColors();
   const tone = STATUS_TONES[status];
+  const mutedInk = withAlpha(colors.onAccent, 0.7);
 
   return (
     <View
-      className="absolute inset-x-0 flex-row items-center pl-3.5 pr-1"
+      className="absolute inset-x-0 flex-row items-center bg-surface-servers pl-3.5 pr-1"
       style={{
         top,
         height: STATUS_BANNER_HEIGHT,
-        backgroundColor: statusBarBackground(status, colors),
+        borderBottomWidth: 1,
+        borderBottomColor:
+          theme === "light" ? colors.borderOnAccent : colors.border,
       }}
     >
       <Pressable
@@ -52,9 +52,9 @@ export function PlatformStatusBanner({
         accessibilityRole="button"
         accessibilityLabel={`${statusNoticeText(incidents)}. ${VIEW_PLATFORM_STATUS_LABEL}`}
       >
-        <Feather name={tone.icon} size={15} color={STATUS_BAR_INK} />
+        <Feather name={tone.icon} size={15} color={tone.color(colors)} />
         <Text
-          className="flex-shrink text-[13px] font-semibold text-black/80"
+          className="flex-shrink text-[13px] font-semibold text-on-accent"
           numberOfLines={1}
         >
           {statusNoticeText(incidents)}
@@ -64,10 +64,10 @@ export function PlatformStatusBanner({
             paddingTop: 3,
             paddingBottom: 2,
             borderBottomWidth: 1,
-            borderBottomColor: STATUS_BAR_LINK_LINE,
+            borderBottomColor: withAlpha(colors.onAccent, 0.4),
           }}
         >
-          <Text className="text-[13px] font-medium text-black/80">
+          <Text className="text-[13px] font-medium" style={{ color: mutedInk }}>
             {VIEW_PLATFORM_STATUS_LABEL}
           </Text>
         </View>
@@ -78,7 +78,7 @@ export function PlatformStatusBanner({
         accessibilityRole="button"
         accessibilityLabel={HIDE_STATUS_NOTICE_LABEL}
       >
-        <Feather name="x" size={16} color={STATUS_BAR_INK} />
+        <Feather name="x" size={16} color={mutedInk} />
       </TouchableOpacity>
     </View>
   );
