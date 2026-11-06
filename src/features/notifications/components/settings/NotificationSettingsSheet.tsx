@@ -3,6 +3,7 @@ import {
   NOTIFICATION_LEVEL_INHERITED_BADGE,
   NOTIFICATION_LEVELS,
   NOTIFICATION_SETTINGS_CLOSE_LABEL,
+  NOTIFICATION_SETTINGS_LEVEL_MUTED_NOTE,
   NOTIFICATION_SETTINGS_LEVEL_TITLE,
   NOTIFICATION_SETTINGS_MUTED_HINT,
   NOTIFICATION_SETTINGS_SERVER_MUTED_NOTE,
@@ -24,6 +25,7 @@ import {
 } from "react-native";
 
 import { FormErrorBanner } from "../../../../components/ui/FormErrorBanner";
+import { cn } from "../../../../lib/cn";
 import { useThemeColors } from "../../../../theme/theme-context";
 import {
   type NotificationTarget,
@@ -58,6 +60,7 @@ export function NotificationSettingsSheet({
     ? NOTIFICATION_LEVEL_INHERITED_BADGE
     : NOTIFICATION_LEVEL_DEFAULT_BADGE;
   const isSilenced = state.isMuted || state.isServerSilenced;
+  const isLevelDisabled = state.isSaving || isSilenced;
 
   return (
     <Modal transparent visible animationType="fade" onRequestClose={close}>
@@ -105,37 +108,54 @@ export function NotificationSettingsSheet({
           <Text className="mb-2 text-[11px] font-bold uppercase tracking-[1px] text-content-subtle">
             {NOTIFICATION_SETTINGS_LEVEL_TITLE}
           </Text>
-          <View
-            className="overflow-hidden rounded-[14px] border border-line"
-            accessibilityRole="radiogroup"
-          >
-            {NOTIFICATION_LEVELS.map((level, index) => {
-              const isSelected = level === state.configuredLevel;
-              return (
-                <NotificationLevelOption
-                  key={level}
-                  level={level}
-                  isSelected={isSelected}
-                  badge={isSelected && state.followsParent ? parentBadge : null}
-                  disabled={state.isSaving}
-                  isLast={index === NOTIFICATION_LEVELS.length - 1}
-                  onPress={() => state.selectLevel(level)}
-                />
-              );
-            })}
-          </View>
-          {state.followsParent ? null : (
-            <TouchableOpacity
-              onPress={state.resetLevel}
-              disabled={state.isSaving}
-              accessibilityRole="button"
-              className="mt-2 self-start py-1"
-            >
-              <Text className="text-[13px] font-bold text-accent">
-                {notificationLevelResetLabel(target.scope)}
+          {isSilenced ? (
+            <View className="mb-2 flex-row items-center gap-2">
+              <Feather name="bell-off" size={13} color={colors.textSubtle} />
+              <Text className="flex-1 text-[12px] leading-[17px] text-content-muted">
+                {NOTIFICATION_SETTINGS_LEVEL_MUTED_NOTE}
               </Text>
-            </TouchableOpacity>
-          )}
+            </View>
+          ) : null}
+          <View
+            className={cn(
+              isSilenced ? "opacity-50" : state.isSaving && "opacity-60",
+            )}
+          >
+            <View
+              className="overflow-hidden rounded-[14px] border border-line"
+              accessibilityRole="radiogroup"
+              accessibilityState={{ disabled: isLevelDisabled }}
+            >
+              {NOTIFICATION_LEVELS.map((level, index) => {
+                const isSelected = level === state.configuredLevel;
+                return (
+                  <NotificationLevelOption
+                    key={level}
+                    level={level}
+                    isSelected={isSelected}
+                    badge={
+                      isSelected && state.followsParent ? parentBadge : null
+                    }
+                    disabled={isLevelDisabled}
+                    isLast={index === NOTIFICATION_LEVELS.length - 1}
+                    onPress={() => state.selectLevel(level)}
+                  />
+                );
+              })}
+            </View>
+            {state.followsParent ? null : (
+              <TouchableOpacity
+                onPress={state.resetLevel}
+                disabled={isLevelDisabled}
+                accessibilityRole="button"
+                className="mt-2 self-start py-1"
+              >
+                <Text className="text-[13px] font-bold text-accent">
+                  {notificationLevelResetLabel(target.scope)}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
 
           <TouchableOpacity
             activeOpacity={0.75}
