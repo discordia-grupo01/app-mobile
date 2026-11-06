@@ -2,7 +2,6 @@ import {
   isServerMuted,
   NO_UNREAD_FLAGS,
   type ServerSummary,
-  UNREAD_MESSAGES_LABEL,
   type UnreadFlags,
 } from "@discordia/client-shared";
 
@@ -11,6 +10,7 @@ import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { resolveServerIconUrl } from "../../api";
+import { railIconLabel } from "./railIconLabel";
 import { cn } from "../../../../lib/cn";
 import { useOptionalNotificationSettings } from "../../../notifications/NotificationSettingsContext";
 import { useTheme, useThemeColors } from "../../../../theme/theme-context";
@@ -45,33 +45,42 @@ function ServerRailIcon({
   const isMuted =
     notificationSettings !== null &&
     isServerMuted(notificationSettings.settings, item.id);
+  const isSuspended = item.suspended === true;
+  const shown = isSuspended ? NO_UNREAD_FLAGS : unread;
   return (
     <TouchableOpacity
       activeOpacity={0.75}
       onPress={onPress}
       className={cn("items-center justify-center", isMuted && "opacity-60")}
-      accessibilityLabel={
-        unread.unread && unread.mentionCount === 0
-          ? `${item.name}, ${UNREAD_MESSAGES_LABEL.toLowerCase()}`
-          : item.name
-      }
+      accessibilityLabel={railIconLabel(item.name, shown, isSuspended)}
       style={styles.iconWrap}
     >
       {active ? (
         <View className="absolute left-0 top-[50%] -mt-3 w-1 h-6 rounded-xs bg-server-pill" />
-      ) : unread.unread ? (
+      ) : shown.unread ? (
         <View className="absolute left-0 top-[50%] -mt-1 w-1 h-2 rounded-xs bg-server-pill" />
       ) : null}
-      <Avatar
-        name={item.name}
-        uri={resolveServerIconUrl(item.icon_url)}
-        size={48}
-        borderRadius={active ? 16 : 24}
-      />
-      {unread.mentionCount > 0 ? (
+      <View>
+        <Avatar
+          name={item.name}
+          uri={resolveServerIconUrl(item.icon_url)}
+          size={48}
+          borderRadius={active ? 16 : 24}
+        />
+        {isSuspended ? (
+          <View
+            pointerEvents="none"
+            style={[
+              styles.suspendedOverlay,
+              { borderRadius: active ? 16 : 24 },
+            ]}
+          />
+        ) : null}
+      </View>
+      {shown.mentionCount > 0 ? (
         <CountBadge
-          count={unread.mentionCount}
-          label={`${unread.mentionCount} menciones sin leer en ${item.name}`}
+          count={shown.mentionCount}
+          label={`${shown.mentionCount} menciones sin leer en ${item.name}`}
           className="absolute bottom-0 right-2 border-2 border-surface-servers"
         />
       ) : null}
@@ -165,5 +174,13 @@ const styles = StyleSheet.create({
   },
   iconWrap: {
     width: RAIL_WIDTH,
+  },
+  suspendedOverlay: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
 });

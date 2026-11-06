@@ -5,6 +5,7 @@ import {
   type DeleteServerResult,
   hasPermission,
   type LeaveServerResult,
+  markServerSuspended,
   type Message,
   messageAuthorOf,
   type MessageJumpTarget,
@@ -13,6 +14,7 @@ import {
   type Role,
   type ServerSummary,
   SESSION_EXPIRED_MESSAGE,
+  suspendedServerIds,
 } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
@@ -74,6 +76,7 @@ import { DirectMessagesScreen } from "./DirectMessagesScreen";
 import { channelTargetOf } from "../features/voice/channel-target";
 import { ServerChannelsScreen } from "./ServerChannelsScreen";
 import { ServerPickerScreen } from "./ServerPickerScreen";
+import { ServerSuspendedScreen } from "./ServerSuspendedScreen";
 
 type MainView = "servers" | "dm";
 
@@ -174,9 +177,11 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
   const notificationSettings = useNotificationSettings(
     currentAuthor?.id ?? null,
   );
+  const suspendedIds = useMemo(() => suspendedServerIds(servers), [servers]);
   const mentions = useMentions(
     currentAuthor?.id ?? null,
     notificationSettings.settings,
+    suspendedIds,
   );
   const { settings, setChannel, setServer } = notificationSettings;
   const notificationSettingsValue = useMemo(
@@ -205,6 +210,12 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
       setSelectedServerId(null);
       setSelectedChannelId(null);
       setView("dm");
+    },
+    onServerSuspended: ({ server_id }) => {
+      setServers((prev) => markServerSuspended(prev, server_id));
+    },
+    onServerReactivated: () => {
+      void reloadServers();
     },
     ...presence.userRoomCallbacks,
   });
@@ -292,7 +303,7 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
    * Roles asignados al usuario actual en `selectedServer`
    */
   const fetchMyRoles = useCallback(() => {
-    if (!user || !selectedServer) return undefined;
+    if (!user || !selectedServer || selectedServer.suspended) return undefined;
     let cancelled = false;
     listMemberRoles(selectedServer.id, String(user.id)).then((result) => {
       if (cancelled) return;
@@ -312,7 +323,7 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
    * haya un canal de texto abierto).
    */
   const fetchServerRoles = useCallback(() => {
-    if (!selectedServer) return undefined;
+    if (!selectedServer || selectedServer.suspended) return undefined;
     let cancelled = false;
     listRoles(selectedServer.id).then((result) => {
       if (!cancelled && result.ok) setServerRoles(result.roles);
@@ -425,6 +436,7 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
   const unread = useUnreadState(
     currentAuthor?.id ?? null,
     view === "servers" ? openChannelId : null,
+    suspendedIds,
   );
   useEffect(() => {
     if (openChannelId && openChannelUnread > 0) markChannelRead(openChannelId);
@@ -442,6 +454,7 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
       view === "dm"
         ? (directMessages.activeSummary?.conversationId ?? null)
         : null,
+    suspendedServerIds: suspendedIds,
   });
   const notificationsValue = useMemo(
     () => ({
@@ -570,6 +583,33 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
     );
   }
 
+  const addServerModals = (
+    <>
+      <AddServerSheet
+        visible={isAddServerSheetVisible}
+        onClose={() => setIsAddServerSheetVisible(false)}
+        onCreatePress={() => {
+          setIsAddServerSheetVisible(false);
+          setIsCreateModalVisible(true);
+        }}
+        onJoinPress={() => {
+          setIsAddServerSheetVisible(false);
+          setIsJoinModalVisible(true);
+        }}
+      />
+      <CreateServerModal
+        visible={isCreateModalVisible}
+        onClose={() => setIsCreateModalVisible(false)}
+        onCreated={addAndSelect}
+      />
+      <JoinServerModal
+        visible={isJoinModalVisible}
+        onClose={() => setIsJoinModalVisible(false)}
+        onJoined={addAndSelect}
+      />
+    </>
+  );
+
   if (view === "dm") {
     return withPresence(
       <View className="flex-1">
@@ -585,28 +625,27 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
           onLogout={logout}
         />
 
-        <AddServerSheet
-          visible={isAddServerSheetVisible}
-          onClose={() => setIsAddServerSheetVisible(false)}
-          onCreatePress={() => {
-            setIsAddServerSheetVisible(false);
-            setIsCreateModalVisible(true);
-          }}
-          onJoinPress={() => {
-            setIsAddServerSheetVisible(false);
-            setIsJoinModalVisible(true);
-          }}
+        {addServerModals}
+      </View>,
+    );
+  }
+
+  if (selectedServer?.suspended) {
+    return withPresence(
+      <View className="flex-1">
+        <StatusBar style={statusBarStyle} />
+        <ServerSuspendedScreen
+          server={selectedServer}
+          servers={servers}
+          userName={user?.name}
+          unreadDmCount={unreadDmCount}
+          unreadByServer={unread.byServer}
+          onSelectServer={selectServer}
+          onOpenDirectMessages={handleOpenDirectMessages}
+          onAddServer={handleAddServer}
+          onLogout={logout}
         />
-        <CreateServerModal
-          visible={isCreateModalVisible}
-          onClose={() => setIsCreateModalVisible(false)}
-          onCreated={addAndSelect}
-        />
-        <JoinServerModal
-          visible={isJoinModalVisible}
-          onClose={() => setIsJoinModalVisible(false)}
-          onJoined={addAndSelect}
-        />
+        {addServerModals}
       </View>,
     );
   }
@@ -676,28 +715,7 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
           onServerUpdated={handleServerUpdated}
         />
 
-        <AddServerSheet
-          visible={isAddServerSheetVisible}
-          onClose={() => setIsAddServerSheetVisible(false)}
-          onCreatePress={() => {
-            setIsAddServerSheetVisible(false);
-            setIsCreateModalVisible(true);
-          }}
-          onJoinPress={() => {
-            setIsAddServerSheetVisible(false);
-            setIsJoinModalVisible(true);
-          }}
-        />
-        <CreateServerModal
-          visible={isCreateModalVisible}
-          onClose={() => setIsCreateModalVisible(false)}
-          onCreated={addAndSelect}
-        />
-        <JoinServerModal
-          visible={isJoinModalVisible}
-          onClose={() => setIsJoinModalVisible(false)}
-          onJoined={addAndSelect}
-        />
+        {addServerModals}
       </View>,
     );
   }
@@ -717,28 +735,7 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
           onLogout={logout}
         />
 
-        <AddServerSheet
-          visible={isAddServerSheetVisible}
-          onClose={() => setIsAddServerSheetVisible(false)}
-          onCreatePress={() => {
-            setIsAddServerSheetVisible(false);
-            setIsCreateModalVisible(true);
-          }}
-          onJoinPress={() => {
-            setIsAddServerSheetVisible(false);
-            setIsJoinModalVisible(true);
-          }}
-        />
-        <CreateServerModal
-          visible={isCreateModalVisible}
-          onClose={() => setIsCreateModalVisible(false)}
-          onCreated={addAndSelect}
-        />
-        <JoinServerModal
-          visible={isJoinModalVisible}
-          onClose={() => setIsJoinModalVisible(false)}
-          onJoined={addAndSelect}
-        />
+        {addServerModals}
       </View>,
     );
   }

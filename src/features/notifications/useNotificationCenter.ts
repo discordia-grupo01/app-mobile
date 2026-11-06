@@ -1,6 +1,7 @@
 import {
   type ConversationSummary,
   NOTIFICATIONS_MARK_ALL_READ_FAILED,
+  withoutSuspendedServers,
 } from "@discordia/client-shared";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -28,7 +29,10 @@ interface NotificationCenterInput {
   activitySignal: number;
   openChannelId: string | null;
   openConversationId: string | null;
+  suspendedServerIds?: ReadonlySet<string>;
 }
+
+const NO_SUSPENDED: ReadonlySet<string> = new Set();
 
 export function useNotificationCenter({
   userId,
@@ -39,8 +43,14 @@ export function useNotificationCenter({
   activitySignal,
   openChannelId,
   openConversationId,
+  suspendedServerIds = NO_SUSPENDED,
 }: NotificationCenterInput) {
-  const history = useNotificationHistory(userId);
+  const fullHistory = useNotificationHistory(userId);
+  const visibleItems = useMemo(
+    () => withoutSuspendedServers(fullHistory.items, suspendedServerIds),
+    [fullHistory.items, suspendedServerIds],
+  );
+  const history = { ...fullHistory, items: visibleItems };
   const [isOpen, setIsOpen] = useState(false);
 
   const { isLoaded: areMentionsLoaded, isUnread: isMentionUnread } = mentions;

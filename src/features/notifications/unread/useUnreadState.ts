@@ -6,15 +6,19 @@ import {
   unreadFlagsByServer,
   type UnreadState,
   type UnreadTracker,
+  withoutSuspendedEntries,
 } from "@discordia/client-shared";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { connectUnread, type UnreadConnection } from "./socket";
 
+const NO_SUSPENDED: ReadonlySet<string> = new Set();
+
 export function useUnreadState(
   userId: string | null,
   openChannelId: string | null,
+  suspendedServerIds: ReadonlySet<string> = NO_SUSPENDED,
 ) {
   const [state, setState] = useState<UnreadState>(NO_UNREAD);
   const openChannelRef = useRef(openChannelId);
@@ -46,9 +50,13 @@ export function useUnreadState(
     trackerRef.current?.setOpenChannel(openChannelId);
   }, [openChannelId]);
 
-  const byChannel = useMemo(() => unreadFlagsByChannel(state), [state]);
-  const byServer = useMemo(() => unreadFlagsByServer(state), [state]);
-  const hasUnread = hasAnyUnread(state);
+  const visible = useMemo(
+    () => withoutSuspendedEntries(state, suspendedServerIds),
+    [state, suspendedServerIds],
+  );
+  const byChannel = useMemo(() => unreadFlagsByChannel(visible), [visible]);
+  const byServer = useMemo(() => unreadFlagsByServer(visible), [visible]);
+  const hasUnread = hasAnyUnread(visible);
 
   const markAllRead = useCallback(
     () => trackerRef.current?.markAllRead() ?? Promise.resolve(false),
