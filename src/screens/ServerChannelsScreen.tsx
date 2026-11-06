@@ -15,6 +15,7 @@ import {
   sortByPosition,
   topLevelChannels,
   visibleCategories,
+  type UnreadFlags,
 } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
@@ -99,8 +100,8 @@ interface ServerChannelsScreenProps {
   onOpenDirectMessages: () => void;
   unreadDmCount?: number;
   /** Menciones sin leer por canal y por servidor. */
-  unreadMentionsByChannel?: Record<string, number>;
-  unreadMentionsByServer?: Record<string, number>;
+  unreadByChannel?: Record<string, UnreadFlags>;
+  unreadByServer?: Record<string, UnreadFlags>;
   onSwitchServer: (serverId: string) => void;
   onAddServer: () => void;
   onLogout: () => void;
@@ -130,8 +131,8 @@ export function ServerChannelsScreen({
   onSelectChannel,
   onOpenDirectMessages,
   unreadDmCount,
-  unreadMentionsByChannel = {},
-  unreadMentionsByServer = {},
+  unreadByChannel = {},
+  unreadByServer = {},
   onSwitchServer,
   onAddServer,
   onLogout,
@@ -417,7 +418,7 @@ export function ServerChannelsScreen({
     return {
       channel,
       hasOptions: hasOptionsFor(channel),
-      unreadMentions: unreadMentionsByChannel[channel.id],
+      unread: unreadByChannel[channel.id],
       isMuted:
         notificationSettings !== null &&
         isChannelMuted(notificationSettings.settings, channel.id),
@@ -519,7 +520,7 @@ export function ServerChannelsScreen({
         activeServerId={server.id}
         isDirectMessagesActive={false}
         unreadDmCount={unreadDmCount}
-        unreadMentionsByServer={unreadMentionsByServer}
+        unreadByServer={unreadByServer}
         onOpenDirectMessages={onOpenDirectMessages}
         onSelectServer={onSwitchServer}
         onAddServer={onAddServer}

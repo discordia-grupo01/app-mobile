@@ -1,4 +1,10 @@
-import { isServerMuted, type ServerSummary } from "@discordia/client-shared";
+import {
+  isServerMuted,
+  NO_UNREAD_FLAGS,
+  type ServerSummary,
+  UNREAD_MESSAGES_LABEL,
+  type UnreadFlags,
+} from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
@@ -18,7 +24,7 @@ interface ServerRailProps {
   activeServerId: string | null;
   isDirectMessagesActive: boolean;
   unreadDmCount?: number;
-  unreadMentionsByServer?: Record<string, number>;
+  unreadByServer?: Record<string, UnreadFlags>;
   onOpenDirectMessages: () => void;
   onSelectServer: (serverId: string) => void;
   onAddServer: () => void;
@@ -27,12 +33,12 @@ interface ServerRailProps {
 function ServerRailIcon({
   item,
   active,
-  unreadMentions,
+  unread,
   onPress,
 }: {
   item: ServerSummary;
   active: boolean;
-  unreadMentions: number;
+  unread: UnreadFlags;
   onPress: () => void;
 }) {
   const notificationSettings = useOptionalNotificationSettings();
@@ -44,10 +50,17 @@ function ServerRailIcon({
       activeOpacity={0.75}
       onPress={onPress}
       className={cn("items-center justify-center", isMuted && "opacity-60")}
+      accessibilityLabel={
+        unread.unread && unread.mentionCount === 0
+          ? `${item.name}, ${UNREAD_MESSAGES_LABEL.toLowerCase()}`
+          : item.name
+      }
       style={styles.iconWrap}
     >
       {active ? (
         <View className="absolute left-0 top-[50%] -mt-3 w-1 h-6 rounded-xs bg-server-pill" />
+      ) : unread.unread ? (
+        <View className="absolute left-0 top-[50%] -mt-1 w-1 h-2 rounded-xs bg-server-pill" />
       ) : null}
       <Avatar
         name={item.name}
@@ -55,10 +68,10 @@ function ServerRailIcon({
         size={48}
         borderRadius={active ? 16 : 24}
       />
-      {unreadMentions > 0 ? (
+      {unread.mentionCount > 0 ? (
         <CountBadge
-          count={unreadMentions}
-          label={`${unreadMentions} menciones sin leer en ${item.name}`}
+          count={unread.mentionCount}
+          label={`${unread.mentionCount} menciones sin leer en ${item.name}`}
           className="absolute bottom-0 right-2 border-2 border-surface-servers"
         />
       ) : null}
@@ -71,7 +84,7 @@ export function ServerRail({
   activeServerId,
   isDirectMessagesActive,
   unreadDmCount = 0,
-  unreadMentionsByServer = {},
+  unreadByServer = {},
   onOpenDirectMessages,
   onSelectServer,
   onAddServer,
@@ -130,7 +143,7 @@ export function ServerRail({
           key={item.id}
           item={item}
           active={item.id === activeServerId}
-          unreadMentions={unreadMentionsByServer[item.id] ?? 0}
+          unread={unreadByServer[item.id] ?? NO_UNREAD_FLAGS}
           onPress={() => onSelectServer(item.id)}
         />
       ))}

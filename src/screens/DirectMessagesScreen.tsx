@@ -1,4 +1,8 @@
-import type { MessageAuthor, ServerSummary } from "@discordia/client-shared";
+import type {
+  MessageAuthor,
+  ServerSummary,
+  UnreadFlags,
+} from "@discordia/client-shared";
 
 import { useState } from "react";
 import { View } from "react-native";
@@ -17,7 +21,7 @@ interface DirectMessagesScreenProps {
   directMessages: ReturnType<typeof useDirectMessages>;
   onSwitchServer: (serverId: string) => void;
   onAddServer: () => void;
-  unreadMentionsByServer?: Record<string, number>;
+  unreadByServer?: Record<string, UnreadFlags>;
   onLogout: () => void;
 }
 
@@ -26,7 +30,7 @@ export function DirectMessagesScreen({
   userName,
   currentAuthor,
   directMessages,
-  unreadMentionsByServer,
+  unreadByServer,
   onSwitchServer,
   onAddServer,
   onLogout,
@@ -67,7 +71,7 @@ export function DirectMessagesScreen({
         servers={servers}
         activeServerId={null}
         isDirectMessagesActive
-        unreadMentionsByServer={unreadMentionsByServer}
+        unreadByServer={unreadByServer}
         onOpenDirectMessages={() => {}}
         onSelectServer={onSwitchServer}
         onAddServer={onAddServer}

@@ -1,11 +1,15 @@
 import {
   type Channel,
+  NO_UNREAD_FLAGS,
   NOTIFICATION_SETTINGS_MUTED_TITLE,
+  UNREAD_MESSAGES_LABEL,
+  type UnreadFlags,
 } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
 import { Text, TouchableOpacity, View } from "react-native";
 
+import { CountBadge } from "../../../../components/ui/CountBadge";
 import { cn } from "../../../../lib/cn";
 import { withAlpha } from "../../../../lib/color";
 import { useThemeColors } from "../../../../theme/theme-context";
@@ -16,7 +20,7 @@ import type { SidebarVoiceParticipant } from "../../../voice/useServerVoice";
 interface ChannelRowProps {
   channel: Channel;
   hasOptions: boolean;
-  unreadMentions?: number;
+  unread?: UnreadFlags;
   isMuted?: boolean;
   onPress: () => void;
   onOptions: () => void;
@@ -31,7 +35,7 @@ interface ChannelRowProps {
 export function ChannelRow({
   channel,
   hasOptions,
-  unreadMentions = 0,
+  unread = NO_UNREAD_FLAGS,
   isMuted = false,
   onPress,
   onOptions,
@@ -42,19 +46,22 @@ export function ChannelRow({
   onToggleVoiceExpanded,
 }: ChannelRowProps) {
   const colors = useThemeColors();
+  const { mentionCount } = unread;
   return (
     <View>
       <View className="relative flex-row items-center">
-        {unreadMentions > 0 ? (
+        {unread.unread ? (
           <View className="absolute left-0 top-1/2 -mt-1 h-2 w-1 rounded-r-full bg-content" />
         ) : null}
         <TouchableOpacity
           activeOpacity={0.7}
           onPress={onPress}
           accessibilityLabel={
-            unreadMentions > 0
-              ? `${channel.name}, ${unreadMentions} menciones sin leer`
-              : undefined
+            mentionCount > 0
+              ? `${channel.name}, ${mentionCount} menciones sin leer`
+              : unread.unread
+                ? `${channel.name}, ${UNREAD_MESSAGES_LABEL.toLowerCase()}`
+                : undefined
           }
           className="flex-1 flex-row items-center gap-2.5 rounded-lg px-2.5 py-[10px]"
           style={
@@ -71,7 +78,7 @@ export function ChannelRow({
           <Text
             className={cn(
               "flex-1 text-[16px] font-medium text-content-muted",
-              unreadMentions > 0 && "font-bold text-content",
+              unread.unread && "font-bold text-content",
               isVoiceConnected && "font-semibold text-success",
             )}
             numberOfLines={1}
@@ -84,6 +91,12 @@ export function ChannelRow({
               size={13}
               color={colors.textSubtle}
               accessibilityLabel={NOTIFICATION_SETTINGS_MUTED_TITLE}
+            />
+          ) : null}
+          {mentionCount > 0 ? (
+            <CountBadge
+              count={mentionCount}
+              label={`${mentionCount} menciones sin leer`}
             />
           ) : null}
           {callStartedAt !== undefined ? (

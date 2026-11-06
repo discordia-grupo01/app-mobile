@@ -33,6 +33,7 @@ import { LoadingScreen } from "../components/ui/LoadingScreen";
 import { useLoadingGate } from "../hooks/useLoadingGate";
 import { useDirectMessages } from "../features/direct-messages/useDirectMessages";
 import { useMentions } from "../features/mentions/useMentions";
+import { useUnreadState } from "../features/notifications/unread/useUnreadState";
 import { notificationTargetOf } from "../features/notifications/history/historyHelpers";
 import { NotificationCenterModal } from "../features/notifications/components/center/NotificationCenterModal";
 import { NotificationSettingsProvider } from "../features/notifications/NotificationSettingsContext";
@@ -409,6 +410,10 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
     ? (mentions.allByChannel[openChannelId] ?? 0)
     : 0;
   const { markChannelRead } = mentions;
+  const unread = useUnreadState(
+    currentAuthor?.id ?? null,
+    view === "servers" ? openChannelId : null,
+  );
   useEffect(() => {
     if (openChannelId && openChannelUnread > 0) markChannelRead(openChannelId);
   }, [openChannelId, openChannelUnread, markChannelRead]);
@@ -557,7 +562,7 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
       <View className="flex-1">
         <StatusBar style={statusBarStyle} />
         <DirectMessagesScreen
-          unreadMentionsByServer={mentions.byServer}
+          unreadByServer={unread.byServer}
           servers={servers}
           userName={user?.name}
           currentAuthor={currentAuthor}
@@ -648,8 +653,8 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
           onSelectChannel={setSelectedChannelId}
           onOpenDirectMessages={handleOpenDirectMessages}
           unreadDmCount={unreadDmCount}
-          unreadMentionsByChannel={mentions.byChannel}
-          unreadMentionsByServer={mentions.byServer}
+          unreadByChannel={unread.byChannel}
+          unreadByServer={unread.byServer}
           onSwitchServer={selectServer}
           onAddServer={handleAddServer}
           onLogout={logout}
@@ -692,7 +697,7 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
           servers={servers}
           userName={user?.name}
           unreadDmCount={unreadDmCount}
-          unreadMentionsByServer={mentions.byServer}
+          unreadByServer={unread.byServer}
           onSelectServer={selectServer}
           onOpenDirectMessages={handleOpenDirectMessages}
           onAddServer={handleAddServer}
