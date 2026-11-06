@@ -433,6 +433,7 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
   const notificationCenter = useNotificationCenter({
     userId: currentAuthor?.id ?? null,
     mentions,
+    unread,
     conversations: directMessages.conversations,
     areConversationsLoading: directMessages.isLoading,
     activitySignal,
