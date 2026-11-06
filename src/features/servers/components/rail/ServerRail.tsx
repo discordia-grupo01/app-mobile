@@ -51,11 +51,7 @@ function ServerRailIcon({
     <TouchableOpacity
       activeOpacity={0.75}
       onPress={onPress}
-      className={cn(
-        "items-center justify-center",
-        isMuted && "opacity-60",
-        isSuspended && "opacity-40",
-      )}
+      className={cn("items-center justify-center", isMuted && "opacity-60")}
       accessibilityLabel={railIconLabel(item.name, shown, isSuspended)}
       style={styles.iconWrap}
     >
@@ -64,13 +60,22 @@ function ServerRailIcon({
       ) : shown.unread ? (
         <View className="absolute left-0 top-[50%] -mt-1 w-1 h-2 rounded-xs bg-server-pill" />
       ) : null}
-      <View style={isSuspended ? styles.suspendedIcon : undefined}>
+      <View>
         <Avatar
           name={item.name}
           uri={resolveServerIconUrl(item.icon_url)}
           size={48}
           borderRadius={active ? 16 : 24}
         />
+        {isSuspended ? (
+          <View
+            pointerEvents="none"
+            style={[
+              styles.suspendedOverlay,
+              { borderRadius: active ? 16 : 24 },
+            ]}
+          />
+        ) : null}
       </View>
       {shown.mentionCount > 0 ? (
         <CountBadge
@@ -170,7 +175,12 @@ const styles = StyleSheet.create({
   iconWrap: {
     width: RAIL_WIDTH,
   },
-  suspendedIcon: {
-    filter: [{ grayscale: 1 }],
+  suspendedOverlay: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
 });
