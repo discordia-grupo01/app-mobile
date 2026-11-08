@@ -89,6 +89,13 @@ export async function loginService(
     if (result.status === 401 || result.status === 400) {
       return { ok: false, message: INVALID_CREDENTIALS };
     }
+    if (result.status === 429 || result.code === "LOGIN_ATTEMPTS_EXCEEDED") {
+      return {
+        ok: false,
+        message: messageFor(result, {}, REQUEST_FAILED_MESSAGE),
+        retryAfterSeconds: result.retryAfterSeconds,
+      };
+    }
     return {
       ok: false,
       message: messageFor(result, {}, REQUEST_FAILED_MESSAGE),

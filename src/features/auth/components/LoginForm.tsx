@@ -5,10 +5,11 @@ import {
   type LoginErrors,
   TWO_FACTOR_RECOVERY_CODE_USED,
   twoFactorRecoveryCodesRemaining,
+  formatLoginRateLimit,
   validateLogin,
 } from "@discordia/client-shared";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert, Text, TouchableOpacity, View } from "react-native";
 
 import { useAuth } from "../auth-context";
@@ -48,8 +49,27 @@ export function LoginForm({
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
   const [challengeToken, setChallengeToken] = useState<string | null>(null);
   const [challengeExpiresIn, setChallengeExpiresIn] = useState(0);
+  const [loginBlockedUntil, setLoginBlockedUntil] = useState<number | null>(
+    null,
+  );
+  const [loginBlockedSeconds, setLoginBlockedSeconds] = useState(0);
 
   const [googleRequest, , promptGoogleAsync] = useGoogleAuthRequest();
+
+  useEffect(() => {
+    if (loginBlockedUntil === null) return;
+    const update = () => {
+      const seconds = Math.max(
+        0,
+        Math.ceil((loginBlockedUntil - Date.now()) / 1000),
+      );
+      setLoginBlockedSeconds(seconds);
+      if (seconds === 0) setLoginBlockedUntil(null);
+    };
+    update();
+    const timer = setInterval(update, 1000);
+    return () => clearInterval(timer);
+  }, [loginBlockedUntil]);
 
   // Se resuelve el resultado de Google directamente en el event handler
   // (en vez de observarlo con un useEffect sobre `response`): evita
@@ -96,6 +116,7 @@ export function LoginForm({
   }
 
   async function handleSubmit() {
+    if (loginBlockedSeconds > 0) return;
     setFormError(null);
 
     const nextErrors = validateLogin({ email, password });
@@ -107,6 +128,11 @@ export function LoginForm({
     setIsSubmitting(false);
 
     if (!result.ok) {
+      if (result.retryAfterSeconds && result.retryAfterSeconds > 0) {
+        setLoginBlockedUntil(Date.now() + result.retryAfterSeconds * 1000);
+        setFormError(null);
+        return;
+      }
       if (result.message === EMAIL_NOT_VERIFIED) {
         onEmailNotVerified(email.trim());
         return;
@@ -211,9 +237,15 @@ export function LoginForm({
         title="Iniciar Sesión"
         onPress={handleSubmit}
         isLoading={isSubmitting}
+        disabled={loginBlockedSeconds > 0}
         iconRight="arrow-right"
         className="mb-6"
       />
+      {loginBlockedSeconds > 0 ? (
+        <Text className="-mt-4 mb-5 text-center text-[12px] text-content-muted">
+          {formatLoginRateLimit(loginBlockedSeconds)}
+        </Text>
+      ) : null}
 
       {/* Divider */}
       <View className="mb-5 flex-row items-center">
