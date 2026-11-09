@@ -26,6 +26,7 @@ interface NotificationCenterInput {
   };
   conversations: readonly ConversationSummary[];
   areConversationsLoading: boolean;
+  markConversationsRead: () => Promise<boolean>;
   activitySignal: number;
   openChannelId: string | null;
   openConversationId: string | null;
@@ -40,6 +41,7 @@ export function useNotificationCenter({
   unread,
   conversations,
   areConversationsLoading,
+  markConversationsRead,
   activitySignal,
   openChannelId,
   openConversationId,
@@ -102,17 +104,33 @@ export function useNotificationCenter({
   const { markAllRead: markHistoryRead } = reads;
   const { hasUnread: hasUnreadChannels, markAllRead: markChannelsRead } =
     unread;
+  const hasUnreadDirect = conversations.some(
+    (conversation) => conversation.isUnread,
+  );
   const markAllRead = useCallback(async () => {
     markHistoryRead();
     setMarkAllError(null);
-    if (!hasUnreadChannels) return;
+    const pending = [
+      hasUnreadChannels ? markChannelsRead() : null,
+      hasUnreadDirect ? markConversationsRead() : null,
+    ].filter((request) => request !== null);
+    if (pending.length === 0) return;
     setIsMarkingAll(true);
-    const ok = await markChannelsRead();
+    const results = await Promise.all(pending);
     setIsMarkingAll(false);
-    if (!ok) setMarkAllError(NOTIFICATIONS_MARK_ALL_READ_FAILED);
-  }, [markHistoryRead, hasUnreadChannels, markChannelsRead]);
+    if (results.includes(false)) {
+      setMarkAllError(NOTIFICATIONS_MARK_ALL_READ_FAILED);
+    }
+  }, [
+    markHistoryRead,
+    hasUnreadChannels,
+    markChannelsRead,
+    hasUnreadDirect,
+    markConversationsRead,
+  ]);
   const canMarkAllRead =
-    !isMarkingAll && (reads.unreadCount > 0 || hasUnreadChannels);
+    !isMarkingAll &&
+    (reads.unreadCount > 0 || hasUnreadChannels || hasUnreadDirect);
 
   const { refresh } = history;
   const open = useCallback(() => {

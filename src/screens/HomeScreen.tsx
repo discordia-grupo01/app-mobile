@@ -448,6 +448,7 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
     unread,
     conversations: directMessages.conversations,
     areConversationsLoading: directMessages.isLoading,
+    markConversationsRead: directMessages.markAllConversationsRead,
     activitySignal,
     openChannelId: view === "servers" ? openChannelId : null,
     openConversationId:
