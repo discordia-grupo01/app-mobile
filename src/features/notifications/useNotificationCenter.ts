@@ -19,6 +19,8 @@ interface NotificationCenterInput {
   mentions: {
     isLoaded: boolean;
     isUnread: (messageId: string) => boolean;
+    hasUnread: boolean;
+    markAllRead: () => Promise<boolean>;
   };
   unread: {
     hasUnread: boolean;
@@ -107,12 +109,15 @@ export function useNotificationCenter({
   const hasUnreadDirect = conversations.some(
     (conversation) => conversation.isUnread,
   );
+  const { hasUnread: hasUnreadMentions, markAllRead: markMentionsRead } =
+    mentions;
   const markAllRead = useCallback(async () => {
     markHistoryRead();
     setMarkAllError(null);
     const pending = [
       hasUnreadChannels ? markChannelsRead() : null,
       hasUnreadDirect ? markConversationsRead() : null,
+      hasUnreadMentions ? markMentionsRead() : null,
     ].filter((request) => request !== null);
     if (pending.length === 0) return;
     setIsMarkingAll(true);
@@ -127,10 +132,15 @@ export function useNotificationCenter({
     markChannelsRead,
     hasUnreadDirect,
     markConversationsRead,
+    hasUnreadMentions,
+    markMentionsRead,
   ]);
   const canMarkAllRead =
     !isMarkingAll &&
-    (reads.unreadCount > 0 || hasUnreadChannels || hasUnreadDirect);
+    (reads.unreadCount > 0 ||
+      hasUnreadChannels ||
+      hasUnreadDirect ||
+      hasUnreadMentions);
 
   const { refresh } = history;
   const open = useCallback(() => {
