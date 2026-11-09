@@ -136,7 +136,11 @@ export async function apiFetchWithBody<T = unknown>(
     body = await res.json();
   } catch {}
 
-  const result = toApiResult<T>(res.status, body);
+  const result = toApiResult<T>(
+    res.status,
+    body,
+    res.headers.get("Retry-After") ?? undefined,
+  );
   if (
     !result.ok &&
     !SUSPENSION_EXEMPT_PATHS.has(path) &&
