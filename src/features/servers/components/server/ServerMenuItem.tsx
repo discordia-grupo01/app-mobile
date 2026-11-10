@@ -1,5 +1,5 @@
 import { Feather } from "@expo/vector-icons";
-import { type ReactElement } from "react";
+import { type ReactElement, type ReactNode } from "react";
 import { Text, TouchableOpacity } from "react-native";
 
 import { cn } from "../../../../lib/cn";
@@ -12,6 +12,7 @@ interface ServerMenuItemProps {
   onPress: () => void;
   /** `danger` para las acciones destructivas (abandonar el servidor). */
   tone?: "default" | "danger";
+  trailing?: ReactNode;
 }
 
 /** Una fila del menu desplegable del servidor. */
@@ -20,6 +21,7 @@ export function ServerMenuItem({
   label,
   onPress,
   tone = "default",
+  trailing,
 }: ServerMenuItemProps) {
   const colors = useThemeColors();
   const isDanger = tone === "danger";
@@ -38,12 +40,13 @@ export function ServerMenuItem({
       )}
       <Text
         className={cn(
-          "text-[14px] font-semibold",
+          "flex-1 text-[14px] font-semibold",
           isDanger ? "text-danger" : "text-content",
         )}
       >
         {label}
       </Text>
+      {trailing}
     </TouchableOpacity>
   );
 }

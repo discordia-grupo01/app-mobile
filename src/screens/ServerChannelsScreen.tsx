@@ -5,11 +5,13 @@ import {
   channelHasNotifications,
   channelsOfCategory,
   type DeleteServerResult,
+  hasModeratorPermissions,
   isChannelMuted,
   isUnassignedCategory,
   type LeaveServerResult,
   NOTIFICATION_SETTINGS_MENU_LABEL,
   type OwnershipTransfer,
+  pendingReportsLabel,
   type Role,
   type ServerSummary,
   sortByPosition,
@@ -63,6 +65,11 @@ import { RolesModal } from "../features/roles/RolesModal";
 import { ServerMenuItem } from "../features/servers/components/server/ServerMenuItem";
 import { ServerBanner } from "../features/servers/components/ServerBanner";
 import { ServerRail } from "../features/servers/components/rail/ServerRail";
+import { ReportsBadge } from "../features/reports/components/shared/ReportsBadge";
+import {
+  pendingReportsOf,
+  usePendingReportsContext,
+} from "../features/reports/ReportsContext";
 import { UserProfileBar } from "../features/servers/components/account/UserProfileBar";
 import { voiceParticipantsHeight } from "../features/voice/components/sidebar/VoiceChannelParticipants";
 import { useServerVoice } from "../features/voice/useServerVoice";
@@ -111,6 +118,8 @@ interface ServerChannelsScreenProps {
     confirmName: string,
   ) => Promise<DeleteServerResult>;
   onServerUpdated: (server: ServerSummary) => void;
+  /** "Ir al mensaje" desde un reporte: abre el canal en ese mensaje. */
+  onGoToMessage: (channelId: string, messageId: string) => void;
 }
 
 export function ServerChannelsScreen({
@@ -139,11 +148,22 @@ export function ServerChannelsScreen({
   onLeaveServer,
   onDeleteServer,
   onServerUpdated,
+  onGoToMessage,
 }: ServerChannelsScreenProps) {
   const colors = useThemeColors();
   const { user } = useAuth();
   const currentUserId = user ? String(user.id) : null;
   const voice = useServerVoice(server);
+  const pendingReportsContext = usePendingReportsContext();
+  const canReviewReports = hasModeratorPermissions({
+    isOwner,
+    roles: myRoles,
+  });
+  const pendingReports = canReviewReports
+    ? pendingReportsOf(pendingReportsContext, server.id)
+    : 0;
+  const canOpenServerSettings =
+    canManageServer || canManageMessages || canReviewReports;
   const [expandedVoiceChannels, setExpandedVoiceChannels] = useState<
     ReadonlySet<string>
   >(new Set());
@@ -632,10 +652,20 @@ export function ServerChannelsScreen({
                   />
                 ) : null}
 
-                {canManageServer || canManageMessages ? (
+                {canOpenServerSettings ? (
                   <ServerMenuItem
                     icon="settings"
                     label="Configuración del servidor"
+                    trailing={
+                      pendingReports > 0 ? (
+                        <ReportsBadge
+                          label={pendingReportsLabel(
+                            pendingReports,
+                            server.name,
+                          )}
+                        />
+                      ) : undefined
+                    }
                     onPress={runFromMenu(() =>
                       setIsServerSettingsVisible(true),
                     )}
@@ -793,14 +823,24 @@ export function ServerChannelsScreen({
         </View>
       </ChannelDragProvider>
 
-      {canManageServer || canManageMessages ? (
+      {canOpenServerSettings ? (
         <ServerSettingsModal
           visible={isServerSettingsVisible}
           server={server}
           isOwner={isOwner}
           canManageServer={canManageServer}
           canManageMessages={canManageMessages}
+          canReviewReports={canReviewReports}
+          pendingReports={pendingReports}
+          currentUserId={currentUserId}
           onClose={() => setIsServerSettingsVisible(false)}
+          onGoToMessage={(channelId, messageId) => {
+            setIsServerSettingsVisible(false);
+            onGoToMessage(channelId, messageId);
+          }}
+          onPendingReportsChanged={() =>
+            void pendingReportsContext?.refresh(server.id)
+          }
           onUpdated={(updated) => {
             setIsServerSettingsVisible(false);
             onServerUpdated(updated);

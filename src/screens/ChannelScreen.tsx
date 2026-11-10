@@ -1,5 +1,6 @@
 import {
   type AccessRevokedReason,
+  canReportUser,
   type Channel,
   isMemberMuted,
   type Message,
@@ -204,6 +205,7 @@ export function ChannelScreen({
       <MembersSidebar
         visible={isMembersVisible}
         serverId={serverId}
+        serverName={server.name}
         serverRoles={serverRoles}
         currentUserId={currentUserId}
         authToken={authToken}
@@ -232,6 +234,11 @@ export function ChannelScreen({
         canMute={canMuteMembers && isModeratable}
         mutedUntil={viewing?.mutedUntil ?? null}
         canBlock={viewing !== null && viewing.userId !== currentUserId}
+        canReport={
+          viewing !== null &&
+          canReportUser(viewing.userId, currentUserId ?? null)
+        }
+        serverName={server.name}
         onSendMessage={
           onMessageUser && viewing !== null && viewing.userId !== currentUserId
             ? (profile) => {
@@ -253,6 +260,7 @@ export function ChannelScreen({
           <ChannelChat
             key={channel.id}
             serverId={serverId}
+            serverName={server.name}
             channel={channel}
             currentAuthor={currentAuthor}
             serverRoles={serverRoles}
