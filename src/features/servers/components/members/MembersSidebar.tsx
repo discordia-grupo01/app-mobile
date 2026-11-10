@@ -1,4 +1,5 @@
 import {
+  canReportUser,
   displayNameOf,
   highestRoleOf,
   isMemberMuted,
@@ -41,6 +42,8 @@ import { Avatar } from "../../../../components/ui/Avatar";
 interface MembersSidebarProps {
   visible: boolean;
   serverId: string;
+  /** Para el aviso del reporte de un usuario. */
+  serverName: string;
   /** Roles del servidor: el nombre toma el color del rol mas alto de cada miembro. */
   serverRoles?: Role[];
   currentUserId?: string | null;
@@ -61,6 +64,7 @@ interface MembersSidebarProps {
 export function MembersSidebar({
   visible,
   serverId,
+  serverName,
   serverRoles = [],
   currentUserId,
   authToken,
@@ -355,6 +359,11 @@ export function MembersSidebar({
         mutedUntil={viewedMember?.muted_until ?? null}
         onMuteChanged={reload}
         canBlock={viewingUserId !== currentUserId}
+        canReport={
+          viewingUserId !== null &&
+          canReportUser(viewingUserId, currentUserId ?? null)
+        }
+        serverName={serverName}
         onBanned={reload}
         onSendMessage={
           onMessageUser && viewingUserId !== currentUserId

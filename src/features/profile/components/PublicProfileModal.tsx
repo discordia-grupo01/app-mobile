@@ -37,6 +37,7 @@ import { useLoadPresence } from "../../presence/useLoadPresence";
 import { UserActivityStatusDot } from "./ActivityStatusDot";
 import { BlockUserModal } from "./BlockUserModal";
 import { MemberActionsSheet } from "./MemberActionsSheet";
+import { ReportSheet } from "../../reports/ReportSheet";
 import { ModalShell } from "../../../components/ui/ModalShell";
 
 interface PublicProfileModalProps {
@@ -56,6 +57,10 @@ interface PublicProfileModalProps {
   /** Se dispara al silenciar o quitar el silencio, para refrescar la lista. */
   onMuteChanged?: () => void;
   canBlock?: boolean;
+  /** "Reportar usuario": solo en un servidor y nunca el perfil propio. */
+  canReport?: boolean;
+  /** Para el aviso del reporte ("Lo ven los moderadores de ..."). */
+  serverName?: string;
   /** Se dispara al banear o expulsar: el miembro ya no esta en el servidor. */
   onBanned?: () => void;
   /** Sin esto no se muestra "Enviar mensaje" (por ejemplo, en tu propio perfil). */
@@ -75,6 +80,8 @@ export function PublicProfileModal({
   mutedUntil = null,
   onMuteChanged,
   canBlock = false,
+  canReport = false,
+  serverName,
   onBanned,
   onSendMessage,
   onClose,
@@ -93,6 +100,7 @@ export function PublicProfileModal({
   const [wasBanned, setWasBanned] = useState(false);
   const [isBlockOpen, setIsBlockOpen] = useState(false);
   const [isActionsOpen, setIsActionsOpen] = useState(false);
+  const [isReportOpen, setIsReportOpen] = useState(false);
   const { blockedIds, blockUser, unblockUser } = useBlockedUsersContext();
   const { store: presenceStore } = usePresenceContext();
   useLoadPresence(presenceStore, visible && userId ? [userId] : []);
@@ -110,6 +118,7 @@ export function PublicProfileModal({
       setIsBanOpen(false);
       setIsBlockOpen(false);
       setIsActionsOpen(false);
+      setIsReportOpen(false);
       setWasBanned(false);
     }
   }
@@ -170,10 +179,11 @@ export function PublicProfileModal({
   const isProfileUnavailable = isUnavailable || Boolean(profile?.is_suspended);
   const hasModeratorActions =
     Boolean(serverId) && (canBan || canKick || canMute);
+  const isReportable = Boolean(serverId && serverName) && canReport;
   const hasMemberActions =
     Boolean(profile) &&
     !isProfileUnavailable &&
-    (hasModeratorActions || canBlock);
+    (hasModeratorActions || canBlock || isReportable);
 
   return (
     <ModalShell visible={visible} onClose={onClose} className="max-w-100">
@@ -352,8 +362,23 @@ export function PublicProfileModal({
             hasModeratorActions && canBan ? () => setIsBanOpen(true) : undefined
           }
           onToggleBlock={canBlock ? () => setIsBlockOpen(true) : undefined}
+          onReport={isReportable ? () => setIsReportOpen(true) : undefined}
           isBlocked={blockedIds.has(profile.id)}
           onClose={() => setIsActionsOpen(false)}
+        />
+      ) : null}
+
+      {isReportOpen && profile && serverId && serverName ? (
+        <ReportSheet
+          serverId={serverId}
+          serverName={serverName}
+          target={{
+            kind: "user",
+            userId: profile.id,
+            name: profile.name,
+            avatarUri: avatarUriOf(profile),
+          }}
+          onClose={() => setIsReportOpen(false)}
         />
       ) : null}
 

@@ -2,6 +2,7 @@ import {
   ADD_REACTION_LABEL,
   DELETE_MESSAGE_LABEL,
   EDIT_MESSAGE_LABEL,
+  REPORT_MESSAGE_LABEL,
 } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
@@ -24,10 +25,11 @@ interface MessageActionsSheetProps {
   onReact?: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onReport?: () => void;
   onClose: () => void;
 }
 
-/** Menú de mantener presionado sobre un mensaje: reaccionar, editar, eliminar. */
+/** Menú de mantener presionado sobre un mensaje: reaccionar, editar, eliminar, reportar. */
 export function MessageActionsSheet({
   visible,
   canEdit,
@@ -35,6 +37,7 @@ export function MessageActionsSheet({
   onReact,
   onEdit,
   onDelete,
+  onReport,
   onClose,
 }: MessageActionsSheetProps) {
   const colors = useThemeColors();
@@ -93,6 +96,21 @@ export function MessageActionsSheet({
               </View>
               <Text className="text-[15px] font-bold text-danger">
                 {DELETE_MESSAGE_LABEL}
+              </Text>
+            </TouchableOpacity>
+          ) : null}
+
+          {onReport ? (
+            <TouchableOpacity
+              activeOpacity={0.75}
+              className="flex-row items-center gap-3.5 rounded-[14px] px-2 py-3"
+              onPress={onReport}
+            >
+              <View className="h-9.5 w-9.5 items-center justify-center rounded-[11px] bg-[rgba(224,82,82,0.12)]">
+                <Feather name="flag" size={16} color={colors.danger} />
+              </View>
+              <Text className="text-[15px] font-bold text-danger">
+                {REPORT_MESSAGE_LABEL}
               </Text>
             </TouchableOpacity>
           ) : null}

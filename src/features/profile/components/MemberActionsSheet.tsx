@@ -3,6 +3,7 @@ import {
   BLOCK_USER_LABEL,
   KICK_ACTION_LABEL,
   MUTE_ACTION_LABEL,
+  REPORT_USER_LABEL,
   UNBLOCK_USER_LABEL,
   UNMUTE_ACTION_LABEL,
 } from "@discordia/client-shared";
@@ -37,6 +38,8 @@ interface MemberActionsSheetProps {
   onBan?: () => void;
   /** Sin esto no se muestra "Bloquear" / "Desbloquear". */
   onToggleBlock?: () => void;
+  /** Sin esto no se muestra "Reportar usuario" (perfil propio o fuera de un servidor). */
+  onReport?: () => void;
   isBlocked: boolean;
   onClose: () => void;
 }
@@ -56,6 +59,7 @@ export function MemberActionsSheet({
   onKick,
   onBan,
   onToggleBlock,
+  onReport,
   isBlocked,
   onClose,
 }: MemberActionsSheetProps) {
@@ -144,8 +148,18 @@ export function MemberActionsSheet({
             />
           ) : null}
 
-          {hasModeratorActions && onToggleBlock ? (
+          {hasModeratorActions && (onToggleBlock || onReport) ? (
             <View className="mx-2 my-2 h-px bg-line" />
+          ) : null}
+
+          {onReport ? (
+            <SheetOption
+              icon={<Feather name="flag" size={16} color={colors.danger} />}
+              iconBackground={withAlpha(colors.danger, 0.15)}
+              label={REPORT_USER_LABEL}
+              danger
+              onPress={closeThen(onReport)}
+            />
           ) : null}
 
           {onToggleBlock ? (
