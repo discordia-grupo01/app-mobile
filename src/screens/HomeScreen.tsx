@@ -41,6 +41,8 @@ import { notificationTargetOf } from "../features/notifications/history/historyH
 import { NotificationCenterModal } from "../features/notifications/components/center/NotificationCenterModal";
 import { NotificationSettingsProvider } from "../features/notifications/NotificationSettingsContext";
 import { NotificationsProvider } from "../features/notifications/NotificationsContext";
+import { PendingReportsProvider } from "../features/reports/ReportsContext";
+import { usePendingReports } from "../features/reports/usePendingReports";
 import { useNotificationCenter } from "../features/notifications/useNotificationCenter";
 import { useNotificationSettings } from "../features/notifications/useNotificationSettings";
 import { PresenceProvider } from "../features/presence/PresenceContext";
@@ -366,13 +368,13 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
     setSelectedChannelId(null);
   }
 
+  function jumpToMessage(channelId: string, messageId: string) {
+    setSelectedChannelId(channelId);
+    setJumpTarget({ channelId, messageId, nonce: ++jumpNonce.current });
+  }
+
   function openSearchResult(message: Message) {
-    setSelectedChannelId(message.channel_id);
-    setJumpTarget({
-      channelId: message.channel_id,
-      messageId: message.id,
-      nonce: ++jumpNonce.current,
-    });
+    jumpToMessage(message.channel_id, message.id);
   }
 
   const canManageChannels = hasPermission(
@@ -488,6 +490,24 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
       markCenterChannelRead,
     ],
   );
+  const reportableServerIds = useMemo(
+    () =>
+      servers.filter((server) => !server.suspended).map((server) => server.id),
+    [servers],
+  );
+  const pendingReports = usePendingReports(
+    currentAuthor?.id ?? null,
+    reportableServerIds,
+    isAppActive,
+  );
+  const pendingReportsValue = useMemo(
+    () => ({
+      byServer: pendingReports.byServer,
+      refresh: pendingReports.refresh,
+    }),
+    [pendingReports.byServer, pendingReports.refresh],
+  );
+
   const notificationsValue = useMemo(
     () => ({
       unreadCount: notificationCenter.reads.unreadCount,
@@ -505,9 +525,11 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
     <PresenceProvider value={presenceValue}>
       <NotificationSettingsProvider value={notificationSettingsValue}>
         <NotificationsProvider value={notificationsValue}>
-          <PlatformStatusLayer refreshSignal={unread.statusRevision}>
-            {screen}
-          </PlatformStatusLayer>
+          <PendingReportsProvider value={pendingReportsValue}>
+            <PlatformStatusLayer refreshSignal={unread.statusRevision}>
+              {screen}
+            </PlatformStatusLayer>
+          </PendingReportsProvider>
           <NotificationCenterModal
             center={notificationCenter}
             servers={servers}
@@ -752,6 +774,7 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
           onLeaveServer={handleLeaveServer}
           onDeleteServer={handleDeleteServer}
           onServerUpdated={handleServerUpdated}
+          onGoToMessage={jumpToMessage}
         />
 
         {addServerModals}

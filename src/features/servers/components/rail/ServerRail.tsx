@@ -1,6 +1,7 @@
 import {
   isServerMuted,
   NO_UNREAD_FLAGS,
+  pendingReportsLabel,
   type ServerSummary,
   type UnreadFlags,
 } from "@discordia/client-shared";
@@ -15,6 +16,11 @@ import { railIconLabel } from "./railIconLabel";
 import { cn } from "../../../../lib/cn";
 import { useOptionalNotifications } from "../../../notifications/NotificationsContext";
 import { useOptionalNotificationSettings } from "../../../notifications/NotificationSettingsContext";
+import {
+  pendingReportsOf,
+  usePendingReportsContext,
+} from "../../../reports/ReportsContext";
+import { ReportsBadge } from "../../../reports/components/shared/ReportsBadge";
 import { ServerOptionsSheet } from "./ServerOptionsSheet";
 import { useTheme, useThemeColors } from "../../../../theme/theme-context";
 import { Avatar } from "../../../../components/ui/Avatar";
@@ -47,11 +53,15 @@ function ServerRailIcon({
   onLongPress?: () => void;
 }) {
   const notificationSettings = useOptionalNotificationSettings();
+  const pendingReportsContext = usePendingReportsContext();
   const isMuted =
     notificationSettings !== null &&
     isServerMuted(notificationSettings.settings, item.id);
   const isSuspended = item.suspended === true;
   const shown = isSuspended ? NO_UNREAD_FLAGS : unread;
+  const pendingReports = isSuspended
+    ? 0
+    : pendingReportsOf(pendingReportsContext, item.id);
   return (
     <TouchableOpacity
       activeOpacity={0.75}
@@ -91,6 +101,12 @@ function ServerRailIcon({
           />
         ) : null}
       </View>
+      {pendingReports > 0 ? (
+        <ReportsBadge
+          label={pendingReportsLabel(pendingReports, item.name)}
+          className="absolute top-0 right-2 border-2 border-surface-servers"
+        />
+      ) : null}
       {shown.mentionCount > 0 ? (
         <CountBadge
           count={shown.mentionCount}
