@@ -6,13 +6,16 @@ import {
 } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
+import { useState } from "react";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { resolveServerIconUrl } from "../../api";
 import { railIconLabel } from "./railIconLabel";
 import { cn } from "../../../../lib/cn";
+import { useOptionalNotifications } from "../../../notifications/NotificationsContext";
 import { useOptionalNotificationSettings } from "../../../notifications/NotificationSettingsContext";
+import { ServerOptionsSheet } from "./ServerOptionsSheet";
 import { useTheme, useThemeColors } from "../../../../theme/theme-context";
 import { Avatar } from "../../../../components/ui/Avatar";
 import { CountBadge } from "../../../../components/ui/CountBadge";
@@ -35,11 +38,13 @@ function ServerRailIcon({
   active,
   unread,
   onPress,
+  onLongPress,
 }: {
   item: ServerSummary;
   active: boolean;
   unread: UnreadFlags;
   onPress: () => void;
+  onLongPress?: () => void;
 }) {
   const notificationSettings = useOptionalNotificationSettings();
   const isMuted =
@@ -51,8 +56,17 @@ function ServerRailIcon({
     <TouchableOpacity
       activeOpacity={0.75}
       onPress={onPress}
+      onLongPress={isSuspended ? undefined : onLongPress}
       className={cn("items-center justify-center", isMuted && "opacity-60")}
       accessibilityLabel={railIconLabel(item.name, shown, isSuspended)}
+      accessibilityActions={
+        !isSuspended && onLongPress
+          ? [{ name: "longpress", label: "Opciones del servidor" }]
+          : undefined
+      }
+      onAccessibilityAction={(event) => {
+        if (event.nativeEvent.actionName === "longpress") onLongPress?.();
+      }}
       style={styles.iconWrap}
     >
       {active ? (
@@ -101,70 +115,88 @@ export function ServerRail({
   const { theme } = useTheme();
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
+  const notifications = useOptionalNotifications();
+  const [optionsFor, setOptionsFor] = useState<ServerSummary | null>(null);
+  const closeOptions = () => setOptionsFor(null);
+  const canMarkOptionsRead = optionsFor
+    ? (unreadByServer[optionsFor.id]?.unread ?? false)
+    : false;
 
   return (
-    <ScrollView
-      className="grow-0 bg-surface-servers"
-      style={styles.rail}
-      contentContainerClassName="items-center gap-2.5 py-3"
-      contentContainerStyle={{ paddingTop: insets.top + 12 }}
-      showsVerticalScrollIndicator={false}
-    >
-      <View className="relative">
-        <TouchableOpacity
-          onPress={onOpenDirectMessages}
-          className={cn(
-            "w-12 h-12 items-center justify-center",
-            isDirectMessagesActive
-              ? "bg-rail-active-bg rounded-2xl"
-              : "bg-rail-surface rounded-3xl",
-          )}
-          accessibilityLabel="Mensajes directos"
-        >
-          <Feather
-            name="home"
-            size={20}
-            color={
-              isDirectMessagesActive ? colors.railActiveText : colors.onAccent
-            }
-            style={isDirectMessagesActive ? undefined : { opacity: 0.7 }}
-          />
-        </TouchableOpacity>
-        {unreadDmCount > 0 && !isDirectMessagesActive ? (
-          <CountBadge
-            count={unreadDmCount}
-            label={`${unreadDmCount} conversaciones sin leer`}
-            className="absolute -right-0.5 -top-0.5 border-2 border-surface-servers"
-          />
-        ) : null}
-      </View>
-
-      <View
-        className="w-8 h-px my-0.5"
-        style={{
-          backgroundColor:
-            theme === "light" ? colors.borderOnAccent : colors.borderStrong,
-        }}
-      />
-
-      {servers.map((item) => (
-        <ServerRailIcon
-          key={item.id}
-          item={item}
-          active={item.id === activeServerId}
-          unread={unreadByServer[item.id] ?? NO_UNREAD_FLAGS}
-          onPress={() => onSelectServer(item.id)}
-        />
-      ))}
-
-      <TouchableOpacity
-        onPress={onAddServer}
-        className="w-12 h-12 rounded-3xl items-center justify-center bg-rail-surface"
-        accessibilityLabel="Agregar servidor"
+    <>
+      <ScrollView
+        className="grow-0 bg-surface-servers"
+        style={styles.rail}
+        contentContainerClassName="items-center gap-2.5 py-3"
+        contentContainerStyle={{ paddingTop: insets.top + 12 }}
+        showsVerticalScrollIndicator={false}
       >
-        <Feather name="plus" size={20} color={colors.success} />
-      </TouchableOpacity>
-    </ScrollView>
+        <View className="relative">
+          <TouchableOpacity
+            onPress={onOpenDirectMessages}
+            className={cn(
+              "w-12 h-12 items-center justify-center",
+              isDirectMessagesActive
+                ? "bg-rail-active-bg rounded-2xl"
+                : "bg-rail-surface rounded-3xl",
+            )}
+            accessibilityLabel="Mensajes directos"
+          >
+            <Feather
+              name="home"
+              size={20}
+              color={
+                isDirectMessagesActive ? colors.railActiveText : colors.onAccent
+              }
+              style={isDirectMessagesActive ? undefined : { opacity: 0.7 }}
+            />
+          </TouchableOpacity>
+          {unreadDmCount > 0 && !isDirectMessagesActive ? (
+            <CountBadge
+              count={unreadDmCount}
+              label={`${unreadDmCount} conversaciones sin leer`}
+              className="absolute -right-0.5 -top-0.5 border-2 border-surface-servers"
+            />
+          ) : null}
+        </View>
+
+        <View
+          className="w-8 h-px my-0.5"
+          style={{
+            backgroundColor:
+              theme === "light" ? colors.borderOnAccent : colors.borderStrong,
+          }}
+        />
+
+        {servers.map((item) => (
+          <ServerRailIcon
+            key={item.id}
+            item={item}
+            active={item.id === activeServerId}
+            unread={unreadByServer[item.id] ?? NO_UNREAD_FLAGS}
+            onPress={() => onSelectServer(item.id)}
+            onLongPress={notifications ? () => setOptionsFor(item) : undefined}
+          />
+        ))}
+
+        <TouchableOpacity
+          onPress={onAddServer}
+          className="w-12 h-12 rounded-3xl items-center justify-center bg-rail-surface"
+          accessibilityLabel="Agregar servidor"
+        >
+          <Feather name="plus" size={20} color={colors.success} />
+        </TouchableOpacity>
+      </ScrollView>
+      <ServerOptionsSheet
+        server={optionsFor}
+        canMarkRead={canMarkOptionsRead}
+        onMarkRead={() => {
+          if (optionsFor) notifications?.markServerRead(optionsFor.id);
+          closeOptions();
+        }}
+        onClose={closeOptions}
+      />
+    </>
   );
 }
 

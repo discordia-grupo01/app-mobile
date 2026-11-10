@@ -466,12 +466,39 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
         : null,
     suspendedServerIds: suspendedIds,
   });
+  const { markServerRead: markServerChannelsRead } = unread;
+  const { markServerRead: markServerMentionsRead } = mentions;
+  const { markChannelRead: markCenterChannelRead } = notificationCenter.reads;
+  const notificationItems = notificationCenter.history.items;
+  const markServerRead = useCallback(
+    (serverId: string) => {
+      const channelIds = new Set(markServerChannelsRead(serverId));
+      for (const item of notificationItems) {
+        if (item.server_id === serverId && item.channel_id) {
+          channelIds.add(item.channel_id);
+        }
+      }
+      markServerMentionsRead(serverId);
+      channelIds.forEach(markCenterChannelRead);
+    },
+    [
+      markServerChannelsRead,
+      markServerMentionsRead,
+      notificationItems,
+      markCenterChannelRead,
+    ],
+  );
   const notificationsValue = useMemo(
     () => ({
       unreadCount: notificationCenter.reads.unreadCount,
       open: notificationCenter.open,
+      markServerRead,
     }),
-    [notificationCenter.reads.unreadCount, notificationCenter.open],
+    [
+      notificationCenter.reads.unreadCount,
+      notificationCenter.open,
+      markServerRead,
+    ],
   );
 
   const withPresence = (screen: ReactNode) => (

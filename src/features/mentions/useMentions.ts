@@ -88,6 +88,18 @@ export function useMentions(
     return read.length === channelIds.length;
   }, [allByChannel]);
 
+  const markServerRead = useCallback(
+    (serverId: string) => {
+      const channelIds = new Set(
+        Object.values(visible)
+          .filter((mention) => mention.serverId === serverId)
+          .map((mention) => mention.channelId),
+      );
+      channelIds.forEach(markChannelRead);
+    },
+    [visible, markChannelRead],
+  );
+
   return {
     allByChannel,
     byChannel,
@@ -99,5 +111,6 @@ export function useMentions(
     reload,
     markChannelRead,
     markAllRead,
+    markServerRead,
   };
 }
