@@ -1,8 +1,10 @@
 import {
+  ownerOfScreenShareIdentity,
   type ServerSummary,
   toVoicePresence,
   type VoicePresenceByChannel,
   voiceParticipantsOf,
+  voiceProfileIds,
   withLivePresence,
 } from "@discordia/client-shared";
 
@@ -13,6 +15,7 @@ import { useAuth } from "../auth/auth-context";
 import { channelTargetOf } from "./channel-target";
 import { useVoiceSession } from "./voice-session-context";
 import { useVoicePresence } from "./useVoicePresence";
+import { useVoiceProfiles } from "./useVoiceProfiles";
 
 export interface SidebarVoiceParticipant {
   identity: string;
@@ -60,6 +63,19 @@ export function useServerVoice(server: ServerSummary) {
   );
 
   const ownAvatarUri = avatarUriOf(user);
+  const ownId = user?.id ?? null;
+  const voiceUserIds = useMemo(
+    () => voiceProfileIds(presence, liveParticipants, ownId),
+    [presence, liveParticipants, ownId],
+  );
+  const { avatarOf: otherAvatarOf } = useVoiceProfiles(voiceUserIds);
+  const participantAvatarOf = useCallback(
+    (identity: string) =>
+      (ownerOfScreenShareIdentity(identity) ?? identity) === ownId
+        ? ownAvatarUri
+        : otherAvatarOf(identity),
+    [ownId, ownAvatarUri, otherAvatarOf],
+  );
 
   const participantsFor = useCallback(
     (channelId: string): SidebarVoiceParticipant[] => {
@@ -67,7 +83,9 @@ export function useServerVoice(server: ServerSummary) {
         return liveParticipants.map((participant) => ({
           identity: participant.identity,
           name: participant.name,
-          avatarUri: participant.isLocal ? ownAvatarUri : null,
+          avatarUri: participant.isLocal
+            ? ownAvatarUri
+            : participantAvatarOf(participant.identity),
           muted: participant.muted,
           speaking: participant.speaking && !participant.mutedForMe,
           cameraOn: participant.cameraOn,
@@ -77,9 +95,16 @@ export function useServerVoice(server: ServerSummary) {
       return (presence[channelId] ?? []).map((participant) => ({
         identity: participant.participant_id,
         name: participant.name,
+        avatarUri: participantAvatarOf(participant.participant_id),
       }));
     },
-    [voiceChannelId, liveParticipants, presence, ownAvatarUri],
+    [
+      voiceChannelId,
+      liveParticipants,
+      presence,
+      ownAvatarUri,
+      participantAvatarOf,
+    ],
   );
 
   return {
@@ -89,5 +114,6 @@ export function useServerVoice(server: ServerSummary) {
     presence,
     callStartsByChannel: socketPresence.startsByChannel,
     participantsFor,
+    participantAvatarOf,
   };
 }

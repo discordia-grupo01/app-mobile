@@ -13,6 +13,7 @@ import {
   type VoiceBridgeCommand,
   type VoiceBridgeEvent,
   voiceDisconnectMessage,
+  voiceProfileIds,
   voiceScreenTileName,
   voiceSessionReducer,
   type VoiceSessionState,
@@ -52,6 +53,7 @@ import { isNativeScreenShareAvailable } from "./screen-share/livekit-native";
 import { useNativeScreenShare } from "./screen-share/useNativeScreenShare";
 import { useCallForegroundService } from "./useCallForegroundService";
 import { useExpandedCall } from "./useExpandedCall";
+import { useVoiceProfiles } from "./useVoiceProfiles";
 
 type EmbedWebView = WebView<object>;
 
@@ -118,15 +120,25 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
   const colors = useThemeColors();
   const { user } = useAuth();
   const localAvatarUrl = avatarUriOf(user);
+  const isChannelCall = channelTargetOf(state.target) !== null;
+  const ownId = user?.id ?? null;
+  const channelCallUserIds = useMemo(
+    () => (isChannelCall ? voiceProfileIds({}, state.participants, ownId) : []),
+    [isChannelCall, state.participants, ownId],
+  );
+  const { profiles: channelCallProfiles } =
+    useVoiceProfiles(channelCallUserIds);
   const profiles = useMemo(
     () =>
-      participantProfilesOf(
-        state.target,
-        user
-          ? { id: user.id, name: user.name, avatarUrl: localAvatarUrl }
-          : null,
-      ),
-    [state.target, user, localAvatarUrl],
+      isChannelCall
+        ? channelCallProfiles
+        : participantProfilesOf(
+            state.target,
+            user
+              ? { id: user.id, name: user.name, avatarUrl: localAvatarUrl }
+              : null,
+          ),
+    [isChannelCall, channelCallProfiles, state.target, user, localAvatarUrl],
   );
   const [bridge, setBridge] = useState<BridgeSession | null>(null);
   const [isEmbedPainted, setIsEmbedPainted] = useState(false);

@@ -298,6 +298,7 @@ export function ChannelScreen({
           canConnect={canConnect}
           isCheckingAccess={isCheckingChannelPermissions}
           presence={voice.presence[channel.id] ?? []}
+          participantAvatarOf={voice.participantAvatarOf}
           bottomInset={insets.bottom}
           isCovered={isMembersVisible}
         />
