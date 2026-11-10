@@ -1,13 +1,16 @@
+import {
+  BILLING_COPY,
+  type BillingSection,
+  PREMIUM_BRAND_COLORS,
+} from "@discordia/client-shared";
+
 import { Feather } from "@expo/vector-icons";
 import { useState, type ReactNode } from "react";
 import { Pressable, Text, TouchableOpacity, View } from "react-native";
 
 import { withAlpha } from "../../../../../lib/color";
 import { useThemeColors } from "../../../../../theme/theme-context";
-import { BILLING_COPY } from "../../../../billing/billingCopy";
-import type { BillingSection } from "../../../../billing/billingSections";
 import { BILLING_MENU_ITEMS } from "../../../../billing/components/navigation/billingMenuItems";
-import { LOGO } from "../../../../billing/components/shared/DiscordiaIcons";
 
 interface SettingsRowProps {
   icon: ReactNode;
@@ -36,7 +39,10 @@ function SettingsRow({
       className="mb-3 flex-row items-center gap-4 rounded-2xl border border-line bg-surface-raised p-4"
       style={
         isHighlighted
-          ? { backgroundColor: LOGO.yellow, borderColor: LOGO.yellow }
+          ? {
+              backgroundColor: PREMIUM_BRAND_COLORS.yellow,
+              borderColor: PREMIUM_BRAND_COLORS.yellow,
+            }
           : isPressed
             ? { opacity: 0.75 }
             : undefined
@@ -49,7 +55,9 @@ function SettingsRow({
       <View
         className="h-11 w-11 items-center justify-center rounded-xl"
         style={{
-          backgroundColor: isHighlighted ? LOGO.deep : iconBackground,
+          backgroundColor: isHighlighted
+            ? PREMIUM_BRAND_COLORS.deep
+            : iconBackground,
         }}
       >
         {icon}
@@ -57,13 +65,17 @@ function SettingsRow({
       <View className="flex-1">
         <Text
           className="mb-0.5 text-[16px] font-bold text-content"
-          style={isHighlighted ? { color: LOGO.deep } : undefined}
+          style={
+            isHighlighted ? { color: PREMIUM_BRAND_COLORS.deep } : undefined
+          }
         >
           {title}
         </Text>
         <Text
           className="text-[13px] text-content-subtle"
-          style={isHighlighted ? { color: LOGO.deep } : undefined}
+          style={
+            isHighlighted ? { color: PREMIUM_BRAND_COLORS.deep } : undefined
+          }
         >
           {subtitle}
         </Text>
@@ -71,7 +83,7 @@ function SettingsRow({
       <Feather
         name="chevron-right"
         size={18}
-        color={isHighlighted ? LOGO.deep : colors.textSubtle}
+        color={isHighlighted ? PREMIUM_BRAND_COLORS.deep : colors.textSubtle}
       />
     </Pressable>
   );
@@ -124,7 +136,7 @@ export function AccountSettingsMenu({
       />
       <SettingsRow
         icon={<Feather name="shield" size={20} color={colors.sky} />}
-        iconBackground={withAlpha(LOGO.petrol, 0.3)}
+        iconBackground={withAlpha(PREMIUM_BRAND_COLORS.petrol, 0.3)}
         title="Seguridad"
         subtitle="Acceso y verificación"
         onPress={onSelectSecurity}

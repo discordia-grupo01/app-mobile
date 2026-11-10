@@ -1,11 +1,13 @@
-import { paginationSummary } from "@discordia/client-shared";
+import {
+  BILLING_HISTORY_PAGE_SIZE,
+  paginationSummary,
+} from "@discordia/client-shared";
 
 import type { ReactNode } from "react";
 import { Text, View } from "react-native";
 
 import { Pagination } from "../../../../components/ui/Pagination";
 import { usePagination } from "../../../../hooks/usePagination";
-import { BILLING_HISTORY_PAGE_SIZE } from "../../billingSections";
 import { DiscordiaPointIcon } from "../shared/DiscordiaIcons";
 
 interface HistoryListProps<T> {

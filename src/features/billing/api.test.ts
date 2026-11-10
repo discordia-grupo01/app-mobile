@@ -11,7 +11,6 @@ import {
   startPointsCheckout,
   startPremiumCheckout,
 } from "./api";
-import { BILLING_EXTRA_ERROR_MESSAGES } from "./billingCopy";
 
 jest.mock("../../lib/api-client", () => ({ apiFetch: jest.fn() }));
 
@@ -77,10 +76,10 @@ describe("checkouts", () => {
     const reused = await startPointsCheckout({ package_id: "p" }, "k");
 
     expect(inProgress).toMatchObject({
-      message: BILLING_EXTRA_ERROR_MESSAGES.CHECKOUT_IN_PROGRESS,
+      message: BILLING_ERROR_MESSAGES.CHECKOUT_IN_PROGRESS,
     });
     expect(reused).toMatchObject({
-      message: BILLING_EXTRA_ERROR_MESSAGES.IDEMPOTENCY_KEY_REUSED,
+      message: BILLING_ERROR_MESSAGES.IDEMPOTENCY_KEY_REUSED,
     });
   });
 

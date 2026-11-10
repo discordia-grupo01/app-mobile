@@ -1,4 +1,6 @@
 import {
+  BILLING_COPY,
+  type CheckoutItem,
   formatArsFromCents,
   formatPoints,
   PREMIUM_RENEWAL_NOTICE,
@@ -13,8 +15,6 @@ import { FormErrorBanner } from "../../../../components/ui/FormErrorBanner";
 import { ModalCloseButton } from "../../../../components/ui/ModalCloseButton";
 import { ModalShell } from "../../../../components/ui/ModalShell";
 import { TextField } from "../../../../components/ui/TextField";
-import { BILLING_COPY } from "../../billingCopy";
-import type { CheckoutItem } from "./checkout";
 import {
   DiscordiaPointIcon,
   DiscordiaPremiumIcon,

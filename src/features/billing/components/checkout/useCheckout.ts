@@ -1,14 +1,17 @@
 import {
   APP_PAYMENT_RETURN_URL,
+  type CheckoutDeps,
+  type CheckoutItem,
+  newIdempotencyKey,
   type PaymentReturnParams,
+  runCheckout,
+  shouldRenewIdempotencyKey,
 } from "@discordia/client-shared";
 
 import * as WebBrowser from "expo-web-browser";
 import { useCallback, useRef, useState } from "react";
 
 import { startPointsCheckout, startPremiumCheckout } from "../../api";
-import { type CheckoutDeps, type CheckoutItem, runCheckout } from "./checkout";
-import { newIdempotencyKey } from "./idempotencyKey";
 
 async function openCheckout(url: string): Promise<void> {
   await WebBrowser.openAuthSessionAsync(url, APP_PAYMENT_RETURN_URL);
@@ -39,14 +42,13 @@ export function useCheckout(
       const outcome = await runCheckout(item, payerEmail, keyRef.current, DEPS);
       inFlight.current = false;
       setPending(false);
+      if (shouldRenewIdempotencyKey(outcome)) {
+        keyRef.current = newIdempotencyKey();
+      }
       if (!outcome.ok) {
-        if (outcome.code === "IDEMPOTENCY_KEY_REUSED") {
-          keyRef.current = newIdempotencyKey();
-        }
         setError(outcome.message);
         return;
       }
-      keyRef.current = newIdempotencyKey();
       onReturned(outcome.payment);
     },
     [onReturned],

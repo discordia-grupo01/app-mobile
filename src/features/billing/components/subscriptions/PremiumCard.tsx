@@ -1,9 +1,11 @@
 import {
+  BILLING_COPY,
+  PREMIUM_STATE_TONE,
+  premiumActionLabels,
   premiumActions,
   premiumCancelConfirmation,
   premiumStatusCopy,
   type PremiumView,
-  type ThemeColors,
 } from "@discordia/client-shared";
 
 import { useState } from "react";
@@ -13,24 +15,10 @@ import { Button } from "../../../../components/ui/Button";
 import { FormErrorBanner } from "../../../../components/ui/FormErrorBanner";
 import { useThemeColors } from "../../../../theme/theme-context";
 import { cancelPremium } from "../../api";
-import { BILLING_COPY } from "../../billingCopy";
 import { CancelPremiumModal } from "./CancelPremiumModal";
+import { billingToneColor } from "../shared/billingTone";
 import { PlanCard } from "../shared/PlanCard";
 import { PremiumSubscribeButton } from "../shared/PremiumSubscribeButton";
-
-function stateColor(state: PremiumView["state"], colors: ThemeColors): string {
-  switch (state) {
-    case "active":
-      return colors.success;
-    case "processing_first_payment":
-    case "active_canceled":
-      return colors.warning;
-    case "expired":
-      return colors.danger;
-    case "none":
-      return colors.textSubtle;
-  }
-}
 
 interface PremiumCardProps {
   premium: PremiumView;
@@ -51,10 +39,7 @@ export function PremiumCard({
   const [error, setError] = useState<string | null>(null);
   const actions = premiumActions(premium);
   const copy = premiumStatusCopy(premium);
-  const cancelLabel =
-    premium.state === "active"
-      ? BILLING_COPY.cancelRenewal
-      : BILLING_COPY.cancelSubscription;
+  const labels = premiumActionLabels(premium);
 
   async function cancel() {
     setIsConfirmOpen(false);
@@ -72,24 +57,23 @@ export function PremiumCard({
   return (
     <View className="gap-3">
       <PlanCard
-        status={{ label: copy.label, color: stateColor(premium.state, colors) }}
+        status={{
+          label: copy.label,
+          color: billingToneColor(PREMIUM_STATE_TONE[premium.state], colors),
+        }}
         detail={copy.detail}
         actions={
           actions.canSubscribe || actions.canCancel ? (
             <>
               {actions.canSubscribe ? (
                 <PremiumSubscribeButton
-                  label={
-                    premium.state === "expired"
-                      ? BILLING_COPY.resubscribe
-                      : BILLING_COPY.subscribeCta
-                  }
+                  label={labels.subscribe}
                   onPress={onSubscribe}
                 />
               ) : null}
               {actions.canCancel ? (
                 <Button
-                  title={cancelLabel}
+                  title={labels.cancel}
                   variant="secondary"
                   isLoading={isCancelling}
                   onPress={() => setIsConfirmOpen(true)}
@@ -120,7 +104,7 @@ export function PremiumCard({
         body={premiumCancelConfirmation(
           actions.benefitsActive ? premium.premium_until : null,
         )}
-        confirmLabel={cancelLabel}
+        confirmLabel={labels.cancel}
         onConfirm={() => void cancel()}
         onClose={() => setIsConfirmOpen(false)}
       />

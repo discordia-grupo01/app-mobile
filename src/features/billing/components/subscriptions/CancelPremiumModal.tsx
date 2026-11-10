@@ -1,3 +1,5 @@
+import { BILLING_COPY } from "@discordia/client-shared";
+
 import { Feather } from "@expo/vector-icons";
 import { Text, View } from "react-native";
 
@@ -6,7 +8,6 @@ import { ModalCloseButton } from "../../../../components/ui/ModalCloseButton";
 import { ModalShell } from "../../../../components/ui/ModalShell";
 import { withAlpha } from "../../../../lib/color";
 import { useThemeColors } from "../../../../theme/theme-context";
-import { BILLING_COPY } from "../../billingCopy";
 
 interface CancelPremiumModalProps {
   visible: boolean;

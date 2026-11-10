@@ -1,4 +1,5 @@
 import {
+  BILLING_COPY,
   formatArsFromCents,
   formatPoints,
   type PointsPackage,
@@ -9,7 +10,6 @@ import { Text, TouchableOpacity, View } from "react-native";
 
 import { Button } from "../../../../components/ui/Button";
 import { cn } from "../../../../lib/cn";
-import { BILLING_COPY } from "../../billingCopy";
 import { DiscordiaPointIcon } from "../shared/DiscordiaIcons";
 
 interface PointsShopProps {

@@ -1,5 +1,7 @@
 import {
+  BILLING_COPY,
   formatArsFromCents,
+  formatBillingDate,
   formatPoints,
   formatPointsDelta,
   LEDGER_REASON_LABELS,
@@ -7,8 +9,7 @@ import {
   type PointPurchase,
   PURCHASE_STATUS_DESCRIPTIONS,
   PURCHASE_STATUS_LABELS,
-  type PurchaseStatus,
-  type ThemeColors,
+  PURCHASE_STATUS_TONE,
   unrecoveredPointsNote,
 } from "@discordia/client-shared";
 
@@ -16,30 +17,13 @@ import { Text, View } from "react-native";
 
 import { withAlpha } from "../../../../lib/color";
 import { useThemeColors } from "../../../../theme/theme-context";
-import { BILLING_COPY } from "../../billingCopy";
-import { formatBillingDate } from "./formatBillingDate";
 import { DiscordiaPointIcon } from "../shared/DiscordiaIcons";
 import { HistoryList } from "./HistoryList";
-
-function statusColor(status: PurchaseStatus, colors: ThemeColors): string {
-  switch (status) {
-    case "pending":
-      return colors.warning;
-    case "paid":
-      return colors.success;
-    case "failed":
-    case "charged_back":
-      return colors.danger;
-    case "expired":
-      return colors.textSubtle;
-    case "refunded":
-      return colors.info;
-  }
-}
+import { billingToneColor } from "../shared/billingTone";
 
 function PurchaseRow({ purchase }: { purchase: PointPurchase }) {
   const colors = useThemeColors();
-  const tone = statusColor(purchase.status, colors);
+  const tone = billingToneColor(PURCHASE_STATUS_TONE[purchase.status], colors);
 
   return (
     <View>

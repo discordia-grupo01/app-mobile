@@ -1,9 +1,12 @@
+import {
+  type BillingSection,
+  PREMIUM_BRAND_COLORS,
+} from "@discordia/client-shared";
+
 import { Pressable, ScrollView, Text, View } from "react-native";
 
 import { cn } from "../../../../lib/cn";
-import type { BillingSection } from "../../billingSections";
 import { BILLING_MENU_ITEMS } from "./billingMenuItems";
-import { LOGO } from "../shared/DiscordiaIcons";
 
 interface BillingTabsProps {
   active: BillingSection;
@@ -32,11 +35,19 @@ export function BillingTabs({ active, onSelect }: BillingTabsProps) {
               "flex-row items-center gap-2 rounded-xl border px-3 py-2",
               isActive ? "border-transparent" : "border-line bg-surface-input",
             )}
-            style={isActive ? { backgroundColor: LOGO.yellow } : undefined}
+            style={
+              isActive
+                ? { backgroundColor: PREMIUM_BRAND_COLORS.yellow }
+                : undefined
+            }
           >
             <View
               className="h-[25px] w-[25px] items-center justify-center rounded-md"
-              style={isActive ? { backgroundColor: LOGO.deep } : undefined}
+              style={
+                isActive
+                  ? { backgroundColor: PREMIUM_BRAND_COLORS.deep }
+                  : undefined
+              }
             >
               <Icon size={17} />
             </View>
@@ -45,7 +56,9 @@ export function BillingTabs({ active, onSelect }: BillingTabsProps) {
                 "text-[13px] font-bold",
                 !isActive && "text-content-muted",
               )}
-              style={isActive ? { color: LOGO.deep } : undefined}
+              style={
+                isActive ? { color: PREMIUM_BRAND_COLORS.deep } : undefined
+              }
             >
               {item.label}
             </Text>

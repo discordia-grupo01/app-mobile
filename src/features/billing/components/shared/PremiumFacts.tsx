@@ -1,8 +1,9 @@
+import { BILLING_COPY } from "@discordia/client-shared";
+
 import { Feather } from "@expo/vector-icons";
 import { Text, View } from "react-native";
 
 import { useThemeColors } from "../../../../theme/theme-context";
-import { BILLING_COPY } from "../../billingCopy";
 
 export function PremiumFacts() {
   const colors = useThemeColors();

@@ -1,5 +1,7 @@
 import {
+  BILLING_COPY,
   formatArsFromCents,
+  PREMIUM_BRAND_COLORS,
   PREMIUM_PRICE_CENTS,
 } from "@discordia/client-shared";
 
@@ -7,8 +9,7 @@ import type { ReactNode } from "react";
 import { Text, View } from "react-native";
 
 import { withAlpha } from "../../../../lib/color";
-import { BILLING_COPY } from "../../billingCopy";
-import { DiscordiaPremiumMark, LOGO } from "./DiscordiaIcons";
+import { DiscordiaPremiumMark } from "./DiscordiaIcons";
 
 interface PlanCardProps {
   status?: { label: string; color: string } | null;
@@ -24,7 +25,7 @@ export function PlanCard({ status, detail, actions }: PlanCardProps) {
   return (
     <View
       className="rounded-2xl border bg-surface-raised p-4"
-      style={{ borderColor: withAlpha(LOGO.yellow, 0.35) }}
+      style={{ borderColor: withAlpha(PREMIUM_BRAND_COLORS.yellow, 0.35) }}
     >
       <DiscordiaPremiumMark size={56} />
 

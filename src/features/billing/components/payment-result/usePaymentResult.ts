@@ -1,19 +1,16 @@
 import {
+  applyPaymentStep,
+  checkPaymentStep,
+  PAYMENT_RESULT_VERIFYING,
   PAYMENT_RETURN_POLL_MS,
-  PAYMENT_RETURN_TIMEOUT_MS,
-  PAYMENT_STATUS_FAILED,
+  type PaymentResultState,
   type PaymentReturnParams,
+  type PaymentStatusApi,
 } from "@discordia/client-shared";
 
 import { useCallback, useEffect, useState } from "react";
 
 import { getPointsOverview, getPremium, getPurchase } from "../../api";
-import {
-  checkPaymentStep,
-  type PaymentResultState,
-  type PaymentStatusApi,
-  VERIFYING,
-} from "./paymentResult";
 
 const STATUS_API: PaymentStatusApi = {
   getPurchase,
@@ -22,13 +19,16 @@ const STATUS_API: PaymentStatusApi = {
 };
 
 export function usePaymentResult({ kind, purchaseId }: PaymentReturnParams) {
-  const [state, setState] = useState<PaymentResultState>(VERIFYING);
+  const [state, setState] = useState<PaymentResultState>(
+    PAYMENT_RESULT_VERIFYING,
+  );
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     const payment: PaymentReturnParams = { kind, purchaseId };
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
+    let current = PAYMENT_RESULT_VERIFYING;
     const startedAt = Date.now();
 
     async function tick() {
@@ -36,17 +36,10 @@ export function usePaymentResult({ kind, purchaseId }: PaymentReturnParams) {
       const step = await checkPaymentStep(payment, elapsed, STATUS_API);
       if (cancelled) return;
 
-      if (step.kind === "progress") {
-        setState(step.state);
-        if (step.state.progress.done) return;
-      } else if (elapsed >= PAYMENT_RETURN_TIMEOUT_MS) {
-        setState((current) => ({
-          ...current,
-          progress: { ...current.progress, done: true },
-          error: PAYMENT_STATUS_FAILED,
-        }));
-        return;
-      }
+      const applied = applyPaymentStep(current, step, elapsed);
+      current = applied.state;
+      setState(current);
+      if (applied.finished) return;
       timer = setTimeout(() => void tick(), PAYMENT_RETURN_POLL_MS);
     }
 
@@ -58,7 +51,7 @@ export function usePaymentResult({ kind, purchaseId }: PaymentReturnParams) {
   }, [kind, purchaseId, attempt]);
 
   const retry = useCallback(() => {
-    setState(VERIFYING);
+    setState(PAYMENT_RESULT_VERIFYING);
     setAttempt((value) => value + 1);
   }, []);
 
