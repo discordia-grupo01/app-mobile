@@ -1,6 +1,10 @@
 import {
+  BILLING_COPY,
   formatMemberSince,
+  PREMIUM_BRAND_COLORS,
+  PREMIUM_SHOWCASE_BENEFITS,
   premiumActions,
+  type PremiumBenefitId,
   premiumStatusCopy,
   type PremiumView,
 } from "@discordia/client-shared";
@@ -11,12 +15,7 @@ import { Text, View } from "react-native";
 import { Button } from "../../../../components/ui/Button";
 import { withAlpha } from "../../../../lib/color";
 import { useThemeColors } from "../../../../theme/theme-context";
-import {
-  BILLING_COPY,
-  PREMIUM_SHOWCASE_BENEFITS,
-  type PremiumBenefitId,
-} from "../../billingCopy";
-import { DiscordiaPremiumBadge, LOGO } from "../shared/DiscordiaIcons";
+import { DiscordiaPremiumBadge } from "../shared/DiscordiaIcons";
 import { PlanCard } from "../shared/PlanCard";
 import { PremiumFacts } from "../shared/PremiumFacts";
 import { PremiumPill } from "../shared/PremiumPill";
@@ -48,7 +47,9 @@ export function PremiumShowcase({ premium, onManage }: PremiumShowcaseProps) {
             : premiumStatusCopy(premium).label,
         color: actions.benefitsActive ? colors.success : colors.textSubtle,
       };
-  const benefitColor = actions.benefitsActive ? colors.success : LOGO.yellow;
+  const benefitColor = actions.benefitsActive
+    ? colors.success
+    : PREMIUM_BRAND_COLORS.yellow;
 
   return (
     <View className="gap-6">
@@ -129,7 +130,7 @@ export function PremiumShowcase({ premium, onManage }: PremiumShowcaseProps) {
                 />
                 <Text
                   className="text-[15px] font-bold tabular-nums"
-                  style={{ color: LOGO.yellow }}
+                  style={{ color: PREMIUM_BRAND_COLORS.yellow }}
                 >
                   50 MB
                 </Text>

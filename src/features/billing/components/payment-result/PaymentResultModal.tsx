@@ -1,6 +1,8 @@
 import {
-  type PaymentOutcome,
+  BILLING_COPY,
+  PAYMENT_OUTCOME_TONE,
   paymentOutcomeCopy,
+  type PaymentOutcomeTone,
   type PaymentReturnParams,
   type ThemeColors,
 } from "@discordia/client-shared";
@@ -13,26 +15,11 @@ import { FormErrorBanner } from "../../../../components/ui/FormErrorBanner";
 import { ModalShell } from "../../../../components/ui/ModalShell";
 import { withAlpha } from "../../../../lib/color";
 import { useThemeColors } from "../../../../theme/theme-context";
-import { BILLING_COPY } from "../../billingCopy";
+import { billingToneColor } from "../shared/billingTone";
 import { usePaymentResult } from "./usePaymentResult";
 
-type Tone = "progress" | "success" | "warning" | "danger";
-
-const TONE: Record<PaymentOutcome, Tone> = {
-  verifying: "progress",
-  points_accredited: "success",
-  premium_active: "success",
-  points_pending: "warning",
-  premium_processing: "warning",
-  points_rejected: "danger",
-  points_expired: "danger",
-  points_reversed: "danger",
-  points_not_found: "danger",
-  premium_not_activated: "danger",
-};
-
 const TONE_ICON: Record<
-  Exclude<Tone, "progress">,
+  Exclude<PaymentOutcomeTone, "progress">,
   "check-circle" | "alert-circle" | "x-circle"
 > = {
   success: "check-circle",
@@ -40,17 +27,8 @@ const TONE_ICON: Record<
   danger: "x-circle",
 };
 
-function toneColor(tone: Tone, colors: ThemeColors): string {
-  switch (tone) {
-    case "progress":
-      return colors.info;
-    case "success":
-      return colors.success;
-    case "warning":
-      return colors.warning;
-    case "danger":
-      return colors.danger;
-  }
+function toneColor(tone: PaymentOutcomeTone, colors: ThemeColors): string {
+  return tone === "progress" ? colors.info : billingToneColor(tone, colors);
 }
 
 interface PaymentResultModalProps {
@@ -92,7 +70,7 @@ function PaymentResultContent({
   const colors = useThemeColors();
   const result = usePaymentResult(payment);
   const { outcome, done } = result.progress;
-  const tone = TONE[outcome];
+  const tone = PAYMENT_OUTCOME_TONE[outcome];
   const color = toneColor(tone, colors);
   const copy = paymentOutcomeCopy(outcome, {
     points: result.purchase?.points,

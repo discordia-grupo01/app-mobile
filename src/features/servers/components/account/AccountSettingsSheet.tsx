@@ -1,4 +1,9 @@
-import type { ThemeName } from "@discordia/client-shared";
+import {
+  BILLING_COPY,
+  type BillingSection,
+  isBillingSection,
+  type ThemeName,
+} from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
 import { useEffect, useRef, useState, type ComponentRef } from "react";
@@ -14,11 +19,6 @@ import {
 
 import { BillingSettings } from "../../../billing/BillingSettings";
 import { BillingTabs } from "../../../billing/components/navigation/BillingTabs";
-import { BILLING_COPY } from "../../../billing/billingCopy";
-import {
-  type BillingSection,
-  isBillingSection,
-} from "../../../billing/billingSections";
 import { PlatformStatusStep } from "../../../platform-status/components/PlatformStatusStep";
 import { useThemeColors } from "../../../../theme/theme-context";
 import { AccountSettingsMenu } from "./account-settings/AccountSettingsMenu";

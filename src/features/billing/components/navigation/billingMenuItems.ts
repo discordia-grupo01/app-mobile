@@ -1,7 +1,11 @@
+import {
+  BILLING_SECTION_LABELS,
+  BILLING_SECTIONS,
+  type BillingSection,
+} from "@discordia/client-shared";
+
 import type { ComponentType } from "react";
 
-import { BILLING_COPY } from "../../billingCopy";
-import type { BillingSection } from "../../billingSections";
 import {
   DiscordiaPointIcon,
   DiscordiaPremiumIcon,
@@ -14,30 +18,16 @@ export interface BillingMenuItem {
   icon: ComponentType<{ size?: number }>;
 }
 
-/** Los mismos ítems, textos e íconos que el grupo "Facturación" de web. */
-export const BILLING_MENU_ITEMS: readonly BillingMenuItem[] = [
-  {
-    id: "premium",
-    label: "Premium",
-    description: "Conocé el plan",
-    icon: DiscordiaPremiumIcon,
-  },
-  {
-    id: "subscriptions",
-    label: BILLING_COPY.subscriptionsTitle,
-    description: "Estado y renovación",
-    icon: DiscordiaPremiumIcon,
-  },
-  {
-    id: "points",
-    label: BILLING_COPY.pointsTitle,
-    description: "Saldo y paquetes",
-    icon: DiscordiaPointIcon,
-  },
-  {
-    id: "transactions",
-    label: BILLING_COPY.transactionsTitle,
-    description: "Pagos y movimientos",
-    icon: DiscordiaPointIcon,
-  },
-];
+const BILLING_ICONS: Record<BillingSection, BillingMenuItem["icon"]> = {
+  premium: DiscordiaPremiumIcon,
+  subscriptions: DiscordiaPremiumIcon,
+  points: DiscordiaPointIcon,
+  transactions: DiscordiaPointIcon,
+};
+
+export const BILLING_MENU_ITEMS: readonly BillingMenuItem[] =
+  BILLING_SECTIONS.map((id) => ({
+    id,
+    ...BILLING_SECTION_LABELS[id],
+    icon: BILLING_ICONS[id],
+  }));
