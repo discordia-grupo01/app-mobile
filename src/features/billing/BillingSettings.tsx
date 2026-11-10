@@ -1,5 +1,9 @@
 import {
+  BILLING_COPY,
+  type BillingSection,
+  type CheckoutItem,
   formatPoints,
+  PAYMENT_RETURN_SECTION,
   type PaymentReturnParams,
   PREMIUM_PRICE_CENTS,
   type PremiumView,
@@ -13,9 +17,6 @@ import { FormErrorBanner } from "../../components/ui/FormErrorBanner";
 import { useThemeColors } from "../../theme/theme-context";
 import { useAuth } from "../auth/auth-context";
 import { getOwnProfile } from "../profile/service";
-import { BILLING_COPY } from "./billingCopy";
-import { type BillingSection, RETURN_SECTION } from "./billingSections";
-import type { CheckoutItem } from "./components/checkout/checkout";
 import { useBillingOverview } from "./useBillingOverview";
 import { useCheckout } from "./components/checkout/useCheckout";
 import { BillingHistory } from "./components/history/BillingHistory";
@@ -33,10 +34,6 @@ interface BillingSettingsProps {
   onNavigate: (tab: BillingSection) => void;
 }
 
-/**
- * Se monta una sola vez para las cuatro solapas de Facturación: cambiar de
- * solapa no vuelve a pedir los datos.
- */
 export function BillingSettings({ tab, onNavigate }: BillingSettingsProps) {
   const colors = useThemeColors();
   const { user, updateUser } = useAuth();
@@ -45,8 +42,6 @@ export function BillingSettings({ tab, onNavigate }: BillingSettingsProps) {
   const [payment, setPayment] = useState<PaymentReturnParams | null>(null);
   const isReady = state.status === "ready";
 
-  // identify recibe `premium` por evento y puede llegar después que billing:
-  // se vuelve a pedir el perfil para que la insignia y los adjuntos lo vean.
   const refreshOwnProfile = useCallback(async () => {
     const result = await getOwnProfile();
     if (result.ok) updateUser(result.user);
@@ -75,7 +70,7 @@ export function BillingSettings({ tab, onNavigate }: BillingSettingsProps) {
 
   function closePayment(returned: PaymentReturnParams) {
     setPayment(null);
-    onNavigate(RETURN_SECTION[returned.kind]);
+    onNavigate(PAYMENT_RETURN_SECTION[returned.kind]);
     reload();
     void refreshOwnProfile();
   }

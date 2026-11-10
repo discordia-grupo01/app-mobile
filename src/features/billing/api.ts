@@ -3,6 +3,7 @@ import {
   billingErrorMessage,
   type ApiFailure,
   type ApiResult,
+  type BillingResult,
   type CheckoutResponse,
   isNetworkFailure,
   messageFor,
@@ -15,7 +16,6 @@ import {
 } from "@discordia/client-shared";
 
 import { apiFetch } from "../../lib/api-client";
-import { BILLING_EXTRA_ERROR_MESSAGES } from "./billingCopy";
 
 /**
  * Billing (Premium y puntos con Mercado Pago) por el Gateway:
@@ -32,9 +32,6 @@ import { BILLING_EXTRA_ERROR_MESSAGES } from "./billingCopy";
  * checkout durante 24 h, así un doble toque o un reintento no crean dos compras.
  */
 
-export type BillingResult<T> =
-  { ok: true; data: T } | { ok: false; code: string; message: string };
-
 function toBillingResult<T>(result: ApiResult<T>): BillingResult<T> {
   if (result.ok) return { ok: true, data: result.data };
   return {
@@ -46,8 +43,7 @@ function toBillingResult<T>(result: ApiResult<T>): BillingResult<T> {
 
 export function billingFailureMessage(failure: ApiFailure): string {
   if (isNetworkFailure(failure)) return messageFor(failure);
-  const code = String(failure.code);
-  return BILLING_EXTRA_ERROR_MESSAGES[code] ?? billingErrorMessage(code);
+  return billingErrorMessage(failure.code);
 }
 
 // Mercado Pago vuelve a la página puente /app-link/billing/return de la web,
