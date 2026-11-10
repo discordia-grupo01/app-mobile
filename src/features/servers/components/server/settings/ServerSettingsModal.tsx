@@ -5,6 +5,7 @@ import {
 import { useState } from "react";
 import { KeyboardAvoidingView, Modal, Platform } from "react-native";
 
+import { ReportsStep } from "../../../../reports/components/list/ReportsStep";
 import { useDeleteServerConfirm } from "../../../useDeleteServerConfirm";
 import { useServerSettingsForm } from "../../../useServerSettingsForm";
 import { WordFilterStep } from "../WordFilterStep";
@@ -22,7 +23,15 @@ interface ServerSettingsModalProps {
   canManageServer: boolean;
   /** "Palabras prohibidas". */
   canManageMessages: boolean;
+  /** "Reportes": solo moderadores. */
+  canReviewReports: boolean;
+  pendingReports: number;
+  currentUserId: string | null;
   onClose: () => void;
+  /** "Ir al mensaje" desde un reporte: quien lo usa cierra la configuracion. */
+  onGoToMessage: (channelId: string, messageId: string) => void;
+  /** Se cerro un reporte pendiente: hay que actualizar la bandera. */
+  onPendingReportsChanged: () => void;
   onUpdated: (server: ServerSummary) => void;
   onConfirmDelete: (confirmName: string) => Promise<DeleteServerResult>;
 }
@@ -34,7 +43,12 @@ function SettingsBody({
   isOwner,
   canManageServer,
   canManageMessages,
+  canReviewReports,
+  pendingReports,
+  currentUserId,
   onClose,
+  onGoToMessage,
+  onPendingReportsChanged,
   onUpdated,
   onConfirmDelete,
 }: SettingsBodyProps) {
@@ -51,7 +65,12 @@ function SettingsBody({
 
   return (
     <>
-      <SettingsHeader step={step} onBack={backToMenu} onClose={onClose} />
+      <SettingsHeader
+        step={step}
+        pendingReports={pendingReports}
+        onBack={backToMenu}
+        onClose={onClose}
+      />
 
       {step === "menu" ? (
         <SettingsMenuStep
@@ -59,6 +78,8 @@ function SettingsBody({
           isOwner={isOwner}
           canManageServer={canManageServer}
           canManageMessages={canManageMessages}
+          canReviewReports={canReviewReports}
+          pendingReports={pendingReports}
           onSelect={setStep}
         />
       ) : null}
@@ -72,6 +93,17 @@ function SettingsBody({
       ) : null}
 
       {step === "words" ? <WordFilterStep serverId={server.id} /> : null}
+
+      {step === "reports" && canReviewReports ? (
+        <ReportsStep
+          serverId={server.id}
+          ownerId={server.owner_id}
+          currentUserId={currentUserId}
+          channels={server.channels}
+          onGoToMessage={onGoToMessage}
+          onPendingChanged={onPendingReportsChanged}
+        />
+      ) : null}
 
       {step === "delete" ? (
         <DeleteServerStep
