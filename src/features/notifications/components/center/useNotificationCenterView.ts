@@ -12,6 +12,7 @@ import { useMemo, useState } from "react";
 import type { NotificationHistoryState } from "../../history/useNotificationHistory";
 import { useNotificationAuthors } from "./useNotificationAuthors";
 import { useNotificationMessages } from "./useNotificationMessages";
+import { useNotificationRoles } from "./useNotificationRoles";
 import type { NotificationReadsState } from "../../history/useNotificationReads";
 
 export function useNotificationCenterView(
@@ -22,6 +23,7 @@ export function useNotificationCenterView(
   const [tab, setTab] = useState<NotificationTab>("unread");
   const authors = useNotificationAuthors(history.items);
   const messages = useNotificationMessages(history.items);
+  const roleNames = useNotificationRoles(history.items);
 
   const groups = useMemo(
     () =>
@@ -33,7 +35,7 @@ export function useNotificationCenterView(
 
   const previews = useMemo(() => {
     const nameOf = (kind: "user" | "role", id: string) => {
-      if (kind !== "user") return null;
+      if (kind === "role") return roleNames[id.toLowerCase()] ?? null;
       return (me?.id === id ? me.name : authors[id]?.name) ?? null;
     };
     return Object.fromEntries(
@@ -42,7 +44,7 @@ export function useNotificationCenterView(
         notificationPreview(message, nameOf),
       ]),
     );
-  }, [messages, authors, me]);
+  }, [messages, authors, roleNames, me]);
 
   const oldestLoaded = history.items.at(-1);
   const canLoadMore =

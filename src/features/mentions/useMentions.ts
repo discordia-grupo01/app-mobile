@@ -74,15 +74,43 @@ export function useMentions(
   );
   const byChannel = useMemo(() => unreadByChannel(highlighted), [highlighted]);
   const byServer = useMemo(() => unreadByServer(highlighted), [highlighted]);
+  const hasUnread = Object.keys(visible).length > 0;
+
+  const markAllRead = useCallback(async () => {
+    const channelIds = Object.keys(allByChannel);
+    const results = await Promise.all(
+      channelIds.map((channelId) => markChannelMentionsRead(channelId)),
+    );
+    const read = channelIds.filter((_, index) => results[index]?.ok);
+    if (read.length > 0) {
+      setUnread((prev) => read.reduce(clearChannelMentions, prev));
+    }
+    return read.length === channelIds.length;
+  }, [allByChannel]);
+
+  const markServerRead = useCallback(
+    (serverId: string) => {
+      const channelIds = new Set(
+        Object.values(visible)
+          .filter((mention) => mention.serverId === serverId)
+          .map((mention) => mention.channelId),
+      );
+      channelIds.forEach(markChannelRead);
+    },
+    [visible, markChannelRead],
+  );
 
   return {
     allByChannel,
     byChannel,
     byServer,
+    hasUnread,
     isLoaded,
     isUnread,
     receive,
     reload,
     markChannelRead,
+    markAllRead,
+    markServerRead,
   };
 }

@@ -32,6 +32,7 @@ import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { LoadingScreen } from "../components/ui/LoadingScreen";
+import { useAppActive } from "../hooks/useAppActive";
 import { useLoadingGate } from "../hooks/useLoadingGate";
 import { useDirectMessages } from "../features/direct-messages/useDirectMessages";
 import { useMentions } from "../features/mentions/useMentions";
@@ -193,32 +194,39 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
     (signal: number) => signal + 1,
     0,
   );
-  const directMessages = useDirectMessages(currentAuthor, view === "dm", {
-    onMention: (payload) => {
-      mentions.receive(payload);
-      bumpActivity();
+  // Con la app en segundo plano no hay canal ni conversación "abiertos" para
+  // marcar leídos: lo que llega mientras tanto queda sin leer hasta que vuelva.
+  const isAppActive = useAppActive();
+  const directMessages = useDirectMessages(
+    currentAuthor,
+    isAppActive && view === "dm",
+    {
+      onMention: (payload) => {
+        mentions.receive(payload);
+        bumpActivity();
+      },
+      onRejoined: () => {
+        mentions.reload();
+        void listMyServers().then((result) => {
+          if (result.ok) setServers(result.servers);
+        });
+      },
+      onServerLeft: ({ server_id }) => {
+        setServers((prev) => prev.filter((server) => server.id !== server_id));
+        if (selectedServerId !== server_id) return;
+        setSelectedServerId(null);
+        setSelectedChannelId(null);
+        setView("dm");
+      },
+      onServerSuspended: ({ server_id }) => {
+        setServers((prev) => markServerSuspended(prev, server_id));
+      },
+      onServerReactivated: () => {
+        void reloadServers();
+      },
+      ...presence.userRoomCallbacks,
     },
-    onRejoined: () => {
-      mentions.reload();
-      void listMyServers().then((result) => {
-        if (result.ok) setServers(result.servers);
-      });
-    },
-    onServerLeft: ({ server_id }) => {
-      setServers((prev) => prev.filter((server) => server.id !== server_id));
-      if (selectedServerId !== server_id) return;
-      setSelectedServerId(null);
-      setSelectedChannelId(null);
-      setView("dm");
-    },
-    onServerSuspended: ({ server_id }) => {
-      setServers((prev) => markServerSuspended(prev, server_id));
-    },
-    onServerReactivated: () => {
-      void reloadServers();
-    },
-    ...presence.userRoomCallbacks,
-  });
+  );
   const presenceValue = usePresenceProviderValue(
     presence.store,
     directMessages.pushToUserRoom,
@@ -428,14 +436,15 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
 
   const myRoleIds = useMemo(() => myRoles.map((role) => role.id), [myRoles]);
 
-  const openChannelId = selectedChannel?.id ?? null;
+  const openChannelId =
+    isAppActive && view === "servers" ? (selectedChannel?.id ?? null) : null;
   const openChannelUnread = openChannelId
     ? (mentions.allByChannel[openChannelId] ?? 0)
     : 0;
   const { markChannelRead } = mentions;
   const unread = useUnreadState(
     currentAuthor?.id ?? null,
-    view === "servers" ? openChannelId : null,
+    openChannelId,
     suspendedIds,
   );
   useEffect(() => {
@@ -448,20 +457,48 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
     unread,
     conversations: directMessages.conversations,
     areConversationsLoading: directMessages.isLoading,
+    markConversationsRead: directMessages.markAllConversationsRead,
     activitySignal,
-    openChannelId: view === "servers" ? openChannelId : null,
+    openChannelId,
     openConversationId:
-      view === "dm"
+      isAppActive && view === "dm"
         ? (directMessages.activeSummary?.conversationId ?? null)
         : null,
     suspendedServerIds: suspendedIds,
   });
+  const { markServerRead: markServerChannelsRead } = unread;
+  const { markServerRead: markServerMentionsRead } = mentions;
+  const { markChannelRead: markCenterChannelRead } = notificationCenter.reads;
+  const notificationItems = notificationCenter.history.items;
+  const markServerRead = useCallback(
+    (serverId: string) => {
+      const channelIds = new Set(markServerChannelsRead(serverId));
+      for (const item of notificationItems) {
+        if (item.server_id === serverId && item.channel_id) {
+          channelIds.add(item.channel_id);
+        }
+      }
+      markServerMentionsRead(serverId);
+      channelIds.forEach(markCenterChannelRead);
+    },
+    [
+      markServerChannelsRead,
+      markServerMentionsRead,
+      notificationItems,
+      markCenterChannelRead,
+    ],
+  );
   const notificationsValue = useMemo(
     () => ({
       unreadCount: notificationCenter.reads.unreadCount,
       open: notificationCenter.open,
+      markServerRead,
     }),
-    [notificationCenter.reads.unreadCount, notificationCenter.open],
+    [
+      notificationCenter.reads.unreadCount,
+      notificationCenter.open,
+      markServerRead,
+    ],
   );
 
   const withPresence = (screen: ReactNode) => (
