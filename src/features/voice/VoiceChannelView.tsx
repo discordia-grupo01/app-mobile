@@ -37,6 +37,8 @@ interface VoiceChannelViewProps {
   isCheckingAccess?: boolean;
   /** Quien esta en este canal, para la pantalla previa a entrar. */
   presence: readonly VoicePresenceParticipant[];
+  /** Foto de los participantes; `null` muestra la inicial. */
+  participantAvatarOf: (identity: string) => string | null;
   bottomInset: number;
   /** Algo de la pantalla esta encima de la llamada (el panel de miembros). */
   isCovered?: boolean;
@@ -49,6 +51,7 @@ export function VoiceChannelView({
   canConnect,
   isCheckingAccess = false,
   presence,
+  participantAvatarOf,
   bottomInset,
   isCovered = false,
 }: VoiceChannelViewProps) {
@@ -65,6 +68,7 @@ export function VoiceChannelView({
         isAvailable={voice.isAvailable}
         isInAnotherChannel={state.target !== null}
         presence={presence}
+        participantAvatarOf={participantAvatarOf}
         notice={state.target === null ? state.notice : null}
         onDismissNotice={voice.dismissNotice}
         onJoin={() =>
@@ -109,6 +113,7 @@ export function VoiceChannelView({
         visible={voice.isParticipantsOpen}
         participants={voiceParticipantsOf(state)}
         ownAvatarUri={avatarUriOf(user)}
+        participantAvatarOf={participantAvatarOf}
         pinnedIdentity={voice.pinnedIdentity}
         onToggleMutedForMe={voice.toggleMutedForMe}
         onPinChange={(identity) => {
@@ -128,6 +133,7 @@ function VoiceLobby({
   isAvailable,
   isInAnotherChannel,
   presence,
+  participantAvatarOf,
   notice,
   onDismissNotice,
   onJoin,
@@ -138,6 +144,7 @@ function VoiceLobby({
   isAvailable: boolean;
   isInAnotherChannel: boolean;
   presence: readonly VoicePresenceParticipant[];
+  participantAvatarOf: (identity: string) => string | null;
   notice: string | null;
   onDismissNotice: () => void;
   onJoin: () => void;
@@ -193,7 +200,11 @@ function VoiceLobby({
                 index > 0 && "-ml-2.5",
               )}
             >
-              <Avatar name={participant.name} size={38} />
+              <Avatar
+                name={participant.name}
+                uri={participantAvatarOf(participant.participant_id)}
+                size={38}
+              />
             </View>
           ))}
           {hidden > 0 ? (

@@ -9,11 +9,6 @@ interface CallMember {
   avatarUrl: string | null;
 }
 
-/**
- * En la llamada privada LiveKit conoce a cada uno solo por su id, asi que la
- * grilla del WebView necesita que la app le pase los nombres. En un canal el
- * token ya trae el nombre y no hace falta nada.
- */
 export function participantProfilesOf(
   target: VoiceSessionTarget | null,
   me: CallMember | null,
