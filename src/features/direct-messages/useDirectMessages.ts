@@ -31,6 +31,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { env } from "../../lib/env";
 import { useBlockedUsersContext } from "../blocks/blocked-users-context";
 import { acquireSocket } from "../messages/socket";
+import { useProfileChanges } from "../../hooks/useProfileChanges";
 import { getPublicProfile } from "../profile/service";
 import { listConversations, markConversationRead } from "./api";
 
@@ -150,6 +151,19 @@ export function useDirectMessages(
       release?.();
     };
   }, [currentUserId, reload, applyList, applyDm, attempt]);
+
+  useProfileChanges(
+    (id) => requestedProfiles.current.has(id),
+    ({ id, name, avatar_url }) =>
+      setPartners((prev) => ({
+        ...prev,
+        [id]: messageAuthorOf(
+          id,
+          name,
+          resolveImageUrl(avatar_url, env.apiUrl),
+        ),
+      })),
+  );
 
   // El back solo devuelve ids: nombre y foto se piden una vez por usuario.
   useEffect(() => {

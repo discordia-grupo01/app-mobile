@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppState } from "react-native";
 
+import { useRefreshOnChange } from "../../hooks/useRefreshOnChange";
 import { useAuth } from "../auth/auth-context";
 import { shouldRefreshOnForeground } from "./ownProfileRefresh";
 import { getOwnProfile } from "./service";
 
 export function useOwnProfileSync() {
-  const { token, updateUser } = useAuth();
+  const { token, user, updateUser } = useAuth();
   const [isLoaded, setIsLoaded] = useState(false);
   const lastFetchAt = useRef(0);
   const isMounted = useRef(true);
@@ -38,6 +39,12 @@ export function useOwnProfileSync() {
     });
     return () => subscription.remove();
   }, [refresh]);
+
+  useRefreshOnChange(
+    { resources: ["profile"], userId: user ? String(user.id) : null },
+    refresh,
+    { enabled: Boolean(token), pollMs: null },
+  );
 
   return { isLoaded, refresh };
 }
