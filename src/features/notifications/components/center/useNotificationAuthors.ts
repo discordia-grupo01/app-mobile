@@ -2,6 +2,7 @@ import {
   type MessageAuthor,
   messageAuthorOf,
   type NotificationHistoryItem,
+  notificationUserIds,
 } from "@discordia/client-shared";
 
 import { useEffect, useRef, useState } from "react";
@@ -24,7 +25,7 @@ export function useNotificationAuthors(
   }, []);
 
   useEffect(() => {
-    const missing = [...new Set(items.map((item) => item.author_id))].filter(
+    const missing = [...new Set(items.flatMap(notificationUserIds))].filter(
       (id) => !requested.current.has(id),
     );
     missing.forEach((id) => requested.current.add(id));

@@ -538,6 +538,7 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
               const target = notificationTargetOf(item);
               if (target) handlePushTarget(target);
             }}
+            onTransferAnswered={() => void reloadServers()}
           />
         </NotificationsProvider>
       </NotificationSettingsProvider>
