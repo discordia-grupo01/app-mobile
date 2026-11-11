@@ -1,7 +1,7 @@
 import { hexToRgba, type Role } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Modal,
@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { useRefreshOnChange } from "../../../hooks/useRefreshOnChange";
 import { cn } from "../../../lib/cn";
 import { useThemeColors } from "../../../theme/theme-context";
 import { assignRole, listMemberRoles, listRoles, removeRole } from "../api";
@@ -49,6 +50,20 @@ export function MemberRoleBadges({
     setIsPickerOpen(false);
     setSearch("");
   }
+
+  const refreshRoles = useCallback(async () => {
+    const [assigned, available] = await Promise.all([
+      listMemberRoles(serverId, userId),
+      canManage ? listRoles(serverId) : null,
+    ]);
+    if (assigned.ok) setAssignedRoles(assigned.roles);
+    if (available?.ok) setAvailableRoles(available.roles);
+  }, [serverId, userId, canManage]);
+
+  useRefreshOnChange(
+    { resources: ["roles", "members"], serverId },
+    refreshRoles,
+  );
 
   useEffect(() => {
     let cancelled = false;

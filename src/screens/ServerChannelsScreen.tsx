@@ -81,6 +81,7 @@ import {
   reorderChannels,
   resolveServerBannerUrl,
 } from "../features/servers/api";
+import { useRefreshOnChange } from "../hooks/useRefreshOnChange";
 import { useThemeColors } from "../theme/theme-context";
 
 const HEADER_HEIGHT = 52;
@@ -278,6 +279,16 @@ export function ServerChannelsScreen({
       cancelled = true;
     };
   }, [server.id]);
+
+  const refreshPendingTransfer = async () => {
+    const result = await getPendingOwnershipTransfer(server.id);
+    setPendingTransfer(result.ok ? result.transfer : null);
+  };
+
+  useRefreshOnChange(
+    { resources: ["server", "notifications"], serverId: server.id },
+    refreshPendingTransfer,
+  );
 
   const incomingTransfer =
     currentUserId !== null &&
