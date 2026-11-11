@@ -9,6 +9,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { getPublicProfile } from "../features/profile/service";
+import { useProfileChanges } from "./useProfileChanges";
 
 interface ProfiledUser {
   user_id: string;
@@ -36,6 +37,12 @@ export function useProfileFallback<T extends ProfiledUser>(
       isMounted.current = false;
     };
   }, []);
+
+  useProfileChanges(
+    (id) => requested.current.has(id),
+    (user) =>
+      setFetched((prev) => ({ ...prev, [user.id]: memberProfileOf(user) })),
+  );
 
   useEffect(() => {
     const queue = userIdsMissingProfile(users ?? [], requested.current);

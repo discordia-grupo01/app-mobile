@@ -8,7 +8,7 @@ import {
 } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -18,6 +18,7 @@ import {
   View,
 } from "react-native";
 
+import { useRefreshOnChange } from "../../../hooks/useRefreshOnChange";
 import { avatarUriOf } from "../../../lib/userProfile";
 import { BanMemberModal } from "../../bans/components/BanMemberModal";
 import { unmuteMember } from "../../moderation/api";
@@ -142,6 +143,17 @@ export function PublicProfileModal({
       cancelled = true;
     };
   }, [visible, userId]);
+
+  const refreshProfile = useCallback(async () => {
+    if (!userId) return;
+    const result = await getPublicProfile(userId);
+    if (result.ok) setProfile(result.user);
+    else if (result.unavailable) setIsUnavailable(true);
+  }, [userId]);
+
+  useRefreshOnChange({ resources: ["profile"], userId }, refreshProfile, {
+    enabled: visible && Boolean(userId),
+  });
 
   const avatarSrc = avatarUriOf(profile);
 
