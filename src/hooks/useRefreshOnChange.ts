@@ -1,6 +1,5 @@
 import {
   CHANGE_COALESCE_MS,
-  CHANGE_POLL_INTERVAL_MS,
   type ChangeFilter,
   watchChanges,
 } from "@discordia/client-shared";
@@ -21,7 +20,7 @@ export function useRefreshOnChange(
   refresh: () => void | Promise<unknown>,
   {
     enabled = true,
-    pollMs = CHANGE_POLL_INTERVAL_MS,
+    pollMs = null,
     delayMs = CHANGE_COALESCE_MS,
   }: RefreshOnChangeOptions = {},
 ) {

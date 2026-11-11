@@ -1,4 +1,5 @@
 import {
+  CHANGE_POLL_INTERVAL_MS,
   daysUntil,
   type Invitation,
   inviteStatus,
@@ -249,6 +250,7 @@ export function InviteLinkModal({
 
   useRefreshOnChange({ resources: [] }, refreshInvitations, {
     enabled: visible,
+    pollMs: CHANGE_POLL_INTERVAL_MS,
   });
 
   useEffect(() => {
