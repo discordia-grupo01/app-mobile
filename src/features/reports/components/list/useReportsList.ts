@@ -9,6 +9,7 @@ import {
 
 import { useCallback, useEffect, useState } from "react";
 
+import { useRefreshOnChange } from "../../../../hooks/useRefreshOnChange";
 import { closeReport, listReports } from "../../api";
 
 export type ReportsTab = "pending" | "closed";
@@ -59,6 +60,24 @@ export function useReportsList(serverId: string, onPendingClosed: () => void) {
       cancelled = true;
     };
   }, [serverId, status, page, requestKey]);
+
+  const refreshReports = useCallback(async () => {
+    const key = requestKey;
+    const result = await listReports(serverId, {
+      status,
+      limit: REPORTS_PAGE_SIZE,
+      offset: (page - 1) * REPORTS_PAGE_SIZE,
+    });
+    if (!result.ok) return;
+    setLoaded((previous) =>
+      previous && previous.key !== key
+        ? previous
+        : { key, reports: result.reports, loadError: "" },
+    );
+    setTotal(result.total);
+  }, [requestKey, serverId, status, page]);
+
+  useRefreshOnChange({ resources: ["reports"], serverId }, refreshReports);
 
   const removeLocally = useCallback(
     (reportId: string) => {

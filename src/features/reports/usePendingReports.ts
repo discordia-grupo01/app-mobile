@@ -2,6 +2,7 @@ import { PENDING_REPORTS_POLL_MS } from "@discordia/client-shared";
 
 import { useCallback, useEffect, useState } from "react";
 
+import { useRefreshOnChange } from "../../hooks/useRefreshOnChange";
 import { fetchPendingReportsCount } from "./api";
 
 type FetchCount = (serverId: string, userId: string) => Promise<number | null>;
@@ -53,6 +54,11 @@ export function usePendingReports(
     const interval = setInterval(load, PENDING_REPORTS_POLL_MS);
     return () => clearInterval(interval);
   }, [key, isAppActive, fetchTotals, applyTotals]);
+
+  useRefreshOnChange({ resources: ["reports"] }, () => refresh(), {
+    enabled: key !== "" && isAppActive,
+    pollMs: null,
+  });
 
   return { byServer, refresh };
 }

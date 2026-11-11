@@ -10,6 +10,7 @@ import {
   latestIncomingMessageId,
   messagingUnreadCheck,
 } from "./history/historyHelpers";
+import { useRefreshOnChange } from "../../hooks/useRefreshOnChange";
 import { useNotificationHistory } from "./history/useNotificationHistory";
 import { useNotificationReads } from "./history/useNotificationReads";
 import { useNotificationRefresh } from "./history/useNotificationRefresh";
@@ -92,6 +93,10 @@ export function useNotificationCenter({
   }
 
   useNotificationRefresh(activitySignal + directSignal, history.refresh);
+  useRefreshOnChange({ resources: ["notifications"] }, history.refresh, {
+    enabled: userId !== null,
+    pollMs: null,
+  });
 
   const { markChannelRead, markConversationRead } = reads;
   useEffect(() => {

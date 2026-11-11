@@ -8,6 +8,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 
 import { avatarUriOf } from "../../../../lib/userProfile";
+import { useProfileChanges } from "../../../../hooks/useProfileChanges";
 import { getPublicProfile } from "../../../profile/service";
 
 export function useNotificationAuthors(
@@ -23,6 +24,15 @@ export function useNotificationAuthors(
       isMounted.current = false;
     };
   }, []);
+
+  useProfileChanges(
+    (id) => requested.current.has(id),
+    (user) =>
+      setAuthors((previous) => ({
+        ...previous,
+        [user.id]: messageAuthorOf(user.id, user.name, avatarUriOf(user)),
+      })),
+  );
 
   useEffect(() => {
     const missing = [...new Set(items.flatMap(notificationUserIds))].filter(

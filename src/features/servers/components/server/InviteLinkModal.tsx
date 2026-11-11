@@ -9,7 +9,7 @@ import {
 
 import { Feather } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -26,6 +26,7 @@ import {
   listInvitations,
   revokeInvite,
 } from "../../api";
+import { useRefreshOnChange } from "../../../../hooks/useRefreshOnChange";
 import { cn } from "../../../../lib/cn";
 import { withAlpha } from "../../../../lib/color";
 import { useThemeColors } from "../../../../theme/theme-context";
@@ -240,6 +241,15 @@ export function InviteLinkModal({
       setActiveTab("active");
     }
   }
+
+  const refreshInvitations = useCallback(async () => {
+    const result = await listInvitations(serverId);
+    if (result.ok) setInvitations(result.invitations);
+  }, [serverId]);
+
+  useRefreshOnChange({ resources: [] }, refreshInvitations, {
+    enabled: visible,
+  });
 
   useEffect(() => {
     if (!visible) return;
