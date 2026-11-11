@@ -55,6 +55,7 @@ export function messagingUnreadCheck({
     ),
   );
   return (item) => {
+    if (item.kind === "ownership_transfer") return true;
     if (item.kind === "mention") {
       return !areMentionsLoaded || isMentionUnread(item.message_id);
     }

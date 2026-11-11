@@ -31,6 +31,7 @@ import {
   NotificationCenterLoading,
 } from "./NotificationCenterStatus";
 import { NotificationGroupCard } from "../list/NotificationGroupCard";
+import { TransferNotificationCard } from "../list/TransferNotificationCard";
 import { NotificationTabs } from "./NotificationTabs";
 
 interface NotificationCenterModalProps {
@@ -38,6 +39,7 @@ interface NotificationCenterModalProps {
   servers: readonly ServerSummary[];
   me: MessageAuthor | null;
   onOpenItem: (item: NotificationHistoryItem) => void;
+  onTransferAnswered: () => void;
 }
 
 export function NotificationCenterModal({
@@ -45,6 +47,7 @@ export function NotificationCenterModal({
   servers,
   me,
   onOpenItem,
+  onTransferAnswered,
 }: NotificationCenterModalProps) {
   const colors = useThemeColors();
   const insets = useModalInsets();
@@ -177,16 +180,31 @@ export function NotificationCenterModal({
           ListFooterComponent={footer}
           onEndReached={view.canLoadMore ? history.loadMore : undefined}
           onEndReachedThreshold={0.4}
-          renderItem={({ item: group }) => (
-            <NotificationGroupCard
-              group={group}
-              servers={servers}
-              authors={view.authors}
-              previews={view.previews}
-              isUnread={reads.isUnread}
-              onOpen={open}
-            />
-          )}
+          renderItem={({ item: group }) =>
+            group.kind === "ownership_transfer" ? (
+              <TransferNotificationCard
+                item={group.items[0]}
+                servers={servers}
+                authors={view.authors}
+                me={me}
+                isUnread={reads.isUnread(group.items[0])}
+                onRead={(item) => reads.markTransferRead(item.message_id)}
+                onAnswered={() => {
+                  onTransferAnswered();
+                  void history.refresh();
+                }}
+              />
+            ) : (
+              <NotificationGroupCard
+                group={group}
+                servers={servers}
+                authors={view.authors}
+                previews={view.previews}
+                isUnread={reads.isUnread}
+                onOpen={open}
+              />
+            )
+          }
         />
       </View>
     </Modal>
