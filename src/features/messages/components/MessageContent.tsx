@@ -13,6 +13,7 @@ import {
 import type { ReactNode } from "react";
 import { Linking, Platform, ScrollView, Text, View } from "react-native";
 
+import { HighlightedCode } from "./HighlightedCode";
 import { MentionChip } from "./MentionChip";
 import { useMessageMentions } from "./MentionsContext";
 import { Spoiler } from "./Spoiler";
@@ -244,7 +245,11 @@ export function MessageContent({
             contentContainerClassName="p-2"
           >
             <Text className="text-[13px] text-content" style={MONOSPACE}>
-              {renderText(block.value, index)}
+              {block.language && !highlight ? (
+                <HighlightedCode code={block.value} language={block.language} />
+              ) : (
+                renderText(block.value, index)
+              )}
             </Text>
           </ScrollView>
         );
