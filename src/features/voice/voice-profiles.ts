@@ -41,6 +41,10 @@ async function fetchVoiceProfile(
   };
 }
 
+export function forgetVoiceProfile(userId: string): void {
+  cache.delete(userId);
+}
+
 export function loadVoiceProfile(
   userId: string,
 ): Promise<VoiceParticipantProfile | null> {

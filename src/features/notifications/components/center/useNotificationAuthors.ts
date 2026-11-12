@@ -2,11 +2,13 @@ import {
   type MessageAuthor,
   messageAuthorOf,
   type NotificationHistoryItem,
+  notificationUserIds,
 } from "@discordia/client-shared";
 
 import { useEffect, useRef, useState } from "react";
 
 import { avatarUriOf } from "../../../../lib/userProfile";
+import { useProfileChanges } from "../../../../hooks/useProfileChanges";
 import { getPublicProfile } from "../../../profile/service";
 
 export function useNotificationAuthors(
@@ -23,8 +25,17 @@ export function useNotificationAuthors(
     };
   }, []);
 
+  useProfileChanges(
+    (id) => requested.current.has(id),
+    (user) =>
+      setAuthors((previous) => ({
+        ...previous,
+        [user.id]: messageAuthorOf(user.id, user.name, avatarUriOf(user)),
+      })),
+  );
+
   useEffect(() => {
-    const missing = [...new Set(items.map((item) => item.author_id))].filter(
+    const missing = [...new Set(items.flatMap(notificationUserIds))].filter(
       (id) => !requested.current.has(id),
     );
     missing.forEach((id) => requested.current.add(id));

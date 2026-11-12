@@ -12,6 +12,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { env } from "../../lib/env";
+import { useProfileChanges } from "../../hooks/useProfileChanges";
 import { getPublicProfile } from "../profile/service";
 
 export function useMessageAuthors(
@@ -30,6 +31,19 @@ export function useMessageAuthors(
       isMounted.current = false;
     };
   }, []);
+
+  useProfileChanges(
+    (id) => requested.current.has(id),
+    ({ id, name, avatar_url }) =>
+      setExtra((prev) => ({
+        ...prev,
+        [id]: messageAuthorOf(
+          id,
+          name,
+          resolveImageUrl(avatar_url, env.apiUrl),
+        ),
+      })),
+  );
 
   const base = useMemo(() => {
     const byId: Record<string, MessageAuthor> = { ...extra };

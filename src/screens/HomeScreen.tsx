@@ -34,6 +34,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LoadingScreen } from "../components/ui/LoadingScreen";
 import { useAppActive } from "../hooks/useAppActive";
 import { useLoadingGate } from "../hooks/useLoadingGate";
+import { useRefreshOnChange } from "../hooks/useRefreshOnChange";
 import { useDirectMessages } from "../features/direct-messages/useDirectMessages";
 import { useMentions } from "../features/mentions/useMentions";
 import { useUnreadState } from "../features/notifications/unread/useUnreadState";
@@ -345,10 +346,50 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
 
   useEffect(() => fetchServerRoles(), [fetchServerRoles]);
 
+  const selectedServerIdRef = useRef(selectedServerId);
+  useEffect(() => {
+    selectedServerIdRef.current = selectedServerId;
+  }, [selectedServerId]);
+
   const reloadServers = useCallback(async () => {
     const result = await listMyServers();
-    if (result.ok) setServers(result.servers);
+    if (!result.ok) return;
+    setServers(result.servers);
+    const current = selectedServerIdRef.current;
+    if (current && !result.servers.some((server) => server.id === current)) {
+      setSelectedServerId(null);
+      setSelectedChannelId(null);
+      setView("dm");
+    }
   }, []);
+
+  useRefreshOnChange(
+    { resources: ["servers", "server", "channels"] },
+    reloadServers,
+    { enabled: !isLoadingServers },
+  );
+
+  const refreshRoles = useCallback(async () => {
+    if (!selectedServer || selectedServer.suspended) return;
+    const [mine, all] = await Promise.all([
+      user ? listMemberRoles(selectedServer.id, String(user.id)) : null,
+      listRoles(selectedServer.id),
+    ]);
+    if (mine?.ok) setMyRoles(mine.roles);
+    if (all.ok) setServerRoles(all.roles);
+    setPermissionsVersion((version) => version + 1);
+  }, [user, selectedServer]);
+
+  useRefreshOnChange(
+    { resources: ["roles"], serverId: selectedServer?.id ?? null },
+    refreshRoles,
+    { enabled: selectedServer !== null },
+  );
+  useRefreshOnChange(
+    { resources: ["channels"], serverId: selectedServer?.id ?? null },
+    () => setPermissionsVersion((version) => version + 1),
+    { enabled: selectedServer !== null, pollMs: null },
+  );
 
   const handlePermissionsChanged = useCallback(() => {
     fetchMyRoles();
@@ -538,6 +579,7 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
               const target = notificationTargetOf(item);
               if (target) handlePushTarget(target);
             }}
+            onTransferAnswered={() => void reloadServers()}
           />
         </NotificationsProvider>
       </NotificationSettingsProvider>

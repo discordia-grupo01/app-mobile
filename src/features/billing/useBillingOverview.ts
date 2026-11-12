@@ -6,6 +6,7 @@ import {
 
 import { useCallback, useEffect, useState } from "react";
 
+import { useRefreshOnChange } from "../../hooks/useRefreshOnChange";
 import { getPointsOverview, getPremium, listPointsPackages } from "./api";
 
 async function loadBillingOverview(): Promise<BillingOverviewState> {
@@ -39,6 +40,11 @@ export function useBillingOverview() {
     );
     setAttempt((value) => value + 1);
   }, []);
+
+  useRefreshOnChange(
+    { resources: ["points", "purchases", "premium", "boosts"] },
+    reload,
+  );
 
   const setPremium = useCallback((premium: PremiumView) => {
     setState((current) =>

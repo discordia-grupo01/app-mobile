@@ -147,3 +147,32 @@ describe("messagingUnreadCheck", () => {
     expect(check(direct())).toBe(true);
   });
 });
+
+describe("transferencia de propiedad", () => {
+  const transfer = (): NotificationHistoryItem => ({
+    kind: "ownership_transfer",
+    message_id: "t1",
+    author_id: "owner",
+    to_user_id: "member",
+    transfer_status: "pending",
+    occurred_at: "2026-11-04T12:00:00.000Z",
+    server_id: "s1",
+    channel_id: null,
+    conversation_id: null,
+  });
+
+  it("no abre ningun canal ni conversacion", () => {
+    expect(notificationTargetOf(transfer())).toBeNull();
+  });
+
+  it("siempre cuenta como sin leer en mensajeria: solo la marca propia la lee", () => {
+    const check = messagingUnreadCheck({
+      areMentionsLoaded: true,
+      isMentionUnread: () => false,
+      areConversationsLoading: false,
+      conversations: [],
+    });
+
+    expect(check(transfer())).toBe(true);
+  });
+});
