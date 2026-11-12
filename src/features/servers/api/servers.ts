@@ -30,6 +30,7 @@ import {
 import { fetch as expoFetch } from "expo/fetch";
 import { File } from "expo-file-system";
 
+import { boostLevelFailure } from "./boostLevelFailure";
 import { apiFetch, refreshAccessToken } from "../../../lib/api-client";
 import { env } from "../../../lib/env";
 import { getToken } from "../../../lib/storage";
@@ -311,6 +312,8 @@ export async function updateServer(
     if (status === 401) {
       return { ok: false, message: SESSION_EXPIRED_MESSAGE };
     }
+    const boostLevelError = boostLevelFailure(details);
+    if (boostLevelError) return boostLevelError;
     if (status === 403) {
       return { ok: false, message: SERVER_UPDATE_FORBIDDEN };
     }
