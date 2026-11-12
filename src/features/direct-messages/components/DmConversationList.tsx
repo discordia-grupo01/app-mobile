@@ -3,6 +3,7 @@ import {
   DIRECT_MESSAGES_TITLE,
   type ConversationSummary,
   NO_CONVERSATIONS_YET,
+  stripMessageMarkdown,
 } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
@@ -143,7 +144,7 @@ export function DmConversationList({
                         className="text-[12px] text-content-subtle"
                         numberOfLines={1}
                       >
-                        {lastMessage.content}
+                        {stripMessageMarkdown(lastMessage.content)}
                       </Text>
                     ) : null}
                   </View>

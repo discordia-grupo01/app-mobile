@@ -180,7 +180,7 @@ export function MessageComposer({
             <Text
               pointerEvents="none"
               numberOfLines={1}
-              className="absolute inset-x-0 text-[15px] text-content-subtle"
+              className="absolute left-[3px] right-0 text-[15px] text-content-subtle"
             >
               {placeholder}
             </Text>
