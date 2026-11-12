@@ -129,6 +129,7 @@ export function MessageContent({
             </Text>
           );
         case "code":
+          if (concealed) return node.value;
           return (
             <Text
               key={index}

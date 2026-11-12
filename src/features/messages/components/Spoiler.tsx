@@ -17,8 +17,7 @@ export function Spoiler({ children }: SpoilerProps) {
       accessibilityRole="button"
       accessibilityLabel="Spoiler, tocá para verlo"
       onPress={() => setRevealed(true)}
-      className="rounded bg-content-subtle"
-      style={{ color: "transparent" }}
+      className="rounded bg-content-muted text-content-muted"
     >
       {children(true)}
     </Text>
