@@ -3,6 +3,7 @@ import {
   MENTION_DELETED_ROLE_NAME,
   type MessageBlock,
   type MessageInline,
+  type MessageList,
   type MessageMentions,
   parseMessageMarkdown,
   splitHighlight,
@@ -10,10 +11,11 @@ import {
 } from "@discordia/client-shared";
 
 import type { ReactNode } from "react";
-import { Platform, ScrollView, Text, View } from "react-native";
+import { Linking, Platform, ScrollView, Text, View } from "react-native";
 
 import { MentionChip } from "./MentionChip";
 import { useMessageMentions } from "./MentionsContext";
+import { Spoiler } from "./Spoiler";
 
 interface MessageContentProps {
   content: string;
@@ -35,6 +37,7 @@ const HEADING_CLASS: Record<1 | 2 | 3, string> = {
 };
 
 const BODY_CLASS = "text-[15px] leading-[21px] text-content";
+const SUBTEXT_CLASS = "text-[12px] leading-[16px] text-content-subtle";
 
 export function MessageContent({
   content,
@@ -48,8 +51,12 @@ export function MessageContent({
   const suffixInline =
     blocks.length > 0 && blocks[lastIndex].kind !== "code-block";
 
-  function renderText(value: string, key: string | number): ReactNode {
-    if (!highlight) return value;
+  function renderText(
+    value: string,
+    key: string | number,
+    concealed = false,
+  ): ReactNode {
+    if (!highlight || concealed) return value;
     return splitHighlight(value, highlight).map((part, i) =>
       part.isMatch ? (
         <Text
@@ -64,27 +71,60 @@ export function MessageContent({
     );
   }
 
-  function renderInline(nodes: readonly MessageInline[]): ReactNode {
+  /**
+   * `concealed`: adentro de un spoiler tapado. Lo que tiene color propio
+   * (menciones, links, resaltado) va como texto comun para que no se vea.
+   */
+  function renderInline(
+    nodes: readonly MessageInline[],
+    concealed = false,
+  ): ReactNode {
+    const inner = (children: readonly MessageInline[]) =>
+      renderInline(children, concealed);
     return nodes.map((node, index) => {
       switch (node.kind) {
         case "text":
-          return renderText(node.value, index);
+          return renderText(node.value, index, concealed);
         case "bold":
           return (
             <Text key={index} className="font-bold">
-              {renderInline(node.children)}
+              {inner(node.children)}
             </Text>
           );
         case "italic":
           return (
             <Text key={index} className="italic">
-              {renderInline(node.children)}
+              {inner(node.children)}
             </Text>
           );
         case "strike":
           return (
             <Text key={index} className="line-through">
-              {renderInline(node.children)}
+              {inner(node.children)}
+            </Text>
+          );
+        case "underline":
+          return (
+            <Text key={index} className="underline">
+              {inner(node.children)}
+            </Text>
+          );
+        case "spoiler":
+          return (
+            <Spoiler key={index}>
+              {(hidden) => renderInline(node.children, hidden)}
+            </Spoiler>
+          );
+        case "link":
+          if (concealed) return inner(node.children);
+          return (
+            <Text
+              key={index}
+              accessibilityRole="link"
+              className="text-sky"
+              onPress={() => void Linking.openURL(node.url)}
+            >
+              {inner(node.children)}
             </Text>
           );
         case "code":
@@ -94,28 +134,67 @@ export function MessageContent({
               className="rounded bg-surface-sunken text-[13px]"
               style={MONOSPACE}
             >
-              {renderText(node.value, index)}
+              {renderText(node.value, index, concealed)}
             </Text>
           );
         case "channel":
+          if (concealed) return node.value;
           return <MentionChip key={index} text={node.value} />;
       }
 
       if (!isActiveMention(node, mentions)) return node.value;
+      if (concealed && node.kind === "everyone") return node.value;
       if (node.kind === "everyone") {
         return <MentionChip key={index} text={node.value} isStrong />;
       }
       const resolved = resolveMention?.(node.kind, node.id);
       const fallbackName =
         node.kind === "role" ? MENTION_DELETED_ROLE_NAME : UNKNOWN_USER_NAME;
-      return (
-        <MentionChip
-          key={index}
-          text={`@${resolved?.name ?? fallbackName}`}
-          color={resolved?.color}
-        />
-      );
+      const name = `@${resolved?.name ?? fallbackName}`;
+      if (concealed) return name;
+      return <MentionChip key={index} text={name} color={resolved?.color} />;
     });
+  }
+
+  function renderList(
+    list: MessageList,
+    depth: number,
+    tail: ReactNode,
+    key?: number,
+  ): ReactNode {
+    const last = list.items.length - 1;
+    return (
+      <View key={key} className="gap-0.5">
+        {list.items.map((item, i) => {
+          const itemTail = i === last ? tail : null;
+          const lastList = item.lists.length - 1;
+          const marker = list.ordered
+            ? `${list.start + i}.`
+            : depth === 0
+              ? "•"
+              : "◦";
+          return (
+            <View key={i} className="flex-row pl-1">
+              <Text className={`${BODY_CLASS} min-w-4 pr-1`}>{marker}</Text>
+              <View className="flex-1 gap-0.5">
+                <Text className={BODY_CLASS}>
+                  {renderInline(item.children)}
+                  {lastList === -1 ? itemTail : null}
+                </Text>
+                {item.lists.map((nested, j) =>
+                  renderList(
+                    nested,
+                    depth + 1,
+                    j === lastList ? itemTail : null,
+                    j,
+                  ),
+                )}
+              </View>
+            </View>
+          );
+        })}
+      </View>
+    );
   }
 
   function renderBlock(block: MessageBlock, index: number): ReactNode {
@@ -138,20 +217,15 @@ export function MessageContent({
             {tail}
           </Text>
         );
-      case "list":
+      case "subtext":
         return (
-          <View key={index} className="gap-0.5">
-            {block.items.map((item, i) => (
-              <View key={i} className="flex-row pl-1">
-                <Text className={`${BODY_CLASS} w-4`}>•</Text>
-                <Text className={`${BODY_CLASS} flex-1`}>
-                  {renderInline(item)}
-                  {i === block.items.length - 1 ? tail : null}
-                </Text>
-              </View>
-            ))}
-          </View>
+          <Text key={index} className={SUBTEXT_CLASS}>
+            {renderInline(block.children)}
+            {tail}
+          </Text>
         );
+      case "list":
+        return renderList(block, 0, tail, index);
       case "quote":
         return (
           <View key={index} className="border-l-4 border-line-strong pl-3">
