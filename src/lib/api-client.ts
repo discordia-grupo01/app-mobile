@@ -29,12 +29,14 @@ let refreshPromise: Promise<string | null> | null = null;
 const AUTH_PATHS_WITHOUT_RETRY = new Set([
   "/v1/login",
   "/v1/login/2fa",
+  "/v1/login/2fa/recovery-request",
   "/v1/logout",
 ]);
 
 const SUSPENSION_EXEMPT_PATHS = new Set([
   "/v1/login",
   "/v1/login/2fa",
+  "/v1/login/2fa/recovery-request",
   "/v1/pin/login",
   "/v1/oauth/google",
   "/v1/logout",
