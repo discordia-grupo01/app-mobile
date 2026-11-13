@@ -5,6 +5,7 @@ import {
 import { useState } from "react";
 import { KeyboardAvoidingView, Modal, Platform } from "react-native";
 
+import { ModerationAuditStep } from "../../../../moderation/components/ModerationAuditStep";
 import { ReportsStep } from "../../../../reports/components/list/ReportsStep";
 import { useDeleteServerConfirm } from "../../../useDeleteServerConfirm";
 import { useServerSettingsForm } from "../../../useServerSettingsForm";
@@ -23,7 +24,7 @@ interface ServerSettingsModalProps {
   canManageServer: boolean;
   /** "Palabras prohibidas". */
   canManageMessages: boolean;
-  /** "Reportes": solo moderadores. */
+  /** "Reportes" y "Registro de auditoría": solo moderadores. */
   canReviewReports: boolean;
   pendingReports: number;
   currentUserId: string | null;
@@ -103,6 +104,10 @@ function SettingsBody({
           onGoToMessage={onGoToMessage}
           onPendingChanged={onPendingReportsChanged}
         />
+      ) : null}
+
+      {step === "audit" && canReviewReports ? (
+        <ModerationAuditStep serverId={server.id} />
       ) : null}
 
       {step === "delete" ? (

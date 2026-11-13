@@ -1,17 +1,23 @@
-import { REPORTS_TITLE, WORD_FILTER_TITLE } from "@discordia/client-shared";
+import {
+  MODERATION_AUDIT_TITLE,
+  REPORTS_TITLE,
+  WORD_FILTER_TITLE,
+} from "@discordia/client-shared";
 import { Feather } from "@expo/vector-icons";
 import { Text, TouchableOpacity, View } from "react-native";
 
 import { withAlpha } from "../../../../../lib/color";
 import { useThemeColors } from "../../../../../theme/theme-context";
 
-export type SettingsStep = "menu" | "profile" | "words" | "reports" | "delete";
+export type SettingsStep =
+  "menu" | "profile" | "words" | "reports" | "audit" | "delete";
 
 const STEP_TITLES: Record<SettingsStep, string> = {
   menu: "Configuración del servidor",
   profile: "Perfil del servidor",
   words: WORD_FILTER_TITLE,
   reports: REPORTS_TITLE,
+  audit: MODERATION_AUDIT_TITLE,
   delete: "Eliminar servidor",
 };
 

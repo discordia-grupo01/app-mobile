@@ -1,4 +1,6 @@
 import {
+  MODERATION_AUDIT_DESCRIPTION,
+  MODERATION_AUDIT_TITLE,
   pendingReportsLabel,
   REPORTS_DESCRIPTION,
   REPORTS_TITLE,
@@ -7,7 +9,7 @@ import {
 } from "@discordia/client-shared";
 import { Feather } from "@expo/vector-icons";
 import { type ComponentProps, type ReactNode } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 import { Avatar } from "../../../../../components/ui/Avatar";
 import { cn } from "../../../../../lib/cn";
@@ -93,7 +95,10 @@ export function SettingsMenuStep({
   onSelect,
 }: SettingsMenuStepProps) {
   return (
-    <View className="px-4.5 gap-3">
+    <ScrollView
+      className="flex-1"
+      contentContainerClassName="px-4.5 gap-3 pb-6"
+    >
       <View className="items-center pt-7 pb-6">
         <Avatar
           name={server.name}
@@ -141,6 +146,14 @@ export function SettingsMenuStep({
           onPress={() => onSelect("reports")}
         />
       ) : null}
+      {canReviewReports ? (
+        <SettingsRow
+          icon="file-text"
+          title={MODERATION_AUDIT_TITLE}
+          subtitle={MODERATION_AUDIT_DESCRIPTION}
+          onPress={() => onSelect("audit")}
+        />
+      ) : null}
       {isOwner ? (
         <>
           <View className="h-px bg-line mx-1 my-1" />
@@ -153,6 +166,6 @@ export function SettingsMenuStep({
           />
         </>
       ) : null}
-    </View>
+    </ScrollView>
   );
 }
