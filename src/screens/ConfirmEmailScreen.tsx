@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Feather } from "@expo/vector-icons";
-import { Text, TouchableOpacity, View } from "react-native";
+import { CHECK_SPAM_HINT } from "@discordia/client-shared";
+import { Text, View } from "react-native";
 
 import { AuthScreen } from "../components/auth/AuthScreen";
 import { Button } from "../components/ui/Button";
@@ -8,6 +9,7 @@ import { useAuth } from "../features/auth/auth-context";
 import { confirmEmailService } from "../features/auth/service";
 import { withAlpha } from "../lib/color";
 import { useThemeColors } from "../theme/theme-context";
+
 interface ConfirmEmailScreenProps {
   email?: string;
   token?: string;
@@ -98,19 +100,26 @@ export function ConfirmEmailScreen({
               ? "El enlace expiró"
               : "Revisa tu correo"}
         </Text>
-        <Text className="mb-3 text-center text-[14px] leading-6 text-content-muted">
-          {confirmed
-            ? "Tu cuenta está lista. Ya puedes iniciar sesión en Discordia."
-            : expired
-              ? "Este enlace ya no es válido. Volvé a iniciar sesión para solicitar una nueva confirmación."
-              : "Te enviamos un enlace para confirmar tu correo y activar tu cuenta."}
-        </Text>
-
-        {email ? (
-          <Text className="mb-6 text-center text-[14px] font-semibold text-content">
-            {email}
+        <View className="mb-8 w-full gap-2">
+          <Text className="text-center text-[14px] leading-6 text-content-muted">
+            {confirmed
+              ? "Tu cuenta está lista. Ya puedes iniciar sesión en Discordia."
+              : expired
+                ? "Este enlace ya no es válido. Volvé a iniciar sesión para solicitar una nueva confirmación."
+                : "Te enviamos un enlace para confirmar tu correo y activar tu cuenta."}
           </Text>
-        ) : null}
+
+          {email ? (
+            <Text className="text-center text-[14px] font-semibold text-content">
+              {email}
+            </Text>
+          ) : null}
+          {confirmed || expired ? null : (
+            <Text className="text-center text-[12px] text-content-subtle">
+              {CHECK_SPAM_HINT}
+            </Text>
+          )}
+        </View>
 
         {isConfirming ? (
           <View className="flex-row items-center gap-2 py-3">
@@ -126,17 +135,24 @@ export function ConfirmEmailScreen({
             iconRight="arrow-right"
           />
         ) : canResend ? (
-          <Button
-            title="Reenviar confirmación"
-            onPress={handleResend}
-            isLoading={isResending}
-            iconRight="arrow-right"
-          />
+          <View className="w-full gap-3">
+            <Button
+              title="Reenviar confirmación"
+              onPress={handleResend}
+              isLoading={isResending}
+              iconRight="arrow-right"
+            />
+            <Button
+              title="Volver al inicio de sesión"
+              onPress={onBackToLogin}
+              variant="secondary"
+            />
+          </View>
         ) : (
           <Button
-            title="Volver a iniciar sesión"
+            title="Volver al inicio de sesión"
             onPress={onBackToLogin}
-            variant="secondary"
+            iconRight="arrow-right"
           />
         )}
 
@@ -144,18 +160,6 @@ export function ConfirmEmailScreen({
           <Text className="mt-4 text-center text-[13px] text-content-muted">
             {message}
           </Text>
-        ) : null}
-
-        {canResend && !confirmed && !isConfirming ? (
-          <TouchableOpacity
-            className="mt-5"
-            onPress={onBackToLogin}
-            activeOpacity={0.7}
-          >
-            <Text className="text-[13px] font-semibold text-content-subtle">
-              Volver a iniciar sesión
-            </Text>
-          </TouchableOpacity>
         ) : null}
       </View>
     </AuthScreen>

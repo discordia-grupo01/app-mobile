@@ -1,4 +1,5 @@
 import {
+  CHECK_SPAM_HINT,
   type ForgotPasswordErrors,
   hasErrors,
   validateForgotPassword,
@@ -66,7 +67,7 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
           contraseña en los próximos minutos.
         </Text>
         <Text className="mb-8 text-center text-[12px] text-content-subtle">
-          Recordá revisar tu carpeta de spam por si acaso.
+          {CHECK_SPAM_HINT}
         </Text>
 
         <Button
