@@ -10,28 +10,18 @@ import {
   validatePinLogin,
 } from "@discordia/client-shared";
 import { Feather } from "@expo/vector-icons";
-import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
-import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Alert, Text, TouchableOpacity, View } from "react-native";
 
-import { AuthLogo } from "../components/auth/AuthLogo";
+import { AuthScreen } from "../components/auth/AuthScreen";
 import { Button } from "../components/ui/Button";
 import { FormErrorBanner } from "../components/ui/FormErrorBanner";
 import { TextField } from "../components/ui/TextField";
-import { ThemeToggleButton } from "../components/ui/ThemeToggleButton";
 import { useAuth } from "../features/auth/auth-context";
 import { TwoFactorLoginStep } from "../features/auth/components/TwoFactorLoginStep";
 import { withAlpha } from "../lib/color";
 import { getPinOwner } from "../lib/storage";
-import { useStatusBarStyle, useThemeColors } from "../theme/theme-context";
+import { useThemeColors } from "../theme/theme-context";
 
 interface PinEntryScreenProps {
   onUseAnotherAccount: () => void;
@@ -44,7 +34,6 @@ export function PinEntryScreen({
 }: PinEntryScreenProps) {
   const { loginWithPin } = useAuth();
   const colors = useThemeColors();
-  const statusBarStyle = useStatusBarStyle();
 
   const [pin, setPin] = useState("");
   const [errors, setErrors] = useState<PinLoginErrors>({});
@@ -151,99 +140,83 @@ export function PinEntryScreen({
   }
 
   return (
-    <KeyboardAvoidingView
-      className="flex-1 bg-surface-sunken"
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
-      <StatusBar style={statusBarStyle} />
-      <ThemeToggleButton />
-      <ScrollView
-        contentContainerClassName="grow items-center justify-center p-4"
-        keyboardShouldPersistTaps="handled"
-      >
-        <View className="w-full max-w-[420px] px-4">
-          <View className="mb-5 items-center">
-            <AuthLogo />
+    <AuthScreen>
+      {isLocked ? (
+        <>
+          <View className="mb-4 items-center">
+            <View
+              className="mb-4 h-14 w-14 items-center justify-center rounded-2xl"
+              style={{ backgroundColor: withAlpha(colors.danger, 0.12) }}
+            >
+              <Feather name="lock" size={26} color={colors.danger} />
+            </View>
+            <Text className="mb-1.5 text-center text-[19px] font-bold text-content">
+              PIN bloqueado temporalmente
+            </Text>
+            <Text className="mb-4 text-center text-[14px] leading-5 text-content-muted">
+              {PIN_LOCKED}
+            </Text>
+            <Text className="mb-2 text-[28px] font-bold text-content">
+              {formatPinLockRemaining(lockSecondsLeft)}
+            </Text>
           </View>
 
-          {isLocked ? (
-            <>
-              <View className="mb-4 items-center">
-                <View
-                  className="mb-4 h-14 w-14 items-center justify-center rounded-2xl"
-                  style={{ backgroundColor: withAlpha(colors.danger, 0.12) }}
-                >
-                  <Feather name="lock" size={26} color={colors.danger} />
-                </View>
-                <Text className="mb-1.5 text-center text-[19px] font-bold text-content">
-                  PIN bloqueado temporalmente
-                </Text>
-                <Text className="mb-4 text-center text-[14px] leading-5 text-content-muted">
-                  {PIN_LOCKED}
-                </Text>
-                <Text className="mb-2 text-[28px] font-bold text-content">
-                  {formatPinLockRemaining(lockSecondsLeft)}
-                </Text>
-              </View>
+          <Button
+            title="Iniciar sesión con email y contraseña"
+            onPress={onUseAnotherAccount}
+            iconRight="arrow-right"
+          />
+        </>
+      ) : challengeToken ? (
+        <TwoFactorLoginStep
+          challengeToken={challengeToken}
+          expiresIn={challengeExpiresIn}
+          onBack={handleBack}
+          onChallengeLost={handleChallengeLost}
+          onRecoveryCodeUsed={handleRecoveryCodeUsed}
+        />
+      ) : (
+        <>
+          <Text className="mb-1.5 text-[24px] font-bold text-content">
+            {userName ? `Hola de nuevo, ${userName}` : "Hola de nuevo"}
+          </Text>
+          <Text className="mb-[26px] text-[14px] text-content-muted">
+            Ingresá tu PIN de acceso rápido para este dispositivo.
+          </Text>
 
-              <Button
-                title="Iniciar sesión con email y contraseña"
-                onPress={onUseAnotherAccount}
-                iconRight="arrow-right"
-              />
-            </>
-          ) : challengeToken ? (
-            <TwoFactorLoginStep
-              challengeToken={challengeToken}
-              expiresIn={challengeExpiresIn}
-              onBack={handleBack}
-              onChallengeLost={handleChallengeLost}
-              onRecoveryCodeUsed={handleRecoveryCodeUsed}
-            />
-          ) : (
-            <>
-              <Text className="mb-1.5 text-[24px] font-bold text-content">
-                {userName ? `Hola de nuevo, ${userName}` : "Hola de nuevo"}
-              </Text>
-              <Text className="mb-[26px] text-[14px] text-content-muted">
-                Ingresá tu PIN de acceso rápido para este dispositivo.
-              </Text>
+          <TextField
+            label="TU PIN"
+            placeholder="••••••"
+            keyboardType="number-pad"
+            maxLength={PIN_MAX_LENGTH}
+            isPassword
+            iconName="lock"
+            autoFocus
+            value={pin}
+            onChangeText={handleChangePin}
+            error={errors.pin}
+          />
 
-              <TextField
-                label="TU PIN"
-                placeholder="••••••"
-                keyboardType="number-pad"
-                maxLength={PIN_MAX_LENGTH}
-                isPassword
-                iconName="lock"
-                autoFocus
-                value={pin}
-                onChangeText={handleChangePin}
-                error={errors.pin}
-              />
+          <FormErrorBanner message={formError} />
 
-              <FormErrorBanner message={formError} />
+          <Button
+            title="Ingresar"
+            onPress={() => handleSubmit(pin)}
+            isLoading={isSubmitting}
+            iconRight="arrow-right"
+          />
 
-              <Button
-                title="Ingresar"
-                onPress={() => handleSubmit(pin)}
-                isLoading={isSubmitting}
-                iconRight="arrow-right"
-              />
-
-              <TouchableOpacity
-                activeOpacity={0.75}
-                className="mt-4 items-center py-3"
-                onPress={onUseAnotherAccount}
-              >
-                <Text className="text-[13px] font-bold text-sky">
-                  ¿No sos vos? Iniciar sesión con otra cuenta
-                </Text>
-              </TouchableOpacity>
-            </>
-          )}
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+          <TouchableOpacity
+            activeOpacity={0.75}
+            className="mt-4 items-center py-3"
+            onPress={onUseAnotherAccount}
+          >
+            <Text className="text-[13px] font-bold text-sky">
+              ¿No sos vos? Iniciar sesión con otra cuenta
+            </Text>
+          </TouchableOpacity>
+        </>
+      )}
+    </AuthScreen>
   );
 }
