@@ -69,11 +69,11 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
           Recordá revisar tu carpeta de spam por si acaso.
         </Text>
 
-        <TouchableOpacity activeOpacity={0.7} onPress={onBack}>
-          <Text className="text-[13px] text-content-subtle">
-            Volver al inicio de sesión
-          </Text>
-        </TouchableOpacity>
+        <Button
+          title="Volver al inicio de sesión"
+          onPress={onBack}
+          iconRight="arrow-right"
+        />
       </View>
     );
   }
