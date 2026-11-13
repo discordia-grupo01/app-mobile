@@ -21,14 +21,14 @@ export function AuthScreen({ children }: { children: ReactNode }) {
       <StatusBar style={statusBarStyle} />
       <ThemeToggleButton />
       <ScrollView
-        contentContainerClassName="grow items-center justify-center px-4"
+        contentContainerClassName="grow items-center justify-center px-6"
         contentContainerStyle={{
           paddingTop: insets.top + EDGE_SPACING,
           paddingBottom: insets.bottom + EDGE_SPACING,
         }}
         keyboardShouldPersistTaps="handled"
       >
-        <View className="w-full max-w-[420px] px-4">
+        <View className="w-full max-w-[420px]">
           <View className="mb-5 items-center">
             <AuthLogo />
           </View>
