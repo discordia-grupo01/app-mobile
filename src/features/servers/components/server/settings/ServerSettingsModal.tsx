@@ -5,6 +5,7 @@ import {
 import { useState } from "react";
 import { KeyboardAvoidingView, Modal, Platform } from "react-native";
 
+import { ServerBoostsStep } from "../../../../boosts/components/ServerBoostsStep";
 import { ModerationAuditStep } from "../../../../moderation/components/ModerationAuditStep";
 import { ReportsStep } from "../../../../reports/components/list/ReportsStep";
 import { useDeleteServerConfirm } from "../../../useDeleteServerConfirm";
@@ -14,6 +15,11 @@ import { DeleteServerStep } from "./DeleteServerStep";
 import { ServerProfileStep } from "./ServerProfileStep";
 import { SettingsHeader, type SettingsStep } from "./SettingsHeader";
 import { SettingsMenuStep } from "./SettingsMenuStep";
+import {
+  hasSettingsMenu,
+  initialSettingsStep,
+  type SettingsEntry,
+} from "./settingsSteps";
 import { useModalInsets } from "../../../../platform-status/hooks/useModalInsets";
 
 interface ServerSettingsModalProps {
@@ -28,6 +34,8 @@ interface ServerSettingsModalProps {
   canReviewReports: boolean;
   pendingReports: number;
   currentUserId: string | null;
+  /** "boosts" si se entra desde "Boosts del servidor". */
+  entry?: SettingsEntry;
   onClose: () => void;
   /** "Ir al mensaje" desde un reporte: quien lo usa cierra la configuracion. */
   onGoToMessage: (channelId: string, messageId: string) => void;
@@ -47,13 +55,22 @@ function SettingsBody({
   canReviewReports,
   pendingReports,
   currentUserId,
+  entry = "menu",
   onClose,
   onGoToMessage,
   onPendingReportsChanged,
   onUpdated,
   onConfirmDelete,
 }: SettingsBodyProps) {
-  const [step, setStep] = useState<SettingsStep>("menu");
+  const hasMenu = hasSettingsMenu({
+    isOwner,
+    canManageServer,
+    canManageMessages,
+    canReviewReports,
+  });
+  const [step, setStep] = useState<SettingsStep>(() =>
+    initialSettingsStep(entry, hasMenu),
+  );
   // Los hooks viven acá y no en cada paso para que lo editado sobreviva a
   // volver al menú y entrar de nuevo.
   const form = useServerSettingsForm({ server, onUpdated });
@@ -69,6 +86,7 @@ function SettingsBody({
       <SettingsHeader
         step={step}
         pendingReports={pendingReports}
+        canGoBack={hasMenu}
         onBack={backToMenu}
         onClose={onClose}
       />
@@ -92,6 +110,8 @@ function SettingsBody({
           onCancel={onClose}
         />
       ) : null}
+
+      {step === "boosts" ? <ServerBoostsStep server={server} /> : null}
 
       {step === "words" ? <WordFilterStep serverId={server.id} /> : null}
 

@@ -1,4 +1,5 @@
 import {
+  BOOSTS_SECTION_TITLE,
   MODERATION_AUDIT_TITLE,
   REPORTS_TITLE,
   WORD_FILTER_TITLE,
@@ -10,11 +11,12 @@ import { withAlpha } from "../../../../../lib/color";
 import { useThemeColors } from "../../../../../theme/theme-context";
 
 export type SettingsStep =
-  "menu" | "profile" | "words" | "reports" | "audit" | "delete";
+  "menu" | "profile" | "boosts" | "words" | "reports" | "audit" | "delete";
 
 const STEP_TITLES: Record<SettingsStep, string> = {
   menu: "Configuración del servidor",
   profile: "Perfil del servidor",
+  boosts: BOOSTS_SECTION_TITLE,
   words: WORD_FILTER_TITLE,
   reports: REPORTS_TITLE,
   audit: MODERATION_AUDIT_TITLE,
@@ -25,6 +27,8 @@ interface SettingsHeaderProps {
   step: SettingsStep;
   /** Solo se muestra en el paso "reports", al lado del titulo. */
   pendingReports?: number;
+  /** `false` si no hay menú al que volver (un miembro que solo ve Boosts). */
+  canGoBack?: boolean;
   onBack: () => void;
   onClose: () => void;
 }
@@ -32,6 +36,7 @@ interface SettingsHeaderProps {
 export function SettingsHeader({
   step,
   pendingReports = 0,
+  canGoBack = true,
   onBack,
   onClose,
 }: SettingsHeaderProps) {
@@ -40,7 +45,7 @@ export function SettingsHeader({
 
   return (
     <View className="flex-row items-center gap-2 border-b border-line px-4 py-3">
-      {step !== "menu" ? (
+      {step !== "menu" && canGoBack ? (
         <TouchableOpacity
           className="w-10 h-10 rounded-xl items-center justify-center bg-surface-input"
           onPress={onBack}

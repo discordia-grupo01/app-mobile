@@ -1,5 +1,7 @@
 import {
   BANS_TITLE,
+  BOOSTS_SECTION_TITLE,
+  boostLevelLabel,
   type Category,
   type Channel,
   channelHasNotifications,
@@ -13,6 +15,7 @@ import {
   type OwnershipTransfer,
   pendingReportsLabel,
   type Role,
+  serverBoostLevel,
   type ServerSummary,
   sortByPosition,
   topLevelChannels,
@@ -58,8 +61,10 @@ import {
 import { InviteLinkModal } from "../features/servers/components/server/InviteLinkModal";
 import { LeaveServerModal } from "../features/servers/components/server/LeaveServerModal";
 import { ServerSettingsModal } from "../features/servers/components/server/settings/ServerSettingsModal";
+import type { SettingsEntry } from "../features/servers/components/server/settings/settingsSteps";
 import { TransferOwnershipModal } from "../features/servers/components/server/TransferOwnershipModal";
 import { BanIcon } from "../features/bans/components/BanIcon";
+import { BoostActionIcon } from "../features/boosts/components/BoostActionIcon";
 import { BansModal } from "../features/bans/components/BansModal";
 import { RolesModal } from "../features/roles/RolesModal";
 import { ServerMenuItem } from "../features/servers/components/server/ServerMenuItem";
@@ -201,6 +206,8 @@ export function ServerChannelsScreen({
   }
   const [isServerMenuOpen, setIsServerMenuOpen] = useState(false);
   const [isServerSettingsVisible, setIsServerSettingsVisible] = useState(false);
+  const [serverSettingsEntry, setServerSettingsEntry] =
+    useState<SettingsEntry>("menu");
   const [isLeaveModalVisible, setIsLeaveModalVisible] = useState(false);
   const [isInviteModalVisible, setIsInviteModalVisible] = useState(false);
   const [isCreateChannelVisible, setIsCreateChannelVisible] = useState(false);
@@ -298,6 +305,11 @@ export function ServerChannelsScreen({
       : null;
   const showTransferMenuItem =
     isOwner || (!isLoadingPendingTransfer && incomingTransfer !== null);
+
+  function openServerSettings(entry: SettingsEntry) {
+    setServerSettingsEntry(entry);
+    setIsServerSettingsVisible(true);
+  }
 
   /** Cierra el menu del servidor y despues hace lo que pidio el item. */
   function runFromMenu(action: () => void) {
@@ -663,6 +675,17 @@ export function ServerChannelsScreen({
                   />
                 ) : null}
 
+                <ServerMenuItem
+                  icon={<BoostActionIcon size={16} />}
+                  label={BOOSTS_SECTION_TITLE}
+                  trailing={
+                    <Text className="text-[12px] font-semibold text-content-muted">
+                      {boostLevelLabel(serverBoostLevel(server))}
+                    </Text>
+                  }
+                  onPress={runFromMenu(() => openServerSettings("boosts"))}
+                />
+
                 {canOpenServerSettings ? (
                   <ServerMenuItem
                     icon="settings"
@@ -677,9 +700,7 @@ export function ServerChannelsScreen({
                         />
                       ) : undefined
                     }
-                    onPress={runFromMenu(() =>
-                      setIsServerSettingsVisible(true),
-                    )}
+                    onPress={runFromMenu(() => openServerSettings("menu"))}
                   />
                 ) : null}
 
@@ -834,33 +855,32 @@ export function ServerChannelsScreen({
         </View>
       </ChannelDragProvider>
 
-      {canOpenServerSettings ? (
-        <ServerSettingsModal
-          visible={isServerSettingsVisible}
-          server={server}
-          isOwner={isOwner}
-          canManageServer={canManageServer}
-          canManageMessages={canManageMessages}
-          canReviewReports={canReviewReports}
-          pendingReports={pendingReports}
-          currentUserId={currentUserId}
-          onClose={() => setIsServerSettingsVisible(false)}
-          onGoToMessage={(channelId, messageId) => {
-            setIsServerSettingsVisible(false);
-            onGoToMessage(channelId, messageId);
-          }}
-          onPendingReportsChanged={() =>
-            void pendingReportsContext?.refresh(server.id)
-          }
-          onUpdated={(updated) => {
-            setIsServerSettingsVisible(false);
-            onServerUpdated(updated);
-          }}
-          onConfirmDelete={(confirmName) =>
-            onDeleteServer(server.id, confirmName)
-          }
-        />
-      ) : null}
+      <ServerSettingsModal
+        visible={isServerSettingsVisible}
+        server={server}
+        isOwner={isOwner}
+        canManageServer={canManageServer}
+        canManageMessages={canManageMessages}
+        canReviewReports={canReviewReports}
+        pendingReports={pendingReports}
+        currentUserId={currentUserId}
+        entry={serverSettingsEntry}
+        onClose={() => setIsServerSettingsVisible(false)}
+        onGoToMessage={(channelId, messageId) => {
+          setIsServerSettingsVisible(false);
+          onGoToMessage(channelId, messageId);
+        }}
+        onPendingReportsChanged={() =>
+          void pendingReportsContext?.refresh(server.id)
+        }
+        onUpdated={(updated) => {
+          setIsServerSettingsVisible(false);
+          onServerUpdated(updated);
+        }}
+        onConfirmDelete={(confirmName) =>
+          onDeleteServer(server.id, confirmName)
+        }
+      />
       <LeaveServerModal
         visible={isLeaveModalVisible}
         serverName={server.name}
