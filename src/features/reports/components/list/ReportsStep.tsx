@@ -28,7 +28,7 @@ import {
 } from "react-native";
 
 import { FormErrorBanner } from "../../../../components/ui/FormErrorBanner";
-import { Pagination } from "../../../../components/ui/Pagination";
+import { PaginationFooter } from "../../../../components/ui/PaginationFooter";
 import {
   type SegmentedTab,
   SegmentedTabs,
@@ -281,15 +281,18 @@ export function ReportsStep({
             })}
           </View>
         )}
-
-        {list.pageCount > 1 ? (
-          <Pagination
-            page={list.page}
-            pageCount={list.pageCount}
-            onPageChange={list.setPage}
-          />
-        ) : null}
       </ScrollView>
+
+      {list.pageCount > 1 ? (
+        <PaginationFooter
+          page={list.page}
+          pageCount={list.pageCount}
+          range={list.range}
+          total={list.total}
+          noun="reportes"
+          onPageChange={list.setPage}
+        />
+      ) : null}
 
       <ReportSanctionSheet
         available={sanctionsFor?.available ?? null}
