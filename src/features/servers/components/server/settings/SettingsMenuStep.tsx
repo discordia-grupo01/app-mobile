@@ -1,4 +1,6 @@
 import {
+  BOOSTS_SECTION_SUBTITLE,
+  BOOSTS_SECTION_TITLE,
   MODERATION_AUDIT_DESCRIPTION,
   MODERATION_AUDIT_TITLE,
   pendingReportsLabel,
@@ -8,12 +10,13 @@ import {
   WORD_FILTER_TITLE,
 } from "@discordia/client-shared";
 import { Feather } from "@expo/vector-icons";
-import { type ComponentProps, type ReactNode } from "react";
+import { type ComponentProps, type ReactElement, type ReactNode } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 import { Avatar } from "../../../../../components/ui/Avatar";
 import { cn } from "../../../../../lib/cn";
 import { useThemeColors } from "../../../../../theme/theme-context";
+import { BoostActionIcon } from "../../../../boosts/components/BoostActionIcon";
 import { ReportsBadge } from "../../../../reports/components/shared/ReportsBadge";
 import { resolveServerIconUrl } from "../../../api";
 import type { SettingsStep } from "./SettingsHeader";
@@ -28,7 +31,8 @@ function SettingsRow({
   badge,
   onPress,
 }: {
-  icon: FeatherIconName;
+  /** Nombre de un icono de Feather, o un icono propio ya dibujado. */
+  icon: FeatherIconName | ReactElement;
   title: string;
   subtitle: string;
   danger?: boolean;
@@ -51,11 +55,15 @@ function SettingsRow({
           danger ? "bg-[rgba(224,82,82,0.14)]" : "bg-[rgba(36,92,107,0.3)]",
         )}
       >
-        <Feather
-          name={icon}
-          size={20}
-          color={danger ? colors.danger : colors.sky}
-        />
+        {typeof icon === "string" ? (
+          <Feather
+            name={icon}
+            size={20}
+            color={danger ? colors.danger : colors.sky}
+          />
+        ) : (
+          icon
+        )}
       </View>
       <View className="flex-1">
         <Text
@@ -122,6 +130,12 @@ export function SettingsMenuStep({
           onPress={() => onSelect("profile")}
         />
       ) : null}
+      <SettingsRow
+        icon={<BoostActionIcon size={20} />}
+        title={BOOSTS_SECTION_TITLE}
+        subtitle={BOOSTS_SECTION_SUBTITLE}
+        onPress={() => onSelect("boosts")}
+      />
       {canManageMessages ? (
         <SettingsRow
           icon="slash"
