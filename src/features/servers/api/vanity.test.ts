@@ -1,9 +1,8 @@
 import { apiFetch } from "../../../lib/api-client";
 
-import { setVanityCode } from "./vanity";
+import { setVanityCode, vanityLinkPrefix, vanityLinkText } from "./vanity";
 
 jest.mock("../../../lib/api-client", () => ({ apiFetch: jest.fn() }));
-jest.mock("../../../lib/env", () => ({ env: { webUrl: null } }));
 
 const mockedFetch = apiFetch as jest.MockedFunction<typeof apiFetch>;
 
@@ -55,5 +54,12 @@ describe("setVanityCode", () => {
       ok: false,
       message: "Ese link ya lo usa otro servidor. Probá con otro.",
     });
+  });
+});
+
+describe("link de la URL personalizada", () => {
+  it("usa el link de la app, no el de la web", () => {
+    expect(vanityLinkText("taller")).toBe("discordia://invite/taller");
+    expect(vanityLinkPrefix()).toBe("discordia://invite/");
   });
 });

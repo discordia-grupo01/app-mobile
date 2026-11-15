@@ -1,5 +1,4 @@
 import {
-  displayInviteLink,
   VANITY_REMOVE_COPY,
   vanityRemoveImpact,
 } from "@discordia/client-shared";
@@ -42,7 +41,7 @@ export function RemoveVanityModal({
               {VANITY_REMOVE_COPY.title}
             </Text>
             <Text className="text-sm leading-5 text-content-muted">
-              {vanityRemoveImpact(displayInviteLink(vanityLinkText(code)))}
+              {vanityRemoveImpact(vanityLinkText(code))}
             </Text>
           </View>
           <FormErrorBanner message={error || null} />

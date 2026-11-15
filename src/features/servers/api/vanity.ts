@@ -1,11 +1,7 @@
-import {
-  displayInviteLink,
-  saveVanityFailureMessage,
-  vanityInviteLink,
-} from "@discordia/client-shared";
+import { saveVanityFailureMessage } from "@discordia/client-shared";
 
 import { apiFetch } from "../../../lib/api-client";
-import { env } from "../../../lib/env";
+import { appInviteLink } from "../../../lib/invite-links";
 
 export type SetVanityResult =
   { ok: true; vanity_code: string | null } | { ok: false; message: string };
@@ -25,12 +21,12 @@ export async function setVanityCode(
   return { ok: true, vanity_code: result.data.vanity_code };
 }
 
-/** El link que se copia, con la base de la web como las invitaciones. */
+/** Entra por el mismo link de la app que una invitación. */
 export function vanityLinkText(code: string): string {
-  return vanityInviteLink(code, env.webUrl);
+  return appInviteLink(code);
 }
 
-/** Sin protocolo, como se muestra: "discordia.app/invite/". */
+/** "discordia://invite/": el prefijo fijo del campo. */
 export function vanityLinkPrefix(): string {
-  return displayInviteLink(vanityLinkText(""));
+  return appInviteLink("");
 }
