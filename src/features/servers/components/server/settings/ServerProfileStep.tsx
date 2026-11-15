@@ -3,6 +3,7 @@ import {
   BOOST_PERK_LEVEL,
   nextBoostLevel,
 } from "@discordia/client-shared";
+import type { ReactNode } from "react";
 import { ScrollView, Text, View } from "react-native";
 
 import { Button } from "../../../../../components/ui/Button";
@@ -21,6 +22,8 @@ interface ServerProfileStepProps {
   serverName: string;
   onCancel: () => void;
   onBoost?: () => void;
+  /** URL de invitación personalizada: se guarda aparte, con su propio botón. */
+  vanityField?: ReactNode;
 }
 
 export function ServerProfileStep({
@@ -28,6 +31,7 @@ export function ServerProfileStep({
   serverName,
   onCancel,
   onBoost,
+  vanityField,
 }: ServerProfileStepProps) {
   const boostStripInBanner =
     nextBoostLevel(form.boostLevel) === BOOST_PERK_LEVEL.custom_banner;
@@ -103,6 +107,8 @@ export function ServerProfileStep({
         isLocked={form.isBannerLocked}
         onSelect={form.choosePreset}
       />
+
+      {vanityField ? <View className="px-7 mt-7">{vanityField}</View> : null}
 
       <View className="px-7 mt-7">
         <ServerNameField

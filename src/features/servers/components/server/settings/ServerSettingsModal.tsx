@@ -1,5 +1,7 @@
 import {
   type DeleteServerResult,
+  serverBoostCount,
+  serverBoostLevel,
   type ServerSummary,
 } from "@discordia/client-shared";
 import { useState } from "react";
@@ -13,6 +15,7 @@ import { useServerSettingsForm } from "../../../useServerSettingsForm";
 import { WordFilterStep } from "../WordFilterStep";
 import { DeleteServerStep } from "./DeleteServerStep";
 import { ServerProfileStep } from "./ServerProfileStep";
+import { VanityUrlField } from "./vanity/VanityUrlField";
 import { SettingsHeader, type SettingsStep } from "./SettingsHeader";
 import { SettingsMenuStep } from "./SettingsMenuStep";
 import {
@@ -113,6 +116,15 @@ function SettingsBody({
           serverName={server.name}
           onCancel={onClose}
           onBoost={() => setStep("boosts")}
+          vanityField={
+            <VanityUrlField
+              serverId={server.id}
+              serverName={server.name}
+              level={serverBoostLevel(server)}
+              boostCount={serverBoostCount(server)}
+              vanityCode={server.vanity_code ?? null}
+            />
+          }
         />
       ) : null}
 

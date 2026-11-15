@@ -15,6 +15,7 @@ import {
   type OwnershipTransfer,
   pendingReportsLabel,
   type Role,
+  hasBoostedBadge,
   serverBoostLevel,
   type ServerSummary,
   sortByPosition,
@@ -65,6 +66,7 @@ import type { SettingsEntry } from "../features/servers/components/server/settin
 import { TransferOwnershipModal } from "../features/servers/components/server/TransferOwnershipModal";
 import { BanIcon } from "../features/bans/components/BanIcon";
 import { BoostActionIcon } from "../features/boosts/components/BoostActionIcon";
+import { BoostedBadge } from "../features/boosts/components/BoostedBadge";
 import { BoostLevelIcon } from "../features/boosts/components/BoostLevelIcon";
 import { BansModal } from "../features/bans/components/BansModal";
 import { RolesModal } from "../features/roles/RolesModal";
@@ -650,6 +652,12 @@ export function ServerChannelsScreen({
               >
                 {server.name}
               </Text>
+              {hasBoostedBadge(serverBoostLevel(server)) ? (
+                <BoostedBadge
+                  size={18}
+                  surface={bannerVisible ? "dark" : "theme"}
+                />
+              ) : null}
               <Feather
                 name={isServerMenuOpen ? "chevron-up" : "chevron-down"}
                 size={18}
@@ -923,6 +931,11 @@ export function ServerChannelsScreen({
           visible={isInviteModalVisible}
           serverId={server.id}
           serverName={server.name}
+          vanityCode={
+            hasBoostedBadge(serverBoostLevel(server))
+              ? (server.vanity_code ?? null)
+              : null
+          }
           onClose={() => setIsInviteModalVisible(false)}
         />
       ) : null}
