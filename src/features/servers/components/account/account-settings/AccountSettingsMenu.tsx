@@ -10,7 +10,10 @@ import { Pressable, Text, TouchableOpacity, View } from "react-native";
 
 import { withAlpha } from "../../../../../lib/color";
 import { useThemeColors } from "../../../../../theme/theme-context";
-import { BILLING_MENU_ITEMS } from "../../../../billing/components/navigation/billingMenuItems";
+import {
+  BILLING_MENU_ITEMS,
+  type BillingMenuTone,
+} from "../../../../billing/components/navigation/billingMenuItems";
 
 interface SettingsRowProps {
   icon: ReactNode;
@@ -18,9 +21,28 @@ interface SettingsRowProps {
   title: string;
   subtitle: string;
   onPress: () => void;
-  /** Las filas de Facturación se ponen amarillas al tocarlas, como el ítem activo de web. */
-  premiumHighlight?: boolean;
+  /**
+   * Las filas de Facturación toman el color del ítem activo de web al
+   * tocarlas: amarillo, o petrol en Boosts.
+   */
+  highlight?: BillingMenuTone;
 }
+
+const HIGHLIGHT_COLORS: Record<
+  BillingMenuTone,
+  { background: string; tile: string; text: string }
+> = {
+  premium: {
+    background: PREMIUM_BRAND_COLORS.yellow,
+    tile: PREMIUM_BRAND_COLORS.deep,
+    text: PREMIUM_BRAND_COLORS.deep,
+  },
+  boost: {
+    background: PREMIUM_BRAND_COLORS.petrol,
+    tile: PREMIUM_BRAND_COLORS.deep,
+    text: PREMIUM_BRAND_COLORS.paper,
+  },
+};
 
 function SettingsRow({
   icon,
@@ -28,20 +50,21 @@ function SettingsRow({
   title,
   subtitle,
   onPress,
-  premiumHighlight = false,
+  highlight,
 }: SettingsRowProps) {
   const colors = useThemeColors();
   const [isPressed, setIsPressed] = useState(false);
-  const isHighlighted = premiumHighlight && isPressed;
+  const pressedColors =
+    highlight && isPressed ? HIGHLIGHT_COLORS[highlight] : null;
 
   return (
     <Pressable
       className="mb-3 flex-row items-center gap-4 rounded-2xl border border-line bg-surface-raised p-4"
       style={
-        isHighlighted
+        pressedColors
           ? {
-              backgroundColor: PREMIUM_BRAND_COLORS.yellow,
-              borderColor: PREMIUM_BRAND_COLORS.yellow,
+              backgroundColor: pressedColors.background,
+              borderColor: pressedColors.background,
             }
           : isPressed
             ? { opacity: 0.75 }
@@ -55,9 +78,7 @@ function SettingsRow({
       <View
         className="h-11 w-11 items-center justify-center rounded-xl"
         style={{
-          backgroundColor: isHighlighted
-            ? PREMIUM_BRAND_COLORS.deep
-            : iconBackground,
+          backgroundColor: pressedColors ? pressedColors.tile : iconBackground,
         }}
       >
         {icon}
@@ -65,17 +86,13 @@ function SettingsRow({
       <View className="flex-1">
         <Text
           className="mb-0.5 text-[16px] font-bold text-content"
-          style={
-            isHighlighted ? { color: PREMIUM_BRAND_COLORS.deep } : undefined
-          }
+          style={pressedColors ? { color: pressedColors.text } : undefined}
         >
           {title}
         </Text>
         <Text
           className="text-[13px] text-content-subtle"
-          style={
-            isHighlighted ? { color: PREMIUM_BRAND_COLORS.deep } : undefined
-          }
+          style={pressedColors ? { color: pressedColors.text } : undefined}
         >
           {subtitle}
         </Text>
@@ -83,7 +100,7 @@ function SettingsRow({
       <Feather
         name="chevron-right"
         size={18}
-        color={isHighlighted ? PREMIUM_BRAND_COLORS.deep : colors.textSubtle}
+        color={pressedColors ? pressedColors.text : colors.textSubtle}
       />
     </Pressable>
   );
@@ -152,7 +169,7 @@ export function AccountSettingsMenu({
             iconBackground={withAlpha(colors.info, 0.15)}
             title={item.label}
             subtitle={item.description}
-            premiumHighlight
+            highlight={item.tone}
             onPress={() => onSelectBilling(item.id)}
           />
         );

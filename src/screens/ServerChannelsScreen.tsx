@@ -65,6 +65,7 @@ import type { SettingsEntry } from "../features/servers/components/server/settin
 import { TransferOwnershipModal } from "../features/servers/components/server/TransferOwnershipModal";
 import { BanIcon } from "../features/bans/components/BanIcon";
 import { BoostActionIcon } from "../features/boosts/components/BoostActionIcon";
+import { BoostLevelIcon } from "../features/boosts/components/BoostLevelIcon";
 import { BansModal } from "../features/bans/components/BansModal";
 import { RolesModal } from "../features/roles/RolesModal";
 import { ServerMenuItem } from "../features/servers/components/server/ServerMenuItem";
@@ -76,6 +77,10 @@ import {
   usePendingReportsContext,
 } from "../features/reports/ReportsContext";
 import { UserProfileBar } from "../features/servers/components/account/UserProfileBar";
+import {
+  accountSettingsRequest,
+  serverBoostsRequest,
+} from "../lib/navigationRequests";
 import { voiceParticipantsHeight } from "../features/voice/components/sidebar/VoiceChannelParticipants";
 import { useServerVoice } from "../features/voice/useServerVoice";
 import { useAuth } from "../features/auth/auth-context";
@@ -310,6 +315,19 @@ export function ServerChannelsScreen({
     setServerSettingsEntry(entry);
     setIsServerSettingsVisible(true);
   }
+
+  // "Gestionar" desde Facturación › Boosts: si el pedido es de este servidor,
+  // se abre su sección Boosts (HomeScreen ya cambió de servidor si hacía falta).
+  useEffect(() => {
+    const openIfRequested = () => {
+      if (serverBoostsRequest.take((id) => id === server.id)) {
+        setServerSettingsEntry("boosts");
+        setIsServerSettingsVisible(true);
+      }
+    };
+    openIfRequested();
+    return serverBoostsRequest.subscribe(openIfRequested);
+  }, [server.id]);
 
   /** Cierra el menu del servidor y despues hace lo que pidio el item. */
   function runFromMenu(action: () => void) {
@@ -679,9 +697,18 @@ export function ServerChannelsScreen({
                   icon={<BoostActionIcon size={16} />}
                   label={BOOSTS_SECTION_TITLE}
                   trailing={
-                    <Text className="text-[12px] font-semibold text-content-muted">
-                      {boostLevelLabel(serverBoostLevel(server))}
-                    </Text>
+                    <View
+                      accessible
+                      accessibilityLabel={boostLevelLabel(
+                        serverBoostLevel(server),
+                      )}
+                    >
+                      <BoostLevelIcon
+                        level={serverBoostLevel(server)}
+                        size={18}
+                        bare
+                      />
+                    </View>
                   }
                   onPress={runFromMenu(() => openServerSettings("boosts"))}
                 />
@@ -866,6 +893,10 @@ export function ServerChannelsScreen({
         currentUserId={currentUserId}
         entry={serverSettingsEntry}
         onClose={() => setIsServerSettingsVisible(false)}
+        onBuyPoints={() => {
+          setIsServerSettingsVisible(false);
+          accountSettingsRequest.request("points");
+        }}
         onGoToMessage={(channelId, messageId) => {
           setIsServerSettingsVisible(false);
           onGoToMessage(channelId, messageId);

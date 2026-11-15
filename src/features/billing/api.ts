@@ -32,7 +32,7 @@ import { apiFetch } from "../../lib/api-client";
  * checkout durante 24 h, así un doble toque o un reintento no crean dos compras.
  */
 
-function toBillingResult<T>(result: ApiResult<T>): BillingResult<T> {
+export function toBillingResult<T>(result: ApiResult<T>): BillingResult<T> {
   if (result.ok) return { ok: true, data: result.data };
   return {
     ok: false,
@@ -43,7 +43,7 @@ function toBillingResult<T>(result: ApiResult<T>): BillingResult<T> {
 
 export function billingFailureMessage(failure: ApiFailure): string {
   if (isNetworkFailure(failure)) return messageFor(failure);
-  return billingErrorMessage(failure.code);
+  return billingErrorMessage(failure.code, failure.details);
 }
 
 // Mercado Pago vuelve a la página puente /app-link/billing/return de la web,

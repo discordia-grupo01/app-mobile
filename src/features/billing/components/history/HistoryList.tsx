@@ -8,7 +8,7 @@ import { Text, View } from "react-native";
 
 import { Pagination } from "../../../../components/ui/Pagination";
 import { usePagination } from "../../../../hooks/usePagination";
-import { DiscordiaPointIcon } from "../shared/DiscordiaIcons";
+import { EmptyHistory } from "./EmptyHistory";
 
 interface HistoryListProps<T> {
   title: string;
@@ -40,12 +40,7 @@ export function HistoryList<T>({
       </View>
 
       {items.length === 0 ? (
-        <View className="items-center rounded-2xl border border-dashed border-line-strong bg-surface-raised px-5 py-8">
-          <DiscordiaPointIcon size={27} />
-          <Text className="mt-3 text-center text-[14px] font-semibold text-content-muted">
-            {emptyText}
-          </Text>
-        </View>
+        <EmptyHistory text={emptyText} />
       ) : (
         <View className="overflow-hidden rounded-2xl border border-line">
           {paged.pageItems.map((item, index) => (

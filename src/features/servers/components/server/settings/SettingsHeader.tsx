@@ -1,5 +1,5 @@
 import {
-  BOOSTS_SECTION_TITLE,
+  boostsSectionTitleFor,
   MODERATION_AUDIT_TITLE,
   REPORTS_TITLE,
   WORD_FILTER_TITLE,
@@ -13,10 +13,9 @@ import { useThemeColors } from "../../../../../theme/theme-context";
 export type SettingsStep =
   "menu" | "profile" | "boosts" | "words" | "reports" | "audit" | "delete";
 
-const STEP_TITLES: Record<SettingsStep, string> = {
+const STEP_TITLES: Record<Exclude<SettingsStep, "boosts">, string> = {
   menu: "Configuración del servidor",
   profile: "Perfil del servidor",
-  boosts: BOOSTS_SECTION_TITLE,
   words: WORD_FILTER_TITLE,
   reports: REPORTS_TITLE,
   audit: MODERATION_AUDIT_TITLE,
@@ -25,6 +24,8 @@ const STEP_TITLES: Record<SettingsStep, string> = {
 
 interface SettingsHeaderProps {
   step: SettingsStep;
+  /** Boosts nombra al servidor en el título ("Boosts de Club de Lectura"). */
+  serverName: string;
   /** Solo se muestra en el paso "reports", al lado del titulo. */
   pendingReports?: number;
   /** `false` si no hay menú al que volver (un miembro que solo ve Boosts). */
@@ -35,6 +36,7 @@ interface SettingsHeaderProps {
 
 export function SettingsHeader({
   step,
+  serverName,
   pendingReports = 0,
   canGoBack = true,
   onBack,
@@ -67,7 +69,9 @@ export function SettingsHeader({
         className="flex-1 text-[17px] font-bold text-content"
         numberOfLines={1}
       >
-        {STEP_TITLES[step]}
+        {step === "boosts"
+          ? boostsSectionTitleFor(serverName)
+          : STEP_TITLES[step]}
         {isReports && pendingReports > 0 ? (
           <Text className="text-warning"> ({pendingReports})</Text>
         ) : null}

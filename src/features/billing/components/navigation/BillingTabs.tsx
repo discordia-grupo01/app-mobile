@@ -13,7 +13,10 @@ interface BillingTabsProps {
   onSelect: (section: BillingSection) => void;
 }
 
-/** Solapas de Facturación: la activa en amarillo, con el ícono sobre azul profundo, como en web. */
+/**
+ * Solapas de Facturación: la activa en amarillo, con el ícono sobre azul
+ * profundo, como en web. Boosts va en petrol.
+ */
 export function BillingTabs({ active, onSelect }: BillingTabsProps) {
   return (
     <ScrollView
@@ -25,6 +28,9 @@ export function BillingTabs({ active, onSelect }: BillingTabsProps) {
       {BILLING_MENU_ITEMS.map((item) => {
         const isActive = item.id === active;
         const Icon = item.icon;
+        // Boosts va en petrol con el ícono de nivel y sin baldosa.
+        const isBoostActive = isActive && item.tone === "boost";
+        const isPremiumActive = isActive && item.tone === "premium";
         return (
           <Pressable
             key={item.id}
@@ -33,10 +39,12 @@ export function BillingTabs({ active, onSelect }: BillingTabsProps) {
             accessibilityState={{ selected: isActive }}
             className={cn(
               "flex-row items-center gap-2 rounded-xl border px-3 py-2",
-              isActive ? "border-transparent" : "border-line bg-surface-input",
+              !isActive && "border-line bg-surface-input",
+              isBoostActive && "border-transparent bg-accent",
+              isPremiumActive && "border-transparent",
             )}
             style={
-              isActive
+              isPremiumActive
                 ? { backgroundColor: PREMIUM_BRAND_COLORS.yellow }
                 : undefined
             }
@@ -44,20 +52,23 @@ export function BillingTabs({ active, onSelect }: BillingTabsProps) {
             <View
               className="h-[25px] w-[25px] items-center justify-center rounded-md"
               style={
-                isActive
+                isPremiumActive
                   ? { backgroundColor: PREMIUM_BRAND_COLORS.deep }
                   : undefined
               }
             >
-              <Icon size={17} />
+              <Icon size={17} onAccent={isBoostActive} />
             </View>
             <Text
               className={cn(
                 "text-[13px] font-bold",
                 !isActive && "text-content-muted",
+                isBoostActive && "text-on-accent",
               )}
               style={
-                isActive ? { color: PREMIUM_BRAND_COLORS.deep } : undefined
+                isPremiumActive
+                  ? { color: PREMIUM_BRAND_COLORS.deep }
+                  : undefined
               }
             >
               {item.label}

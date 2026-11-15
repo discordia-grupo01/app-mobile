@@ -1,7 +1,9 @@
 import {
+  boostLevelLabel,
   isServerMuted,
   NO_UNREAD_FLAGS,
   pendingReportsLabel,
+  serverBoostLevel,
   type ServerSummary,
   type UnreadFlags,
 } from "@discordia/client-shared";
@@ -24,6 +26,7 @@ import { ReportsBadge } from "../../../reports/components/shared/ReportsBadge";
 import { ServerOptionsSheet } from "./ServerOptionsSheet";
 import { useTheme, useThemeColors } from "../../../../theme/theme-context";
 import { Avatar } from "../../../../components/ui/Avatar";
+import { BoostLevelIcon } from "../../../boosts/components/BoostLevelIcon";
 import { CountBadge } from "../../../../components/ui/CountBadge";
 
 export const RAIL_WIDTH = 72;
@@ -62,13 +65,20 @@ function ServerRailIcon({
   const pendingReports = isSuspended
     ? 0
     : pendingReportsOf(pendingReportsContext, item.id);
+  const boostLevel = isSuspended ? 0 : serverBoostLevel(item);
+  const label = [
+    railIconLabel(item.name, shown, isSuspended),
+    boostLevel > 0 ? boostLevelLabel(boostLevel) : null,
+  ]
+    .filter(Boolean)
+    .join(". ");
   return (
     <TouchableOpacity
       activeOpacity={0.75}
       onPress={onPress}
       onLongPress={isSuspended ? undefined : onLongPress}
       className={cn("items-center justify-center", isMuted && "opacity-60")}
-      accessibilityLabel={railIconLabel(item.name, shown, isSuspended)}
+      accessibilityLabel={label}
       accessibilityActions={
         !isSuspended && onLongPress
           ? [{ name: "longpress", label: "Opciones del servidor" }]
@@ -106,6 +116,16 @@ function ServerRailIcon({
           label={pendingReportsLabel(pendingReports, item.name)}
           className="absolute top-0 right-2 border-2 border-surface-servers"
         />
+      ) : null}
+      {/* Desde el nivel 1, el ícono de nivel en la esquina; con menciones sin
+          leer, la esquina es del contador. */}
+      {boostLevel > 0 && shown.mentionCount === 0 ? (
+        <View
+          pointerEvents="none"
+          className="absolute bottom-0 right-1.5 rounded-[5px] bg-surface-servers px-[3px] py-[2px]"
+        >
+          <BoostLevelIcon level={boostLevel} size={17} bare tight />
+        </View>
       ) : null}
       {shown.mentionCount > 0 ? (
         <CountBadge

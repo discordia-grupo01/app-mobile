@@ -16,7 +16,7 @@ import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { Avatar } from "../../../../../components/ui/Avatar";
 import { cn } from "../../../../../lib/cn";
 import { useThemeColors } from "../../../../../theme/theme-context";
-import { BoostActionIcon } from "../../../../boosts/components/BoostActionIcon";
+import { BoostsSectionIcon } from "../../../../boosts/components/BoostsSectionIcon";
 import { ReportsBadge } from "../../../../reports/components/shared/ReportsBadge";
 import { resolveServerIconUrl } from "../../../api";
 import type { SettingsStep } from "./SettingsHeader";
@@ -131,7 +131,7 @@ export function SettingsMenuStep({
         />
       ) : null}
       <SettingsRow
-        icon={<BoostActionIcon size={20} />}
+        icon={<BoostsSectionIcon size={22} />}
         title={BOOSTS_SECTION_TITLE}
         subtitle={BOOSTS_SECTION_SUBTITLE}
         onPress={() => onSelect("boosts")}

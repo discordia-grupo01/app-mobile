@@ -34,7 +34,9 @@ export function useServerBoostSummary(serverId: string) {
     void load();
   }, [load]);
 
-  useRefreshOnChange({ resources: ["server"], serverId }, load);
+  // `boosts` le llega a quien boosteó cuando su boost cambia de estado:
+  // alcanza para refrescar aunque se pierda el aviso `server` del servidor.
+  useRefreshOnChange({ resources: ["server", "boosts"], serverId }, load);
 
   return {
     summary: current?.summary ?? null,

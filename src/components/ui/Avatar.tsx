@@ -1,7 +1,8 @@
 import { getInitial } from "@discordia/client-shared";
 
+import { Image } from "expo-image";
 import { useState } from "react";
-import { Image, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 
 import { useThemeColors } from "../../theme/theme-context";
@@ -24,13 +25,21 @@ export function Avatar({ name, uri, size = 48, borderRadius }: AvatarProps) {
   }
 
   if (uri && !failed) {
+    // expo-image y no el Image de React Native: en Android ese no anima los
+    // GIF (íconos de servidor boosteado y avatares Premium).
     return (
-      <Image
-        source={{ uri }}
-        onError={() => setFailed(true)}
-        className="bg-surface-raised"
+      <View
+        className="overflow-hidden bg-surface-raised"
         style={{ width: size, height: size, borderRadius: radius }}
-      />
+      >
+        <Image
+          source={{ uri }}
+          onError={() => setFailed(true)}
+          contentFit="cover"
+          recyclingKey={uri}
+          style={{ width: size, height: size }}
+        />
+      </View>
     );
   }
 
