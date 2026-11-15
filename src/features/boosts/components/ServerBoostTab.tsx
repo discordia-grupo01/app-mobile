@@ -1,10 +1,9 @@
 import {
-  activeBoostCount,
   type Boost,
+  boostBlockReason,
   RETRY_LABEL,
   type ServerBoostSummary,
   type ServerSummary,
-  serverBoosts,
 } from "@discordia/client-shared";
 
 import { useEffect, useState } from "react";
@@ -13,7 +12,8 @@ import { ActivityIndicator, View } from "react-native";
 import { Button } from "../../../components/ui/Button";
 import { FormErrorBanner } from "../../../components/ui/FormErrorBanner";
 import { useThemeColors } from "../../../theme/theme-context";
-import type { OwnBoosts } from "../useOwnBoosts";
+import { usePointsBalance } from "../usePointsBalance";
+import { useServerBoostsPage } from "../useServerBoostsPage";
 import { BoostActionCard } from "./actions/BoostActionCard";
 import {
   BoostConfirmModal,
@@ -28,8 +28,6 @@ import { BoostStatusCard } from "./BoostStatusCard";
 interface ServerBoostTabProps {
   server: ServerSummary;
   summary: ServerBoostSummary;
-  /** Se pide en la sección, a la par del resumen, para no esperar uno detrás del otro. */
-  own: OwnBoosts;
   /** Vuelve a pedir el resumen del servidor (nivel y contador). */
   onSummaryStale: () => void;
   onBuyPoints: () => void;
@@ -38,24 +36,28 @@ interface ServerBoostTabProps {
 export function ServerBoostTab({
   server,
   summary,
-  own,
   onSummaryStale,
   onBuyPoints,
 }: ServerBoostTabProps) {
   const colors = useThemeColors();
+  const points = usePointsBalance();
+  const list = useServerBoostsPage(server.id);
   const boosting = useBoostServer(server.id);
-  const removing = useRemoveBoost(own.replaceBoost);
+  const removing = useRemoveBoost(list.restart);
   const [confirm, setConfirm] = useState<BoostConfirmSnapshot | null>(null);
   const [toRemove, setToRemove] = useState<Boost | null>(null);
 
+  const capReached = summary.next_level === null;
+
   const finished = boosting.flow.phase === "done";
-  const { reload } = own;
+  const { reload: reloadPoints } = points;
+  const { restart: restartList } = list;
   useEffect(() => {
-    // Al terminar no se espera solo al socket: se piden el nivel, la lista y el saldo.
     if (!finished) return;
     onSummaryStale();
-    reload();
-  }, [finished, onSummaryStale, reload]);
+    reloadPoints();
+    restartList();
+  }, [finished, onSummaryStale, reloadPoints, restartList]);
 
   function openConfirm(balance: number) {
     boosting.reset();
@@ -82,41 +84,44 @@ export function ServerBoostTab({
     <View className="gap-7">
       <BoostStatusCard summary={summary} />
 
-      {own.state.status === "error" ? (
+      {points.state.status === "error" ? (
         <View className="gap-3">
-          <FormErrorBanner message={own.state.message} />
+          <FormErrorBanner message={points.state.message} />
           <Button
             title={RETRY_LABEL}
             variant="secondary"
-            onPress={own.reload}
+            onPress={points.reload}
           />
         </View>
-      ) : own.state.status === "loading" ? (
+      ) : points.state.status === "loading" ? (
         <View className="items-center py-6">
           <ActivityIndicator size="small" color={colors.accentBright} />
         </View>
       ) : (
-        <>
-          <BoostActionCard
-            balance={own.state.balance}
-            onBoost={() => {
-              if (own.state.status === "ready") openConfirm(own.state.balance);
-            }}
-            onBuyPoints={onBuyPoints}
-          />
-          <ServerBoostList
-            boosts={serverBoosts(own.state.boosts, server.id)}
-            activeCount={activeBoostCount(own.state.boosts, server.id)}
-            onRemove={setToRemove}
-          />
-        </>
+        <BoostActionCard
+          serverName={server.name}
+          balance={points.state.balance}
+          blockReason={boostBlockReason({
+            boostCount: summary.boost_count,
+            balance: points.state.balance,
+          })}
+          onBoost={() => {
+            if (points.state.status === "ready") {
+              openConfirm(points.state.balance);
+            }
+          }}
+          onBuyPoints={onBuyPoints}
+        />
       )}
+
+      <ServerBoostList list={list} onRemove={setToRemove} />
 
       <BoostConfirmModal
         serverName={server.name}
         snapshot={confirm}
         flow={boosting.flow}
         error={boosting.error}
+        capReached={capReached}
         onConfirm={() => void boosting.submit()}
         onClose={closeConfirm}
       />

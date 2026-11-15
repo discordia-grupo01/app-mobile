@@ -88,9 +88,16 @@ type MainView = "servers" | "dm";
 interface HomeScreenProps {
   /** La pantalla de carga ya estaba a la vista antes de montar el home. */
   resumesLoader?: boolean;
+  /** Código de un link `discordia://invite/…` que todavía no se abrió. */
+  pendingInviteCode?: string | null;
+  onInviteOpened?: () => void;
 }
 
-export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
+export function HomeScreen({
+  resumesLoader = false,
+  pendingInviteCode = null,
+  onInviteOpened,
+}: HomeScreenProps) {
   const colors = useThemeColors();
   const statusBarStyle = useStatusBarStyle();
   const { user, token, logout } = useAuth();
@@ -635,6 +642,11 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
     setIsJoinModalVisible(false);
   }, []);
 
+  function closeJoinModal() {
+    setIsJoinModalVisible(false);
+    onInviteOpened?.();
+  }
+
   function handleAddServer() {
     setIsAddServerSheetVisible(true);
   }
@@ -722,9 +734,13 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
         onCreated={addAndSelect}
       />
       <JoinServerModal
-        visible={isJoinModalVisible}
-        onClose={() => setIsJoinModalVisible(false)}
-        onJoined={addAndSelect}
+        visible={isJoinModalVisible || pendingInviteCode !== null}
+        initialCode={pendingInviteCode ?? ""}
+        onClose={closeJoinModal}
+        onJoined={(server) => {
+          onInviteOpened?.();
+          addAndSelect(server);
+        }}
       />
     </>
   );
@@ -892,9 +908,13 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
         onCreated={addAndSelect}
       />
       <JoinServerModal
-        visible={isJoinModalVisible}
-        onClose={() => setIsJoinModalVisible(false)}
-        onJoined={addAndSelect}
+        visible={isJoinModalVisible || pendingInviteCode !== null}
+        initialCode={pendingInviteCode ?? ""}
+        onClose={closeJoinModal}
+        onJoined={(server) => {
+          onInviteOpened?.();
+          addAndSelect(server);
+        }}
       />
     </View>,
   );

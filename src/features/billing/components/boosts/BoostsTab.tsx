@@ -2,13 +2,13 @@ import {
   BILLING_BOOSTS_COPY,
   BOOST_ACTION_COPY,
   BOOST_TIER_SUMMARIES,
-  groupBoostsByServer,
-  ownBoostsLabel,
+  type BoostedServer,
+  boostedServersCountLabel,
+  boostedServerSummaryLabel,
+  hasBoostedBadge,
   RETRY_LABEL,
-  type ServerBoostGroup,
   serverBoostCount,
   serverBoostLevel,
-  serverBoostsSummaryLabel,
   type ServerSummary,
 } from "@discordia/client-shared";
 
@@ -19,10 +19,13 @@ import { Button } from "../../../../components/ui/Button";
 import { FormErrorBanner } from "../../../../components/ui/FormErrorBanner";
 import { cn } from "../../../../lib/cn";
 import { useThemeColors } from "../../../../theme/theme-context";
+import { BoostedBadge } from "../../../boosts/components/BoostedBadge";
 import { BoostLevelIcon } from "../../../boosts/components/BoostLevelIcon";
-import { useOwnBoosts } from "../../../boosts/useOwnBoosts";
+import { BoostedRing } from "../../../boosts/components/BoostedRing";
 import { resolveServerIconUrl } from "../../../servers/api";
 import { EmptyHistory } from "../history/EmptyHistory";
+import { ListPagination } from "../history/ListPagination";
+import { useBoostedServersPage } from "./useBoostedServersPage";
 import { useServerDirectory } from "./useServerDirectory";
 
 function HowBoostsWork({ onBuyPoints }: { onBuyPoints: () => void }) {
@@ -65,51 +68,59 @@ function HowBoostsWork({ onBuyPoints }: { onBuyPoints: () => void }) {
 }
 
 interface BoostedServerRowProps {
-  group: ServerBoostGroup;
+  boosted: BoostedServer;
+  /** `undefined` si ya no soy miembro: no está en mi lista de servidores. */
   server: ServerSummary | undefined;
   onManage: (serverId: string) => void;
 }
 
-function BoostedServerRow({ group, server, onManage }: BoostedServerRowProps) {
+function BoostedServerRow({
+  boosted,
+  server,
+  onManage,
+}: BoostedServerRowProps) {
+  const level = server ? serverBoostLevel(server) : 0;
+  const isBoosted = hasBoostedBadge(level);
+  const standing = server
+    ? { level, boostCount: serverBoostCount(server) }
+    : null;
+
   return (
     <View className="flex-row items-center gap-3 bg-surface-raised px-4 py-3">
-      <Avatar
-        name={server?.name ?? "?"}
-        uri={server ? resolveServerIconUrl(server.icon_url) : null}
-        size={40}
-        borderRadius={12}
-      />
+      <BoostedRing visible={isBoosted} borderRadius={12}>
+        <Avatar
+          name={server?.name ?? "?"}
+          uri={server ? resolveServerIconUrl(server.icon_url) : null}
+          size={40}
+          borderRadius={12}
+        />
+      </BoostedRing>
       <View className="flex-1">
-        <Text
-          className="font-display text-sm font-bold text-content"
-          numberOfLines={1}
-        >
-          {server?.name ?? BILLING_BOOSTS_COPY.unknownServer}
-        </Text>
+        <View className="flex-row items-center gap-1.5">
+          <Text
+            className={cn(
+              "shrink font-display text-sm font-bold",
+              server ? "text-content" : "text-content-muted",
+            )}
+            numberOfLines={1}
+          >
+            {server?.name ?? BILLING_BOOSTS_COPY.unknownServer}
+          </Text>
+          {isBoosted ? <BoostedBadge size={16} /> : null}
+        </View>
         <View className="mt-0.5 flex-row items-center gap-1.5">
           {server ? (
-            <BoostLevelIcon
-              level={serverBoostLevel(server)}
-              size={14}
-              bare
-              tight
-            />
+            <BoostLevelIcon level={level} size={14} bare tight />
           ) : null}
           <Text className="flex-1 text-xs text-content-subtle">
-            {server
-              ? serverBoostsSummaryLabel(
-                  serverBoostLevel(server),
-                  serverBoostCount(server),
-                  group.boosts.length,
-                )
-              : ownBoostsLabel(group.boosts.length)}
+            {boostedServerSummaryLabel(boosted, standing)}
           </Text>
         </View>
       </View>
       {server ? (
         <TouchableOpacity
           activeOpacity={0.8}
-          onPress={() => onManage(group.serverId)}
+          onPress={() => onManage(boosted.server_id)}
           accessibilityRole="button"
           className="rounded-xl bg-surface-input px-4 py-2"
         >
@@ -129,52 +140,71 @@ interface BoostsTabProps {
 
 export function BoostsTab({ onBuyPoints, onManageServer }: BoostsTabProps) {
   const colors = useThemeColors();
-  const own = useOwnBoosts();
+  const boosted = useBoostedServersPage();
   const servers = useServerDirectory();
-  const groups =
-    own.state.status === "ready" ? groupBoostsByServer(own.state.boosts) : [];
+  const rows = boosted.data?.servers ?? [];
 
   return (
     <View className="gap-6">
       <HowBoostsWork onBuyPoints={onBuyPoints} />
 
       <View>
-        <Text
-          accessibilityRole="header"
-          className="mb-3 font-display text-base font-bold text-content"
-        >
-          {BILLING_BOOSTS_COPY.yourBoostsTitle}
-        </Text>
-        {own.state.status === "error" ? (
+        <View className="mb-3 flex-row items-baseline justify-between gap-3">
+          <Text
+            accessibilityRole="header"
+            className="flex-1 font-display text-base font-bold text-content"
+          >
+            {BILLING_BOOSTS_COPY.yourBoostsTitle}
+          </Text>
+          {boosted.total > 0 ? (
+            <Text className="text-xs font-semibold text-content-subtle">
+              {boostedServersCountLabel(boosted.total)}
+            </Text>
+          ) : null}
+        </View>
+        {boosted.loadError && boosted.data === null ? (
           <View className="gap-3">
-            <FormErrorBanner message={own.state.message} />
+            <FormErrorBanner message={boosted.loadError} />
             <Button
               title={RETRY_LABEL}
               variant="secondary"
-              onPress={own.reload}
+              onPress={boosted.reload}
             />
           </View>
-        ) : own.state.status === "loading" || servers === null ? (
+        ) : boosted.data === null || servers === null ? (
           <View className="items-center py-6">
             <ActivityIndicator size="small" color={colors.textMuted} />
           </View>
-        ) : groups.length === 0 ? (
+        ) : rows.length === 0 ? (
           <EmptyHistory text={BILLING_BOOSTS_COPY.empty} />
         ) : (
-          <View className="overflow-hidden rounded-2xl border border-line">
-            {groups.map((group, index) => (
-              <View
-                key={group.serverId}
-                className={cn(index > 0 && "border-t border-line")}
-              >
-                <BoostedServerRow
-                  group={group}
-                  server={servers.get(group.serverId)}
-                  onManage={onManageServer}
-                />
-              </View>
-            ))}
-          </View>
+          <>
+            <View className="overflow-hidden rounded-2xl border border-line">
+              {rows.map((row, index) => (
+                <View
+                  key={row.server_id}
+                  className={cn(index > 0 && "border-t border-line")}
+                >
+                  <BoostedServerRow
+                    boosted={row}
+                    server={servers.get(row.server_id)}
+                    onManage={onManageServer}
+                  />
+                </View>
+              ))}
+            </View>
+            <ListPagination
+              page={boosted.page}
+              pageCount={boosted.pageCount}
+              range={boosted.range}
+              total={boosted.total}
+              noun={BILLING_BOOSTS_COPY.paginationNoun}
+              onPageChange={boosted.setPage}
+            />
+            <Text className="mt-2 text-xs text-content-subtle">
+              {BILLING_BOOSTS_COPY.footnote}
+            </Text>
+          </>
         )}
       </View>
     </View>

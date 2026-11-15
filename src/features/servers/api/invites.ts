@@ -1,5 +1,4 @@
 import {
-  buildInviteLink,
   type CreateInviteResult,
   type Invitation,
   INVITE_CREATE_FAILED,
@@ -17,19 +16,11 @@ import {
 } from "@discordia/client-shared";
 
 import { apiFetch } from "../../../lib/api-client";
-import { env } from "../../../lib/env";
+import { appInviteLink } from "../../../lib/invite-links";
 
-/**
- * El link que se copia al portapapeles.
- *
- * `env.webUrl` es null mientras no este configurado `EXPO_PUBLIC_WEB_URL`, y
- * en ese caso `buildInviteLink` devuelve una ruta relativa (`/invite/abc`),
- * que pegada en WhatsApp no lleva a ningun lado. Es el estado actual, no algo
- * que este refactor haya introducido: se ve aca porque el parametro es
- * obligatorio justamente para que no pase desapercibido.
- */
+/** El link que se muestra y se copia: el de la app, no el de la web. */
 export function inviteLinkText(code: string): string {
-  return buildInviteLink(code, env.webUrl);
+  return appInviteLink(code);
 }
 
 export async function generateInvite(

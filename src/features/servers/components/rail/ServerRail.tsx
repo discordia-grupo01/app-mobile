@@ -1,5 +1,7 @@
 import {
+  BOOSTED_BADGE_COPY,
   boostLevelLabel,
+  hasBoostedBadge,
   isServerMuted,
   NO_UNREAD_FLAGS,
   pendingReportsLabel,
@@ -26,6 +28,7 @@ import { ReportsBadge } from "../../../reports/components/shared/ReportsBadge";
 import { ServerOptionsSheet } from "./ServerOptionsSheet";
 import { useTheme, useThemeColors } from "../../../../theme/theme-context";
 import { Avatar } from "../../../../components/ui/Avatar";
+import { BoostedRing } from "../../../boosts/components/BoostedRing";
 import { BoostLevelIcon } from "../../../boosts/components/BoostLevelIcon";
 import { CountBadge } from "../../../../components/ui/CountBadge";
 
@@ -66,9 +69,11 @@ function ServerRailIcon({
     ? 0
     : pendingReportsOf(pendingReportsContext, item.id);
   const boostLevel = isSuspended ? 0 : serverBoostLevel(item);
+  const isBoosted = hasBoostedBadge(boostLevel);
   const label = [
     railIconLabel(item.name, shown, isSuspended),
     boostLevel > 0 ? boostLevelLabel(boostLevel) : null,
+    isBoosted ? BOOSTED_BADGE_COPY.label : null,
   ]
     .filter(Boolean)
     .join(". ");
@@ -94,7 +99,7 @@ function ServerRailIcon({
       ) : shown.unread ? (
         <View className="absolute left-0 top-[50%] -mt-1 w-1 h-2 rounded-xs bg-server-pill" />
       ) : null}
-      <View>
+      <BoostedRing visible={isBoosted} borderRadius={active ? 16 : 24}>
         <Avatar
           name={item.name}
           uri={resolveServerIconUrl(item.icon_url)}
@@ -110,7 +115,7 @@ function ServerRailIcon({
             ]}
           />
         ) : null}
-      </View>
+      </BoostedRing>
       {pendingReports > 0 ? (
         <ReportsBadge
           label={pendingReportsLabel(pendingReports, item.name)}
