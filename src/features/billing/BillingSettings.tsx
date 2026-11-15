@@ -1,4 +1,5 @@
 import {
+  BILLING_BOOSTS_COPY,
   BILLING_COPY,
   type BillingSection,
   type CheckoutItem,
@@ -19,6 +20,7 @@ import { useAuth } from "../auth/auth-context";
 import { getOwnProfile } from "../profile/service";
 import { useBillingOverview } from "./useBillingOverview";
 import { useCheckout } from "./components/checkout/useCheckout";
+import { BoostsTab } from "./components/boosts/BoostsTab";
 import { BillingHistory } from "./components/history/BillingHistory";
 import { BillingSectionHeader } from "./components/shared/BillingSectionHeader";
 import { CheckoutConfirmModal } from "./components/checkout/CheckoutConfirmModal";
@@ -32,9 +34,15 @@ import { PremiumShowcase } from "./components/premium/PremiumShowcase";
 interface BillingSettingsProps {
   tab: BillingSection;
   onNavigate: (tab: BillingSection) => void;
+  /** "Gestionar" en Boosts de servidor: cierra la cuenta y abre la sección Boosts. */
+  onOpenServerBoosts: (serverId: string) => void;
 }
 
-export function BillingSettings({ tab, onNavigate }: BillingSettingsProps) {
+export function BillingSettings({
+  tab,
+  onNavigate,
+  onOpenServerBoosts,
+}: BillingSettingsProps) {
   const colors = useThemeColors();
   const { user, updateUser } = useAuth();
   const { state, reload, setPremium } = useBillingOverview();
@@ -150,6 +158,7 @@ export function BillingSettings({ tab, onNavigate }: BillingSettingsProps) {
           </View>
           <PointsShop
             packages={state.packages}
+            onShowBoosts={() => onNavigate("boosts")}
             onBuy={(pack) =>
               openCheckout({
                 kind: "points",
@@ -158,6 +167,19 @@ export function BillingSettings({ tab, onNavigate }: BillingSettingsProps) {
                 priceCents: pack.price_cents,
               })
             }
+          />
+        </>
+      ) : null}
+
+      {tab === "boosts" ? (
+        <>
+          <BillingSectionHeader
+            title={BILLING_BOOSTS_COPY.title}
+            subtitle={BILLING_BOOSTS_COPY.subtitle}
+          />
+          <BoostsTab
+            onBuyPoints={() => onNavigate("points")}
+            onManageServer={onOpenServerBoosts}
           />
         </>
       ) : null}

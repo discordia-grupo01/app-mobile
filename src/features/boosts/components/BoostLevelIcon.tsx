@@ -21,19 +21,40 @@ interface BoostLevelIconProps {
   size?: number;
   dimmed?: boolean;
   bare?: boolean;
+  /** Sobre un fondo `accent`: el borde de las barras llenas va claro. */
+  onAccent?: boolean;
+  /** Recorta el aire alrededor de las barras: para tamaños chicos. */
+  tight?: boolean;
 }
+
+const ON_ACCENT_STROKE_WIDTH = 0.4;
 
 export function BoostLevelIcon({
   level,
   size = 16,
   dimmed = false,
   bare = false,
+  onAccent = false,
+  tight = false,
 }: BoostLevelIconProps) {
   const colors = useThemeColors();
-  const { viewBox, bars, strokeWidth, filledStrokeWidth, emptyDash } =
-    BOOST_LEVEL_ICON;
+  const {
+    viewBox,
+    tightViewBox,
+    bars,
+    strokeWidth,
+    filledStrokeWidth,
+    emptyDash,
+  } = BOOST_LEVEL_ICON;
+  const filledStroke = onAccent
+    ? PREMIUM_BRAND_COLORS.paper
+    : colors.boostLevelOutline;
   const svg = (
-    <Svg width={size} height={size} viewBox={brandViewBox(viewBox)}>
+    <Svg
+      width={size}
+      height={size}
+      viewBox={brandViewBox(tight ? tightViewBox : viewBox)}
+    >
       {bars.map(({ fill, ...bar }, index) => {
         const filled = index < level;
         return (
@@ -41,8 +62,14 @@ export function BoostLevelIcon({
             key={bar.y}
             {...bar}
             fill={filled ? PREMIUM_BRAND_COLORS[fill] : "none"}
-            stroke={filled ? colors.boostLevelOutline : colors.boostLevelEmpty}
-            strokeWidth={filled ? filledStrokeWidth : strokeWidth}
+            stroke={filled ? filledStroke : colors.boostLevelEmpty}
+            strokeWidth={
+              filled
+                ? onAccent
+                  ? ON_ACCENT_STROKE_WIDTH
+                  : filledStrokeWidth
+                : strokeWidth
+            }
             strokeDasharray={filled ? undefined : emptyDash}
           />
         );

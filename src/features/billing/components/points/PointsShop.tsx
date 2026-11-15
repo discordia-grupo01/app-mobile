@@ -11,13 +11,15 @@ import { Text, TouchableOpacity, View } from "react-native";
 import { Button } from "../../../../components/ui/Button";
 import { cn } from "../../../../lib/cn";
 import { DiscordiaPointIcon } from "../shared/DiscordiaIcons";
+import { BoostPointsPromo } from "./BoostPointsPromo";
 
 interface PointsShopProps {
   packages: PointsPackage[];
   onBuy: (pack: PointsPackage) => void;
+  onShowBoosts: () => void;
 }
 
-export function PointsShop({ packages, onBuy }: PointsShopProps) {
+export function PointsShop({ packages, onBuy, onShowBoosts }: PointsShopProps) {
   const [selectedId, setSelectedId] = useState(
     packages[Math.floor(packages.length / 2)]?.id ?? null,
   );
@@ -31,6 +33,10 @@ export function PointsShop({ packages, onBuy }: PointsShopProps) {
       <Text className="mt-1 text-[13px] text-content-subtle">
         {BILLING_COPY.buyPointsHint}
       </Text>
+
+      <View className="mt-3">
+        <BoostPointsPromo onShowBoosts={onShowBoosts} />
+      </View>
 
       <View
         accessibilityRole="radiogroup"

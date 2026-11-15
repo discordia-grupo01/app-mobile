@@ -1,4 +1,5 @@
 import {
+  BILLING_BOOSTS_COPY,
   BILLING_COPY,
   type BillingSection,
   isBillingSection,
@@ -29,6 +30,7 @@ import { LogoutConfirmModal } from "./LogoutConfirmModal";
 import { PinSetupPanel } from "./PinSetupPanel";
 import { TwoFactorPanel } from "./TwoFactorPanel";
 import { useModalInsets } from "../../../platform-status/hooks/useModalInsets";
+import { serverBoostsRequest } from "../../../../lib/navigationRequests";
 
 type Section =
   | "menu"
@@ -51,6 +53,7 @@ const TITLES: Record<Section, string> = {
   premium: "Premium",
   subscriptions: BILLING_COPY.subscriptionsTitle,
   points: BILLING_COPY.pointsTitle,
+  boosts: BILLING_BOOSTS_COPY.title,
   transactions: BILLING_COPY.transactionsTitle,
 };
 
@@ -65,11 +68,14 @@ const BACK_TARGET: Record<Section, Section> = {
   premium: "menu",
   subscriptions: "menu",
   points: "menu",
+  boosts: "menu",
   transactions: "menu",
 };
 
 interface AccountSettingsSheetProps {
   visible: boolean;
+  /** Solapa con la que se abre (por ejemplo, Puntos desde Boosts). */
+  initialSection?: BillingSection;
   isPinEnabled: boolean;
   onClose: () => void;
   onLogout: () => void;
@@ -79,6 +85,7 @@ interface AccountSettingsSheetProps {
 
 export function AccountSettingsSheet({
   visible,
+  initialSection,
   isPinEnabled,
   onClose,
   onLogout,
@@ -87,7 +94,7 @@ export function AccountSettingsSheet({
 }: AccountSettingsSheetProps) {
   const colors = useThemeColors();
   const insets = useModalInsets();
-  const [section, setSection] = useState<Section>("menu");
+  const [section, setSection] = useState<Section>(initialSection ?? "menu");
   const [isConfirmVisible, setIsConfirmVisible] = useState(false);
   const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
 
@@ -104,6 +111,11 @@ export function AccountSettingsSheet({
     setIsConfirmVisible(false);
     handleClose();
     onLogout();
+  }
+
+  function openServerBoosts(serverId: string) {
+    handleClose();
+    serverBoostsRequest.request(serverId);
   }
 
   function goBack() {
@@ -177,7 +189,11 @@ export function AccountSettingsSheet({
             <View className="pt-4">
               <BillingTabs active={section} onSelect={setSection} />
               <View className="px-4.5 pt-5">
-                <BillingSettings tab={section} onNavigate={setSection} />
+                <BillingSettings
+                  tab={section}
+                  onNavigate={setSection}
+                  onOpenServerBoosts={openServerBoosts}
+                />
               </View>
             </View>
           ) : section === "two-factor" ? (

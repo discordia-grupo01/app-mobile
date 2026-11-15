@@ -1,5 +1,6 @@
 import {
   ACTIVITY_STATUS_LABEL,
+  type BillingSection,
   resolveImageUrl,
   VOICE_MODERATOR_MUTED,
   VOICE_MUTE_LABEL,
@@ -7,10 +8,11 @@ import {
 } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 
 import { env } from "../../../../lib/env";
+import { accountSettingsRequest } from "../../../../lib/navigationRequests";
 import { useThemeColors, useTheme } from "../../../../theme/theme-context";
 import { useAuth } from "../../../auth/auth-context";
 import { OwnProfileModal } from "../../../profile/components/OwnProfileModal";
@@ -32,6 +34,10 @@ export function UserProfileBar({ userName, onLogout }: UserProfileBarProps) {
   const colors = useThemeColors();
   const { user, isPinEnabled } = useAuth();
   const [isSettingsVisible, setIsSettingsVisible] = useState(false);
+  const [settingsRequest, setSettingsRequest] = useState<{
+    section: BillingSection;
+    id: number;
+  } | null>(null);
   const [isProfileVisible, setIsProfileVisible] = useState(false);
   const voice = useOptionalVoiceSession();
   const isMicMuted = voice?.state.muted ?? false;
@@ -43,6 +49,21 @@ export function UserProfileBar({ userName, onLogout }: UserProfileBarProps) {
   const avatarSrc = resolveImageUrl(user?.avatar_url, env.apiUrl);
   const statusText = user?.status_text?.trim();
   const activityStatus = usePresenceOf(user?.id);
+
+  // "Ir a comprar puntos" desde Boosts abre la configuración en esa solapa.
+  useEffect(
+    () =>
+      accountSettingsRequest.subscribe(() => {
+        const section = accountSettingsRequest.take();
+        if (!section) return;
+        setSettingsRequest((current) => ({
+          section,
+          id: (current?.id ?? 0) + 1,
+        }));
+        setIsSettingsVisible(true);
+      }),
+    [],
+  );
 
   return (
     <>
@@ -134,9 +155,14 @@ export function UserProfileBar({ userName, onLogout }: UserProfileBarProps) {
       />
 
       <AccountSettingsSheet
+        key={settingsRequest?.id ?? 0}
+        initialSection={settingsRequest?.section}
         visible={isSettingsVisible}
         isPinEnabled={isPinEnabled}
-        onClose={() => setIsSettingsVisible(false)}
+        onClose={() => {
+          setIsSettingsVisible(false);
+          setSettingsRequest(null);
+        }}
         onLogout={onLogout}
         theme={theme}
         onSelectTheme={setTheme}
