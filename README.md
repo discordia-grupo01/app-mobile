@@ -85,34 +85,34 @@ Las variables `EXPO_PUBLIC_*` del APK salen de `eas.json`, no de `.env`, porque 
 
 Se leen de un archivo `.env`. El archivo [`.env.example`](.env.example) trae los valores por defecto. Las variables `EXPO_PUBLIC_` quedan incluidas en la app: no pongas secretos ahí.
 
-| Variable | Default | Descripción |
-|---|---|---|
-| `EXPO_PUBLIC_API_URL` | `https://discordia-g1.duckdns.org` | URL del gateway (Kong). Desde un celular tiene que ser una dirección que el celular alcance. |
-| `EXPO_PUBLIC_WEB_URL` | la web en Vercel | URL de `web-client`. Arma los links de invitación y carga la página de voz. Tiene que ser `https` (o `localhost`): sin eso el WebView no da acceso al micrófono. |
-| `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` | vacío | Client ID de Google (tipo "Web application"). Es el mismo que usan `identify-service` y `web-client`. |
-| `EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID` | vacío | Client ID de Android, solo para un build nativo con identificador propio. |
-| `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` | vacío | Client ID de iOS, solo para un build nativo con identificador propio. |
+| Variable                               | Default                            | Descripción                                                                                                                                                      |
+| -------------------------------------- | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `EXPO_PUBLIC_API_URL`                  | `https://discordia-g1.duckdns.org` | URL del gateway (Kong). Desde un celular tiene que ser una dirección que el celular alcance.                                                                     |
+| `EXPO_PUBLIC_WEB_URL`                  | la web en Vercel                   | URL de `web-client`. Arma los links de invitación y carga la página de voz. Tiene que ser `https` (o `localhost`): sin eso el WebView no da acceso al micrófono. |
+| `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`     | vacío                              | Client ID de Google (tipo "Web application"). Es el mismo que usan `identify-service` y `web-client`.                                                            |
+| `EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID` | vacío                              | Client ID de Android, solo para un build nativo con identificador propio.                                                                                        |
+| `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`     | vacío                              | Client ID de iOS, solo para un build nativo con identificador propio.                                                                                            |
 
 Variables que usa solo `docker-compose.yml`:
 
-| Variable | Default | Descripción |
-|---|---|---|
+| Variable        | Default     | Descripción                                                                                         |
+| --------------- | ----------- | --------------------------------------------------------------------------------------------------- |
 | `PACKAGER_HOST` | `localhost` | Dirección de tu computadora en la red local, que el celular usa para encontrar el servidor de Expo. |
-| `METRO_PORT` | `8081` | Puerto del servidor de Expo en tu máquina. |
+| `METRO_PORT`    | `8081`      | Puerto del servidor de Expo en tu máquina.                                                          |
 
 ## Comandos Docker
 
 Todos desde la raíz del repositorio.
 
-| Qué querés hacer | Comando |
-|---|---|
-| Levantar el servidor de Expo | `docker compose up` |
-| Levantar en segundo plano | `docker compose up -d` |
-| Ver los logs | `docker compose logs -f metro` |
-| Ver si está listo | `curl http://localhost:8081/status` |
-| Ver qué está corriendo | `docker compose ps` |
-| Bajar todo | `docker compose down` |
-| Bajar todo y borrar las dependencias instaladas | `docker compose down -v` |
+| Qué querés hacer                                | Comando                             |
+| ----------------------------------------------- | ----------------------------------- |
+| Levantar el servidor de Expo                    | `docker compose up`                 |
+| Levantar en segundo plano                       | `docker compose up -d`              |
+| Ver los logs                                    | `docker compose logs -f metro`      |
+| Ver si está listo                               | `curl http://localhost:8081/status` |
+| Ver qué está corriendo                          | `docker compose ps`                 |
+| Bajar todo                                      | `docker compose down`               |
+| Bajar todo y borrar las dependencias instaladas | `docker compose down -v`            |
 
 ## Tests
 
@@ -122,11 +122,11 @@ npm test
 
 Corre los tests con Jest (`jest-expo`). Para revisar el resto del código:
 
-| Qué | Comando |
-|---|---|
-| Linter (ESLint) | `npm run lint` |
-| Tipos (TypeScript) | `npm run typecheck` |
-| Formato | `npm run format:check` (y `npm run format` para arreglarlo) |
+| Qué                | Comando                                                     |
+| ------------------ | ----------------------------------------------------------- |
+| Linter (ESLint)    | `npm run lint`                                              |
+| Tipos (TypeScript) | `npm run typecheck`                                         |
+| Formato            | `npm run format:check` (y `npm run format` para arreglarlo) |
 
 El CI corre todo eso en cada pull request. El repositorio se formatea con Prettier; activá el hook una vez por clon:
 
