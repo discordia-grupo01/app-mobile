@@ -1,6 +1,5 @@
 import {
   billingErrorMessage,
-  BOOSTS_LIST_MAX_LIMIT,
   BOOSTS_LOAD_ERROR,
 } from "@discordia/client-shared";
 
@@ -9,7 +8,8 @@ import { apiFetch } from "../../lib/api-client";
 import {
   getBoost,
   getServerBoostSummary,
-  listOwnBoosts,
+  listBoostedServersPage,
+  listServerBoostsPage,
   removeBoost,
   requestBoost,
 } from "./api";
@@ -108,17 +108,36 @@ describe("requestBoost", () => {
   });
 });
 
-describe("listOwnBoosts", () => {
-  it("pide el máximo y devuelve la lista", async () => {
-    mockedFetch.mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      data: { boosts: [pendingBoost] },
-    });
+describe("listServerBoostsPage", () => {
+  it("pide la página del servidor con offset", async () => {
+    const page = {
+      boosts: [pendingBoost],
+      total: 13,
+      active: 7,
+      limit: 10,
+      offset: 10,
+    };
+    mockedFetch.mockResolvedValueOnce({ ok: true, status: 200, data: page });
 
-    expect(await listOwnBoosts()).toEqual({ ok: true, data: [pendingBoost] });
+    expect(await listServerBoostsPage("s1", 2)).toEqual({
+      ok: true,
+      data: page,
+    });
     expect(mockedFetch).toHaveBeenCalledWith(
-      `/v1/billing/boosts?limit=${BOOSTS_LIST_MAX_LIMIT}`,
+      "/v1/billing/boosts?server_id=s1&limit=10&offset=10",
+      { method: "GET" },
+    );
+  });
+});
+
+describe("listBoostedServersPage", () => {
+  it("pide los servidores que boosteé de a 10", async () => {
+    const page = { servers: [], total: 0, limit: 10, offset: 0 };
+    mockedFetch.mockResolvedValueOnce({ ok: true, status: 200, data: page });
+
+    expect(await listBoostedServersPage(1)).toEqual({ ok: true, data: page });
+    expect(mockedFetch).toHaveBeenCalledWith(
+      "/v1/billing/boosts/servers?limit=10&offset=0",
       { method: "GET" },
     );
   });

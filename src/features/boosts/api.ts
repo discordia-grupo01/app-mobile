@@ -1,9 +1,11 @@
 import {
   type BillingResult,
   type Boost,
-  BOOSTS_LIST_MAX_LIMIT,
+  type BoostedServersPage,
+  boostedServersPageParams,
+  type BoostPage,
   BOOSTS_LOAD_ERROR,
-  type BoostsResponse,
+  boostsPageParams,
   messageFor,
   type ServerBoostSummary,
   toServerBoostSummary,
@@ -17,7 +19,8 @@ import { toBillingResult } from "../billing/api";
  *
  *   GET    /v1/servers/:id/boosts    -> 200 resumen del servidor (servers)
  *   POST   /v1/billing/boosts        -> 202 boost "pending" | 409 INSUFFICIENT_POINTS
- *   GET    /v1/billing/boosts?limit= -> 200 {boosts}: los míos, de todos los servidores
+ *   GET    /v1/billing/boosts?server_id=&limit=&offset= -> 200 BoostPage: los míos en un servidor, retirados incluidos
+ *   GET    /v1/billing/boosts/servers?limit=&offset=    -> 200 BoostedServersPage: los servidores que boosteé
  *   GET    /v1/billing/boosts/:id    -> 200 boost | 404 BOOST_NOT_FOUND
  *   DELETE /v1/billing/boosts/:id    -> 200 boost "removed" | 409 BOOST_NOT_ACTIVE
  *
@@ -57,14 +60,32 @@ export async function requestBoost(
   );
 }
 
-export async function listOwnBoosts(): Promise<BillingResult<Boost[]>> {
-  const result = toBillingResult(
-    await apiFetch<BoostsResponse>(
-      `/v1/billing/boosts?limit=${BOOSTS_LIST_MAX_LIMIT}`,
+function withQuery(path: string, params: Record<string, string>): string {
+  return `${path}?${new URLSearchParams(params).toString()}`;
+}
+
+export async function listServerBoostsPage(
+  serverId: string,
+  page: number,
+): Promise<BillingResult<BoostPage>> {
+  return toBillingResult(
+    await apiFetch<BoostPage>(
+      withQuery("/v1/billing/boosts", boostsPageParams(serverId, page)),
       { method: "GET" },
     ),
   );
-  return result.ok ? { ok: true, data: result.data.boosts ?? [] } : result;
+}
+
+/** Una página (1-based) de los servidores que boosteé. */
+export async function listBoostedServersPage(
+  page: number,
+): Promise<BillingResult<BoostedServersPage>> {
+  return toBillingResult(
+    await apiFetch<BoostedServersPage>(
+      withQuery("/v1/billing/boosts/servers", boostedServersPageParams(page)),
+      { method: "GET" },
+    ),
+  );
 }
 
 export async function getBoost(boostId: string): Promise<BillingResult<Boost>> {

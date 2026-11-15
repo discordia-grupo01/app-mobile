@@ -4,6 +4,7 @@ import {
   boostRemoveImpact,
   boostRemoveNoRefund,
   boostRemoveTitle,
+  boostRemoveVanityNote,
   lostPerksIfRemoved,
 } from "@discordia/client-shared";
 
@@ -74,6 +75,9 @@ export function RemoveBoostModal({
               )}
             >
               {boostRemoveImpact(boostCount)}
+              {boostRemoveVanityNote(boostCount)
+                ? ` ${boostRemoveVanityNote(boostCount)}`
+                : null}
             </Text>
           </View>
 

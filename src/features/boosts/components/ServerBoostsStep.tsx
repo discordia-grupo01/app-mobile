@@ -10,7 +10,6 @@ import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 import { Button } from "../../../components/ui/Button";
 import { FormErrorBanner } from "../../../components/ui/FormErrorBanner";
 import { useThemeColors } from "../../../theme/theme-context";
-import { useOwnBoosts } from "../useOwnBoosts";
 import { useServerBoostSummary } from "../useServerBoostSummary";
 import { BoostPerksTable } from "./BoostPerksTable";
 import { BoostShowcase } from "./BoostShowcase";
@@ -28,7 +27,6 @@ export function ServerBoostsStep({
 }: ServerBoostsStepProps) {
   const colors = useThemeColors();
   const { summary, loadError, retry } = useServerBoostSummary(server.id);
-  const own = useOwnBoosts();
   const [tab, setTab] = useState<BoostSectionTab>("boost");
 
   return (
@@ -47,7 +45,6 @@ export function ServerBoostsStep({
         <ServerBoostTab
           server={server}
           summary={summary}
-          own={own}
           onSummaryStale={retry}
           onBuyPoints={onBuyPoints}
         />

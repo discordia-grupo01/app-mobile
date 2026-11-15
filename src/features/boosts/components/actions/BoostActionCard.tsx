@@ -1,18 +1,25 @@
 import {
   BOOST_ACTION_COPY,
   BOOST_COST_POINTS,
+  type BoostBlockReason,
+  boostCapNote,
   boostPointsMissingLabel,
-  canAffordBoost,
+  MAX_BOOST_LEVEL,
 } from "@discordia/client-shared";
+import { Feather } from "@expo/vector-icons";
 
 import { Text, TouchableOpacity, View } from "react-native";
 
 import { cn } from "../../../../lib/cn";
+import { useThemeColors } from "../../../../theme/theme-context";
 import { DiscordiaPointIcon } from "../../../billing/components/shared/DiscordiaIcons";
 import { BoostActionIcon } from "../BoostActionIcon";
+import { BoostLevelIcon } from "../BoostLevelIcon";
 
 interface BoostActionCardProps {
+  serverName: string;
   balance: number;
+  blockReason: BoostBlockReason | null;
   onBoost: () => void;
   onBuyPoints: () => void;
 }
@@ -34,11 +41,15 @@ function PointsFact({ label, value }: { label: string; value: number }) {
 }
 
 export function BoostActionCard({
+  serverName,
   balance,
+  blockReason,
   onBoost,
   onBuyPoints,
 }: BoostActionCardProps) {
-  const canAfford = canAffordBoost(balance);
+  const colors = useThemeColors();
+  const blocked = blockReason !== null;
+  const capReached = blockReason === "cap";
 
   return (
     <View className="overflow-hidden rounded-2xl border border-line bg-surface-raised">
@@ -71,51 +82,66 @@ export function BoostActionCard({
         <TouchableOpacity
           activeOpacity={0.85}
           onPress={onBoost}
-          disabled={!canAfford}
+          disabled={blocked}
           accessibilityRole="button"
-          accessibilityState={{ disabled: !canAfford }}
+          accessibilityState={{ disabled: blocked }}
           className={cn(
             "flex-row items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5",
-            !canAfford && "opacity-50",
+            blocked && "opacity-50",
           )}
         >
-          <View className="h-5.5 w-5.5 items-center justify-center rounded-md bg-surface-modal">
-            <BoostActionIcon size={16} />
-          </View>
+          {capReached ? (
+            <BoostLevelIcon level={MAX_BOOST_LEVEL} size={18} bare onAccent />
+          ) : (
+            <View className="h-5.5 w-5.5 items-center justify-center rounded-md bg-surface-modal">
+              <BoostActionIcon size={16} />
+            </View>
+          )}
           <Text className="font-display text-sm font-bold text-on-accent">
-            {BOOST_ACTION_COPY.cta}
+            {capReached ? BOOST_ACTION_COPY.capCta : BOOST_ACTION_COPY.cta}
           </Text>
         </TouchableOpacity>
       </View>
 
-      <View
-        className={cn(
-          "flex-row items-center justify-between gap-3 border-t px-4 py-2.5",
-          canAfford
-            ? "border-line bg-surface-input"
-            : "border-line bg-danger-soft",
-        )}
-      >
-        <Text
+      {capReached ? (
+        <View className="flex-row items-center gap-2.5 border-t border-line bg-surface-input px-4 py-2.5">
+          <Feather name="info" size={16} color={colors.textMuted} />
+          <Text className="flex-1 text-xs text-content-muted">
+            {boostCapNote(serverName)}
+          </Text>
+        </View>
+      ) : (
+        <View
           className={cn(
-            "flex-1 text-xs",
-            canAfford ? "text-content-muted" : "font-semibold text-danger",
+            "flex-row items-center justify-between gap-3 border-t px-4 py-2.5",
+            blockReason === "balance"
+              ? "border-boost-warn-line bg-boost-warn-soft"
+              : "border-line bg-surface-input",
           )}
         >
-          {canAfford
-            ? BOOST_ACTION_COPY.moreBoosts
-            : boostPointsMissingLabel(balance)}
-        </Text>
-        <TouchableOpacity
-          onPress={onBuyPoints}
-          accessibilityRole="link"
-          hitSlop={8}
-        >
-          <Text className="text-xs font-semibold text-accent-strong">
-            {BOOST_ACTION_COPY.buyPoints}
+          <Text
+            className={cn(
+              "flex-1 text-xs",
+              blockReason === "balance"
+                ? "font-semibold text-boost-warn"
+                : "text-content-muted",
+            )}
+          >
+            {blockReason === "balance"
+              ? boostPointsMissingLabel(balance)
+              : BOOST_ACTION_COPY.moreBoosts}
           </Text>
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity
+            onPress={onBuyPoints}
+            accessibilityRole="link"
+            hitSlop={8}
+          >
+            <Text className="text-xs font-semibold text-accent-strong">
+              {BOOST_ACTION_COPY.buyPoints}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 }

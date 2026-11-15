@@ -1,14 +1,11 @@
-import {
-  BILLING_HISTORY_PAGE_SIZE,
-  paginationSummary,
-} from "@discordia/client-shared";
+import { BILLING_HISTORY_PAGE_SIZE } from "@discordia/client-shared";
 
 import type { ReactNode } from "react";
 import { Text, View } from "react-native";
 
-import { Pagination } from "../../../../components/ui/Pagination";
 import { usePagination } from "../../../../hooks/usePagination";
 import { EmptyHistory } from "./EmptyHistory";
+import { ListPagination } from "./ListPagination";
 
 interface HistoryListProps<T> {
   title: string;
@@ -20,7 +17,6 @@ interface HistoryListProps<T> {
   renderItem: (item: T) => ReactNode;
 }
 
-/** Bloque del historial: título, lista en tarjeta, vacío punteado y paginado de a 10. */
 export function HistoryList<T>({
   title,
   subtitle,
@@ -58,26 +54,14 @@ export function HistoryList<T>({
         </View>
       )}
 
-      {paged.pageCount > 1 ? (
-        <View className="mt-3 items-center gap-2">
-          <Text
-            accessibilityLiveRegion="polite"
-            className="text-[12px] text-content-muted"
-          >
-            {paginationSummary(
-              paged.range.from,
-              paged.range.to,
-              paged.total,
-              noun,
-            )}
-          </Text>
-          <Pagination
-            page={paged.page}
-            pageCount={paged.pageCount}
-            onPageChange={paged.setPage}
-          />
-        </View>
-      ) : null}
+      <ListPagination
+        page={paged.page}
+        pageCount={paged.pageCount}
+        range={paged.range}
+        total={paged.total}
+        noun={noun}
+        onPageChange={paged.setPage}
+      />
     </View>
   );
 }

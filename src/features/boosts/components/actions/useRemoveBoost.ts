@@ -5,7 +5,7 @@ import { useCallback, useState } from "react";
 import { changeBus } from "../../../../lib/changeBus";
 import { removeBoost } from "../../api";
 
-export function useRemoveBoost(onRemoved: (boost: Boost) => void) {
+export function useRemoveBoost(onRemoved: () => void) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,9 +19,7 @@ export function useRemoveBoost(onRemoved: (boost: Boost) => void) {
         setError(result.message);
         return false;
       }
-      onRemoved(result.data);
-      // servers baja el contador al recibir el evento: el nivel puede tardar un
-      // instante más y llega con el aviso del socket.
+      onRemoved();
       changeBus.publish({ resource: "server", server_id: boost.server_id });
       return true;
     },

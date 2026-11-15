@@ -4,6 +4,7 @@ import {
   BOOST_COST_POINTS,
   BOOST_OUTCOME_ACTIONS,
   boostLevelLabel,
+  boostCapNote,
   boostLevelUpNotice,
   boostOutcomeCopy,
   boostRefundDelta,
@@ -24,7 +25,6 @@ import { BoostActionIcon } from "../BoostActionIcon";
 import { BoostLevelIcon } from "../BoostLevelIcon";
 import type { BoostFlow } from "./useBoostServer";
 
-/** Boosts del servidor y saldo al abrir el diálogo, antes de este boost. */
 export interface BoostConfirmSnapshot {
   boostCount: number;
   balance: number;
@@ -35,6 +35,7 @@ interface BoostConfirmModalProps {
   snapshot: BoostConfirmSnapshot | null;
   flow: BoostFlow;
   error: string | null;
+  capReached: boolean;
   onConfirm: () => void;
   onClose: () => void;
 }
@@ -100,17 +101,21 @@ function Fact({
 }
 
 interface BoostConfirmFormProps {
+  serverName: string;
   snapshot: BoostConfirmSnapshot;
   submitting: boolean;
   error: string | null;
+  capReached: boolean;
   onConfirm: () => void;
   onClose: () => void;
 }
 
 function BoostConfirmForm({
+  serverName,
   snapshot,
   submitting,
   error,
+  capReached,
   onConfirm,
   onClose,
 }: BoostConfirmFormProps) {
@@ -150,7 +155,11 @@ function BoostConfirmForm({
         />
       </View>
 
-      {levelUpNotice ? (
+      {capReached ? (
+        <Text className="rounded-xl bg-boost-warn-soft px-4 py-3 text-sm font-semibold leading-5 text-boost-warn">
+          {boostCapNote(serverName)}
+        </Text>
+      ) : levelUpNotice ? (
         <Text className="rounded-xl bg-boost-column px-4 py-3 text-sm leading-5 text-content">
           {levelUpNotice}
         </Text>
@@ -169,6 +178,7 @@ function BoostConfirmForm({
         <Button
           title={BOOST_CONFIRM_COPY.confirm}
           isLoading={submitting}
+          disabled={capReached}
           onPress={onConfirm}
           style={{ flex: 1, width: undefined }}
         />
