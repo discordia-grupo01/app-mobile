@@ -1,167 +1,140 @@
-# discordia-app-mobile
+# app-mobile
 
-Cliente mobile de Discordia (React Native + Expo).
+Aplicación móvil de Discordia.
 
-## Stack
+## Tabla de contenidos
 
-- Lenguaje: TypeScript
-- Framework: React Native 0.88 (Expo, SDK 58)
-- Testing: Jest (`jest-expo`)
+- [Introducción](#introducción)
+- [Pre-requisitos](#pre-requisitos)
+- [Cómo correr](#cómo-correr)
+- [Variables de entorno](#variables-de-entorno)
+- [Comandos Docker](#comandos-docker)
+- [Tests](#tests)
+- [Más documentación](#más-documentación)
 
-## Requisitos
+## Introducción
 
-- **Node.js 22.13 o más nuevo** (SDK 58 no funciona con Node 20). Con nvm alcanza con `nvm install && nvm use`: toma la versión de `.nvmrc`.
-- **Expo Go para SDK 58** en el celular, que es la versión actual de App Store y Play Store. Si Expo Go muestra "Project is incompatible with this version of Expo Go", la versión de Expo Go y el SDK del proyecto no coinciden.
+`app-mobile` es el cliente móvil de Discordia, para Android e iOS: registro e inicio de sesión (con email, con Google, con PIN y con segundo factor), servidores, canales de texto y de voz, mensajes directos, notificaciones push, perfil y Premium. Cubre las historias de usuario final del catálogo para el celular.
 
-## Setup local
+Está hecha con React Native y Expo (SDK 58), en TypeScript, con NativeWind para los estilos y Jest para los tests. La lógica que comparte con la web (tipos, textos y funciones puras) vive en el paquete [`client-shared`](https://github.com/discordia-grupo01/client-shared); acá queda lo que es propio del celular: las pantallas, los hooks y el acceso a la API.
+
+Todos los pedidos van al gateway (Kong), nunca directo a un servicio. La sesión se guarda en el almacenamiento del teléfono. La llamada de voz corre dentro de una página de la web (`/voice-embed`) cargada en un WebView, salvo compartir pantalla, que solo existe en el APK de Android y abre una segunda conexión nativa a la sala.
+
+La app se puede probar de dos formas: con **Expo Go** (la app de Expo, sin instalar nada propio) o como un **APK** de Android que se genera con EAS Build.
+
+## Pre-requisitos
+
+- **Node.js 22.13 o más nuevo** y **npm**, si querés correrla en tu máquina. El SDK 58 no funciona con Node 20.
+- **Docker** y **Docker Compose** v2.24 o más nuevo, si preferís levantar el servidor de la app en un contenedor.
+- **Expo Go para SDK 58** en el celular (la versión actual de App Store y Play Store). Si muestra "Project is incompatible with this version of Expo Go", la versión de Expo Go y la del SDK no coinciden.
+- **Una cuenta de Expo** (gratis), con la misma sesión iniciada en Expo Go y en tu computadora (`npx expo login`).
+- **El backend**, para que la app tenga a quién hablarle. Por defecto apunta al de producción. Para uno propio, lo más simple es el repositorio [`infrastructure`](https://github.com/discordia-grupo01/infrastructure).
+
+## Cómo correr
+
+### Para desarrollar
+
+Es la forma más cómoda: el servidor de Expo corre en tu máquina, con recarga en caliente, y mostrás la app en el celular:
 
 ```bash
-nvm use
 cp .env.example .env
 npm install
 npm start
 ```
 
-Si venías de SDK 57 o de Node 20, reinstalá las dependencias de cero: `rm -rf node_modules && npm install`.
+Expo muestra un código QR. Escanealo con la cámara (iOS) o con Expo Go (Android) y la app se abre en el celular. El celular y la computadora tienen que estar en la misma red.
 
-Desde ahi, Expo CLI muestra un QR para abrir la app en el celular (con Expo Go) o las opciones para emulador Android / simulador iOS.
+Si querés probar contra un backend levantado en tu máquina, el celular no puede usar `localhost`: poné en `EXPO_PUBLIC_API_URL` la dirección de tu computadora en la red local (por ejemplo `http://192.168.0.10:8000`).
 
-## Conectar con el backend real (Expo Go, Android y iOS)
+También podés abrir la app en un emulador de Android (`npm run android`) o en el simulador de iOS (`npm run ios`).
 
-Pasos para levantar todo el backend y probar app-mobile conectada de verdad, desde un celular con Expo Go.
+### Con Docker Compose
 
-**Requisito previo:** tener los repos `infrastructure`, `identify-service`, `servers` y `gateway` clonados. `infrastructure` levanta todo lo demás.
-
-1. **Levantar el backend:**
-
-   ```bash
-   cd infrastructure
-   cp .env.example .env
-   docker compose up --build
-   ```
-
-   Esperar a que las migraciones corran y los servicios queden arriba (logs de `identity`, `servers` y `gateway` sin errores).
-
-2. **Instalar Expo Go en el celular** (App Store en iOS, Play Store en Android; tiene que ser la versión para SDK 58) y crear o loguearse con una cuenta de Expo (gratis).
-
-3. **Loguearse con esa misma cuenta en la compu**, dentro de `app-mobile`:
-
-   ```bash
-   npx expo login
-   ```
-
-   Expo Go pide estar logueado con la misma cuenta en ambos lados para poder conectar.
-
-4. **Levantar app-mobile:**
-
-   ```bash
-   cd app-mobile
-   cp .env.example .env
-   npm install
-   npm start
-   ```
-
-5. **Escanear el QR** que muestra la terminal (con la app Camara en iOS, o con el lector de Expo Go en Android). El celular tiene que estar conectado a la **misma red WiFi** que la compu donde corre Docker.
-
-   - En iOS, la primera vez puede aparecer un permiso de "Red Local" (Local Network) — hay que aceptarlo, si no la app no va a poder llegar ni al bundler ni al backend.
-   - Si la red tiene "client isolation" (comun en WiFi de facultades/eventos, que aisla dispositivos entre si) o hay un firewall bloqueando el puerto 8000 en la compu, la conexion va a fallar aunque esten en la misma red.
-
-## Variables de entorno
-
-| Variable            | Default | Descripcion                                                                                                                           |
-| ------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| EXPO_PUBLIC_API_URL | (vacio) | URL base del Gateway (Kong) al que le pega la app. Debe empezar con `EXPO_PUBLIC_` para que Expo la incluya en el bundle del cliente. |
-
-**Por qué `EXPO_PUBLIC_API_URL` queda vacía por default:** si tiene un valor, ese valor se usa tal cual (útil para apuntar a un backend hosteado más adelante). Si está vacía, `src/lib/env.ts` detecta sola la IP correcta usando `Constants.expoConfig.hostUri` de Expo — la misma IP que Expo Go ya usó para conectarse al bundler al escanear el QR — y arma la URL del backend a partir de esa IP en el puerto 8000. Esto evita tener que hardcodear y actualizar la IP a mano cada vez que alguien del equipo prueba desde otra red (localhost no sirve desde un celular; en emulador Android hace falta `10.0.2.2`; en celular fisico hace falta la IP de LAN de la compu; con auto-deteccion, ninguno de esos casos requiere tocar el `.env`).
-
-Este mecanismo solo funciona corriendo `expo start` en modo LAN (el default, sin `--tunnel`). Si mas adelante se hostea el backend, ahí sí conviene setear `EXPO_PUBLIC_API_URL` explicitamente a esa URL publica.
-
-`.env.example` solo trae la estructura (sin valores sensibles). Los valores reales van en tu propio `.env`, que nunca se sube (ya esta en `.gitignore`).
-
-## Estructura de carpetas
-
-```
-app-mobile/
-├── App.tsx                    entrypoint: componente raiz de la app
-├── index.ts                   registra App.tsx como root component (no editar)
-├── app.json                   configuracion de Expo (nombre, icono, splash, etc.)
-├── eslint.config.js           config de ESLint (eslint-config-expo)
-├── src/
-│   ├── components/
-│   │   ├── ui/                   componentes de UI genericos y reutilizables (Button, TextField)
-│   │   ├── icons/                iconos custom (ej. GoogleIcon)
-│   │   └── <feature>/            componentes propios de una feature (ej. auth: LoginForm)
-│   ├── features/                 codigo agrupado por dominio (auth, ...)
-│   │   └── <feature>/            types, validacion, service y contexto/hooks de esa feature (archivos sueltos, sin subcarpetas)
-│   ├── hooks/                  hooks de React reutilizables entre features
-│   ├── lib/
-│   │   ├── api-client.ts      cliente HTTP hacia el Gateway (token via AsyncStorage, ApiError tipado)
-│   │   ├── constants.ts       constantes de la app (ej. APP_NAME)
-│   │   ├── env.ts              lectura centralizada de variables de entorno (incluye auto-deteccion de IP)
-│   │   └── storage.ts          helper unico de AsyncStorage para la sesion (token + usuario)
-│   ├── screens/                pantallas de la app (una por flujo)
-│   └── theme/
-│       ├── colors.ts           paleta de colores (alineada a web-client)
-│       ├── spacing.ts          escala de espaciado y radios
-│       ├── typography.ts       tamaños y pesos de fuente
-│       └── index.ts             barrel de theme/
-├── assets/                    iconos, splash screen y logos de Discordia
-├── .github/
-│   └── workflows/
-│       └── ci.yml             format:check, lint, typecheck y test en cada PR/push a main
-├── .githooks/
-│   └── pre-commit             hook de prettier local
-└── .env.example                estructura de variables de entorno (sin valores sensibles)
-```
-
-`components/` y `features/` crecen con cada feature: una carpeta bajo `features/<feature>/` y sus componentes bajo `components/<feature>/`.
-
-La carpeta `src/hooks/` viene vacia (`.gitkeep`) porque todavia no hay hooks custom. Las carpetas `ios/` y `android/` no existen (son generadas por Expo solo si se hace un build nativo/prebuild) y estan en `.gitignore`.
-
-## Comandos
-
-- `npm start` - levanta el bundler de Expo (dev server).
-- `npm run android` / `npm run ios` / `npm run web` - abre la app en esa plataforma.
-- `npm run lint` - corre ESLint (`eslint-config-expo`).
-- `npm run format` / `npm run format:check` - formatea o chequea el formato con Prettier.
-- `npm run typecheck` - chequea tipos con `tsc --noEmit`.
-- `npm run test` - corre los tests con Jest.
-
-## Tests
+Levanta el servidor de Expo (Metro) dentro de un contenedor, sin instalar Node en tu máquina:
 
 ```bash
-npm run test
+docker compose up
 ```
 
-## Formateo automatico
-
-Este repo se autoformatea con Prettier en cada commit. Activalo una vez por clone:
+La primera vez tarda, porque instala las dependencias. Para que el celular encuentre el servidor, decile en qué dirección está tu computadora en la red local, creando un `.env` con esa variable:
 
 ```bash
-git config core.hooksPath .githooks
+echo "PACKAGER_HOST=192.168.0.10" >> .env
+docker compose up
 ```
 
-Si usan VS Code con la extension oficial de Prettier, tambien formatea al guardar (ya configurado en .vscode/settings.json).
+Cuando termine de arrancar, comprobá que esté vivo:
 
-El CI corre `npm run format:check` como red de seguridad (falla si encuentra archivos sin formatear), por si alguien clono sin activar el hook.
+```bash
+curl http://localhost:8081/status
+```
 
-## APK de Android (EAS Build) y compartir pantalla
+Tiene que responder `packager-status:running`. Después abrí la app en el celular con la dirección `exp://<tu IP>:8081` desde Expo Go. Con un emulador o el simulador es más simple usar `npm start`. Este compose levanta solo el servidor de la app: el backend no está incluido.
 
-La app corre en Expo Go (la VM) y tambien como APK generado con EAS Build:
+### APK de Android
+
+Para generar un APK con EAS Build:
 
 ```bash
 eas build -p android --profile preview
 ```
 
-Las `EXPO_PUBLIC_*` del APK salen de `eas.json`, no de `.env` (EAS no sube archivos ignorados por git).
+Las variables `EXPO_PUBLIC_*` del APK salen de `eas.json`, no de `.env`, porque EAS no sube los archivos ignorados por git.
 
-Compartir pantalla solo existe en el APK de Android: la llamada corre en un WebView que no puede capturar la pantalla, asi que el APK abre una segunda conexion nativa a la sala con `@livekit/react-native`, con la identidad `<id>:screen`, que solo publica la pantalla (ver `src/features/voice/screen-share/`). En Expo Go esos modulos nativos no existen: el boton no aparece y la llamada anda igual que siempre. Por eso LiveKit nativo nunca se importa arriba de un archivo, se carga con `loadLiveKitNative()` recien al compartir. Cualquier cambio en dependencias nativas o en los plugins de `app.json` necesita un build nuevo del APK.
+## Variables de entorno
 
-Para que el microfono siga andando con la app minimizada, el APK levanta un servicio en primer plano de tipo `microphone|mediaPlayback` mientras la llamada esta conectada (modulo local `modules/call-service`, usado desde `useCallForegroundService`). Muestra la notificacion fija "En llamada" y se corta al salir de la llamada. Si se desliza la app desde recientes, Android cierra el WebView y la llamada termina. En Expo Go el modulo no existe y no hace nada.
+Se leen de un archivo `.env`. El archivo [`.env.example`](.env.example) trae los valores por defecto. Las variables `EXPO_PUBLIC_` quedan incluidas en la app: no pongas secretos ahí.
 
-## Notas
+| Variable | Default | Descripción |
+|---|---|---|
+| `EXPO_PUBLIC_API_URL` | `https://discordia-g1.duckdns.org` | URL del gateway (Kong). Desde un celular tiene que ser una dirección que el celular alcance. |
+| `EXPO_PUBLIC_WEB_URL` | la web en Vercel | URL de `web-client`. Arma los links de invitación y carga la página de voz. Tiene que ser `https` (o `localhost`): sin eso el WebView no da acceso al micrófono. |
+| `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` | vacío | Client ID de Google (tipo "Web application"). Es el mismo que usan `identify-service` y `web-client`. |
+| `EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID` | vacío | Client ID de Android, solo para un build nativo con identificador propio. |
+| `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` | vacío | Client ID de iOS, solo para un build nativo con identificador propio. |
 
-- Las requests siempre van al Gateway (Kong), nunca directo a un microservicio (ADR-006).
-- Ver la seccion "Conectar con el backend real" para el paso a paso completo de como levantar el backend y probar app-mobile con Expo Go. La deteccion de la URL del backend es automatica.
-- `metro.config.js` hace que `expo-asset` importe el `react-native` original en vez del shim de NativeWind (`react-native-css`), porque ese shim no exporta `AssetRegistry` en RN 0.88. Sin esa excepción la app falla con `Cannot read property 'getAssetByID' of undefined`. Se puede sacar cuando `react-native-css` lo exporte.
-- El cliente HTTP (`src/lib/api-client.ts`) sigue el mismo patron que `web-client` (fetch wrapper + `ApiError` tipado), pero usa `AsyncStorage` en vez de `localStorage` para guardar la sesion (React Native no tiene `localStorage`).
+Variables que usa solo `docker-compose.yml`:
+
+| Variable | Default | Descripción |
+|---|---|---|
+| `PACKAGER_HOST` | `localhost` | Dirección de tu computadora en la red local, que el celular usa para encontrar el servidor de Expo. |
+| `METRO_PORT` | `8081` | Puerto del servidor de Expo en tu máquina. |
+
+## Comandos Docker
+
+Todos desde la raíz del repositorio.
+
+| Qué querés hacer | Comando |
+|---|---|
+| Levantar el servidor de Expo | `docker compose up` |
+| Levantar en segundo plano | `docker compose up -d` |
+| Ver los logs | `docker compose logs -f metro` |
+| Ver si está listo | `curl http://localhost:8081/status` |
+| Ver qué está corriendo | `docker compose ps` |
+| Bajar todo | `docker compose down` |
+| Bajar todo y borrar las dependencias instaladas | `docker compose down -v` |
+
+## Tests
+
+```bash
+npm test
+```
+
+Corre los tests con Jest (`jest-expo`). Para revisar el resto del código:
+
+| Qué | Comando |
+|---|---|
+| Linter (ESLint) | `npm run lint` |
+| Tipos (TypeScript) | `npm run typecheck` |
+| Formato | `npm run format:check` (y `npm run format` para arreglarlo) |
+
+El CI corre todo eso en cada pull request. El repositorio se formatea con Prettier; activá el hook una vez por clon:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+## Más documentación
+
+- [`client-shared`](https://github.com/discordia-grupo01/client-shared): los tipos, textos y funciones que comparten la app, la web y el backoffice.
+- [`infrastructure`](https://github.com/discordia-grupo01/infrastructure): cómo levantar todo el sistema para probar la app conectada de verdad.
