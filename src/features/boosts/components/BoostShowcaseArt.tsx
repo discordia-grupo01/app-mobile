@@ -11,7 +11,7 @@ import { Avatar } from "../../../components/ui/Avatar";
 import { cn } from "../../../lib/cn";
 import { useThemeColors } from "../../../theme/theme-context";
 import { resolveServerIconUrl } from "../../servers/api";
-import { BoostLevelIcon } from "./BoostLevelIcon";
+import { BoostedBadge } from "./BoostedBadge";
 
 type ThemeColorKey = keyof ReturnType<typeof useThemeColors>;
 
@@ -160,16 +160,19 @@ function Art({ perk, server }: BoostShowcaseArtProps) {
       return (
         <>
           <Avatar name={server.name} uri={iconUri} size={44} />
-          <View className="flex-1 gap-1.5">
-            <Text numberOfLines={1} className="text-xs font-bold text-content">
-              {server.name}
-            </Text>
-            <View className="flex-row items-center gap-1.5 self-start rounded-full bg-boost-paper px-2 py-0.75">
-              <BoostLevelIcon level={3} size={13} bare />
-              <Text className="text-[10px] font-bold text-boost-ink">
-                {ART_COPY.badge}
+          <View className="flex-1 gap-1">
+            <View className="flex-row items-center gap-1.5">
+              <Text
+                numberOfLines={1}
+                className="shrink text-xs font-bold text-content"
+              >
+                {server.name}
               </Text>
+              <BoostedBadge size={18} decorative />
             </View>
+            <Text className="text-[10px] font-semibold text-content-muted">
+              {ART_COPY.badge}
+            </Text>
           </View>
         </>
       );

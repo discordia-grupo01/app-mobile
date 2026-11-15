@@ -1,5 +1,6 @@
 import {
   BOOST_MAX_LEVEL_DETAIL,
+  BOOST_MAX_LEVEL_NOTE,
   BOOST_MAX_LEVEL_TITLE,
   type BoostLevel,
   boostActivePerksLabel,
@@ -10,10 +11,12 @@ import {
   boostProgressAriaLabel,
   boostProgressCountLabel,
   boostsToNextLevelParts,
+  hasBoostedBadge,
   type ServerBoostSummary,
 } from "@discordia/client-shared";
 import { Text, View } from "react-native";
 
+import { BoostedBadge } from "./BoostedBadge";
 import { BoostLevelIcon } from "./BoostLevelIcon";
 
 interface BoostStatusCardProps {
@@ -44,6 +47,9 @@ export function BoostStatusCard({ summary }: BoostStatusCardProps) {
                   {boostCountLabel(summary.boost_count)}
                 </Text>
               </View>
+              {hasBoostedBadge(summary.level) ? (
+                <BoostedBadge size={22} />
+              ) : null}
             </View>
             <Text className="text-[13px] leading-[18px] text-boost-on-band-muted">
               {boostActivePerksLabel(summary.level)}
@@ -75,7 +81,11 @@ export function BoostStatusCard({ summary }: BoostStatusCardProps) {
             {boostLevelUnlocks(nextLevel).perks}
           </Text>
         </Text>
-      ) : null}
+      ) : (
+        <Text className="px-4 py-3.5 text-xs leading-[18px] text-content-muted">
+          {BOOST_MAX_LEVEL_NOTE}
+        </Text>
+      )}
     </View>
   );
 }
