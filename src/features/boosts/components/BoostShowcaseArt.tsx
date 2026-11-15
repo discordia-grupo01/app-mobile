@@ -1,7 +1,8 @@
 import {
-  BOOSTED_MAX_ATTACHMENT_MB,
+  BOOST_SHOWCASE_ART_COPY as ART_COPY,
   type BoostPerk,
   type ServerSummary,
+  vanitySlug,
 } from "@discordia/client-shared";
 import { Feather } from "@expo/vector-icons";
 import { Text, View } from "react-native";
@@ -20,18 +21,6 @@ const EMOJI_TILES: readonly { tile: string; icon: ThemeColorKey }[] = [
   { tile: "bg-sky", icon: "boostInk" },
   { tile: "bg-boost-paper", icon: "accent" },
 ];
-
-function vanitySlug(name: string): string {
-  return (
-    name
-      .normalize("NFD")
-      .replace(/[̀-ͯ]/g, "")
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "")
-      .slice(0, 32) || "mi-servidor"
-  );
-}
 
 interface BoostShowcaseArtProps {
   perk: BoostPerk;
@@ -70,7 +59,9 @@ function Art({ perk, server }: BoostShowcaseArtProps) {
             </View>
           ))}
           <View className="h-8.5 justify-center rounded-[10px] bg-boost-yellow px-2.5">
-            <Text className="text-xs font-bold text-boost-ink">+20</Text>
+            <Text className="text-xs font-bold text-boost-ink">
+              {ART_COPY.extraEmojiSlots}
+            </Text>
           </View>
         </>
       );
@@ -91,10 +82,10 @@ function Art({ perk, server }: BoostShowcaseArtProps) {
           </View>
           <View className="gap-1">
             <Text className="text-[11px] font-bold text-content">
-              Lista de servidores
+              {ART_COPY.serverList}
             </Text>
             <Text className="text-[10px] text-content-muted">
-              El ícono puede ser un GIF
+              {ART_COPY.animatedIconHint}
             </Text>
           </View>
         </>
@@ -125,19 +116,21 @@ function Art({ perk, server }: BoostShowcaseArtProps) {
       return (
         <>
           <View className="h-12.5 w-10.5 items-center justify-center rounded-lg bg-info">
-            <Text className="text-[10px] font-bold text-boost-ink">PDF</Text>
+            <Text className="text-[10px] font-bold text-boost-ink">
+              {ART_COPY.attachmentKind}
+            </Text>
           </View>
           <View className="flex-1 gap-1.5">
             <Text className="text-[11px] font-semibold text-content">
-              apuntes.pdf
+              {ART_COPY.attachmentName}
             </Text>
             <View className="h-1.25 overflow-hidden rounded-sm bg-surface-input">
               <View className="h-full w-4/5 bg-info" />
             </View>
             <Text className="text-[10px] text-content-muted">
-              20 MB de{" "}
+              {ART_COPY.attachmentUsed}{" "}
               <Text className="font-bold text-content">
-                {BOOSTED_MAX_ATTACHMENT_MB} MB
+                {ART_COPY.attachmentLimit}
               </Text>
             </Text>
           </View>
@@ -147,7 +140,7 @@ function Art({ perk, server }: BoostShowcaseArtProps) {
       return (
         <View className="flex-1 gap-1.5">
           <Text className="text-[10px] font-bold uppercase tracking-wider text-content-subtle">
-            Invitación
+            {ART_COPY.invite}
           </Text>
           <View className="flex-row items-center gap-2 rounded-[10px] border border-line-strong bg-surface-raised px-2.5 py-2">
             <Feather name="link-2" size={14} color={colors.textMuted} />
@@ -155,7 +148,7 @@ function Art({ perk, server }: BoostShowcaseArtProps) {
               numberOfLines={1}
               className="flex-1 text-xs text-content-muted"
             >
-              /invite/
+              {ART_COPY.invitePath}
               <Text className="font-bold text-boost-yellow">
                 {vanitySlug(server.name)}
               </Text>
@@ -174,7 +167,7 @@ function Art({ perk, server }: BoostShowcaseArtProps) {
             <View className="flex-row items-center gap-1.5 self-start rounded-full bg-boost-paper px-2 py-0.75">
               <BoostLevelIcon level={3} size={13} bare />
               <Text className="text-[10px] font-bold text-boost-ink">
-                Servidor Boosteado
+                {ART_COPY.badge}
               </Text>
             </View>
           </View>
