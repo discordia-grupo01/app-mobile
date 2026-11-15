@@ -11,6 +11,7 @@ import { AuthProvider, useAuth } from "./src/features/auth/auth-context";
 import { AccountSuspendedModal } from "./src/features/auth/components/AccountSuspendedModal";
 import { BlockedUsersProvider } from "./src/features/blocks/blocked-users-context";
 import { useEmailConfirmation } from "./src/features/auth/use-email-confirmation";
+import { usePendingInvite } from "./src/features/servers/usePendingInvite";
 import { configurePushNotifications } from "./src/features/push/notification-handler";
 import { PrivateCallRoot } from "./src/features/private-call/components/PrivateCallRoot";
 import { VoiceSessionProvider } from "./src/features/voice/voice-session-context";
@@ -42,6 +43,8 @@ function AppContent() {
   } = useEmailConfirmation(
     useCallback(() => setAuthScreen("confirm-email"), []),
   );
+
+  const pendingInvite = usePendingInvite();
 
   const [skipPinEntry, setSkipPinEntry] = useState(false);
   // Al reabrir la app con sesion guardada se ve la pantalla de carga mientras
@@ -95,7 +98,11 @@ function AppContent() {
       <BlockedUsersProvider>
         <VoiceSessionProvider>
           <PrivateCallRoot>
-            <HomeScreen resumesLoader={hasShownLoader} />
+            <HomeScreen
+              resumesLoader={hasShownLoader}
+              pendingInviteCode={pendingInvite.code}
+              onInviteOpened={pendingInvite.clear}
+            />
           </PrivateCallRoot>
         </VoiceSessionProvider>
       </BlockedUsersProvider>
