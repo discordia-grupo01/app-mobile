@@ -37,6 +37,8 @@ interface ServerSettingsModalProps {
   /** "boosts" si se entra desde "Boosts del servidor". */
   entry?: SettingsEntry;
   onClose: () => void;
+  /** "Ir a comprar puntos" desde Boosts: quien lo usa cierra la configuracion. */
+  onBuyPoints: () => void;
   /** "Ir al mensaje" desde un reporte: quien lo usa cierra la configuracion. */
   onGoToMessage: (channelId: string, messageId: string) => void;
   /** Se cerro un reporte pendiente: hay que actualizar la bandera. */
@@ -57,6 +59,7 @@ function SettingsBody({
   currentUserId,
   entry = "menu",
   onClose,
+  onBuyPoints,
   onGoToMessage,
   onPendingReportsChanged,
   onUpdated,
@@ -85,6 +88,7 @@ function SettingsBody({
     <>
       <SettingsHeader
         step={step}
+        serverName={server.name}
         pendingReports={pendingReports}
         canGoBack={hasMenu}
         onBack={backToMenu}
@@ -108,10 +112,13 @@ function SettingsBody({
           form={form}
           serverName={server.name}
           onCancel={onClose}
+          onBoost={() => setStep("boosts")}
         />
       ) : null}
 
-      {step === "boosts" ? <ServerBoostsStep server={server} /> : null}
+      {step === "boosts" ? (
+        <ServerBoostsStep server={server} onBuyPoints={onBuyPoints} />
+      ) : null}
 
       {step === "words" ? <WordFilterStep serverId={server.id} /> : null}
 

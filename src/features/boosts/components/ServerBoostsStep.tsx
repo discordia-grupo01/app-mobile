@@ -1,37 +1,61 @@
 import {
+  type BoostSectionTab,
   BOOSTS_SECTION_DESCRIPTION,
   RETRY_LABEL,
   type ServerSummary,
 } from "@discordia/client-shared";
+import { useState } from "react";
 import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 
 import { Button } from "../../../components/ui/Button";
 import { FormErrorBanner } from "../../../components/ui/FormErrorBanner";
 import { useThemeColors } from "../../../theme/theme-context";
+import { useOwnBoosts } from "../useOwnBoosts";
 import { useServerBoostSummary } from "../useServerBoostSummary";
 import { BoostPerksTable } from "./BoostPerksTable";
 import { BoostShowcase } from "./BoostShowcase";
-import { BoostStatusCard } from "./BoostStatusCard";
+import { BoostSectionTabs } from "./navigation/BoostSectionTabs";
+import { ServerBoostTab } from "./ServerBoostTab";
 
-export function ServerBoostsStep({ server }: { server: ServerSummary }) {
+interface ServerBoostsStepProps {
+  server: ServerSummary;
+  onBuyPoints: () => void;
+}
+
+export function ServerBoostsStep({
+  server,
+  onBuyPoints,
+}: ServerBoostsStepProps) {
   const colors = useThemeColors();
   const { summary, loadError, retry } = useServerBoostSummary(server.id);
+  const own = useOwnBoosts();
+  const [tab, setTab] = useState<BoostSectionTab>("boost");
 
   return (
     <ScrollView
       className="flex-1"
-      contentContainerClassName="gap-7 px-4.5 pt-5 pb-8"
+      contentContainerClassName="gap-5 px-4.5 pt-5 pb-8"
+      keyboardShouldPersistTaps="handled"
     >
       <Text className="text-[14px] leading-5 text-content-muted">
         {BOOSTS_SECTION_DESCRIPTION}
       </Text>
 
-      {summary ? (
-        <>
-          <BoostStatusCard summary={summary} />
+      <BoostSectionTabs active={tab} onSelect={setTab} />
+
+      {summary && tab === "boost" ? (
+        <ServerBoostTab
+          server={server}
+          summary={summary}
+          own={own}
+          onSummaryStale={retry}
+          onBuyPoints={onBuyPoints}
+        />
+      ) : summary ? (
+        <View className="gap-7">
           <BoostPerksTable level={summary.level} />
           <BoostShowcase server={server} level={summary.level} />
-        </>
+        </View>
       ) : loadError ? (
         <View className="gap-3">
           <FormErrorBanner message={loadError} />

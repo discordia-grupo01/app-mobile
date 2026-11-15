@@ -72,6 +72,7 @@ import { useMyChannelPermissions } from "../features/channels/useMyChannelPermis
 import { usePushNotificationTap } from "../features/push/notification-handler";
 import { usePushDeviceSync } from "../features/push/use-push-notifications";
 import { useVoiceSession } from "../features/voice/voice-session-context";
+import { serverBoostsRequest } from "../lib/navigationRequests";
 import { getLastLocation, setLastLocation } from "../lib/storage";
 import { avatarUriOf } from "../lib/userProfile";
 import { useStatusBarStyle, useThemeColors } from "../theme/theme-context";
@@ -363,8 +364,10 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
     }
   }, []);
 
+  // `boosts` le llega a quien boostea: así su lista se actualiza aunque se
+  // pierda el aviso `server` del servidor.
   useRefreshOnChange(
-    { resources: ["servers", "server", "channels"] },
+    { resources: ["servers", "server", "channels", "boosts"] },
     reloadServers,
     { enabled: !isLoadingServers },
   );
@@ -604,6 +607,19 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
     setSelectedChannelId(null);
     setLostChannel(null);
   }
+
+  // "Gestionar" desde Facturación › Boosts: se va al servidor y
+  // ServerChannelsScreen abre su sección Boosts.
+  useEffect(
+    () =>
+      serverBoostsRequest.subscribe((serverId) => {
+        setView("servers");
+        setSelectedServerId(serverId);
+        setSelectedChannelId(null);
+        setLostChannel(null);
+      }),
+    [],
+  );
 
   const addAndSelect = useCallback((server: ServerSummary) => {
     setServers((prev) => {
