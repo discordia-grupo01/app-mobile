@@ -32,6 +32,8 @@ import {
 } from "@discordia/client-shared";
 
 import { apiFetch } from "../../lib/api-client";
+
+const RETURN_TO_APP = "app";
 import { getOrCreateDeviceId } from "../../lib/device-id";
 
 export async function registerService(
@@ -43,6 +45,7 @@ export async function registerService(
       name: values.name.trim(),
       email: values.email.trim(),
       password: values.password,
+      return_to: RETURN_TO_APP,
     }),
   });
 
@@ -86,6 +89,13 @@ export async function loginService(
     if (result.status === 401 || result.status === 400) {
       return { ok: false, message: INVALID_CREDENTIALS };
     }
+    if (result.status === 429 || result.code === "LOGIN_ATTEMPTS_EXCEEDED") {
+      return {
+        ok: false,
+        message: messageFor(result, {}, REQUEST_FAILED_MESSAGE),
+        retryAfterSeconds: result.retryAfterSeconds,
+      };
+    }
     return {
       ok: false,
       message: messageFor(result, {}, REQUEST_FAILED_MESSAGE),
@@ -109,7 +119,7 @@ export async function requestEmailConfirmationService(
 ): Promise<EmailConfirmationResult> {
   const result = await apiFetch<{ message: string }>("/v1/email-confirmation", {
     method: "POST",
-    body: JSON.stringify({ email: email.trim() }),
+    body: JSON.stringify({ email: email.trim(), return_to: RETURN_TO_APP }),
   });
 
   if (!result.ok) {

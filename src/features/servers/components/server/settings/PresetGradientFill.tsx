@@ -5,11 +5,13 @@ import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 interface PresetGradientFillProps {
   preset: PresetBanner;
   idPrefix: string;
+  radius?: number;
 }
 
 export function PresetGradientFill({
   preset,
   idPrefix,
+  radius = 0,
 }: PresetGradientFillProps) {
   const gradientId = `${idPrefix}-${preset.id}`;
   return (
@@ -30,6 +32,8 @@ export function PresetGradientFill({
         y={0}
         width="100%"
         height="100%"
+        rx={radius}
+        ry={radius}
         fill={`url(#${gradientId})`}
       />
     </Svg>

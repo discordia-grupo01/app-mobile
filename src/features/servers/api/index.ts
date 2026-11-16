@@ -3,3 +3,4 @@ export * from "./channels";
 export * from "./invites";
 export * from "./members";
 export * from "./channel-permissions";
+export * from "./vanity";

@@ -2,7 +2,6 @@ import { type ReactNode } from "react";
 import {
   KeyboardAvoidingView,
   Modal,
-  Platform,
   Pressable,
   StyleSheet,
   View,
@@ -43,7 +42,7 @@ export function ModalShell({
       onRequestClose={onClose}
     >
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior="padding"
         className="flex-1 bg-[rgba(0,0,0,0.65)] items-center justify-center p-4"
       >
         {dismissOnBackdrop ? (

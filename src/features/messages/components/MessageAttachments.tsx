@@ -4,10 +4,13 @@ import {
   type MessageAttachment,
 } from "@discordia/client-shared";
 import { Feather } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import * as WebBrowser from "expo-web-browser";
-import { Image, Pressable, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 
 import { useThemeColors } from "../../../theme/theme-context";
+
+const IMAGE_FILL = { width: "100%", height: "100%" } as const;
 
 interface MessageAttachmentsProps {
   attachments: MessageAttachment[];
@@ -28,12 +31,17 @@ export function MessageAttachments({ attachments }: MessageAttachmentsProps) {
           accessibilityLabel={`Abrir ${attachment.name}`}
         >
           {isImageAttachment(attachment) ? (
-            <Image
-              source={{ uri: attachment.url }}
-              resizeMode="contain"
-              className="h-56 w-full rounded-[10px] border border-line"
-              accessibilityLabel={attachment.name}
-            />
+            // expo-image y no el Image de React Native: en Android ese no anima
+            // los GIF.
+            <View className="h-56 w-full overflow-hidden rounded-[10px] border border-line">
+              <Image
+                source={{ uri: attachment.url }}
+                contentFit="contain"
+                recyclingKey={attachment.id}
+                style={IMAGE_FILL}
+                accessibilityLabel={attachment.name}
+              />
+            </View>
           ) : (
             <View className="max-w-72 flex-row items-center gap-2 self-start rounded-[10px] border border-line bg-surface-input px-3 py-2">
               <Feather name="file" size={20} color={colors.textSubtle} />

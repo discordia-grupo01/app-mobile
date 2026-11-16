@@ -38,10 +38,12 @@ interface VoiceControlsProps {
   canScreenShare: boolean;
   bottomInset: number;
   onToggleMute: () => void;
-  onToggleCamera: () => void;
+  onToggleCamera?: () => void;
   onToggleScreenShare: () => void;
-  onShowParticipants: () => void;
+  onShowParticipants?: () => void;
   onLeave: () => void;
+  leaveLabel?: string;
+  leaveAccessibilityLabel?: string;
 }
 
 export function VoiceControls({
@@ -56,6 +58,8 @@ export function VoiceControls({
   onToggleScreenShare,
   onShowParticipants,
   onLeave,
+  leaveLabel = VOICE_LEAVE,
+  leaveAccessibilityLabel = VOICE_LEAVE_LABEL,
 }: VoiceControlsProps) {
   return (
     <View
@@ -83,16 +87,18 @@ export function VoiceControls({
           disabled={!canSpeak}
           onPress={onToggleMute}
         />
-        <ControlButton
-          icon={cameraOn ? "video" : "video-off"}
-          label={cameraOn ? VOICE_CAMERA : VOICE_CAMERA_OFF}
-          accessibilityLabel={
-            cameraOn ? VOICE_CAMERA_OFF_ACTION : VOICE_CAMERA_ON_ACTION
-          }
-          tone={cameraOn ? "neutral" : "danger"}
-          isSelected={cameraOn}
-          onPress={onToggleCamera}
-        />
+        {onToggleCamera ? (
+          <ControlButton
+            icon={cameraOn ? "video" : "video-off"}
+            label={cameraOn ? VOICE_CAMERA : VOICE_CAMERA_OFF}
+            accessibilityLabel={
+              cameraOn ? VOICE_CAMERA_OFF_ACTION : VOICE_CAMERA_ON_ACTION
+            }
+            tone={cameraOn ? "neutral" : "danger"}
+            isSelected={cameraOn}
+            onPress={onToggleCamera}
+          />
+        ) : null}
         {canScreenShare || screenSharing ? (
           <ControlButton
             icon="monitor"
@@ -106,20 +112,22 @@ export function VoiceControls({
           />
         ) : null}
 
-        <ControlButton
-          icon="users"
-          label={VOICE_PARTICIPANTS_BUTTON}
-          accessibilityLabel={VOICE_PARTICIPANTS_OPEN}
-          tone="neutral"
-          onPress={onShowParticipants}
-        />
+        {onShowParticipants ? (
+          <ControlButton
+            icon="users"
+            label={VOICE_PARTICIPANTS_BUTTON}
+            accessibilityLabel={VOICE_PARTICIPANTS_OPEN}
+            tone="neutral"
+            onPress={onShowParticipants}
+          />
+        ) : null}
 
         <View className="mx-1 h-10 w-px bg-line" />
 
         <ControlButton
           icon="phone-off"
-          label={VOICE_LEAVE}
-          accessibilityLabel={VOICE_LEAVE_LABEL}
+          label={leaveLabel}
+          accessibilityLabel={leaveAccessibilityLabel}
           tone="danger"
           isLeave
           onPress={onLeave}

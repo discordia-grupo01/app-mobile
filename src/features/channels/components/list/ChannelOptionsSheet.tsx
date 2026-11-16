@@ -2,6 +2,7 @@ import {
   type Channel,
   DELETE_CHANNEL_LABEL,
   EDIT_CHANNEL_LABEL,
+  NOTIFICATION_SETTINGS_MENU_LABEL,
   OVERRIDE_CHANNEL_PERMISSIONS_LABEL,
 } from "@discordia/client-shared";
 
@@ -25,6 +26,7 @@ interface ChannelOptionsSheetProps {
   channel: Channel | null;
   canManageChannel: boolean;
   canManagePermissions: boolean;
+  onNotifications?: () => void;
   onClose: () => void;
   onEdit: () => void;
   onOverridePermissions: () => void;
@@ -74,6 +76,7 @@ export function ChannelOptionsSheet({
   channel,
   canManageChannel,
   canManagePermissions,
+  onNotifications,
   onClose,
   onEdit,
   onOverridePermissions,
@@ -107,6 +110,15 @@ export function ChannelOptionsSheet({
                 {channel.name}
               </Text>
             </View>
+          ) : null}
+
+          {onNotifications ? (
+            <SheetOption
+              icon="bell"
+              label={NOTIFICATION_SETTINGS_MENU_LABEL}
+              color={colors.info}
+              onPress={onNotifications}
+            />
           ) : null}
 
           {canManageChannel ? (

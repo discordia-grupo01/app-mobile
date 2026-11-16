@@ -1,23 +1,29 @@
 import {
   ACTIVITY_STATUS_LABEL,
+  type BillingSection,
   resolveImageUrl,
+  VOICE_DEAFEN_LABEL,
   VOICE_MODERATOR_MUTED,
+  VOICE_UNDEAFEN_LABEL,
   VOICE_MUTE_LABEL,
   VOICE_UNMUTE_LABEL,
 } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 
 import { env } from "../../../../lib/env";
+import { accountSettingsRequest } from "../../../../lib/navigationRequests";
 import { useThemeColors, useTheme } from "../../../../theme/theme-context";
 import { useAuth } from "../../../auth/auth-context";
 import { OwnProfileModal } from "../../../profile/components/OwnProfileModal";
 import { ActivityStatusDot } from "../../../profile/components/ActivityStatusDot";
 import { usePresenceOf } from "../../../presence/PresenceContext";
 import { Avatar } from "../../../../components/ui/Avatar";
+import { NotificationsButton } from "../../../notifications/components/center/NotificationsButton";
 import { AccountSettingsSheet } from "./AccountSettingsSheet";
+import { PrivateCallStrip } from "../../../private-call/components/PrivateCallStrip";
 import { VoiceConnectedStrip } from "../../../voice/components/sidebar/VoiceConnectedStrip";
 import { useOptionalVoiceSession } from "../../../voice/voice-session-context";
 
@@ -30,11 +36,15 @@ export function UserProfileBar({ userName, onLogout }: UserProfileBarProps) {
   const colors = useThemeColors();
   const { user, isPinEnabled } = useAuth();
   const [isSettingsVisible, setIsSettingsVisible] = useState(false);
+  const [settingsRequest, setSettingsRequest] = useState<{
+    section: BillingSection;
+    id: number;
+  } | null>(null);
   const [isProfileVisible, setIsProfileVisible] = useState(false);
   const voice = useOptionalVoiceSession();
   const isMicMuted = voice?.state.muted ?? false;
   const canSpeak = voice?.state.canSpeak ?? true;
-  const [isDeafened, setIsDeafened] = useState(false);
+  const isDeafened = voice?.state.deafened ?? false;
   const { theme, setTheme } = useTheme();
 
   const displayName = (user?.name ?? userName)?.trim() || "Mi cuenta";
@@ -42,9 +52,25 @@ export function UserProfileBar({ userName, onLogout }: UserProfileBarProps) {
   const statusText = user?.status_text?.trim();
   const activityStatus = usePresenceOf(user?.id);
 
+  // "Ir a comprar puntos" desde Boosts abre la configuración en esa solapa.
+  useEffect(
+    () =>
+      accountSettingsRequest.subscribe(() => {
+        const section = accountSettingsRequest.take();
+        if (!section) return;
+        setSettingsRequest((current) => ({
+          section,
+          id: (current?.id ?? 0) + 1,
+        }));
+        setIsSettingsVisible(true);
+      }),
+    [],
+  );
+
   return (
     <>
       <VoiceConnectedStrip />
+      <PrivateCallStrip />
       <View className="flex-row items-center gap-2 px-3.5 py-3.5 border-t border-t-line bg-surface-panel">
         <TouchableOpacity
           className="flex-1 flex-row items-center gap-2 min-w-0"
@@ -75,6 +101,8 @@ export function UserProfileBar({ userName, onLogout }: UserProfileBarProps) {
         </TouchableOpacity>
 
         <View className="shrink-0 flex-row items-center gap-0.5">
+          <NotificationsButton />
+
           <TouchableOpacity
             className="w-9 h-9 rounded-[10px] items-center justify-center"
             onPress={voice?.toggleMute}
@@ -99,10 +127,11 @@ export function UserProfileBar({ userName, onLogout }: UserProfileBarProps) {
 
           <TouchableOpacity
             className="w-9 h-9 rounded-[10px] items-center justify-center"
-            onPress={() => setIsDeafened((prev) => !prev)}
+            onPress={voice?.toggleDeafen}
             accessibilityRole="button"
+            accessibilityState={{ selected: isDeafened }}
             accessibilityLabel={
-              isDeafened ? "Activar audio" : "Silenciar audio (ensordecer)"
+              isDeafened ? VOICE_UNDEAFEN_LABEL : VOICE_DEAFEN_LABEL
             }
           >
             <Feather
@@ -129,9 +158,14 @@ export function UserProfileBar({ userName, onLogout }: UserProfileBarProps) {
       />
 
       <AccountSettingsSheet
+        key={settingsRequest?.id ?? 0}
+        initialSection={settingsRequest?.section}
         visible={isSettingsVisible}
         isPinEnabled={isPinEnabled}
-        onClose={() => setIsSettingsVisible(false)}
+        onClose={() => {
+          setIsSettingsVisible(false);
+          setSettingsRequest(null);
+        }}
         onLogout={onLogout}
         theme={theme}
         onSelectTheme={setTheme}

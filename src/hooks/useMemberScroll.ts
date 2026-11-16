@@ -42,6 +42,7 @@ export function useMemberScroll({
   const [total, setTotal] = useState(0);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const loadedCountRef = useRef(0);
   /** Cambia cada vez que la lista arranca de cero: descarta respuestas viejas. */
   const generation = useRef(0);
   const inFlight = useRef(false);
@@ -98,6 +99,32 @@ export function useMemberScroll({
   }, [reload, enabled]);
 
   const loadedCount = loaded?.length ?? 0;
+  useEffect(() => {
+    loadedCountRef.current = loadedCount;
+  }, [loadedCount]);
+
+  const refresh = useCallback(async () => {
+    const current = generation.current;
+    const wanted = Math.max(loadedCountRef.current, pageSize);
+    let collected: Member[] = [];
+    let latestTotal = 0;
+    while (collected.length < wanted) {
+      const result = await fetchPage({
+        search: debouncedSearch,
+        limit: pageSize,
+        offset: collected.length,
+      });
+      if (current !== generation.current || !result.ok) return;
+      collected = appendMembersPage(collected, result.members);
+      latestTotal = result.total;
+      if (result.members.length === 0 || collected.length >= result.total) {
+        break;
+      }
+    }
+    if (current !== generation.current) return;
+    setLoaded(collected);
+    setTotal(latestTotal);
+  }, [fetchPage, debouncedSearch, pageSize]);
   // Un error no corta la lista: seguir scrolleando vuelve a intentar.
   const hasMore = loaded !== null && loadedCount < total;
 
@@ -117,5 +144,6 @@ export function useMemberScroll({
     errorMessage,
     loadMore,
     reload,
+    refresh,
   };
 }

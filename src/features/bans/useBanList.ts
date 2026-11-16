@@ -3,6 +3,7 @@ import { type Ban, type UnbanMemberResult } from "@discordia/client-shared";
 import { useCallback, useEffect, useState } from "react";
 
 import { useProfileFallback } from "../../hooks/useProfileFallback";
+import { useRefreshOnChange } from "../../hooks/useRefreshOnChange";
 import { listBans, unbanMember } from "./api";
 
 interface LoadState {
@@ -53,6 +54,8 @@ export function useBanList(serverId: string) {
   );
 
   const reload = useCallback(() => setVersion((v) => v + 1), []);
+
+  useRefreshOnChange({ resources: ["moderation"], serverId }, reload);
 
   return {
     bans: useProfileFallback(state.bans),

@@ -3,6 +3,7 @@ import {
   ADD_REACTION_LABEL,
   canDeleteMessage,
   canEditMessage,
+  canReportMessage,
   type Channel,
   LOADING_MESSAGES_LABEL,
   type Member,
@@ -11,11 +12,14 @@ import {
   type MessageJumpTarget,
   type Role,
   SEND_MESSAGES_DENIED_PLACEHOLDER,
+  unknownAuthor,
 } from "@discordia/client-shared";
 
 import { useEffect, useRef, useState } from "react";
 import { Text } from "react-native";
 
+import { ReportSheet } from "../../reports/ReportSheet";
+import type { ReportTarget } from "../../reports/reportTarget";
 import { useServerMembers } from "../../servers/useServerMembers";
 import { useChannelMessages } from "../use-channel-messages";
 import { usePendingMessages } from "../usePendingMessages";
@@ -35,6 +39,8 @@ import { ViewingPastBar } from "./ViewingPastBar";
 
 interface ChannelChatProps {
   serverId: string;
+  /** Para el aviso de quien ve un reporte ("Lo ven los moderadores de ..."). */
+  serverName: string;
   channel: Channel;
   currentAuthor: MessageAuthor | null;
   serverRoles: Role[];
@@ -56,6 +62,7 @@ interface ChannelChatProps {
 
 export function ChannelChat({
   serverId,
+  serverName,
   channel,
   currentAuthor,
   serverRoles,
@@ -116,6 +123,7 @@ export function ChannelChat({
     null,
   );
   const [actionError, setActionError] = useState<string | null>(null);
+  const [reportTarget, setReportTarget] = useState<ReportTarget | null>(null);
 
   // Se salta recien con el historial cargado: si no, la primera carga de lo
   // ultimo se mezclaria con el tramo del pasado.
@@ -174,6 +182,13 @@ export function ChannelChat({
     actionsMessage && currentAuthor
       ? canDeleteMessage(actionsMessage, currentAuthor.id, canManageMessages)
       : false;
+
+  const canReportActions =
+    actionsMessage !== null &&
+    canReportMessage({
+      authorId: actionsMessage.user_id,
+      currentUserId: currentAuthor?.id ?? null,
+    });
 
   const editingMessage =
     messages?.find((m) => m.id === editingMessageId) ?? null;
@@ -290,8 +305,31 @@ export function ChannelChat({
           setDeletingMessageId(actionsMessageId);
           setActionsMessageId(null);
         }}
+        onReport={
+          canReportActions && actionsMessage
+            ? () => {
+                setReportTarget({
+                  kind: "message",
+                  message: actionsMessage,
+                  author:
+                    authors[actionsMessage.user_id] ??
+                    unknownAuthor(actionsMessage.user_id),
+                });
+                setActionsMessageId(null);
+              }
+            : undefined
+        }
         onClose={() => setActionsMessageId(null)}
       />
+
+      {reportTarget ? (
+        <ReportSheet
+          serverId={serverId}
+          serverName={serverName}
+          target={reportTarget}
+          onClose={() => setReportTarget(null)}
+        />
+      ) : null}
 
       <DeleteMessageModal
         visible={deletingMessageId !== null}

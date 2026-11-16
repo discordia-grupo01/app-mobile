@@ -31,6 +31,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { env } from "../../lib/env";
 import { useBlockedUsersContext } from "../blocks/blocked-users-context";
 import { acquireSocket } from "../messages/socket";
+import { useProfileChanges } from "../../hooks/useProfileChanges";
 import { getPublicProfile } from "../profile/service";
 import { listConversations, markConversationRead } from "./api";
 
@@ -117,6 +118,11 @@ export function useDirectMessages(
           callbacksRef.current.onPresenceUpdated?.(entry),
         ownStatusUpdated: (payload) =>
           callbacksRef.current.onOwnStatusUpdated?.(payload),
+        serverLeft: (payload) => callbacksRef.current.onServerLeft?.(payload),
+        serverSuspended: (payload) =>
+          callbacksRef.current.onServerSuspended?.(payload),
+        serverReactivated: (payload) =>
+          callbacksRef.current.onServerReactivated?.(payload),
         connectionLost: () => {
           isJoined.current = false;
           setIsConnected(false);
@@ -145,6 +151,19 @@ export function useDirectMessages(
       release?.();
     };
   }, [currentUserId, reload, applyList, applyDm, attempt]);
+
+  useProfileChanges(
+    (id) => requestedProfiles.current.has(id),
+    ({ id, name, avatar_url }) =>
+      setPartners((prev) => ({
+        ...prev,
+        [id]: messageAuthorOf(
+          id,
+          name,
+          resolveImageUrl(avatar_url, env.apiUrl),
+        ),
+      })),
+  );
 
   // El back solo devuelve ids: nombre y foto se piden una vez por usuario.
   useEffect(() => {
@@ -246,6 +265,37 @@ export function useDirectMessages(
     });
   }, [toConfirm]);
 
+  const markAllConversationsRead = useCallback(async () => {
+    const pending = conversations.filter((conversation) => conversation.unread);
+    const results = await Promise.all(
+      pending.map((conversation) => markConversationRead(conversation.id)),
+    );
+    const read = pending.filter((_, index) => results[index]?.ok);
+    if (read.length > 0) {
+      setConversations((prev) =>
+        read.reduce(
+          (list, conversation) =>
+            markConversationReadIn(
+              list,
+              conversation.id,
+              conversation.last_message?.id,
+            ),
+          prev,
+        ),
+      );
+      setReadKeys((prev) => {
+        const next = new Set(prev);
+        for (const conversation of read) {
+          next.add(
+            conversationReadKey(conversation.id, conversation.last_message?.id),
+          );
+        }
+        return next;
+      });
+    }
+    return read.length === pending.length;
+  }, [conversations]);
+
   // Un chat restaurado tras recargar sin conversacion en el back (ni borrador
   // abierto en esta sesion) no se muestra: el back manda.
   if (
@@ -333,6 +383,7 @@ export function useDirectMessages(
     openConversation,
     closeConversation,
     sendMessage,
+    markAllConversationsRead,
     pushToUserRoom,
     isConnected,
   };

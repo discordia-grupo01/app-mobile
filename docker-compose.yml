@@ -1,0 +1,19 @@
+services:
+  metro:
+    image: node:22-alpine
+    working_dir: /app
+    command: sh -c "apk add --no-cache git >/dev/null && npm install --no-package-lock --no-audit --no-fund && npx expo start --lan --port 8081"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      EXPO_NO_TELEMETRY: "1"
+      REACT_NATIVE_PACKAGER_HOSTNAME: ${PACKAGER_HOST:-localhost}
+    ports:
+      - "${METRO_PORT:-8081}:8081"
+    volumes:
+      - .:/app
+      - mobile_node_modules:/app/node_modules
+
+volumes:
+  mobile_node_modules:

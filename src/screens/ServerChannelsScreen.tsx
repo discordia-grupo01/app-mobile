@@ -1,17 +1,27 @@
 import {
   BANS_TITLE,
+  BOOSTS_SECTION_TITLE,
+  boostLevelLabel,
   type Category,
   type Channel,
+  channelHasNotifications,
   channelsOfCategory,
   type DeleteServerResult,
+  hasModeratorPermissions,
+  isChannelMuted,
   isUnassignedCategory,
   type LeaveServerResult,
+  NOTIFICATION_SETTINGS_MENU_LABEL,
   type OwnershipTransfer,
+  pendingReportsLabel,
   type Role,
+  hasBoostedBadge,
+  serverBoostLevel,
   type ServerSummary,
   sortByPosition,
   topLevelChannels,
   visibleCategories,
+  type UnreadFlags,
 } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
@@ -38,6 +48,9 @@ import { DraggableCategoryList } from "../features/servers/components/category/D
 import { CreateChannelModal } from "../features/channels/components/create/CreateChannelModal";
 import { DeleteChannelModal } from "../features/channels/components/delete/DeleteChannelModal";
 import { ChannelRow } from "../features/channels/components/list/ChannelRow";
+import { NotificationSettingsSheet } from "../features/notifications/components/settings/NotificationSettingsSheet";
+import { useOptionalNotificationSettings } from "../features/notifications/NotificationSettingsContext";
+import type { NotificationTarget } from "../features/notifications/components/settings/useNotificationTarget";
 import {
   DRAG_ROW_HEIGHT,
   DraggableChannelList,
@@ -49,14 +62,27 @@ import {
 import { InviteLinkModal } from "../features/servers/components/server/InviteLinkModal";
 import { LeaveServerModal } from "../features/servers/components/server/LeaveServerModal";
 import { ServerSettingsModal } from "../features/servers/components/server/settings/ServerSettingsModal";
+import type { SettingsEntry } from "../features/servers/components/server/settings/settingsSteps";
 import { TransferOwnershipModal } from "../features/servers/components/server/TransferOwnershipModal";
 import { BanIcon } from "../features/bans/components/BanIcon";
+import { BoostActionIcon } from "../features/boosts/components/BoostActionIcon";
+import { BoostedBadge } from "../features/boosts/components/BoostedBadge";
+import { BoostLevelIcon } from "../features/boosts/components/BoostLevelIcon";
 import { BansModal } from "../features/bans/components/BansModal";
 import { RolesModal } from "../features/roles/RolesModal";
 import { ServerMenuItem } from "../features/servers/components/server/ServerMenuItem";
 import { ServerBanner } from "../features/servers/components/ServerBanner";
 import { ServerRail } from "../features/servers/components/rail/ServerRail";
+import { ReportsBadge } from "../features/reports/components/shared/ReportsBadge";
+import {
+  pendingReportsOf,
+  usePendingReportsContext,
+} from "../features/reports/ReportsContext";
 import { UserProfileBar } from "../features/servers/components/account/UserProfileBar";
+import {
+  accountSettingsRequest,
+  serverBoostsRequest,
+} from "../lib/navigationRequests";
 import { voiceParticipantsHeight } from "../features/voice/components/sidebar/VoiceChannelParticipants";
 import { useServerVoice } from "../features/voice/useServerVoice";
 import { useAuth } from "../features/auth/auth-context";
@@ -67,6 +93,7 @@ import {
   reorderChannels,
   resolveServerBannerUrl,
 } from "../features/servers/api";
+import { useRefreshOnChange } from "../hooks/useRefreshOnChange";
 import { useThemeColors } from "../theme/theme-context";
 
 const HEADER_HEIGHT = 52;
@@ -93,8 +120,8 @@ interface ServerChannelsScreenProps {
   onOpenDirectMessages: () => void;
   unreadDmCount?: number;
   /** Menciones sin leer por canal y por servidor. */
-  unreadMentionsByChannel?: Record<string, number>;
-  unreadMentionsByServer?: Record<string, number>;
+  unreadByChannel?: Record<string, UnreadFlags>;
+  unreadByServer?: Record<string, UnreadFlags>;
   onSwitchServer: (serverId: string) => void;
   onAddServer: () => void;
   onLogout: () => void;
@@ -104,6 +131,8 @@ interface ServerChannelsScreenProps {
     confirmName: string,
   ) => Promise<DeleteServerResult>;
   onServerUpdated: (server: ServerSummary) => void;
+  /** "Ir al mensaje" desde un reporte: abre el canal en ese mensaje. */
+  onGoToMessage: (channelId: string, messageId: string) => void;
 }
 
 export function ServerChannelsScreen({
@@ -124,19 +153,30 @@ export function ServerChannelsScreen({
   onSelectChannel,
   onOpenDirectMessages,
   unreadDmCount,
-  unreadMentionsByChannel = {},
-  unreadMentionsByServer = {},
+  unreadByChannel = {},
+  unreadByServer = {},
   onSwitchServer,
   onAddServer,
   onLogout,
   onLeaveServer,
   onDeleteServer,
   onServerUpdated,
+  onGoToMessage,
 }: ServerChannelsScreenProps) {
   const colors = useThemeColors();
   const { user } = useAuth();
   const currentUserId = user ? String(user.id) : null;
   const voice = useServerVoice(server);
+  const pendingReportsContext = usePendingReportsContext();
+  const canReviewReports = hasModeratorPermissions({
+    isOwner,
+    roles: myRoles,
+  });
+  const pendingReports = canReviewReports
+    ? pendingReportsOf(pendingReportsContext, server.id)
+    : 0;
+  const canOpenServerSettings =
+    canManageServer || canManageMessages || canReviewReports;
   const [expandedVoiceChannels, setExpandedVoiceChannels] = useState<
     ReadonlySet<string>
   >(new Set());
@@ -173,6 +213,8 @@ export function ServerChannelsScreen({
   }
   const [isServerMenuOpen, setIsServerMenuOpen] = useState(false);
   const [isServerSettingsVisible, setIsServerSettingsVisible] = useState(false);
+  const [serverSettingsEntry, setServerSettingsEntry] =
+    useState<SettingsEntry>("menu");
   const [isLeaveModalVisible, setIsLeaveModalVisible] = useState(false);
   const [isInviteModalVisible, setIsInviteModalVisible] = useState(false);
   const [isCreateChannelVisible, setIsCreateChannelVisible] = useState(false);
@@ -197,6 +239,9 @@ export function ServerChannelsScreen({
     section: ChannelSettingsSection;
   } | null>(null);
   const [deletingChannel, setDeletingChannel] = useState<Channel | null>(null);
+  const [notificationTarget, setNotificationTarget] =
+    useState<NotificationTarget | null>(null);
+  const notificationSettings = useOptionalNotificationSettings();
   const [dragError, setDragError] = useState("");
   const [isChannelDragActive, setIsChannelDragActive] = useState(false);
   const [isCategoryDragActive, setIsCategoryDragActive] = useState(false);
@@ -249,6 +294,16 @@ export function ServerChannelsScreen({
     };
   }, [server.id]);
 
+  const refreshPendingTransfer = async () => {
+    const result = await getPendingOwnershipTransfer(server.id);
+    setPendingTransfer(result.ok ? result.transfer : null);
+  };
+
+  useRefreshOnChange(
+    { resources: ["server", "notifications"], serverId: server.id },
+    refreshPendingTransfer,
+  );
+
   const incomingTransfer =
     currentUserId !== null &&
     pendingTransfer !== null &&
@@ -257,6 +312,24 @@ export function ServerChannelsScreen({
       : null;
   const showTransferMenuItem =
     isOwner || (!isLoadingPendingTransfer && incomingTransfer !== null);
+
+  function openServerSettings(entry: SettingsEntry) {
+    setServerSettingsEntry(entry);
+    setIsServerSettingsVisible(true);
+  }
+
+  // "Gestionar" desde Facturación › Boosts: si el pedido es de este servidor,
+  // se abre su sección Boosts (HomeScreen ya cambió de servidor si hacía falta).
+  useEffect(() => {
+    const openIfRequested = () => {
+      if (serverBoostsRequest.take((id) => id === server.id)) {
+        setServerSettingsEntry("boosts");
+        setIsServerSettingsVisible(true);
+      }
+    };
+    openIfRequested();
+    return serverBoostsRequest.subscribe(openIfRequested);
+  }, [server.id]);
 
   /** Cierra el menu del servidor y despues hace lo que pidio el item. */
   function runFromMenu(action: () => void) {
@@ -397,17 +470,35 @@ export function ServerChannelsScreen({
     }
   }
 
+  function hasOptionsFor(channel: Channel): boolean {
+    return (
+      canOpenChannelOptions ||
+      (notificationSettings !== null && channelHasNotifications(channel))
+    );
+  }
+
+  function channelRowPropsOf(channel: Channel) {
+    return {
+      channel,
+      hasOptions: hasOptionsFor(channel),
+      unread: unreadByChannel[channel.id],
+      isMuted:
+        notificationSettings !== null &&
+        isChannelMuted(notificationSettings.settings, channel.id),
+      ...voicePropsOf(channel),
+      onPress: () => onSelectChannel(channel.id),
+      onOptions: () => setChannelOptionsFor(channel),
+    };
+  }
+
+  function openNotificationSettings(target: NotificationTarget) {
+    setChannelOptionsFor(null);
+    setNotificationTarget(target);
+  }
+
   function renderChannelList(channels: Channel[]) {
     return channels.map((channel) => (
-      <ChannelRow
-        key={channel.id}
-        channel={channel}
-        canManage={canOpenChannelOptions}
-        unreadMentions={unreadMentionsByChannel[channel.id]}
-        {...voicePropsOf(channel)}
-        onPress={() => onSelectChannel(channel.id)}
-        onOptions={() => setChannelOptionsFor(channel)}
-      />
+      <ChannelRow key={channel.id} {...channelRowPropsOf(channel)} />
     ));
   }
 
@@ -473,14 +564,7 @@ export function ServerChannelsScreen({
                 onDragActiveChange={setIsChannelDragActive}
                 rowHeightOf={rowHeightOf}
                 renderChannel={(channel) => (
-                  <ChannelRow
-                    channel={channel}
-                    canManage={canOpenChannelOptions}
-                    unreadMentions={unreadMentionsByChannel[channel.id]}
-                    {...voicePropsOf(channel)}
-                    onPress={() => onSelectChannel(channel.id)}
-                    onOptions={() => setChannelOptionsFor(channel)}
-                  />
+                  <ChannelRow {...channelRowPropsOf(channel)} />
                 )}
               />
             ) : (
@@ -499,7 +583,7 @@ export function ServerChannelsScreen({
         activeServerId={server.id}
         isDirectMessagesActive={false}
         unreadDmCount={unreadDmCount}
-        unreadMentionsByServer={unreadMentionsByServer}
+        unreadByServer={unreadByServer}
         onOpenDirectMessages={onOpenDirectMessages}
         onSelectServer={onSwitchServer}
         onAddServer={onAddServer}
@@ -509,7 +593,7 @@ export function ServerChannelsScreen({
         renderChannel={(channel) => (
           <ChannelRow
             channel={channel}
-            canManage={false}
+            hasOptions={false}
             onPress={() => {}}
             onOptions={() => {}}
           />
@@ -568,6 +652,12 @@ export function ServerChannelsScreen({
               >
                 {server.name}
               </Text>
+              {hasBoostedBadge(serverBoostLevel(server)) ? (
+                <BoostedBadge
+                  size={18}
+                  surface={bannerVisible ? "dark" : "theme"}
+                />
+              ) : null}
               <Feather
                 name={isServerMenuOpen ? "chevron-up" : "chevron-down"}
                 size={18}
@@ -596,13 +686,56 @@ export function ServerChannelsScreen({
                   />
                 ) : null}
 
-                {canManageServer || canManageMessages ? (
+                {notificationSettings ? (
+                  <ServerMenuItem
+                    icon="bell"
+                    label={NOTIFICATION_SETTINGS_MENU_LABEL}
+                    onPress={runFromMenu(() =>
+                      setNotificationTarget({
+                        scope: "server",
+                        targetId: server.id,
+                        serverId: server.id,
+                        name: server.name,
+                      }),
+                    )}
+                  />
+                ) : null}
+
+                <ServerMenuItem
+                  icon={<BoostActionIcon size={16} />}
+                  label={BOOSTS_SECTION_TITLE}
+                  trailing={
+                    <View
+                      accessible
+                      accessibilityLabel={boostLevelLabel(
+                        serverBoostLevel(server),
+                      )}
+                    >
+                      <BoostLevelIcon
+                        level={serverBoostLevel(server)}
+                        size={18}
+                        bare
+                      />
+                    </View>
+                  }
+                  onPress={runFromMenu(() => openServerSettings("boosts"))}
+                />
+
+                {canOpenServerSettings ? (
                   <ServerMenuItem
                     icon="settings"
                     label="Configuración del servidor"
-                    onPress={runFromMenu(() =>
-                      setIsServerSettingsVisible(true),
-                    )}
+                    trailing={
+                      pendingReports > 0 ? (
+                        <ReportsBadge
+                          label={pendingReportsLabel(
+                            pendingReports,
+                            server.name,
+                          )}
+                        />
+                      ) : undefined
+                    }
+                    onPress={runFromMenu(() => openServerSettings("menu"))}
                   />
                 ) : null}
 
@@ -710,14 +843,7 @@ export function ServerChannelsScreen({
                     onDragActiveChange={setIsChannelDragActive}
                     rowHeightOf={rowHeightOf}
                     renderChannel={(channel) => (
-                      <ChannelRow
-                        channel={channel}
-                        canManage={canOpenChannelOptions}
-                        unreadMentions={unreadMentionsByChannel[channel.id]}
-                        {...voicePropsOf(channel)}
-                        onPress={() => onSelectChannel(channel.id)}
-                        onOptions={() => setChannelOptionsFor(channel)}
-                      />
+                      <ChannelRow {...channelRowPropsOf(channel)} />
                     )}
                   />
                 ) : (
@@ -764,23 +890,36 @@ export function ServerChannelsScreen({
         </View>
       </ChannelDragProvider>
 
-      {canManageServer || canManageMessages ? (
-        <ServerSettingsModal
-          visible={isServerSettingsVisible}
-          server={server}
-          isOwner={isOwner}
-          canManageServer={canManageServer}
-          canManageMessages={canManageMessages}
-          onClose={() => setIsServerSettingsVisible(false)}
-          onUpdated={(updated) => {
-            setIsServerSettingsVisible(false);
-            onServerUpdated(updated);
-          }}
-          onConfirmDelete={(confirmName) =>
-            onDeleteServer(server.id, confirmName)
-          }
-        />
-      ) : null}
+      <ServerSettingsModal
+        visible={isServerSettingsVisible}
+        server={server}
+        isOwner={isOwner}
+        canManageServer={canManageServer}
+        canManageMessages={canManageMessages}
+        canReviewReports={canReviewReports}
+        pendingReports={pendingReports}
+        currentUserId={currentUserId}
+        entry={serverSettingsEntry}
+        onClose={() => setIsServerSettingsVisible(false)}
+        onBuyPoints={() => {
+          setIsServerSettingsVisible(false);
+          accountSettingsRequest.request("points");
+        }}
+        onGoToMessage={(channelId, messageId) => {
+          setIsServerSettingsVisible(false);
+          onGoToMessage(channelId, messageId);
+        }}
+        onPendingReportsChanged={() =>
+          void pendingReportsContext?.refresh(server.id)
+        }
+        onUpdated={(updated) => {
+          setIsServerSettingsVisible(false);
+          onServerUpdated(updated);
+        }}
+        onConfirmDelete={(confirmName) =>
+          onDeleteServer(server.id, confirmName)
+        }
+      />
       <LeaveServerModal
         visible={isLeaveModalVisible}
         serverName={server.name}
@@ -792,6 +931,11 @@ export function ServerChannelsScreen({
           visible={isInviteModalVisible}
           serverId={server.id}
           serverName={server.name}
+          vanityCode={
+            hasBoostedBadge(serverBoostLevel(server))
+              ? (server.vanity_code ?? null)
+              : null
+          }
           onClose={() => setIsInviteModalVisible(false)}
         />
       ) : null}
@@ -855,24 +999,39 @@ export function ServerChannelsScreen({
           onClose={() => setIsBansModalVisible(false)}
         />
       ) : null}
-      {canOpenChannelOptions ? (
-        <ChannelOptionsSheet
-          visible={channelOptionsFor !== null}
-          channel={channelOptionsFor}
-          canManageChannel={canManageChannels}
-          canManagePermissions={canManageRoles}
-          onClose={() => setChannelOptionsFor(null)}
-          onEdit={() => openChannelSettings(channelOptionsFor, "overview")}
-          onOverridePermissions={() =>
-            openChannelSettings(channelOptionsFor, "permissions")
-          }
-          onDelete={() => {
-            const channel = channelOptionsFor;
-            setChannelOptionsFor(null);
-            setDeletingChannel(channel);
-          }}
-        />
-      ) : null}
+      <ChannelOptionsSheet
+        visible={channelOptionsFor !== null}
+        channel={channelOptionsFor}
+        canManageChannel={canManageChannels}
+        canManagePermissions={canManageRoles}
+        onNotifications={
+          notificationSettings &&
+          channelOptionsFor &&
+          channelHasNotifications(channelOptionsFor)
+            ? () =>
+                openNotificationSettings({
+                  scope: "channel",
+                  targetId: channelOptionsFor.id,
+                  serverId: server.id,
+                  name: channelOptionsFor.name,
+                })
+            : undefined
+        }
+        onClose={() => setChannelOptionsFor(null)}
+        onEdit={() => openChannelSettings(channelOptionsFor, "overview")}
+        onOverridePermissions={() =>
+          openChannelSettings(channelOptionsFor, "permissions")
+        }
+        onDelete={() => {
+          const channel = channelOptionsFor;
+          setChannelOptionsFor(null);
+          setDeletingChannel(channel);
+        }}
+      />
+      <NotificationSettingsSheet
+        target={notificationTarget}
+        onClose={() => setNotificationTarget(null)}
+      />
       {settingsTarget && settingsChannel ? (
         <ChannelSettingsModal
           key={settingsChannel.id}

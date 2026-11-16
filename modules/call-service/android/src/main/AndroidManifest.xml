@@ -1,0 +1,14 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+
+  <application>
+    <!-- stopWithTask: si se desliza la app desde recientes, se corta la llamada. -->
+    <service
+      android:name="expo.modules.callservice.CallForegroundService"
+      android:exported="false"
+      android:stopWithTask="true"
+      android:foregroundServiceType="microphone|mediaPlayback" />
+  </application>
+</manifest>

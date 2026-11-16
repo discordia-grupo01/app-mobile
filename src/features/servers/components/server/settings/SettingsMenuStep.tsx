@@ -1,14 +1,23 @@
 import {
+  BOOSTS_SECTION_SUBTITLE,
+  BOOSTS_SECTION_TITLE,
+  MODERATION_AUDIT_DESCRIPTION,
+  MODERATION_AUDIT_TITLE,
+  pendingReportsLabel,
+  REPORTS_DESCRIPTION,
+  REPORTS_TITLE,
   type ServerSummary,
   WORD_FILTER_TITLE,
 } from "@discordia/client-shared";
 import { Feather } from "@expo/vector-icons";
-import { type ComponentProps } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { type ComponentProps, type ReactElement, type ReactNode } from "react";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 import { Avatar } from "../../../../../components/ui/Avatar";
 import { cn } from "../../../../../lib/cn";
 import { useThemeColors } from "../../../../../theme/theme-context";
+import { BoostsSectionIcon } from "../../../../boosts/components/BoostsSectionIcon";
+import { ReportsBadge } from "../../../../reports/components/shared/ReportsBadge";
 import { resolveServerIconUrl } from "../../../api";
 import type { SettingsStep } from "./SettingsHeader";
 
@@ -19,12 +28,16 @@ function SettingsRow({
   title,
   subtitle,
   danger,
+  badge,
   onPress,
 }: {
-  icon: FeatherIconName;
+  /** Nombre de un icono de Feather, o un icono propio ya dibujado. */
+  icon: FeatherIconName | ReactElement;
   title: string;
   subtitle: string;
   danger?: boolean;
+  /** Va antes de la flecha (por ejemplo, los reportes pendientes). */
+  badge?: ReactNode;
   onPress: () => void;
 }) {
   const colors = useThemeColors();
@@ -42,11 +55,15 @@ function SettingsRow({
           danger ? "bg-[rgba(224,82,82,0.14)]" : "bg-[rgba(36,92,107,0.3)]",
         )}
       >
-        <Feather
-          name={icon}
-          size={20}
-          color={danger ? colors.danger : colors.sky}
-        />
+        {typeof icon === "string" ? (
+          <Feather
+            name={icon}
+            size={20}
+            color={danger ? colors.danger : colors.sky}
+          />
+        ) : (
+          icon
+        )}
       </View>
       <View className="flex-1">
         <Text
@@ -59,6 +76,7 @@ function SettingsRow({
         </Text>
         <Text className="text-[13px] text-content-subtle">{subtitle}</Text>
       </View>
+      {badge}
       <Feather name="chevron-right" size={18} color={colors.textSubtle} />
     </TouchableOpacity>
   );
@@ -69,6 +87,9 @@ interface SettingsMenuStepProps {
   isOwner: boolean;
   canManageServer: boolean;
   canManageMessages: boolean;
+  /** Moderador (`MANAGE_MESSAGES` + `KICK_MEMBERS` + `BAN_MEMBERS`). */
+  canReviewReports: boolean;
+  pendingReports: number;
   onSelect: (step: Exclude<SettingsStep, "menu">) => void;
 }
 
@@ -77,10 +98,15 @@ export function SettingsMenuStep({
   isOwner,
   canManageServer,
   canManageMessages,
+  canReviewReports,
+  pendingReports,
   onSelect,
 }: SettingsMenuStepProps) {
   return (
-    <View className="px-4.5 gap-3">
+    <ScrollView
+      className="flex-1"
+      contentContainerClassName="px-4.5 gap-3 pb-6"
+    >
       <View className="items-center pt-7 pb-6">
         <Avatar
           name={server.name}
@@ -104,12 +130,42 @@ export function SettingsMenuStep({
           onPress={() => onSelect("profile")}
         />
       ) : null}
+      <SettingsRow
+        icon={<BoostsSectionIcon size={22} />}
+        title={BOOSTS_SECTION_TITLE}
+        subtitle={BOOSTS_SECTION_SUBTITLE}
+        onPress={() => onSelect("boosts")}
+      />
       {canManageMessages ? (
         <SettingsRow
           icon="slash"
           title={WORD_FILTER_TITLE}
           subtitle="Mensajes que no se pueden enviar"
           onPress={() => onSelect("words")}
+        />
+      ) : null}
+      {canReviewReports ? (
+        <SettingsRow
+          icon="flag"
+          title={REPORTS_TITLE}
+          subtitle={REPORTS_DESCRIPTION}
+          badge={
+            pendingReports > 0 ? (
+              <ReportsBadge
+                count={pendingReports}
+                label={pendingReportsLabel(pendingReports, server.name)}
+              />
+            ) : undefined
+          }
+          onPress={() => onSelect("reports")}
+        />
+      ) : null}
+      {canReviewReports ? (
+        <SettingsRow
+          icon="file-text"
+          title={MODERATION_AUDIT_TITLE}
+          subtitle={MODERATION_AUDIT_DESCRIPTION}
+          onPress={() => onSelect("audit")}
         />
       ) : null}
       {isOwner ? (
@@ -124,6 +180,6 @@ export function SettingsMenuStep({
           />
         </>
       ) : null}
-    </View>
+    </ScrollView>
   );
 }

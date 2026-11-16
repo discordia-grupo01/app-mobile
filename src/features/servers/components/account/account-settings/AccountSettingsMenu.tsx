@@ -1,12 +1,125 @@
-import { Feather } from "@expo/vector-icons";
-import { Text, TouchableOpacity, View } from "react-native";
+import {
+  BILLING_COPY,
+  type BillingSection,
+  PREMIUM_BRAND_COLORS,
+} from "@discordia/client-shared";
 
+import { Feather } from "@expo/vector-icons";
+import { useState, type ReactNode } from "react";
+import { Pressable, Text, TouchableOpacity, View } from "react-native";
+
+import { withAlpha } from "../../../../../lib/color";
 import { useThemeColors } from "../../../../../theme/theme-context";
+import {
+  BILLING_MENU_ITEMS,
+  type BillingMenuTone,
+} from "../../../../billing/components/navigation/billingMenuItems";
+
+interface SettingsRowProps {
+  icon: ReactNode;
+  iconBackground: string;
+  title: string;
+  subtitle: string;
+  onPress: () => void;
+  /**
+   * Las filas de Facturación toman el color del ítem activo de web al
+   * tocarlas: amarillo, o petrol en Boosts.
+   */
+  highlight?: BillingMenuTone;
+}
+
+const HIGHLIGHT_COLORS: Record<
+  BillingMenuTone,
+  { background: string; tile: string; text: string }
+> = {
+  premium: {
+    background: PREMIUM_BRAND_COLORS.yellow,
+    tile: PREMIUM_BRAND_COLORS.deep,
+    text: PREMIUM_BRAND_COLORS.deep,
+  },
+  boost: {
+    background: PREMIUM_BRAND_COLORS.petrol,
+    tile: PREMIUM_BRAND_COLORS.deep,
+    text: PREMIUM_BRAND_COLORS.paper,
+  },
+};
+
+function SettingsRow({
+  icon,
+  iconBackground,
+  title,
+  subtitle,
+  onPress,
+  highlight,
+}: SettingsRowProps) {
+  const colors = useThemeColors();
+  const [isPressed, setIsPressed] = useState(false);
+  const pressedColors =
+    highlight && isPressed ? HIGHLIGHT_COLORS[highlight] : null;
+
+  return (
+    <Pressable
+      className="mb-3 flex-row items-center gap-4 rounded-2xl border border-line bg-surface-raised p-4"
+      style={
+        pressedColors
+          ? {
+              backgroundColor: pressedColors.background,
+              borderColor: pressedColors.background,
+            }
+          : isPressed
+            ? { opacity: 0.75 }
+            : undefined
+      }
+      onPress={onPress}
+      onPressIn={() => setIsPressed(true)}
+      onPressOut={() => setIsPressed(false)}
+      accessibilityRole="button"
+    >
+      <View
+        className="h-11 w-11 items-center justify-center rounded-xl"
+        style={{
+          backgroundColor: pressedColors ? pressedColors.tile : iconBackground,
+        }}
+      >
+        {icon}
+      </View>
+      <View className="flex-1">
+        <Text
+          className="mb-0.5 text-[16px] font-bold text-content"
+          style={pressedColors ? { color: pressedColors.text } : undefined}
+        >
+          {title}
+        </Text>
+        <Text
+          className="text-[13px] text-content-subtle"
+          style={pressedColors ? { color: pressedColors.text } : undefined}
+        >
+          {subtitle}
+        </Text>
+      </View>
+      <Feather
+        name="chevron-right"
+        size={18}
+        color={pressedColors ? pressedColors.text : colors.textSubtle}
+      />
+    </Pressable>
+  );
+}
+
+function GroupLabel({ children }: { children: string }) {
+  return (
+    <Text className="mb-2.5 mt-3 px-1 text-[14px] font-semibold text-content-muted">
+      {children}
+    </Text>
+  );
+}
 
 interface AccountSettingsMenuProps {
   onSelectAppearance: () => void;
   onSelectNotifications: () => void;
   onSelectSecurity: () => void;
+  onSelectStatus: () => void;
+  onSelectBilling: (section: BillingSection) => void;
   onLogout: () => void;
 }
 
@@ -14,70 +127,62 @@ export function AccountSettingsMenu({
   onSelectAppearance,
   onSelectNotifications,
   onSelectSecurity,
+  onSelectStatus,
+  onSelectBilling,
   onLogout,
 }: AccountSettingsMenuProps) {
   const colors = useThemeColors();
+  const skyTint = withAlpha(colors.info, 0.15);
 
   return (
-    <View className="px-4.5 pt-5">
-      <Text className="mb-4 text-[14px] leading-[19px] text-content-muted">
-        Elegí qué aspecto de tu cuenta querés configurar.
-      </Text>
-
-      <TouchableOpacity
-        activeOpacity={0.75}
-        className="mb-3 flex-row items-center gap-4 rounded-2xl border border-line bg-surface-raised p-4"
+    <View className="px-4.5 pt-2">
+      <GroupLabel>Mi cuenta</GroupLabel>
+      <SettingsRow
+        icon={<Feather name="moon" size={20} color={colors.sky} />}
+        iconBackground={skyTint}
+        title="Apariencia"
+        subtitle="Tema de la aplicación"
         onPress={onSelectAppearance}
-      >
-        <View className="w-11 h-11 rounded-xl items-center justify-center bg-[rgba(107,149,189,0.15)]">
-          <Feather name="sun" size={20} color={colors.sky} />
-        </View>
-        <View className="flex-1">
-          <Text className="text-[16px] font-bold text-content mb-0.5">
-            Apariencia
-          </Text>
-          <Text className="text-[13px] text-content-subtle">
-            Tema de la aplicación
-          </Text>
-        </View>
-        <Feather name="chevron-right" size={18} color={colors.textSubtle} />
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        activeOpacity={0.75}
-        className="mb-3 flex-row items-center gap-4 rounded-2xl border border-line bg-surface-raised p-4"
+      />
+      <SettingsRow
+        icon={<Feather name="bell" size={20} color={colors.sky} />}
+        iconBackground={skyTint}
+        title="Notificaciones"
+        subtitle="Avisos push"
         onPress={onSelectNotifications}
-      >
-        <View className="w-11 h-11 rounded-xl items-center justify-center bg-[rgba(107,149,189,0.15)]">
-          <Feather name="bell" size={20} color={colors.sky} />
-        </View>
-        <View className="flex-1">
-          <Text className="text-[16px] font-bold text-content mb-0.5">
-            Notificaciones
-          </Text>
-          <Text className="text-[13px] text-content-subtle">Avisos push</Text>
-        </View>
-        <Feather name="chevron-right" size={18} color={colors.textSubtle} />
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        activeOpacity={0.75}
-        className="flex-row items-center gap-4 rounded-2xl border border-line bg-surface-raised p-4"
+      />
+      <SettingsRow
+        icon={<Feather name="shield" size={20} color={colors.sky} />}
+        iconBackground={withAlpha(PREMIUM_BRAND_COLORS.petrol, 0.3)}
+        title="Seguridad"
+        subtitle="Acceso y verificación"
         onPress={onSelectSecurity}
-      >
-        <View className="w-11 h-11 rounded-xl items-center justify-center bg-[rgba(36,92,107,0.3)]">
-          <Feather name="shield" size={20} color={colors.sky} />
-        </View>
-        <View className="flex-1">
-          <Text className="text-[16px] font-bold text-content mb-0.5">
-            Seguridad
-          </Text>
-          <Text className="text-[13px] text-content-subtle">
-            Acceso y verificación
-          </Text>
-        </View>
-        <Feather name="chevron-right" size={18} color={colors.textSubtle} />
-      </TouchableOpacity>
+      />
+
+      <GroupLabel>{BILLING_COPY.groupTitle}</GroupLabel>
+      {BILLING_MENU_ITEMS.map((item) => {
+        const Icon = item.icon;
+        return (
+          <SettingsRow
+            key={item.id}
+            icon={<Icon size={22} />}
+            iconBackground={withAlpha(colors.info, 0.15)}
+            title={item.label}
+            subtitle={item.description}
+            highlight={item.tone}
+            onPress={() => onSelectBilling(item.id)}
+          />
+        );
+      })}
+
+      <GroupLabel>Plataforma</GroupLabel>
+      <SettingsRow
+        icon={<Feather name="activity" size={20} color={colors.sky} />}
+        iconBackground={skyTint}
+        title="Estado de la plataforma"
+        subtitle="Servicios e incidentes"
+        onPress={onSelectStatus}
+      />
 
       <TouchableOpacity
         activeOpacity={0.75}
@@ -86,7 +191,10 @@ export function AccountSettingsMenu({
         accessibilityRole="button"
         accessibilityLabel="Cerrar sesión"
       >
-        <View className="w-11 h-11 rounded-xl items-center justify-center bg-[rgba(224,82,82,0.14)]">
+        <View
+          className="h-11 w-11 items-center justify-center rounded-xl"
+          style={{ backgroundColor: withAlpha(colors.danger, 0.14) }}
+        >
           <Feather name="log-out" size={20} color={colors.danger} />
         </View>
         <Text className="flex-1 text-[16px] font-bold text-danger">

@@ -8,7 +8,7 @@ import {
 } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -18,6 +18,7 @@ import {
   View,
 } from "react-native";
 
+import { useRefreshOnChange } from "../../../hooks/useRefreshOnChange";
 import { avatarUriOf } from "../../../lib/userProfile";
 import { BanMemberModal } from "../../bans/components/BanMemberModal";
 import { unmuteMember } from "../../moderation/api";
@@ -28,6 +29,7 @@ import { Avatar } from "../../../components/ui/Avatar";
 import { Button } from "../../../components/ui/Button";
 import { MemberRoleBadges } from "../../roles/components/MemberRoleBadges";
 import { getPublicProfile } from "../service";
+import { PremiumPill } from "../../billing/components/shared/PremiumPill";
 import { MutualServersList } from "./MutualServersList";
 import { ProfileBanner } from "./ProfileBanner";
 import { useBlockedUsersContext } from "../../blocks/blocked-users-context";
@@ -36,6 +38,7 @@ import { useLoadPresence } from "../../presence/useLoadPresence";
 import { UserActivityStatusDot } from "./ActivityStatusDot";
 import { BlockUserModal } from "./BlockUserModal";
 import { MemberActionsSheet } from "./MemberActionsSheet";
+import { ReportSheet } from "../../reports/ReportSheet";
 import { ModalShell } from "../../../components/ui/ModalShell";
 
 interface PublicProfileModalProps {
@@ -55,6 +58,10 @@ interface PublicProfileModalProps {
   /** Se dispara al silenciar o quitar el silencio, para refrescar la lista. */
   onMuteChanged?: () => void;
   canBlock?: boolean;
+  /** "Reportar usuario": solo en un servidor y nunca el perfil propio. */
+  canReport?: boolean;
+  /** Para el aviso del reporte ("Lo ven los moderadores de ..."). */
+  serverName?: string;
   /** Se dispara al banear o expulsar: el miembro ya no esta en el servidor. */
   onBanned?: () => void;
   /** Sin esto no se muestra "Enviar mensaje" (por ejemplo, en tu propio perfil). */
@@ -74,6 +81,8 @@ export function PublicProfileModal({
   mutedUntil = null,
   onMuteChanged,
   canBlock = false,
+  canReport = false,
+  serverName,
   onBanned,
   onSendMessage,
   onClose,
@@ -92,6 +101,7 @@ export function PublicProfileModal({
   const [wasBanned, setWasBanned] = useState(false);
   const [isBlockOpen, setIsBlockOpen] = useState(false);
   const [isActionsOpen, setIsActionsOpen] = useState(false);
+  const [isReportOpen, setIsReportOpen] = useState(false);
   const { blockedIds, blockUser, unblockUser } = useBlockedUsersContext();
   const { store: presenceStore } = usePresenceContext();
   useLoadPresence(presenceStore, visible && userId ? [userId] : []);
@@ -109,6 +119,7 @@ export function PublicProfileModal({
       setIsBanOpen(false);
       setIsBlockOpen(false);
       setIsActionsOpen(false);
+      setIsReportOpen(false);
       setWasBanned(false);
     }
   }
@@ -132,6 +143,17 @@ export function PublicProfileModal({
       cancelled = true;
     };
   }, [visible, userId]);
+
+  const refreshProfile = useCallback(async () => {
+    if (!userId) return;
+    const result = await getPublicProfile(userId);
+    if (result.ok) setProfile(result.user);
+    else if (result.unavailable) setIsUnavailable(true);
+  }, [userId]);
+
+  useRefreshOnChange({ resources: ["profile"], userId }, refreshProfile, {
+    enabled: visible && Boolean(userId),
+  });
 
   const avatarSrc = avatarUriOf(profile);
 
@@ -169,10 +191,11 @@ export function PublicProfileModal({
   const isProfileUnavailable = isUnavailable || Boolean(profile?.is_suspended);
   const hasModeratorActions =
     Boolean(serverId) && (canBan || canKick || canMute);
+  const isReportable = Boolean(serverId && serverName) && canReport;
   const hasMemberActions =
     Boolean(profile) &&
     !isProfileUnavailable &&
-    (hasModeratorActions || canBlock);
+    (hasModeratorActions || canBlock || isReportable);
 
   return (
     <ModalShell visible={visible} onClose={onClose} className="max-w-100">
@@ -236,12 +259,15 @@ export function PublicProfileModal({
             keyboardShouldPersistTaps="handled"
           >
             <View className="mb-4">
-              <Text
-                className="text-[18px] font-bold text-content"
-                numberOfLines={1}
-              >
-                {profile.name}
-              </Text>
+              <View className="flex-row items-center gap-1.5">
+                <Text
+                  className="shrink text-[18px] font-bold text-content"
+                  numberOfLines={1}
+                >
+                  {profile.name}
+                </Text>
+                {profile.premium ? <PremiumPill /> : null}
+              </View>
               {isMuted && currentMutedUntil ? (
                 <View className="mt-1 flex-row items-center gap-1.5">
                   <Feather name="mic-off" size={12} color={colors.danger} />
@@ -348,8 +374,23 @@ export function PublicProfileModal({
             hasModeratorActions && canBan ? () => setIsBanOpen(true) : undefined
           }
           onToggleBlock={canBlock ? () => setIsBlockOpen(true) : undefined}
+          onReport={isReportable ? () => setIsReportOpen(true) : undefined}
           isBlocked={blockedIds.has(profile.id)}
           onClose={() => setIsActionsOpen(false)}
+        />
+      ) : null}
+
+      {isReportOpen && profile && serverId && serverName ? (
+        <ReportSheet
+          serverId={serverId}
+          serverName={serverName}
+          target={{
+            kind: "user",
+            userId: profile.id,
+            name: profile.name,
+            avatarUri: avatarUriOf(profile),
+          }}
+          onClose={() => setIsReportOpen(false)}
         />
       ) : null}
 

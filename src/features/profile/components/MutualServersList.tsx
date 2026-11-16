@@ -1,10 +1,16 @@
-import { type ServerSummary } from "@discordia/client-shared";
+import {
+  hasBoostedBadge,
+  serverBoostLevel,
+  type ServerSummary,
+} from "@discordia/client-shared";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Text, View } from "react-native";
 
+import { useRefreshOnChange } from "../../../hooks/useRefreshOnChange";
 import { listMyServers, resolveServerIconUrl } from "../../servers/api";
 import { Avatar } from "../../../components/ui/Avatar";
+import { BoostedBadge } from "../../boosts/components/BoostedBadge";
 
 interface MutualServersListProps {
   serverIds: string[];
@@ -12,6 +18,13 @@ interface MutualServersListProps {
 
 export function MutualServersList({ serverIds }: MutualServersListProps) {
   const [servers, setServers] = useState<ServerSummary[] | null>(null);
+
+  const refreshServers = useCallback(async () => {
+    const result = await listMyServers();
+    if (result.ok) setServers(result.servers);
+  }, []);
+
+  useRefreshOnChange({ resources: ["servers", "server"] }, refreshServers);
 
   useEffect(() => {
     let cancelled = false;
@@ -50,11 +63,14 @@ export function MutualServersList({ serverIds }: MutualServersListProps) {
                 borderRadius={12}
               />
               <Text
-                className="flex-1 text-[13px] font-semibold text-content-muted"
+                className="shrink text-[13px] font-semibold text-content-muted"
                 numberOfLines={1}
               >
                 {server.name}
               </Text>
+              {hasBoostedBadge(serverBoostLevel(server)) ? (
+                <BoostedBadge size={16} />
+              ) : null}
             </View>
           ))}
         </View>

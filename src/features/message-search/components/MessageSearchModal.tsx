@@ -23,7 +23,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Pagination } from "../../../components/ui/Pagination";
 import { SearchInput } from "../../../components/ui/SearchInput";
@@ -41,6 +40,7 @@ import {
   MessageSearchHint,
   MessageSearchSkeleton,
 } from "./MessageSearchStatus";
+import { useModalInsets } from "../../platform-status/hooks/useModalInsets";
 
 interface MessageSearchModalProps {
   visible: boolean;
@@ -69,7 +69,7 @@ export function MessageSearchModal({
   onClose,
 }: MessageSearchModalProps) {
   const colors = useThemeColors();
-  const insets = useSafeAreaInsets();
+  const insets = useModalInsets();
   const [isPickingAuthor, setIsPickingAuthor] = useState(false);
   const { draft, setDraft, authorId, setAuthorId, submit, validationError } =
     form;

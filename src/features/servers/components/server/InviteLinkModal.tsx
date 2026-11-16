@@ -1,15 +1,17 @@
 import {
+  CHANGE_POLL_INTERVAL_MS,
   daysUntil,
   type Invitation,
   inviteStatus,
   type InviteStatus,
   MAX_USES_LABEL,
   validateMaxUses,
+  VANITY_INVITE_COPY,
 } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -26,16 +28,20 @@ import {
   listInvitations,
   revokeInvite,
 } from "../../api";
+import { useRefreshOnChange } from "../../../../hooks/useRefreshOnChange";
 import { cn } from "../../../../lib/cn";
 import { withAlpha } from "../../../../lib/color";
 import { useThemeColors } from "../../../../theme/theme-context";
 import { ModalShell } from "../../../../components/ui/ModalShell";
 import { ModalCloseButton } from "../../../../components/ui/ModalCloseButton";
+import { ServerVanityLink } from "./ServerVanityLink";
 
 interface InviteLinkModalProps {
   visible: boolean;
   serverId: string;
   serverName: string;
+  /** URL personalizada: servers solo la manda en el nivel 3. */
+  vanityCode: string | null;
   onClose: () => void;
 }
 
@@ -216,6 +222,7 @@ export function InviteLinkModal({
   visible,
   serverId,
   serverName,
+  vanityCode,
   onClose,
 }: InviteLinkModalProps) {
   const colors = useThemeColors();
@@ -240,6 +247,16 @@ export function InviteLinkModal({
       setActiveTab("active");
     }
   }
+
+  const refreshInvitations = useCallback(async () => {
+    const result = await listInvitations(serverId);
+    if (result.ok) setInvitations(result.invitations);
+  }, [serverId]);
+
+  useRefreshOnChange({ resources: [] }, refreshInvitations, {
+    enabled: visible,
+    pollMs: CHANGE_POLL_INTERVAL_MS,
+  });
 
   useEffect(() => {
     if (!visible) return;
@@ -323,6 +340,19 @@ export function InviteLinkModal({
           </Text>
         </View>
       </View>
+
+      {vanityCode ? (
+        <View className="gap-4 px-7 pb-5">
+          <ServerVanityLink code={vanityCode} />
+          <View className="flex-row items-center gap-2.5">
+            <View className="h-px flex-1 bg-line" />
+            <Text className="text-xs text-content-subtle">
+              {VANITY_INVITE_COPY.divider}
+            </Text>
+            <View className="h-px flex-1 bg-line" />
+          </View>
+        </View>
+      ) : null}
 
       <View className="border-t border-t-line px-7 py-5">
         <Text className="text-[11px] font-bold tracking-[1.1px] text-content-subtle mb-2 uppercase">

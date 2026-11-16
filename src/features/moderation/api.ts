@@ -1,6 +1,9 @@
 import {
   type KickMemberResult,
   kickFailureMessage,
+  listModerationAuditFailureMessage,
+  type ListModerationAuditResult,
+  type ModerationAuditPage,
   type MuteMemberResult,
   muteFailureMessage,
   type UnmuteMemberResult,
@@ -57,4 +60,19 @@ export async function unmuteMember(
   );
   if (!result.ok) return { ok: false, message: unmuteFailureMessage(result) };
   return { ok: true };
+}
+
+/** Ver el registro exige ser moderador: los tres permisos juntos. */
+export async function listModerationAudit(
+  serverId: string,
+  query: { limit: number; offset: number },
+): Promise<ListModerationAuditResult> {
+  const result = await apiFetch<ModerationAuditPage>(
+    `/v1/servers/${serverId}/moderation-audit?limit=${query.limit}&offset=${query.offset}`,
+    { method: "GET" },
+  );
+  if (!result.ok) {
+    return { ok: false, message: listModerationAuditFailureMessage(result) };
+  }
+  return { ok: true, entries: result.data.entries, total: result.data.total };
 }

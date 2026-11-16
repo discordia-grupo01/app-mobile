@@ -1,9 +1,13 @@
 import {
+  boostPerkAvailableFrom,
+  canSetServerBanner,
   MAX_NAME,
   MIN_SERVER_NAME,
   PRESET_BANNER_FAILED,
   PRESET_BANNERS,
   type PresetBanner,
+  serverBoostCount,
+  serverBoostLevel,
   type ServerSummary,
   validateServerBanner,
   validateServerIcon,
@@ -47,6 +51,9 @@ export function useServerSettingsForm({
   // viejo se descarta.
   const presetRequestIdRef = useRef(0);
 
+  const boostLevel = serverBoostLevel(server);
+  const isBannerLocked = !canSetServerBanner(boostLevel);
+
   const trimmedName = name.trim();
   const nameChanged = trimmedName !== server.name;
   const hasChanges =
@@ -75,7 +82,7 @@ export function useServerSettingsForm({
   async function pickIcon() {
     setIconError("");
     const result = await pickServerImage({
-      validate: validateServerIcon,
+      validate: (file) => validateServerIcon(file, { boostLevel }),
       purpose: "un ícono",
       fallbackName: "icon.jpg",
     });
@@ -85,6 +92,10 @@ export function useServerSettingsForm({
 
   async function pickBanner() {
     setBannerError("");
+    if (isBannerLocked) {
+      setBannerError(boostPerkAvailableFrom("custom_banner"));
+      return;
+    }
     const result = await pickServerImage({
       validate: validateServerBanner,
       purpose: "un banner",
@@ -102,6 +113,10 @@ export function useServerSettingsForm({
 
   async function choosePreset(preset: PresetBanner) {
     setBannerError("");
+    if (isBannerLocked) {
+      setBannerError(boostPerkAvailableFrom("custom_banner"));
+      return;
+    }
     setSelectedPresetId(preset.id);
     setRemoveBanner(false);
     setIsPreparingBanner(true);
@@ -173,6 +188,9 @@ export function useServerSettingsForm({
     iconPreviewUri,
     bannerPreviewUri,
     selectedPreset,
+    boostLevel,
+    boostCount: serverBoostCount(server),
+    isBannerLocked,
     pickIcon,
     pickBanner,
     choosePreset,

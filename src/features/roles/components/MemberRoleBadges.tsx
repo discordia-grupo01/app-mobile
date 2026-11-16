@@ -1,10 +1,12 @@
 import { hexToRgba, type Role } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -15,6 +17,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { useRefreshOnChange } from "../../../hooks/useRefreshOnChange";
 import { cn } from "../../../lib/cn";
 import { useThemeColors } from "../../../theme/theme-context";
 import { assignRole, listMemberRoles, listRoles, removeRole } from "../api";
@@ -49,6 +52,20 @@ export function MemberRoleBadges({
     setIsPickerOpen(false);
     setSearch("");
   }
+
+  const refreshRoles = useCallback(async () => {
+    const [assigned, available] = await Promise.all([
+      listMemberRoles(serverId, userId),
+      canManage ? listRoles(serverId) : null,
+    ]);
+    if (assigned.ok) setAssignedRoles(assigned.roles);
+    if (available?.ok) setAvailableRoles(available.roles);
+  }, [serverId, userId, canManage]);
+
+  useRefreshOnChange(
+    { resources: ["roles", "members"], serverId },
+    refreshRoles,
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -204,7 +221,10 @@ export function MemberRoleBadges({
           animationType="fade"
           onRequestClose={closePicker}
         >
-          <View className="flex-1 justify-end bg-[rgba(0,0,0,0.6)]">
+          <KeyboardAvoidingView
+            className="flex-1 justify-end bg-[rgba(0,0,0,0.6)]"
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+          >
             <Pressable style={StyleSheet.absoluteFill} onPress={closePicker} />
 
             <View
@@ -220,7 +240,6 @@ export function MemberRoleBadges({
                   onChangeText={setSearch}
                   placeholder="Buscar rol..."
                   placeholderTextColor={colors.textSubtle}
-                  autoFocus
                   className="flex-1 text-[14px] text-content py-0.5"
                 />
                 {search ? (
@@ -241,7 +260,7 @@ export function MemberRoleBadges({
                 </Text>
               ) : (
                 <ScrollView
-                  className="mb-1"
+                  className="shrink mb-1"
                   keyboardShouldPersistTaps="handled"
                   showsVerticalScrollIndicator={false}
                 >
@@ -278,7 +297,7 @@ export function MemberRoleBadges({
                 </ScrollView>
               )}
             </View>
-          </View>
+          </KeyboardAvoidingView>
         </Modal>
       ) : null}
     </View>

@@ -3,7 +3,7 @@
     "name": "Discordia",
     "slug": "app-mobile",
     "scheme": "discordia",
-    "version": "1.0.1",
+    "version": "1.0.4",
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -24,12 +24,13 @@
         "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+        "android.permission.FOREGROUND_SERVICE_MICROPHONE",
         "android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION",
         "android.permission.POST_NOTIFICATIONS"
       ],
       "package": "com.g1discordia.appmobile",
       "googleServicesFile": "./google-services.json",
-      "versionCode": 2
+      "versionCode": 5
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -39,8 +40,12 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/android-icon-monochrome.png",
-          "color": "#072B40"
+          "icon": "./assets/notification-icon.png",
+          "color": "#4889C4",
+          "sounds": [
+            "./assets/sounds/llamada_entrante.wav",
+            "./assets/sounds/nuevo_mensaje.wav"
+          ]
         }
       ],
       "expo-web-browser",

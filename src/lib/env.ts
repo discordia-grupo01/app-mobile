@@ -65,11 +65,19 @@ function resolveVoiceWsUrl(apiUrl: string): string {
   );
 }
 
+function resolveNotificationsWsUrl(apiUrl: string): string {
+  return (
+    process.env.EXPO_PUBLIC_NOTIFICATIONS_WS_URL ??
+    `${apiUrl.replace(/^http/, "ws")}/notifications/socket`
+  );
+}
+
 const apiUrl = resolveApiUrl();
 
 export const env = {
   apiUrl,
   wsUrl: resolveWsUrl(apiUrl),
   voiceWsUrl: resolveVoiceWsUrl(apiUrl),
+  notificationsWsUrl: resolveNotificationsWsUrl(apiUrl),
   webUrl: resolveWebUrl(),
 };

@@ -16,12 +16,14 @@ interface CustomStatusEditorProps {
   statusText: string;
   onSave: (text: string) => Promise<boolean>;
   onClear: () => Promise<boolean>;
+  onStartEditing?: () => void;
 }
 
 export function CustomStatusEditor({
   statusText,
   onSave,
   onClear,
+  onStartEditing,
 }: CustomStatusEditorProps) {
   const colors = useThemeColors();
   const [isEditing, setIsEditing] = useState(false);
@@ -36,6 +38,7 @@ export function CustomStatusEditor({
   function startEditing() {
     setDraft(statusText);
     setIsEditing(true);
+    onStartEditing?.();
   }
 
   async function handleSave() {

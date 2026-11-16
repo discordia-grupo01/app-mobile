@@ -1,6 +1,8 @@
 import * as ImagePicker from "expo-image-picker";
 import { Alert } from "react-native";
 
+const PICKER_QUALITY = 1;
+
 export interface PickedLibraryImage {
   asset: ImagePicker.ImagePickerAsset;
   mimeType: string;
@@ -20,7 +22,10 @@ export async function pickImageFromLibrary(
 
   const result = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: ["images"],
-    quality: 0.8,
+    // Con `quality` menor a 1, en Android expo-image-picker vuelve a codificar
+    // la imagen con un solo cuadro: un GIF llega quieto (y como PNG). Con 1
+    // copia el archivo tal cual. El tamaño se valida igual sobre el original.
+    quality: PICKER_QUALITY,
   });
   const asset = result.canceled ? undefined : result.assets?.[0];
   if (!asset) return null;

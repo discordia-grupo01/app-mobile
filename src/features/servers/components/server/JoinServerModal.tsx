@@ -20,17 +20,20 @@ import { ModalCloseButton } from "../../../../components/ui/ModalCloseButton";
 
 interface JoinServerModalProps {
   visible: boolean;
+  /** El código de un link de invitación, para no tener que escribirlo. */
+  initialCode?: string;
   onClose: () => void;
   onJoined: (server: ServerSummary) => void;
 }
 
 export function JoinServerModal({
   visible,
+  initialCode = "",
   onClose,
   onJoined,
 }: JoinServerModalProps) {
   const colors = useThemeColors();
-  const [code, setCode] = useState("");
+  const [code, setCode] = useState(initialCode);
   const [fieldError, setFieldError] = useState("");
   const [globalError, setGlobalError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -39,11 +42,15 @@ export function JoinServerModal({
     alreadyMember: boolean;
   } | null>(null);
   const [wasVisible, setWasVisible] = useState(visible);
+  const [lastInitialCode, setLastInitialCode] = useState(initialCode);
 
-  if (visible !== wasVisible) {
+  // Al abrirse, o si llega otro link con el diálogo abierto, arranca de cero
+  // con el código del link.
+  if (visible !== wasVisible || initialCode !== lastInitialCode) {
     setWasVisible(visible);
+    setLastInitialCode(initialCode);
     if (visible) {
-      setCode("");
+      setCode(initialCode);
       setFieldError("");
       setGlobalError("");
       setIsSubmitting(false);

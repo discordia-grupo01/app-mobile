@@ -1,4 +1,5 @@
 import {
+  canReportUser,
   displayNameOf,
   highestRoleOf,
   isMemberMuted,
@@ -9,6 +10,7 @@ import {
   MEMBERS_LOADING_MORE,
   MEMBERS_SEARCH_LABEL,
   MEMBERS_SEARCH_PLACEHOLDER,
+  PROFILE_REPLICATION_DELAY_MS,
   resolveImageUrl,
   type Role,
 } from "@discordia/client-shared";
@@ -29,6 +31,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { SearchInput } from "../../../../components/ui/SearchInput";
 import { useMemberScroll } from "../../../../hooks/useMemberScroll";
+import { useRefreshOnChange } from "../../../../hooks/useRefreshOnChange";
 import { env } from "../../../../lib/env";
 import { useThemeColors } from "../../../../theme/theme-context";
 import { useAuth } from "../../../auth/auth-context";
@@ -41,6 +44,8 @@ import { Avatar } from "../../../../components/ui/Avatar";
 interface MembersSidebarProps {
   visible: boolean;
   serverId: string;
+  /** Para el aviso del reporte de un usuario. */
+  serverName: string;
   /** Roles del servidor: el nombre toma el color del rol mas alto de cada miembro. */
   serverRoles?: Role[];
   currentUserId?: string | null;
@@ -61,6 +66,7 @@ interface MembersSidebarProps {
 export function MembersSidebar({
   visible,
   serverId,
+  serverName,
   serverRoles = [],
   currentUserId,
   authToken,
@@ -96,9 +102,18 @@ export function MembersSidebar({
     errorMessage,
     loadMore,
     reload,
+    refresh,
     // El panel se monta siempre: pide al abrirse, y de nuevo cada vez que se
     // reabre, asi muestra a quien haya entrado o salido mientras estaba cerrado.
   } = useMemberScroll({ fetchPage, search, enabled: visible });
+  useRefreshOnChange({ resources: ["members", "roles"], serverId }, refresh, {
+    enabled: visible,
+  });
+  useRefreshOnChange({ resources: ["profile"], serverId }, refresh, {
+    enabled: visible,
+    pollMs: null,
+    delayMs: PROFILE_REPLICATION_DELAY_MS,
+  });
 
   useEffect(() => {
     if (!visible) return;
@@ -355,6 +370,11 @@ export function MembersSidebar({
         mutedUntil={viewedMember?.muted_until ?? null}
         onMuteChanged={reload}
         canBlock={viewingUserId !== currentUserId}
+        canReport={
+          viewingUserId !== null &&
+          canReportUser(viewingUserId, currentUserId ?? null)
+        }
+        serverName={serverName}
         onBanned={reload}
         onSendMessage={
           onMessageUser && viewingUserId !== currentUserId

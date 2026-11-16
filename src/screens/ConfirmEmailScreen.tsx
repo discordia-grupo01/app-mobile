@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
 import { Feather } from "@expo/vector-icons";
-import { StatusBar } from "expo-status-bar";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { CHECK_SPAM_HINT } from "@discordia/client-shared";
+import { Text, View } from "react-native";
 
-import { AuthLogo } from "../components/auth/AuthLogo";
+import { AuthScreen } from "../components/auth/AuthScreen";
 import { Button } from "../components/ui/Button";
-import { ThemeToggleButton } from "../components/ui/ThemeToggleButton";
 import { useAuth } from "../features/auth/auth-context";
 import { confirmEmailService } from "../features/auth/service";
 import { withAlpha } from "../lib/color";
-import { useStatusBarStyle, useThemeColors } from "../theme/theme-context";
+import { useThemeColors } from "../theme/theme-context";
+
 interface ConfirmEmailScreenProps {
   email?: string;
   token?: string;
@@ -25,7 +25,6 @@ export function ConfirmEmailScreen({
 }: ConfirmEmailScreenProps) {
   const { requestEmailConfirmation } = useAuth();
   const colors = useThemeColors();
-  const statusBarStyle = useStatusBarStyle();
   const [isConfirming, setIsConfirming] = useState(Boolean(token));
   const [isResending, setIsResending] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
@@ -70,114 +69,99 @@ export function ConfirmEmailScreen({
   }
 
   return (
-    <View className="flex-1 bg-surface-sunken">
-      <StatusBar style={statusBarStyle} />
-      <ThemeToggleButton />
-      <ScrollView
-        contentContainerClassName="grow items-center justify-center p-4"
-        keyboardShouldPersistTaps="handled"
-      >
-        <View className="w-full max-w-[420px] px-4">
-          <View className="mb-8 items-center">
-            <AuthLogo />
-          </View>
-
-          <View className="items-center">
-            <View
-              className="mb-5 size-16 items-center justify-center rounded-2xl"
-              style={{
-                backgroundColor: withAlpha(
-                  confirmed
-                    ? colors.success
-                    : expired
-                      ? colors.danger
-                      : colors.accent,
-                  0.15,
-                ),
-              }}
-            >
-              {confirmed ? (
-                <Feather name="check-circle" size={32} color={colors.success} />
-              ) : expired ? (
-                <Feather
-                  name="alert-triangle"
-                  size={32}
-                  color={colors.danger}
-                />
-              ) : (
-                <Feather name="mail" size={32} color={colors.sky} />
-              )}
-            </View>
-
-            <Text className="mb-2 text-center text-[24px] font-bold text-content">
-              {confirmed
-                ? "Correo confirmado"
+    <AuthScreen>
+      <View className="items-center">
+        <View
+          className="mb-5 size-16 items-center justify-center rounded-2xl"
+          style={{
+            backgroundColor: withAlpha(
+              confirmed
+                ? colors.success
                 : expired
-                  ? "El enlace expiró"
-                  : "Revisa tu correo"}
-            </Text>
-            <Text className="mb-3 text-center text-[14px] leading-6 text-content-muted">
-              {confirmed
-                ? "Tu cuenta está lista. Ya puedes iniciar sesión en Discordia."
-                : expired
-                  ? "Este enlace ya no es válido. Volvé a iniciar sesión para solicitar una nueva confirmación."
-                  : "Te enviamos un enlace para confirmar tu correo y activar tu cuenta."}
-            </Text>
-
-            {email ? (
-              <Text className="mb-6 text-center text-[14px] font-semibold text-content">
-                {email}
-              </Text>
-            ) : null}
-
-            {isConfirming ? (
-              <View className="flex-row items-center gap-2 py-3">
-                <Feather
-                  name="refresh-cw"
-                  size={16}
-                  color={colors.textSubtle}
-                />
-                <Text className="text-[14px] text-content-muted">
-                  Confirmando tu correo...
-                </Text>
-              </View>
-            ) : confirmed ? (
-              <Button title="Ir a iniciar sesión" onPress={onBackToLogin} />
-            ) : canResend ? (
-              <Button
-                title="Reenviar confirmación"
-                onPress={handleResend}
-                isLoading={isResending}
-                iconRight="arrow-right"
-              />
-            ) : (
-              <Button
-                title="Volver a iniciar sesión"
-                onPress={onBackToLogin}
-                variant="secondary"
-              />
-            )}
-
-            {message ? (
-              <Text className="mt-4 text-center text-[13px] text-content-muted">
-                {message}
-              </Text>
-            ) : null}
-
-            {canResend && !confirmed && !isConfirming ? (
-              <TouchableOpacity
-                className="mt-5"
-                onPress={onBackToLogin}
-                activeOpacity={0.7}
-              >
-                <Text className="text-[13px] font-semibold text-content-subtle">
-                  Volver a iniciar sesión
-                </Text>
-              </TouchableOpacity>
-            ) : null}
-          </View>
+                  ? colors.danger
+                  : colors.accent,
+              0.15,
+            ),
+          }}
+        >
+          {confirmed ? (
+            <Feather name="check-circle" size={32} color={colors.success} />
+          ) : expired ? (
+            <Feather name="alert-triangle" size={32} color={colors.danger} />
+          ) : (
+            <Feather name="mail" size={32} color={colors.sky} />
+          )}
         </View>
-      </ScrollView>
-    </View>
+
+        <Text className="mb-2 text-center text-[24px] font-bold text-content">
+          {confirmed
+            ? "Correo confirmado"
+            : expired
+              ? "El enlace expiró"
+              : "Revisa tu correo"}
+        </Text>
+        <View className="mb-8 w-full gap-2">
+          <Text className="text-center text-[14px] leading-6 text-content-muted">
+            {confirmed
+              ? "Tu cuenta está lista. Ya puedes iniciar sesión en Discordia."
+              : expired
+                ? "Este enlace ya no es válido. Volvé a iniciar sesión para solicitar una nueva confirmación."
+                : "Te enviamos un enlace para confirmar tu correo y activar tu cuenta."}
+          </Text>
+
+          {email ? (
+            <Text className="text-center text-[14px] font-semibold text-content">
+              {email}
+            </Text>
+          ) : null}
+          {confirmed || expired ? null : (
+            <Text className="text-center text-[12px] text-content-subtle">
+              {CHECK_SPAM_HINT}
+            </Text>
+          )}
+        </View>
+
+        {isConfirming ? (
+          <View className="flex-row items-center gap-2 py-3">
+            <Feather name="refresh-cw" size={16} color={colors.textSubtle} />
+            <Text className="text-[14px] text-content-muted">
+              Confirmando tu correo...
+            </Text>
+          </View>
+        ) : confirmed ? (
+          <Button
+            title="Ir a iniciar sesión"
+            onPress={onBackToLogin}
+            iconRight="arrow-right"
+          />
+        ) : canResend ? (
+          <View className="w-full gap-3">
+            <Button
+              title="Reenviar confirmación"
+              onPress={handleResend}
+              isLoading={isResending}
+              iconRight="arrow-right"
+            />
+            <Button
+              title="Volver al inicio de sesión"
+              onPress={onBackToLogin}
+              variant="secondary"
+            />
+          </View>
+        ) : (
+          <Button
+            title="Volver al inicio de sesión"
+            onPress={onBackToLogin}
+            iconRight="arrow-right"
+          />
+        )}
+
+        {message ? (
+          <Text className="mt-4 text-center text-[13px] text-content-muted">
+            {message}
+          </Text>
+        ) : null}
+      </View>
+    </AuthScreen>
   );
 }

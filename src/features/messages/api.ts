@@ -2,6 +2,8 @@ import {
   isMessageErrorCode,
   type ListMessagesOptions,
   type ListMessagesResult,
+  type LookupMessagesResult,
+  type MessageLookupResponse,
   messageErrorFor,
   type MessageHistory,
   MESSAGES_LOAD_FAILED,
@@ -75,4 +77,18 @@ export async function fetchMessages(
       ? { newerCursor: result.data.newer_cursor ?? null }
       : {}),
   };
+}
+
+export async function lookupMessages(
+  ids: readonly string[],
+): Promise<LookupMessagesResult> {
+  const query = new URLSearchParams({ ids: ids.join(",") });
+  const result = await apiFetch<MessageLookupResponse>(
+    `/v1/messages?${query.toString()}`,
+    { method: "GET" },
+  );
+  if (!result.ok || !Array.isArray(result.data?.messages)) {
+    return { ok: false, message: MESSAGES_LOAD_FAILED };
+  }
+  return { ok: true, messages: result.data.messages };
 }

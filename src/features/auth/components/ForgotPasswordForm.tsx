@@ -1,4 +1,5 @@
 import {
+  CHECK_SPAM_HINT,
   type ForgotPasswordErrors,
   hasErrors,
   validateForgotPassword,
@@ -66,14 +67,14 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
           contraseña en los próximos minutos.
         </Text>
         <Text className="mb-8 text-center text-[12px] text-content-subtle">
-          Recordá revisar tu carpeta de spam por si acaso.
+          {CHECK_SPAM_HINT}
         </Text>
 
-        <TouchableOpacity activeOpacity={0.7} onPress={onBack}>
-          <Text className="text-[13px] text-content-subtle">
-            Volver al inicio de sesión
-          </Text>
-        </TouchableOpacity>
+        <Button
+          title="Volver al inicio de sesión"
+          onPress={onBack}
+          iconRight="arrow-right"
+        />
       </View>
     );
   }

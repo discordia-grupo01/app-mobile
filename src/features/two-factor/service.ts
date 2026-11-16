@@ -1,4 +1,9 @@
 import {
+  ACCOUNT_RECOVERY_CHALLENGE_EXPIRED,
+  ACCOUNT_RECOVERY_UNAVAILABLE,
+  ACCOUNT_SUSPENDED_MESSAGE,
+  type AccountRecoveryCreatePayload,
+  type AccountRecoveryResult,
   type ApiFailure,
   messageFor,
   REQUEST_FAILED_MESSAGE,
@@ -179,4 +184,34 @@ function passwordEndpointMessage(failure: ApiFailure): string {
   if (failure.status === 403) return TWO_FACTOR_PASSWORD_INVALID;
   if (failure.status === 409) return TWO_FACTOR_NOT_ENABLED;
   return messageFor(failure, {}, REQUEST_FAILED_MESSAGE);
+}
+
+export async function requestAccountRecoveryService(
+  challengeToken: string,
+  message: string,
+): Promise<AccountRecoveryResult> {
+  const result = await apiFetch<AccountRecoveryCreatePayload>(
+    "/v1/login/2fa/recovery-request",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        challenge_token: challengeToken,
+        message: message.trim(),
+      }),
+    },
+  );
+
+  if (result.ok) return { ok: true, emailHint: result.data.email_hint };
+  if (result.status === 409) return { ok: true, alreadyPending: true };
+  if (result.status === 401) {
+    return {
+      ok: false,
+      message: ACCOUNT_RECOVERY_CHALLENGE_EXPIRED,
+      expired: true,
+    };
+  }
+  if (result.status === 403) {
+    return { ok: false, message: ACCOUNT_SUSPENDED_MESSAGE };
+  }
+  return { ok: false, message: ACCOUNT_RECOVERY_UNAVAILABLE };
 }

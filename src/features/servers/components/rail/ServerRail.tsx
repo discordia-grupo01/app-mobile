@@ -1,13 +1,35 @@
-import { type ServerSummary } from "@discordia/client-shared";
+import {
+  BOOSTED_BADGE_COPY,
+  boostLevelLabel,
+  hasBoostedBadge,
+  isServerMuted,
+  NO_UNREAD_FLAGS,
+  pendingReportsLabel,
+  serverBoostLevel,
+  type ServerSummary,
+  type UnreadFlags,
+} from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
+import { useState } from "react";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { resolveServerIconUrl } from "../../api";
+import { railIconLabel } from "./railIconLabel";
 import { cn } from "../../../../lib/cn";
-import { useThemeColors } from "../../../../theme/theme-context";
+import { useOptionalNotifications } from "../../../notifications/NotificationsContext";
+import { useOptionalNotificationSettings } from "../../../notifications/NotificationSettingsContext";
+import {
+  pendingReportsOf,
+  usePendingReportsContext,
+} from "../../../reports/ReportsContext";
+import { ReportsBadge } from "../../../reports/components/shared/ReportsBadge";
+import { ServerOptionsSheet } from "./ServerOptionsSheet";
+import { useTheme, useThemeColors } from "../../../../theme/theme-context";
 import { Avatar } from "../../../../components/ui/Avatar";
+import { BoostedRing } from "../../../boosts/components/BoostedRing";
+import { BoostLevelIcon } from "../../../boosts/components/BoostLevelIcon";
 import { CountBadge } from "../../../../components/ui/CountBadge";
 
 export const RAIL_WIDTH = 72;
@@ -17,7 +39,7 @@ interface ServerRailProps {
   activeServerId: string | null;
   isDirectMessagesActive: boolean;
   unreadDmCount?: number;
-  unreadMentionsByServer?: Record<string, number>;
+  unreadByServer?: Record<string, UnreadFlags>;
   onOpenDirectMessages: () => void;
   onSelectServer: (serverId: string) => void;
   onAddServer: () => void;
@@ -26,34 +48,94 @@ interface ServerRailProps {
 function ServerRailIcon({
   item,
   active,
-  unreadMentions,
+  unread,
   onPress,
+  onLongPress,
 }: {
   item: ServerSummary;
   active: boolean;
-  unreadMentions: number;
+  unread: UnreadFlags;
   onPress: () => void;
+  onLongPress?: () => void;
 }) {
+  const notificationSettings = useOptionalNotificationSettings();
+  const pendingReportsContext = usePendingReportsContext();
+  const isMuted =
+    notificationSettings !== null &&
+    isServerMuted(notificationSettings.settings, item.id);
+  const isSuspended = item.suspended === true;
+  const shown = isSuspended ? NO_UNREAD_FLAGS : unread;
+  const pendingReports = isSuspended
+    ? 0
+    : pendingReportsOf(pendingReportsContext, item.id);
+  const boostLevel = isSuspended ? 0 : serverBoostLevel(item);
+  const isBoosted = hasBoostedBadge(boostLevel);
+  const label = [
+    railIconLabel(item.name, shown, isSuspended),
+    boostLevel > 0 ? boostLevelLabel(boostLevel) : null,
+    isBoosted ? BOOSTED_BADGE_COPY.label : null,
+  ]
+    .filter(Boolean)
+    .join(". ");
   return (
     <TouchableOpacity
       activeOpacity={0.75}
       onPress={onPress}
-      className="items-center justify-center"
+      onLongPress={isSuspended ? undefined : onLongPress}
+      className={cn("items-center justify-center", isMuted && "opacity-60")}
+      accessibilityLabel={label}
+      accessibilityActions={
+        !isSuspended && onLongPress
+          ? [{ name: "longpress", label: "Opciones del servidor" }]
+          : undefined
+      }
+      onAccessibilityAction={(event) => {
+        if (event.nativeEvent.actionName === "longpress") onLongPress?.();
+      }}
       style={styles.iconWrap}
     >
       {active ? (
         <View className="absolute left-0 top-[50%] -mt-3 w-1 h-6 rounded-xs bg-server-pill" />
+      ) : shown.unread ? (
+        <View className="absolute left-0 top-[50%] -mt-1 w-1 h-2 rounded-xs bg-server-pill" />
       ) : null}
-      <Avatar
-        name={item.name}
-        uri={resolveServerIconUrl(item.icon_url)}
-        size={48}
-        borderRadius={active ? 16 : 24}
-      />
-      {unreadMentions > 0 ? (
+      <BoostedRing visible={isBoosted} borderRadius={active ? 16 : 24}>
+        <Avatar
+          name={item.name}
+          uri={resolveServerIconUrl(item.icon_url)}
+          size={48}
+          borderRadius={active ? 16 : 24}
+        />
+        {isSuspended ? (
+          <View
+            pointerEvents="none"
+            style={[
+              styles.suspendedOverlay,
+              { borderRadius: active ? 16 : 24 },
+            ]}
+          />
+        ) : null}
+      </BoostedRing>
+      {pendingReports > 0 ? (
+        <ReportsBadge
+          label={pendingReportsLabel(pendingReports, item.name)}
+          className="absolute top-0 right-2 border-2 border-surface-servers"
+        />
+      ) : null}
+      {/* Desde el nivel 1, el ícono de nivel en la esquina; con menciones sin
+          leer, la esquina es del contador. */}
+      {boostLevel > 0 && shown.mentionCount === 0 ? (
+        <View
+          pointerEvents="none"
+          className="absolute bottom-0 right-1.5 rounded-[5px] bg-surface-servers px-[3px] py-[2px]"
+        >
+          <BoostLevelIcon level={boostLevel} size={17} bare tight />
+        </View>
+      ) : null}
+      {shown.mentionCount > 0 ? (
         <CountBadge
-          count={unreadMentions}
-          label={`${unreadMentions} menciones sin leer en ${item.name}`}
+          count={shown.mentionCount}
+          label={`${shown.mentionCount} menciones sin leer en ${item.name}`}
           className="absolute bottom-0 right-2 border-2 border-surface-servers"
         />
       ) : null}
@@ -66,71 +148,96 @@ export function ServerRail({
   activeServerId,
   isDirectMessagesActive,
   unreadDmCount = 0,
-  unreadMentionsByServer = {},
+  unreadByServer = {},
   onOpenDirectMessages,
   onSelectServer,
   onAddServer,
 }: ServerRailProps) {
+  const { theme } = useTheme();
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
+  const notifications = useOptionalNotifications();
+  const [optionsFor, setOptionsFor] = useState<ServerSummary | null>(null);
+  const closeOptions = () => setOptionsFor(null);
+  const canMarkOptionsRead = optionsFor
+    ? (unreadByServer[optionsFor.id]?.unread ?? false)
+    : false;
 
   return (
-    <ScrollView
-      className="grow-0 bg-surface-servers"
-      style={styles.rail}
-      contentContainerClassName="items-center gap-2.5 py-3"
-      contentContainerStyle={{ paddingTop: insets.top + 12 }}
-      showsVerticalScrollIndicator={false}
-    >
-      <View className="relative">
-        <TouchableOpacity
-          onPress={onOpenDirectMessages}
-          className={cn(
-            "w-12 h-12 items-center justify-center",
-            isDirectMessagesActive
-              ? "bg-rail-active-bg rounded-2xl"
-              : "bg-rail-surface rounded-3xl",
-          )}
-          accessibilityLabel="Mensajes directos"
-        >
-          <Feather
-            name="home"
-            size={20}
-            color={
-              isDirectMessagesActive ? colors.railActiveText : colors.onAccent
-            }
-            style={isDirectMessagesActive ? undefined : { opacity: 0.7 }}
-          />
-        </TouchableOpacity>
-        {unreadDmCount > 0 && !isDirectMessagesActive ? (
-          <CountBadge
-            count={unreadDmCount}
-            label={`${unreadDmCount} conversaciones sin leer`}
-            className="absolute -right-0.5 -top-0.5 border-2 border-surface-servers"
-          />
-        ) : null}
-      </View>
-
-      <View className="w-8 h-px bg-line-strong my-0.5" />
-
-      {servers.map((item) => (
-        <ServerRailIcon
-          key={item.id}
-          item={item}
-          active={item.id === activeServerId}
-          unreadMentions={unreadMentionsByServer[item.id] ?? 0}
-          onPress={() => onSelectServer(item.id)}
-        />
-      ))}
-
-      <TouchableOpacity
-        onPress={onAddServer}
-        className="w-12 h-12 rounded-3xl items-center justify-center bg-rail-surface"
-        accessibilityLabel="Agregar servidor"
+    <>
+      <ScrollView
+        className="grow-0 bg-surface-servers"
+        style={styles.rail}
+        contentContainerClassName="items-center gap-2.5 py-3"
+        contentContainerStyle={{ paddingTop: insets.top + 12 }}
+        showsVerticalScrollIndicator={false}
       >
-        <Feather name="plus" size={20} color={colors.success} />
-      </TouchableOpacity>
-    </ScrollView>
+        <View className="relative">
+          <TouchableOpacity
+            onPress={onOpenDirectMessages}
+            className={cn(
+              "w-12 h-12 items-center justify-center",
+              isDirectMessagesActive
+                ? "bg-rail-active-bg rounded-2xl"
+                : "bg-rail-surface rounded-3xl",
+            )}
+            accessibilityLabel="Mensajes directos"
+          >
+            <Feather
+              name="home"
+              size={20}
+              color={
+                isDirectMessagesActive ? colors.railActiveText : colors.onAccent
+              }
+              style={isDirectMessagesActive ? undefined : { opacity: 0.7 }}
+            />
+          </TouchableOpacity>
+          {unreadDmCount > 0 && !isDirectMessagesActive ? (
+            <CountBadge
+              count={unreadDmCount}
+              label={`${unreadDmCount} conversaciones sin leer`}
+              className="absolute -right-0.5 -top-0.5 border-2 border-surface-servers"
+            />
+          ) : null}
+        </View>
+
+        <View
+          className="w-8 h-px my-0.5"
+          style={{
+            backgroundColor:
+              theme === "light" ? colors.borderOnAccent : colors.borderStrong,
+          }}
+        />
+
+        {servers.map((item) => (
+          <ServerRailIcon
+            key={item.id}
+            item={item}
+            active={item.id === activeServerId}
+            unread={unreadByServer[item.id] ?? NO_UNREAD_FLAGS}
+            onPress={() => onSelectServer(item.id)}
+            onLongPress={notifications ? () => setOptionsFor(item) : undefined}
+          />
+        ))}
+
+        <TouchableOpacity
+          onPress={onAddServer}
+          className="w-12 h-12 rounded-3xl items-center justify-center bg-rail-surface"
+          accessibilityLabel="Agregar servidor"
+        >
+          <Feather name="plus" size={20} color={colors.success} />
+        </TouchableOpacity>
+      </ScrollView>
+      <ServerOptionsSheet
+        server={optionsFor}
+        canMarkRead={canMarkOptionsRead}
+        onMarkRead={() => {
+          if (optionsFor) notifications?.markServerRead(optionsFor.id);
+          closeOptions();
+        }}
+        onClose={closeOptions}
+      />
+    </>
   );
 }
 
@@ -140,5 +247,13 @@ const styles = StyleSheet.create({
   },
   iconWrap: {
     width: RAIL_WIDTH,
+  },
+  suspendedOverlay: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
 });

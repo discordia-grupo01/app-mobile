@@ -1,4 +1,10 @@
-import type { ThemeName } from "@discordia/client-shared";
+import {
+  BILLING_BOOSTS_COPY,
+  BILLING_COPY,
+  type BillingSection,
+  isBillingSection,
+  type ThemeName,
+} from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
 import { useEffect, useRef, useState, type ComponentRef } from "react";
@@ -11,8 +17,10 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { BillingSettings } from "../../../billing/BillingSettings";
+import { BillingTabs } from "../../../billing/components/navigation/BillingTabs";
+import { PlatformStatusStep } from "../../../platform-status/components/PlatformStatusStep";
 import { useThemeColors } from "../../../../theme/theme-context";
 import { AccountSettingsMenu } from "./account-settings/AccountSettingsMenu";
 import { AppearanceSettingsStep } from "./account-settings/AppearanceSettingsStep";
@@ -21,9 +29,18 @@ import { SecuritySettingsStep } from "./account-settings/SecuritySettingsStep";
 import { LogoutConfirmModal } from "./LogoutConfirmModal";
 import { PinSetupPanel } from "./PinSetupPanel";
 import { TwoFactorPanel } from "./TwoFactorPanel";
+import { useModalInsets } from "../../../platform-status/hooks/useModalInsets";
+import { serverBoostsRequest } from "../../../../lib/navigationRequests";
 
 type Section =
-  "menu" | "appearance" | "notifications" | "security" | "two-factor" | "pin";
+  | "menu"
+  | "appearance"
+  | "notifications"
+  | "security"
+  | "two-factor"
+  | "pin"
+  | "status"
+  | BillingSection;
 
 const TITLES: Record<Section, string> = {
   menu: "Configuración",
@@ -32,6 +49,12 @@ const TITLES: Record<Section, string> = {
   security: "Seguridad",
   "two-factor": "Verificación en dos pasos",
   pin: "PIN de acceso rápido",
+  status: "Estado de la plataforma",
+  premium: "Premium",
+  subscriptions: BILLING_COPY.subscriptionsTitle,
+  points: BILLING_COPY.pointsTitle,
+  boosts: BILLING_BOOSTS_COPY.title,
+  transactions: BILLING_COPY.transactionsTitle,
 };
 
 const BACK_TARGET: Record<Section, Section> = {
@@ -41,10 +64,18 @@ const BACK_TARGET: Record<Section, Section> = {
   security: "menu",
   "two-factor": "security",
   pin: "security",
+  status: "menu",
+  premium: "menu",
+  subscriptions: "menu",
+  points: "menu",
+  boosts: "menu",
+  transactions: "menu",
 };
 
 interface AccountSettingsSheetProps {
   visible: boolean;
+  /** Solapa con la que se abre (por ejemplo, Puntos desde Boosts). */
+  initialSection?: BillingSection;
   isPinEnabled: boolean;
   onClose: () => void;
   onLogout: () => void;
@@ -54,6 +85,7 @@ interface AccountSettingsSheetProps {
 
 export function AccountSettingsSheet({
   visible,
+  initialSection,
   isPinEnabled,
   onClose,
   onLogout,
@@ -61,8 +93,8 @@ export function AccountSettingsSheet({
   onSelectTheme,
 }: AccountSettingsSheetProps) {
   const colors = useThemeColors();
-  const insets = useSafeAreaInsets();
-  const [section, setSection] = useState<Section>("menu");
+  const insets = useModalInsets();
+  const [section, setSection] = useState<Section>(initialSection ?? "menu");
   const [isConfirmVisible, setIsConfirmVisible] = useState(false);
   const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
 
@@ -79,6 +111,11 @@ export function AccountSettingsSheet({
     setIsConfirmVisible(false);
     handleClose();
     onLogout();
+  }
+
+  function openServerBoosts(serverId: string) {
+    handleClose();
+    serverBoostsRequest.request(serverId);
   }
 
   function goBack() {
@@ -132,6 +169,8 @@ export function AccountSettingsSheet({
               onSelectAppearance={() => setSection("appearance")}
               onSelectNotifications={() => setSection("notifications")}
               onSelectSecurity={() => setSection("security")}
+              onSelectStatus={() => setSection("status")}
+              onSelectBilling={setSection}
               onLogout={() => setIsConfirmVisible(true)}
             />
           ) : section === "appearance" ? (
@@ -144,6 +183,19 @@ export function AccountSettingsSheet({
               onOpenTwoFactor={() => setSection("two-factor")}
               onOpenPinSetup={() => setSection("pin")}
             />
+          ) : section === "status" ? (
+            <PlatformStatusStep />
+          ) : isBillingSection(section) ? (
+            <View className="pt-4">
+              <BillingTabs active={section} onSelect={setSection} />
+              <View className="px-4.5 pt-5">
+                <BillingSettings
+                  tab={section}
+                  onNavigate={setSection}
+                  onOpenServerBoosts={openServerBoosts}
+                />
+              </View>
+            </View>
           ) : section === "two-factor" ? (
             <TwoFactorPanel onClose={goBack} scrollRef={scrollRef} />
           ) : (

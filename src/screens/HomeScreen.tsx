@@ -5,6 +5,7 @@ import {
   type DeleteServerResult,
   hasPermission,
   type LeaveServerResult,
+  markServerSuspended,
   type Message,
   messageAuthorOf,
   type MessageJumpTarget,
@@ -13,6 +14,7 @@ import {
   type Role,
   type ServerSummary,
   SESSION_EXPIRED_MESSAGE,
+  suspendedServerIds,
 } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
@@ -22,6 +24,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useReducer,
   useRef,
   useState,
 } from "react";
@@ -29,10 +32,22 @@ import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { LoadingScreen } from "../components/ui/LoadingScreen";
+import { useAppActive } from "../hooks/useAppActive";
 import { useLoadingGate } from "../hooks/useLoadingGate";
+import { useRefreshOnChange } from "../hooks/useRefreshOnChange";
 import { useDirectMessages } from "../features/direct-messages/useDirectMessages";
 import { useMentions } from "../features/mentions/useMentions";
+import { useUnreadState } from "../features/notifications/unread/useUnreadState";
+import { notificationTargetOf } from "../features/notifications/history/historyHelpers";
+import { NotificationCenterModal } from "../features/notifications/components/center/NotificationCenterModal";
+import { NotificationSettingsProvider } from "../features/notifications/NotificationSettingsContext";
+import { NotificationsProvider } from "../features/notifications/NotificationsContext";
+import { PendingReportsProvider } from "../features/reports/ReportsContext";
+import { usePendingReports } from "../features/reports/usePendingReports";
+import { useNotificationCenter } from "../features/notifications/useNotificationCenter";
+import { useNotificationSettings } from "../features/notifications/useNotificationSettings";
 import { PresenceProvider } from "../features/presence/PresenceContext";
+import { PlatformStatusLayer } from "../features/platform-status/components/PlatformStatusLayer";
 import { useIdleReporter } from "../features/presence/useIdleReporter";
 import { useLoadPresence } from "../features/presence/useLoadPresence";
 import {
@@ -46,7 +61,7 @@ import { EmptyState } from "../features/servers/components/home/EmptyState";
 import { JoinServerModal } from "../features/servers/components/server/JoinServerModal";
 import { useAuth } from "../features/auth/auth-context";
 import { authorFromProfile } from "../features/messages/author";
-import { getOwnProfile } from "../features/profile/service";
+import { useOwnProfileSync } from "../features/profile/useOwnProfileSync";
 import { listMemberRoles, listRoles } from "../features/roles/api";
 import {
   deleteServer,
@@ -57,6 +72,7 @@ import { useMyChannelPermissions } from "../features/channels/useMyChannelPermis
 import { usePushNotificationTap } from "../features/push/notification-handler";
 import { usePushDeviceSync } from "../features/push/use-push-notifications";
 import { useVoiceSession } from "../features/voice/voice-session-context";
+import { serverBoostsRequest } from "../lib/navigationRequests";
 import { getLastLocation, setLastLocation } from "../lib/storage";
 import { avatarUriOf } from "../lib/userProfile";
 import { useStatusBarStyle, useThemeColors } from "../theme/theme-context";
@@ -65,22 +81,30 @@ import { DirectMessagesScreen } from "./DirectMessagesScreen";
 import { channelTargetOf } from "../features/voice/channel-target";
 import { ServerChannelsScreen } from "./ServerChannelsScreen";
 import { ServerPickerScreen } from "./ServerPickerScreen";
+import { ServerSuspendedScreen } from "./ServerSuspendedScreen";
 
 type MainView = "servers" | "dm";
 
 interface HomeScreenProps {
   /** La pantalla de carga ya estaba a la vista antes de montar el home. */
   resumesLoader?: boolean;
+  /** Código de un link `discordia://invite/…` que todavía no se abrió. */
+  pendingInviteCode?: string | null;
+  onInviteOpened?: () => void;
 }
 
-export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
+export function HomeScreen({
+  resumesLoader = false,
+  pendingInviteCode = null,
+  onInviteOpened,
+}: HomeScreenProps) {
   const colors = useThemeColors();
   const statusBarStyle = useStatusBarStyle();
-  const { user, token, logout, updateUser } = useAuth();
+  const { user, token, logout } = useAuth();
   const insets = useSafeAreaInsets();
   const [servers, setServers] = useState<ServerSummary[]>([]);
   const [isLoadingServers, setIsLoadingServers] = useState(true);
-  const [isProfileLoaded, setIsProfileLoaded] = useState(false);
+  const { isLoaded: isProfileLoaded } = useOwnProfileSync();
   const [selectedServerId, setSelectedServerId] = useState<string | null>(null);
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(
     null,
@@ -123,20 +147,6 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
     };
   }, []);
 
-  useEffect(() => {
-    if (!token) return;
-    let cancelled = false;
-    getOwnProfile().then((result) => {
-      if (cancelled) return;
-      if (result.ok) updateUser(result.user);
-      setIsProfileLoaded(true);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [token, updateUser]);
-
-  // Tocar "Voz conectada" (desde cualquier vista) abre el canal de la llamada.
   const voiceFocus = voice.state.focus;
   const [seenFocusNonce, setSeenFocusNonce] = useState(voiceFocus?.nonce);
   if (voiceFocus && voiceFocus.nonce !== seenFocusNonce) {
@@ -147,8 +157,6 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
     setLostChannel(null);
   }
 
-  // Si el canal de la llamada ya no esta (se borro, saliste del servidor o
-  // perdiste el acceso), se corta.
   const voiceTarget = channelTargetOf(voice.state.target);
   const leaveVoice = voice.leave;
   const isVoiceChannelGone =
@@ -174,19 +182,62 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
     selectedServer != null &&
     String(user.id) === selectedServer.owner_id;
 
-  // Se pide una sola vez y sobrevive a cambiar de vista, asi el contador de
-  // no leidos del riel no se resetea al entrar y salir de Mensajes Directos.
   const currentAuthor = useMemo(
     () => (user ? authorFromProfile(user) : null),
     [user],
   );
-  const mentions = useMentions(currentAuthor?.id ?? null);
+  const notificationSettings = useNotificationSettings(
+    currentAuthor?.id ?? null,
+  );
+  const suspendedIds = useMemo(() => suspendedServerIds(servers), [servers]);
+  const mentions = useMentions(
+    currentAuthor?.id ?? null,
+    notificationSettings.settings,
+    suspendedIds,
+  );
+  const { settings, setChannel, setServer } = notificationSettings;
+  const notificationSettingsValue = useMemo(
+    () => ({ settings, setChannel, setServer }),
+    [settings, setChannel, setServer],
+  );
   const presence = usePresenceSession(currentAuthor?.id ?? null);
-  const directMessages = useDirectMessages(currentAuthor, view === "dm", {
-    onMention: mentions.receive,
-    onRejoined: mentions.reload,
-    ...presence.userRoomCallbacks,
-  });
+  const [activitySignal, bumpActivity] = useReducer(
+    (signal: number) => signal + 1,
+    0,
+  );
+  // Con la app en segundo plano no hay canal ni conversación "abiertos" para
+  // marcar leídos: lo que llega mientras tanto queda sin leer hasta que vuelva.
+  const isAppActive = useAppActive();
+  const directMessages = useDirectMessages(
+    currentAuthor,
+    isAppActive && view === "dm",
+    {
+      onMention: (payload) => {
+        mentions.receive(payload);
+        bumpActivity();
+      },
+      onRejoined: () => {
+        mentions.reload();
+        void listMyServers().then((result) => {
+          if (result.ok) setServers(result.servers);
+        });
+      },
+      onServerLeft: ({ server_id }) => {
+        setServers((prev) => prev.filter((server) => server.id !== server_id));
+        if (selectedServerId !== server_id) return;
+        setSelectedServerId(null);
+        setSelectedChannelId(null);
+        setView("dm");
+      },
+      onServerSuspended: ({ server_id }) => {
+        setServers((prev) => markServerSuspended(prev, server_id));
+      },
+      onServerReactivated: () => {
+        void reloadServers();
+      },
+      ...presence.userRoomCallbacks,
+    },
+  );
   const presenceValue = usePresenceProviderValue(
     presence.store,
     directMessages.pushToUserRoom,
@@ -197,9 +248,6 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
     directMessages.conversations.map((c) => c.partner.id),
   );
   useServerPresence(presence.store, selectedServer?.id ?? null);
-  const withPresence = (screen: ReactNode) => (
-    <PresenceProvider value={presenceValue}>{screen}</PresenceProvider>
-  );
   const unreadDmCount = directMessages.conversations.filter(
     (c) => c.isUnread,
   ).length;
@@ -274,7 +322,7 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
    * Roles asignados al usuario actual en `selectedServer`
    */
   const fetchMyRoles = useCallback(() => {
-    if (!user || !selectedServer) return undefined;
+    if (!user || !selectedServer || selectedServer.suspended) return undefined;
     let cancelled = false;
     listMemberRoles(selectedServer.id, String(user.id)).then((result) => {
       if (cancelled) return;
@@ -294,7 +342,7 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
    * haya un canal de texto abierto).
    */
   const fetchServerRoles = useCallback(() => {
-    if (!selectedServer) return undefined;
+    if (!selectedServer || selectedServer.suspended) return undefined;
     let cancelled = false;
     listRoles(selectedServer.id).then((result) => {
       if (!cancelled && result.ok) setServerRoles(result.roles);
@@ -306,10 +354,52 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
 
   useEffect(() => fetchServerRoles(), [fetchServerRoles]);
 
+  const selectedServerIdRef = useRef(selectedServerId);
+  useEffect(() => {
+    selectedServerIdRef.current = selectedServerId;
+  }, [selectedServerId]);
+
   const reloadServers = useCallback(async () => {
     const result = await listMyServers();
-    if (result.ok) setServers(result.servers);
+    if (!result.ok) return;
+    setServers(result.servers);
+    const current = selectedServerIdRef.current;
+    if (current && !result.servers.some((server) => server.id === current)) {
+      setSelectedServerId(null);
+      setSelectedChannelId(null);
+      setView("dm");
+    }
   }, []);
+
+  // `boosts` le llega a quien boostea: así su lista se actualiza aunque se
+  // pierda el aviso `server` del servidor.
+  useRefreshOnChange(
+    { resources: ["servers", "server", "channels", "boosts"] },
+    reloadServers,
+    { enabled: !isLoadingServers },
+  );
+
+  const refreshRoles = useCallback(async () => {
+    if (!selectedServer || selectedServer.suspended) return;
+    const [mine, all] = await Promise.all([
+      user ? listMemberRoles(selectedServer.id, String(user.id)) : null,
+      listRoles(selectedServer.id),
+    ]);
+    if (mine?.ok) setMyRoles(mine.roles);
+    if (all.ok) setServerRoles(all.roles);
+    setPermissionsVersion((version) => version + 1);
+  }, [user, selectedServer]);
+
+  useRefreshOnChange(
+    { resources: ["roles"], serverId: selectedServer?.id ?? null },
+    refreshRoles,
+    { enabled: selectedServer !== null },
+  );
+  useRefreshOnChange(
+    { resources: ["channels"], serverId: selectedServer?.id ?? null },
+    () => setPermissionsVersion((version) => version + 1),
+    { enabled: selectedServer !== null, pollMs: null },
+  );
 
   const handlePermissionsChanged = useCallback(() => {
     fetchMyRoles();
@@ -329,13 +419,13 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
     setSelectedChannelId(null);
   }
 
+  function jumpToMessage(channelId: string, messageId: string) {
+    setSelectedChannelId(channelId);
+    setJumpTarget({ channelId, messageId, nonce: ++jumpNonce.current });
+  }
+
   function openSearchResult(message: Message) {
-    setSelectedChannelId(message.channel_id);
-    setJumpTarget({
-      channelId: message.channel_id,
-      messageId: message.id,
-      nonce: ++jumpNonce.current,
-    });
+    jumpToMessage(message.channel_id, message.id);
   }
 
   const canManageChannels = hasPermission(
@@ -399,14 +489,112 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
 
   const myRoleIds = useMemo(() => myRoles.map((role) => role.id), [myRoles]);
 
-  const openChannelId = selectedChannel?.id ?? null;
+  const openChannelId =
+    isAppActive && view === "servers" ? (selectedChannel?.id ?? null) : null;
   const openChannelUnread = openChannelId
-    ? (mentions.byChannel[openChannelId] ?? 0)
+    ? (mentions.allByChannel[openChannelId] ?? 0)
     : 0;
   const { markChannelRead } = mentions;
+  const unread = useUnreadState(
+    currentAuthor?.id ?? null,
+    openChannelId,
+    suspendedIds,
+  );
   useEffect(() => {
     if (openChannelId && openChannelUnread > 0) markChannelRead(openChannelId);
   }, [openChannelId, openChannelUnread, markChannelRead]);
+
+  const notificationCenter = useNotificationCenter({
+    userId: currentAuthor?.id ?? null,
+    mentions,
+    unread,
+    conversations: directMessages.conversations,
+    areConversationsLoading: directMessages.isLoading,
+    markConversationsRead: directMessages.markAllConversationsRead,
+    activitySignal,
+    openChannelId,
+    openConversationId:
+      isAppActive && view === "dm"
+        ? (directMessages.activeSummary?.conversationId ?? null)
+        : null,
+    suspendedServerIds: suspendedIds,
+  });
+  const { markServerRead: markServerChannelsRead } = unread;
+  const { markServerRead: markServerMentionsRead } = mentions;
+  const { markChannelRead: markCenterChannelRead } = notificationCenter.reads;
+  const notificationItems = notificationCenter.history.items;
+  const markServerRead = useCallback(
+    (serverId: string) => {
+      const channelIds = new Set(markServerChannelsRead(serverId));
+      for (const item of notificationItems) {
+        if (item.server_id === serverId && item.channel_id) {
+          channelIds.add(item.channel_id);
+        }
+      }
+      markServerMentionsRead(serverId);
+      channelIds.forEach(markCenterChannelRead);
+    },
+    [
+      markServerChannelsRead,
+      markServerMentionsRead,
+      notificationItems,
+      markCenterChannelRead,
+    ],
+  );
+  const reportableServerIds = useMemo(
+    () =>
+      servers.filter((server) => !server.suspended).map((server) => server.id),
+    [servers],
+  );
+  const pendingReports = usePendingReports(
+    currentAuthor?.id ?? null,
+    reportableServerIds,
+    isAppActive,
+  );
+  const pendingReportsValue = useMemo(
+    () => ({
+      byServer: pendingReports.byServer,
+      refresh: pendingReports.refresh,
+    }),
+    [pendingReports.byServer, pendingReports.refresh],
+  );
+
+  const notificationsValue = useMemo(
+    () => ({
+      unreadCount: notificationCenter.reads.unreadCount,
+      open: notificationCenter.open,
+      markServerRead,
+    }),
+    [
+      notificationCenter.reads.unreadCount,
+      notificationCenter.open,
+      markServerRead,
+    ],
+  );
+
+  const withPresence = (screen: ReactNode) => (
+    <PresenceProvider value={presenceValue}>
+      <NotificationSettingsProvider value={notificationSettingsValue}>
+        <NotificationsProvider value={notificationsValue}>
+          <PendingReportsProvider value={pendingReportsValue}>
+            <PlatformStatusLayer refreshSignal={unread.statusRevision}>
+              {screen}
+            </PlatformStatusLayer>
+          </PendingReportsProvider>
+          <NotificationCenterModal
+            center={notificationCenter}
+            servers={servers}
+            me={currentAuthor}
+            onOpenItem={(item) => {
+              const target = notificationTargetOf(item);
+              if (target) handlePushTarget(target);
+            }}
+            onTransferAnswered={() => void reloadServers()}
+          />
+        </NotificationsProvider>
+      </NotificationSettingsProvider>
+    </PresenceProvider>
+  );
 
   function handleOpenDirectMessages() {
     setView("dm");
@@ -427,6 +615,19 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
     setLostChannel(null);
   }
 
+  // "Gestionar" desde Facturación › Boosts: se va al servidor y
+  // ServerChannelsScreen abre su sección Boosts.
+  useEffect(
+    () =>
+      serverBoostsRequest.subscribe((serverId) => {
+        setView("servers");
+        setSelectedServerId(serverId);
+        setSelectedChannelId(null);
+        setLostChannel(null);
+      }),
+    [],
+  );
+
   const addAndSelect = useCallback((server: ServerSummary) => {
     setServers((prev) => {
       const withoutDuplicate = prev.filter(
@@ -440,6 +641,11 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
     setIsCreateModalVisible(false);
     setIsJoinModalVisible(false);
   }, []);
+
+  function closeJoinModal() {
+    setIsJoinModalVisible(false);
+    onInviteOpened?.();
+  }
 
   function handleAddServer() {
     setIsAddServerSheetVisible(true);
@@ -508,12 +714,43 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
     );
   }
 
+  const addServerModals = (
+    <>
+      <AddServerSheet
+        visible={isAddServerSheetVisible}
+        onClose={() => setIsAddServerSheetVisible(false)}
+        onCreatePress={() => {
+          setIsAddServerSheetVisible(false);
+          setIsCreateModalVisible(true);
+        }}
+        onJoinPress={() => {
+          setIsAddServerSheetVisible(false);
+          setIsJoinModalVisible(true);
+        }}
+      />
+      <CreateServerModal
+        visible={isCreateModalVisible}
+        onClose={() => setIsCreateModalVisible(false)}
+        onCreated={addAndSelect}
+      />
+      <JoinServerModal
+        visible={isJoinModalVisible || pendingInviteCode !== null}
+        initialCode={pendingInviteCode ?? ""}
+        onClose={closeJoinModal}
+        onJoined={(server) => {
+          onInviteOpened?.();
+          addAndSelect(server);
+        }}
+      />
+    </>
+  );
+
   if (view === "dm") {
     return withPresence(
       <View className="flex-1">
         <StatusBar style={statusBarStyle} />
         <DirectMessagesScreen
-          unreadMentionsByServer={mentions.byServer}
+          unreadByServer={unread.byServer}
           servers={servers}
           userName={user?.name}
           currentAuthor={currentAuthor}
@@ -523,28 +760,27 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
           onLogout={logout}
         />
 
-        <AddServerSheet
-          visible={isAddServerSheetVisible}
-          onClose={() => setIsAddServerSheetVisible(false)}
-          onCreatePress={() => {
-            setIsAddServerSheetVisible(false);
-            setIsCreateModalVisible(true);
-          }}
-          onJoinPress={() => {
-            setIsAddServerSheetVisible(false);
-            setIsJoinModalVisible(true);
-          }}
+        {addServerModals}
+      </View>,
+    );
+  }
+
+  if (selectedServer?.suspended) {
+    return withPresence(
+      <View className="flex-1">
+        <StatusBar style={statusBarStyle} />
+        <ServerSuspendedScreen
+          server={selectedServer}
+          servers={servers}
+          userName={user?.name}
+          unreadDmCount={unreadDmCount}
+          unreadByServer={unread.byServer}
+          onSelectServer={selectServer}
+          onOpenDirectMessages={handleOpenDirectMessages}
+          onAddServer={handleAddServer}
+          onLogout={logout}
         />
-        <CreateServerModal
-          visible={isCreateModalVisible}
-          onClose={() => setIsCreateModalVisible(false)}
-          onCreated={addAndSelect}
-        />
-        <JoinServerModal
-          visible={isJoinModalVisible}
-          onClose={() => setIsJoinModalVisible(false)}
-          onJoined={addAndSelect}
-        />
+        {addServerModals}
       </View>,
     );
   }
@@ -604,38 +840,18 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
           onSelectChannel={setSelectedChannelId}
           onOpenDirectMessages={handleOpenDirectMessages}
           unreadDmCount={unreadDmCount}
-          unreadMentionsByChannel={mentions.byChannel}
-          unreadMentionsByServer={mentions.byServer}
+          unreadByChannel={unread.byChannel}
+          unreadByServer={unread.byServer}
           onSwitchServer={selectServer}
           onAddServer={handleAddServer}
           onLogout={logout}
           onLeaveServer={handleLeaveServer}
           onDeleteServer={handleDeleteServer}
           onServerUpdated={handleServerUpdated}
+          onGoToMessage={jumpToMessage}
         />
 
-        <AddServerSheet
-          visible={isAddServerSheetVisible}
-          onClose={() => setIsAddServerSheetVisible(false)}
-          onCreatePress={() => {
-            setIsAddServerSheetVisible(false);
-            setIsCreateModalVisible(true);
-          }}
-          onJoinPress={() => {
-            setIsAddServerSheetVisible(false);
-            setIsJoinModalVisible(true);
-          }}
-        />
-        <CreateServerModal
-          visible={isCreateModalVisible}
-          onClose={() => setIsCreateModalVisible(false)}
-          onCreated={addAndSelect}
-        />
-        <JoinServerModal
-          visible={isJoinModalVisible}
-          onClose={() => setIsJoinModalVisible(false)}
-          onJoined={addAndSelect}
-        />
+        {addServerModals}
       </View>,
     );
   }
@@ -648,35 +864,14 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
           servers={servers}
           userName={user?.name}
           unreadDmCount={unreadDmCount}
-          unreadMentionsByServer={mentions.byServer}
+          unreadByServer={unread.byServer}
           onSelectServer={selectServer}
           onOpenDirectMessages={handleOpenDirectMessages}
           onAddServer={handleAddServer}
           onLogout={logout}
         />
 
-        <AddServerSheet
-          visible={isAddServerSheetVisible}
-          onClose={() => setIsAddServerSheetVisible(false)}
-          onCreatePress={() => {
-            setIsAddServerSheetVisible(false);
-            setIsCreateModalVisible(true);
-          }}
-          onJoinPress={() => {
-            setIsAddServerSheetVisible(false);
-            setIsJoinModalVisible(true);
-          }}
-        />
-        <CreateServerModal
-          visible={isCreateModalVisible}
-          onClose={() => setIsCreateModalVisible(false)}
-          onCreated={addAndSelect}
-        />
-        <JoinServerModal
-          visible={isJoinModalVisible}
-          onClose={() => setIsJoinModalVisible(false)}
-          onJoined={addAndSelect}
-        />
+        {addServerModals}
       </View>,
     );
   }
@@ -713,9 +908,13 @@ export function HomeScreen({ resumesLoader = false }: HomeScreenProps) {
         onCreated={addAndSelect}
       />
       <JoinServerModal
-        visible={isJoinModalVisible}
-        onClose={() => setIsJoinModalVisible(false)}
-        onJoined={addAndSelect}
+        visible={isJoinModalVisible || pendingInviteCode !== null}
+        initialCode={pendingInviteCode ?? ""}
+        onClose={closeJoinModal}
+        onJoined={(server) => {
+          onInviteOpened?.();
+          addAndSelect(server);
+        }}
       />
     </View>,
   );

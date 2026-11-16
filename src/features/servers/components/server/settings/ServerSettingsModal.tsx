@@ -1,18 +1,29 @@
 import {
   type DeleteServerResult,
+  serverBoostCount,
+  serverBoostLevel,
   type ServerSummary,
 } from "@discordia/client-shared";
 import { useState } from "react";
 import { KeyboardAvoidingView, Modal, Platform } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { ServerBoostsStep } from "../../../../boosts/components/ServerBoostsStep";
+import { ModerationAuditStep } from "../../../../moderation/components/ModerationAuditStep";
+import { ReportsStep } from "../../../../reports/components/list/ReportsStep";
 import { useDeleteServerConfirm } from "../../../useDeleteServerConfirm";
 import { useServerSettingsForm } from "../../../useServerSettingsForm";
 import { WordFilterStep } from "../WordFilterStep";
 import { DeleteServerStep } from "./DeleteServerStep";
 import { ServerProfileStep } from "./ServerProfileStep";
+import { VanityUrlField } from "./vanity/VanityUrlField";
 import { SettingsHeader, type SettingsStep } from "./SettingsHeader";
 import { SettingsMenuStep } from "./SettingsMenuStep";
+import {
+  hasSettingsMenu,
+  initialSettingsStep,
+  type SettingsEntry,
+} from "./settingsSteps";
+import { useModalInsets } from "../../../../platform-status/hooks/useModalInsets";
 
 interface ServerSettingsModalProps {
   visible: boolean;
@@ -22,7 +33,19 @@ interface ServerSettingsModalProps {
   canManageServer: boolean;
   /** "Palabras prohibidas". */
   canManageMessages: boolean;
+  /** "Reportes" y "Registro de auditoría": solo moderadores. */
+  canReviewReports: boolean;
+  pendingReports: number;
+  currentUserId: string | null;
+  /** "boosts" si se entra desde "Boosts del servidor". */
+  entry?: SettingsEntry;
   onClose: () => void;
+  /** "Ir a comprar puntos" desde Boosts: quien lo usa cierra la configuracion. */
+  onBuyPoints: () => void;
+  /** "Ir al mensaje" desde un reporte: quien lo usa cierra la configuracion. */
+  onGoToMessage: (channelId: string, messageId: string) => void;
+  /** Se cerro un reporte pendiente: hay que actualizar la bandera. */
+  onPendingReportsChanged: () => void;
   onUpdated: (server: ServerSummary) => void;
   onConfirmDelete: (confirmName: string) => Promise<DeleteServerResult>;
 }
@@ -34,11 +57,26 @@ function SettingsBody({
   isOwner,
   canManageServer,
   canManageMessages,
+  canReviewReports,
+  pendingReports,
+  currentUserId,
+  entry = "menu",
   onClose,
+  onBuyPoints,
+  onGoToMessage,
+  onPendingReportsChanged,
   onUpdated,
   onConfirmDelete,
 }: SettingsBodyProps) {
-  const [step, setStep] = useState<SettingsStep>("menu");
+  const hasMenu = hasSettingsMenu({
+    isOwner,
+    canManageServer,
+    canManageMessages,
+    canReviewReports,
+  });
+  const [step, setStep] = useState<SettingsStep>(() =>
+    initialSettingsStep(entry, hasMenu),
+  );
   // Los hooks viven acá y no en cada paso para que lo editado sobreviva a
   // volver al menú y entrar de nuevo.
   const form = useServerSettingsForm({ server, onUpdated });
@@ -51,7 +89,14 @@ function SettingsBody({
 
   return (
     <>
-      <SettingsHeader step={step} onBack={backToMenu} onClose={onClose} />
+      <SettingsHeader
+        step={step}
+        serverName={server.name}
+        pendingReports={pendingReports}
+        canGoBack={hasMenu}
+        onBack={backToMenu}
+        onClose={onClose}
+      />
 
       {step === "menu" ? (
         <SettingsMenuStep
@@ -59,6 +104,8 @@ function SettingsBody({
           isOwner={isOwner}
           canManageServer={canManageServer}
           canManageMessages={canManageMessages}
+          canReviewReports={canReviewReports}
+          pendingReports={pendingReports}
           onSelect={setStep}
         />
       ) : null}
@@ -68,10 +115,39 @@ function SettingsBody({
           form={form}
           serverName={server.name}
           onCancel={onClose}
+          onBoost={() => setStep("boosts")}
+          vanityField={
+            <VanityUrlField
+              serverId={server.id}
+              serverName={server.name}
+              level={serverBoostLevel(server)}
+              boostCount={serverBoostCount(server)}
+              vanityCode={server.vanity_code ?? null}
+            />
+          }
         />
       ) : null}
 
+      {step === "boosts" ? (
+        <ServerBoostsStep server={server} onBuyPoints={onBuyPoints} />
+      ) : null}
+
       {step === "words" ? <WordFilterStep serverId={server.id} /> : null}
+
+      {step === "reports" && canReviewReports ? (
+        <ReportsStep
+          serverId={server.id}
+          ownerId={server.owner_id}
+          currentUserId={currentUserId}
+          channels={server.channels}
+          onGoToMessage={onGoToMessage}
+          onPendingChanged={onPendingReportsChanged}
+        />
+      ) : null}
+
+      {step === "audit" && canReviewReports ? (
+        <ModerationAuditStep serverId={server.id} />
+      ) : null}
 
       {step === "delete" ? (
         <DeleteServerStep
@@ -88,7 +164,7 @@ export function ServerSettingsModal({
   visible,
   ...bodyProps
 }: ServerSettingsModalProps) {
-  const insets = useSafeAreaInsets();
+  const insets = useModalInsets();
   const [openCount, setOpenCount] = useState(0);
   const [wasVisible, setWasVisible] = useState(visible);
 

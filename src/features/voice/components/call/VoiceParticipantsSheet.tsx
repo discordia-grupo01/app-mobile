@@ -40,6 +40,7 @@ interface VoiceParticipantsSheetProps {
   visible: boolean;
   participants: readonly VoiceParticipant[];
   ownAvatarUri: string | null;
+  participantAvatarOf: (identity: string) => string | null;
   pinnedIdentity: string | null;
   onToggleMutedForMe: (identity: string) => void;
   onPinChange: (identity: string | null) => void;
@@ -51,6 +52,7 @@ export function VoiceParticipantsSheet({
   visible,
   participants,
   ownAvatarUri,
+  participantAvatarOf,
   pinnedIdentity,
   onToggleMutedForMe,
   onPinChange,
@@ -97,7 +99,11 @@ export function VoiceParticipantsSheet({
               <ParticipantRow
                 key={participant.identity}
                 participant={participant}
-                avatarUri={participant.isLocal ? ownAvatarUri : null}
+                avatarUri={
+                  participant.isLocal
+                    ? ownAvatarUri
+                    : participantAvatarOf(participant.identity)
+                }
                 isPinned={participant.identity === pinnedIdentity}
                 onToggleMutedForMe={() =>
                   onToggleMutedForMe(participant.identity)
