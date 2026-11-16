@@ -117,9 +117,13 @@ export function DraggableCategoryList({
     categories.map((category) => [category.id, category]),
   );
   const offsets = offsetsFor(order);
+  // Until every row is measured they stack in the normal flow, like the plain
+  // list: positioning them with a guessed height made them overlap and then
+  // slide down once measured.
+  const positioned = order.every((id) => heights[id] !== undefined);
 
   return (
-    <View style={{ height: totalHeight(order) }}>
+    <View style={positioned ? { height: totalHeight(order) } : { gap }}>
       {order.map((id) => {
         const category = categoryById.get(id);
         if (!category) return null;
@@ -128,6 +132,7 @@ export function DraggableCategoryList({
           <DraggableCategoryRow
             key={id}
             top={offsets.get(id) ?? 0}
+            positioned={positioned}
             isDragging={draggingId === id}
             onDragStart={() => handleDragStart(id)}
             onDragMove={(dy) => handleDragMove(id, dy)}
@@ -144,6 +149,7 @@ export function DraggableCategoryList({
 
 function DraggableCategoryRow({
   top,
+  positioned,
   isDragging,
   onDragStart,
   onDragMove,
@@ -152,6 +158,7 @@ function DraggableCategoryRow({
   children,
 }: {
   top: number;
+  positioned: boolean;
   isDragging: boolean;
   onDragStart: () => void;
   onDragMove: (dy: number) => void;
@@ -167,13 +174,17 @@ function DraggableCategoryRow({
   }, [top]);
 
   useEffect(() => {
+    if (!positioned) {
+      topAnim.setValue(top);
+      return;
+    }
     if (isDragging) return;
     Animated.timing(topAnim, {
       toValue: top,
       duration: 150,
       useNativeDriver: false,
     }).start();
-  }, [top, isDragging, topAnim]);
+  }, [top, positioned, isDragging, topAnim]);
 
   const callbacksRef = useRef({ onDragStart, onDragMove, onDragEnd });
   useEffect(() => {
@@ -212,14 +223,18 @@ function DraggableCategoryRow({
 
   return (
     <Animated.View
-      style={{
-        position: "absolute",
-        left: 0,
-        right: 0,
-        top: topAnim,
-        zIndex: isDragging ? 10 : 0,
-        opacity: isDragging ? 0.9 : 1,
-      }}
+      style={
+        positioned
+          ? {
+              position: "absolute",
+              left: 0,
+              right: 0,
+              top: topAnim,
+              zIndex: isDragging ? 10 : 0,
+              opacity: isDragging ? 0.9 : 1,
+            }
+          : null
+      }
       onLayout={(event) => onMeasure(event.nativeEvent.layout.height)}
     >
       {children(panResponder.panHandlers)}
