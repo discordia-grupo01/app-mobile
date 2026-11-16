@@ -1,5 +1,7 @@
 import {
   initialVoiceSessionState,
+  isCameraMediaError,
+  isMicMediaError,
   ownerOfScreenShareIdentity,
   parseVoiceBridgeEvent,
   pinOnScreenShareChange,
@@ -13,6 +15,7 @@ import {
   type VoiceBridgeCommand,
   type VoiceBridgeEvent,
   voiceDisconnectMessage,
+  voiceMediaErrorMessage,
   voiceProfileIds,
   voiceScreenTileName,
   voiceSessionReducer,
@@ -359,11 +362,11 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
         case "error":
           if (event.error === "connect_failed") {
             end(VOICE_CONNECT_FAILED);
-          } else if (event.error === "mic_denied") {
-            setMediaError(VOICE_MIC_DENIED);
+          } else if (isMicMediaError(event.error)) {
+            setMediaError(voiceMediaErrorMessage(event.error));
             if (!stateRef.current.muted) dispatch({ type: "toggle_mute" });
-          } else if (event.error === "camera_denied") {
-            setMediaError(VOICE_CAMERA_DENIED);
+          } else if (isCameraMediaError(event.error)) {
+            setMediaError(voiceMediaErrorMessage(event.error));
           }
           return;
       }
