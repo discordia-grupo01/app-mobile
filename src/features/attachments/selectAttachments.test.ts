@@ -1,5 +1,4 @@
 import {
-  ATTACHMENT_TOO_LARGE,
   ATTACHMENT_UNSUPPORTED_TYPE,
   ATTACHMENTS_LIMIT_REACHED,
 } from "@discordia/client-shared";
@@ -37,7 +36,7 @@ describe("selectAttachments", () => {
     const pdf = file("a.pdf", "application/pdf", 11 * MB);
     expect(selectAttachments([], [pdf], { premium: false })).toEqual({
       accepted: [],
-      error: ATTACHMENT_TOO_LARGE,
+      error: "Pesa 11 MB. El límite es 10 MB.",
     });
   });
 
@@ -55,7 +54,7 @@ describe("selectAttachments", () => {
     const png = file("a.png", "image/png");
     expect(selectAttachments([], [big, png], { premium: true })).toEqual({
       accepted: [png],
-      error: ATTACHMENT_TOO_LARGE,
+      error: "Pesa 51 MB. El límite es 50 MB.",
     });
   });
 
