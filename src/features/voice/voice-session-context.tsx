@@ -1,5 +1,7 @@
 import {
   initialVoiceSessionState,
+  isCameraMediaError,
+  isMicMediaError,
   ownerOfScreenShareIdentity,
   parseVoiceBridgeEvent,
   pinOnScreenShareChange,
@@ -13,6 +15,7 @@ import {
   type VoiceBridgeCommand,
   type VoiceBridgeEvent,
   voiceDisconnectMessage,
+  voiceMediaErrorMessage,
   voiceProfileIds,
   voiceScreenTileName,
   voiceSessionReducer,
@@ -82,6 +85,7 @@ interface VoiceSessionValue {
   ) => void;
   leave: () => void;
   toggleMute: () => void;
+  toggleDeafen: () => void;
   toggleCamera: () => void;
   canScreenShare: boolean;
   toggleScreenShare: () => void;
@@ -358,11 +362,11 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
         case "error":
           if (event.error === "connect_failed") {
             end(VOICE_CONNECT_FAILED);
-          } else if (event.error === "mic_denied") {
-            setMediaError(VOICE_MIC_DENIED);
+          } else if (isMicMediaError(event.error)) {
+            setMediaError(voiceMediaErrorMessage(event.error));
             if (!stateRef.current.muted) dispatch({ type: "toggle_mute" });
-          } else if (event.error === "camera_denied") {
-            setMediaError(VOICE_CAMERA_DENIED);
+          } else if (isCameraMediaError(event.error)) {
+            setMediaError(voiceMediaErrorMessage(event.error));
           }
           return;
       }
@@ -383,7 +387,8 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
     send({ type: "connect", url: bridge.url, token: bridge.token });
   }, [bridge, send]);
 
-  const { muted, cameraOn, screenSharing, mutedForMe, target } = state;
+  const { muted, deafened, cameraOn, screenSharing, mutedForMe, target } =
+    state;
   const { start: startScreenShare, stop: stopScreenShare } = screenShare;
 
   // Desde que conecta (y aunque este reconectando) el microfono tiene que
@@ -406,6 +411,11 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
     if (!bridge) return;
     send({ type: "setMicrophoneEnabled", enabled: !muted });
   }, [bridge, muted, send]);
+
+  useEffect(() => {
+    if (!bridge) return;
+    send({ type: "setDeafened", deafened });
+  }, [bridge, deafened, send]);
 
   useEffect(() => {
     if (!bridge) return;
@@ -463,6 +473,10 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
     setMediaError(null);
     dispatch({ type: "toggle_mute" });
   }, []);
+  const toggleDeafen = useCallback(
+    () => dispatch({ type: "toggle_deafen" }),
+    [],
+  );
   const toggleCamera = useCallback(() => {
     setMediaError(null);
     dispatch({ type: "toggle_camera" });
@@ -511,6 +525,7 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
       connectWith: startConnectWith,
       leave: startLeave,
       toggleMute,
+      toggleDeafen,
       toggleCamera,
       canScreenShare,
       toggleScreenShare,
@@ -532,6 +547,7 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
       startConnectWith,
       startLeave,
       toggleMute,
+      toggleDeafen,
       toggleCamera,
       canScreenShare,
       toggleScreenShare,
