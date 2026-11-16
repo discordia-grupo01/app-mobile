@@ -2,7 +2,9 @@ import {
   ACTIVITY_STATUS_LABEL,
   type BillingSection,
   resolveImageUrl,
+  VOICE_DEAFEN_LABEL,
   VOICE_MODERATOR_MUTED,
+  VOICE_UNDEAFEN_LABEL,
   VOICE_MUTE_LABEL,
   VOICE_UNMUTE_LABEL,
 } from "@discordia/client-shared";
@@ -42,7 +44,7 @@ export function UserProfileBar({ userName, onLogout }: UserProfileBarProps) {
   const voice = useOptionalVoiceSession();
   const isMicMuted = voice?.state.muted ?? false;
   const canSpeak = voice?.state.canSpeak ?? true;
-  const [isDeafened, setIsDeafened] = useState(false);
+  const isDeafened = voice?.state.deafened ?? false;
   const { theme, setTheme } = useTheme();
 
   const displayName = (user?.name ?? userName)?.trim() || "Mi cuenta";
@@ -125,10 +127,11 @@ export function UserProfileBar({ userName, onLogout }: UserProfileBarProps) {
 
           <TouchableOpacity
             className="w-9 h-9 rounded-[10px] items-center justify-center"
-            onPress={() => setIsDeafened((prev) => !prev)}
+            onPress={voice?.toggleDeafen}
             accessibilityRole="button"
+            accessibilityState={{ selected: isDeafened }}
             accessibilityLabel={
-              isDeafened ? "Activar audio" : "Silenciar audio (ensordecer)"
+              isDeafened ? VOICE_UNDEAFEN_LABEL : VOICE_DEAFEN_LABEL
             }
           >
             <Feather
