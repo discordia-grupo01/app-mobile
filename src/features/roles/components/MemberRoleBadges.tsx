@@ -4,7 +4,9 @@ import { Feather } from "@expo/vector-icons";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -219,7 +221,10 @@ export function MemberRoleBadges({
           animationType="fade"
           onRequestClose={closePicker}
         >
-          <View className="flex-1 justify-end bg-[rgba(0,0,0,0.6)]">
+          <KeyboardAvoidingView
+            className="flex-1 justify-end bg-[rgba(0,0,0,0.6)]"
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+          >
             <Pressable style={StyleSheet.absoluteFill} onPress={closePicker} />
 
             <View
@@ -235,7 +240,6 @@ export function MemberRoleBadges({
                   onChangeText={setSearch}
                   placeholder="Buscar rol..."
                   placeholderTextColor={colors.textSubtle}
-                  autoFocus
                   className="flex-1 text-[14px] text-content py-0.5"
                 />
                 {search ? (
@@ -256,7 +260,7 @@ export function MemberRoleBadges({
                 </Text>
               ) : (
                 <ScrollView
-                  className="mb-1"
+                  className="shrink mb-1"
                   keyboardShouldPersistTaps="handled"
                   showsVerticalScrollIndicator={false}
                 >
@@ -293,7 +297,7 @@ export function MemberRoleBadges({
                 </ScrollView>
               )}
             </View>
-          </View>
+          </KeyboardAvoidingView>
         </Modal>
       ) : null}
     </View>
