@@ -334,9 +334,12 @@ export function ServerChannelsScreen({
   // se abre su sección Boosts (HomeScreen ya cambió de servidor si hacía falta).
   useEffect(() => {
     const openIfRequested = () => {
-      if (serverBoostsRequest.take((id) => id === server.id)) {
+      const target = serverBoostsRequest.take(
+        ({ serverId }) => serverId === server.id,
+      );
+      if (target) {
         setServerSettingsEntry("boosts");
-        setServerBoostsTab("boost");
+        setServerBoostsTab(target.tab);
         setIsServerSettingsVisible(true);
       }
     };
