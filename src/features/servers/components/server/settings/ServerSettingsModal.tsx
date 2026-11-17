@@ -1,4 +1,5 @@
 import {
+  type BoostSectionTab,
   type DeleteServerResult,
   serverBoostCount,
   serverBoostLevel,
@@ -85,7 +86,18 @@ function SettingsBody({
     onConfirm: onConfirmDelete,
     onDeleted: onClose,
   });
+  const [boostsTab, setBoostsTab] = useState<BoostSectionTab>("boost");
   const backToMenu = () => setStep("menu");
+
+  function selectStep(target: SettingsStep) {
+    setBoostsTab("boost");
+    setStep(target);
+  }
+
+  function openBoostsAt(tab: BoostSectionTab) {
+    setBoostsTab(tab);
+    setStep("boosts");
+  }
 
   return (
     <>
@@ -106,7 +118,7 @@ function SettingsBody({
           canManageMessages={canManageMessages}
           canReviewReports={canReviewReports}
           pendingReports={pendingReports}
-          onSelect={setStep}
+          onSelect={selectStep}
         />
       ) : null}
 
@@ -115,7 +127,8 @@ function SettingsBody({
           form={form}
           serverName={server.name}
           onCancel={onClose}
-          onBoost={() => setStep("boosts")}
+          onBoost={() => openBoostsAt("boost")}
+          onShowBenefits={() => openBoostsAt("benefits")}
           vanityField={
             <VanityUrlField
               serverId={server.id}
@@ -129,7 +142,11 @@ function SettingsBody({
       ) : null}
 
       {step === "boosts" ? (
-        <ServerBoostsStep server={server} onBuyPoints={onBuyPoints} />
+        <ServerBoostsStep
+          server={server}
+          initialTab={boostsTab}
+          onBuyPoints={onBuyPoints}
+        />
       ) : null}
 
       {step === "words" ? <WordFilterStep serverId={server.id} /> : null}

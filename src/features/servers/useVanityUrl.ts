@@ -15,7 +15,7 @@ export function useVanityUrl(serverId: string, vanityCode: string | null) {
   }
 
   const save = useCallback(
-    async (code: string | null): Promise<boolean> => {
+    async (code: string): Promise<boolean> => {
       setPending(true);
       setError("");
       const result = await setVanityCode(serverId, code);

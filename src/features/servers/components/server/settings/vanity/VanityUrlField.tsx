@@ -1,13 +1,17 @@
 import {
   type BoostLevel,
   canSetVanityUrl,
+  VANITY_URL_COPY,
   vanitySlug,
 } from "@discordia/client-shared";
+import { Feather } from "@expo/vector-icons";
 import { useState } from "react";
+import { Text, View } from "react-native";
 
-import { BoostPerkHint } from "../../../../../boosts/components/BoostPerkHint";
+import { useThemeColors } from "../../../../../../theme/theme-context";
+import { BoostBenefitField } from "../../../../../boosts/components/BoostBenefitField";
+import { vanityLinkPrefix } from "../../../../api";
 import { useVanityUrl } from "../../../../useVanityUrl";
-import { RemoveVanityModal } from "./RemoveVanityModal";
 import { VanityUrlEditor } from "./VanityUrlEditor";
 import { VanityUrlSaved } from "./VanityUrlSaved";
 
@@ -30,18 +34,6 @@ export function VanityUrlField({
 }: VanityUrlFieldProps) {
   const vanity = useVanityUrl(serverId, vanityCode);
   const [isEditing, setIsEditing] = useState(false);
-  const [isRemoving, setIsRemoving] = useState(false);
-
-  if (!canSetVanityUrl(level)) {
-    return (
-      <BoostPerkHint
-        perk="vanity_url"
-        level={level}
-        boostCount={boostCount}
-        unlockedHint=""
-      />
-    );
-  }
 
   const { savedCode } = vanity;
 
@@ -49,19 +41,20 @@ export function VanityUrlField({
     if (await vanity.save(code)) setIsEditing(false);
   }
 
-  async function remove() {
-    if (!(await vanity.save(null))) return;
-    setIsRemoving(false);
-    setIsEditing(false);
-  }
-
   return (
-    <>
-      {savedCode === null || isEditing ? (
+    <BoostBenefitField
+      perk="vanity_url"
+      level={level}
+      boostCount={boostCount}
+      title={VANITY_URL_COPY.title}
+    >
+      {!canSetVanityUrl(level) ? (
+        <LockedVanityUrl code={savedCode ?? vanitySlug(serverName)} />
+      ) : savedCode === null || isEditing ? (
         <VanityUrlEditor
           initialCode={savedCode ?? vanitySlug(serverName)}
           pending={vanity.pending}
-          saveError={isRemoving ? "" : vanity.error}
+          saveError={vanity.error}
           onSave={(code) => void save(code)}
           onEdit={vanity.clearError}
           onCancel={
@@ -74,25 +67,33 @@ export function VanityUrlField({
           }
         />
       ) : (
-        <VanityUrlSaved
-          code={savedCode}
-          onChange={() => setIsEditing(true)}
-          onRemove={() => {
-            vanity.clearError();
-            setIsRemoving(true);
-          }}
-        />
+        <VanityUrlSaved code={savedCode} onChange={() => setIsEditing(true)} />
       )}
-      <RemoveVanityModal
-        code={isRemoving ? savedCode : null}
-        pending={vanity.pending}
-        error={vanity.error}
-        onConfirm={() => void remove()}
-        onClose={() => {
-          vanity.clearError();
-          setIsRemoving(false);
-        }}
-      />
+    </BoostBenefitField>
+  );
+}
+
+function LockedVanityUrl({ code }: { code: string }) {
+  const colors = useThemeColors();
+
+  return (
+    <>
+      <View
+        accessibilityState={{ disabled: true }}
+        className="min-h-11 flex-row items-center rounded-xl border border-dashed border-line-strong bg-surface-input px-3.5"
+      >
+        <Text
+          className="flex-1 text-[13px] text-content-subtle opacity-70"
+          numberOfLines={1}
+        >
+          {vanityLinkPrefix()}
+          <Text className="font-bold">{code}</Text>
+        </Text>
+        <Feather name="lock" size={14} color={colors.textSubtle} />
+      </View>
+      <Text className="text-xs text-content-muted">
+        {VANITY_URL_COPY.locked}
+      </Text>
     </>
   );
 }
