@@ -13,6 +13,7 @@ import {
   type Role,
   SEND_MESSAGES_DENIED_PLACEHOLDER,
   unknownAuthor,
+  type BoostLevel,
 } from "@discordia/client-shared";
 
 import { useEffect, useRef, useState } from "react";
@@ -39,6 +40,8 @@ import { ViewingPastBar } from "./ViewingPastBar";
 
 interface ChannelChatProps {
   serverId: string;
+  boostLevel: BoostLevel;
+  boostCount: number;
   /** Para el aviso de quien ve un reporte ("Lo ven los moderadores de ..."). */
   serverName: string;
   channel: Channel;
@@ -62,6 +65,8 @@ interface ChannelChatProps {
 
 export function ChannelChat({
   serverId,
+  boostLevel,
+  boostCount,
   serverName,
   channel,
   currentAuthor,
@@ -258,6 +263,7 @@ export function ChannelChat({
           jumpToPresent();
           return pending.onSend(...args);
         }}
+        serverBoost={{ serverId, level: boostLevel, boostCount }}
         uploadTarget={{ channelId: channel.id }}
         disabled={
           !currentAuthor ||

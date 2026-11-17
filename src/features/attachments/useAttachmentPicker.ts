@@ -1,7 +1,12 @@
+import type { BoostLevel } from "@discordia/client-shared";
 import * as DocumentPicker from "expo-document-picker";
 import { useCallback, useState } from "react";
 
-import { attachmentPickerTypes, selectAttachments } from "./selectAttachments";
+import {
+  type AttachmentLimitOffer,
+  attachmentPickerTypes,
+  selectAttachments,
+} from "./selectAttachments";
 
 // TODO: mover a client-shared (messages/chat) en la proxima release.
 const ATTACHMENT_PICKER_FAILED =
@@ -11,11 +16,17 @@ export type PickedAttachment = DocumentPicker.DocumentPickerAsset;
 
 type UseAttachmentPickerOptions = {
   premium: boolean;
-  onError: (message: string | undefined) => void;
+  /** Nivel de boosts del servidor; sin él es un mensaje directo. */
+  serverLevel?: BoostLevel;
+  onError: (
+    message: string | undefined,
+    offer?: AttachmentLimitOffer | null,
+  ) => void;
 };
 
 export function useAttachmentPicker({
   premium,
+  serverLevel,
   onError,
 }: UseAttachmentPickerOptions) {
   const [attachments, setAttachments] = useState<PickedAttachment[]>([]);
@@ -36,12 +47,14 @@ export function useAttachmentPicker({
     }
     if (result.canceled) return;
 
-    const { accepted, error } = selectAttachments(attachments, result.assets, {
-      premium,
-    });
-    onError(error);
+    const { accepted, error, offer } = selectAttachments(
+      attachments,
+      result.assets,
+      { premium, serverLevel },
+    );
+    onError(error, offer);
     if (accepted.length > 0) setAttachments((prev) => [...prev, ...accepted]);
-  }, [attachments, premium, onError]);
+  }, [attachments, premium, serverLevel, onError]);
 
   const remove = useCallback((uri: string) => {
     setAttachments((prev) => prev.filter((file) => file.uri !== uri));

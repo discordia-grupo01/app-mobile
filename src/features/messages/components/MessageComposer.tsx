@@ -1,6 +1,7 @@
 import {
   ATTACH_FILE_LABEL,
   type AttachmentTarget,
+  type BoostLevel,
   decodeMentions,
   EMOJI_PICKER_LABEL,
   MAX_MESSAGE_LENGTH,
@@ -13,13 +14,20 @@ import { Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { cn } from "../../../lib/cn";
+import {
+  accountSettingsRequest,
+  serverBoostsRequest,
+} from "../../../lib/navigationRequests";
+import type { AttachmentLimitOffer } from "../../attachments/selectAttachments";
 import { useAttachmentPicker } from "../../attachments/useAttachmentPicker";
 import { useAttachmentUploads } from "../../attachments/useAttachmentUploads";
 import { useOwnPremium } from "../../billing/useOwnPremium";
 import { useThemeColors } from "../../../theme/theme-context";
 import type { SendMessageResult } from "../use-channel-messages";
 import { useMentionDraft } from "../useMentionDraft";
+import { AttachmentBoostOffer } from "./AttachmentBoostOffer";
 import { AttachmentChips } from "./AttachmentChips";
+import { AttachmentPremiumOffer } from "./AttachmentPremiumOffer";
 import { ComposerIconButton } from "./ComposerIconButton";
 import { EditingBanner, type ComposerEditing } from "./EditingBanner";
 import { EmojiPickerSheet } from "./EmojiPickerSheet";
@@ -37,17 +45,30 @@ interface MessageComposerProps {
   ) => void | Promise<SendMessageResult>;
   /** A donde van los archivos: el canal o el usuario del DM. */
   uploadTarget: AttachmentTarget;
+  /** Solo en canales de un servidor: en un DM los boosts no cambian el límite. */
+  serverBoost?: { serverId: string; level: BoostLevel; boostCount: number };
   disabled?: boolean;
   /** Mientras hay un mensaje en edicion, el composer lo carga y guarda en lugar de enviar uno nuevo. */
   editing?: ComposerEditing | null;
+  /**
+   * Lleva a la suscripción Premium. Por defecto la pide a la barra de cuenta;
+   * donde esa barra no está montada (un DM abierto) hay que volver primero.
+   */
+  onOpenPremium?: () => void;
+}
+
+function requestPremiumSubscription() {
+  accountSettingsRequest.request("subscriptions");
 }
 
 export function MessageComposer({
   placeholder,
   onSend,
   uploadTarget,
+  serverBoost,
   disabled = false,
   editing = null,
+  onOpenPremium = requestPremiumSubscription,
 }: MessageComposerProps) {
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
@@ -55,6 +76,9 @@ export function MessageComposer({
   const draft = useMentionDraft({ sources });
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [sendError, setSendError] = useState<string | undefined>();
+  const [limitOffer, setLimitOffer] = useState<AttachmentLimitOffer | null>(
+    null,
+  );
   const [isSending, setIsSending] = useState(false);
   const premium = useOwnPremium();
   const {
@@ -62,7 +86,19 @@ export function MessageComposer({
     pick: pickFiles,
     remove: removeAttachment,
     clear: clearAttachments,
-  } = useAttachmentPicker({ premium, onError: setSendError });
+  } = useAttachmentPicker({
+    premium,
+    serverLevel: serverBoost?.level,
+    onError: showError,
+  });
+
+  function showError(
+    message: string | undefined,
+    offer: AttachmentLimitOffer | null = null,
+  ) {
+    setSendError(message);
+    setLimitOffer(offer);
+  }
   const inputRef = useRef<ComponentRef<typeof TextInput>>(null);
   const { uploadAll, forget } = useAttachmentUploads();
 
@@ -79,7 +115,7 @@ export function MessageComposer({
       (kind, id) => resolveMention?.(kind, id)?.name ?? null,
     );
     draft.load(decoded.text, decoded.picked);
-    setSendError(undefined);
+    showError(undefined);
   }
 
   // El input ya estaba montado, asi que el foco (y el teclado) es inmediato.
@@ -99,7 +135,7 @@ export function MessageComposer({
 
   async function submit() {
     if (!canSend) return;
-    setSendError(undefined);
+    showError(undefined);
 
     if (editing && draft.encoded.trim() === editing.content) {
       editing.onCancel();
@@ -113,7 +149,7 @@ export function MessageComposer({
       const result = await outcome;
       setIsSending(false);
       if (result.ok) draft.reset();
-      else setSendError(result.message);
+      else showError(result.message);
       return;
     }
 
@@ -127,7 +163,7 @@ export function MessageComposer({
       const result = await outcome;
       setIsSending(false);
       if (result.ok) clearDraft();
-      else setSendError(result.message);
+      else showError(result.message);
       return;
     }
 
@@ -135,14 +171,14 @@ export function MessageComposer({
     const uploads = await uploadAll(attachments, uploadTarget);
     if (!uploads.ok) {
       setIsSending(false);
-      setSendError(uploads.message);
+      showError(uploads.message);
       return;
     }
 
     const result = await onSend(draft.encoded, uploads.ids);
     setIsSending(false);
     if (result === undefined || result.ok) clearDraft();
-    else setSendError(result.message);
+    else showError(result.message);
   }
 
   function clearDraft() {
@@ -181,7 +217,7 @@ export function MessageComposer({
             value={draft.segments ? undefined : draft.text}
             onChangeText={(text) => {
               draft.handleChangeText(text);
-              setSendError(undefined);
+              showError(undefined);
             }}
             onSelectionChange={draft.handleSelectionChange}
             selection={draft.selection}
@@ -215,6 +251,21 @@ export function MessageComposer({
 
       {sendError ? (
         <Text className="mt-1.5 text-[12px] text-danger">{sendError}</Text>
+      ) : null}
+      {limitOffer === "boost" && serverBoost ? (
+        <AttachmentBoostOffer
+          level={serverBoost.level}
+          boostCount={serverBoost.boostCount}
+          onShowBenefits={() =>
+            serverBoostsRequest.request({
+              serverId: serverBoost.serverId,
+              tab: "benefits",
+            })
+          }
+          onOpenPremium={onOpenPremium}
+        />
+      ) : limitOffer === "premium" ? (
+        <AttachmentPremiumOffer onOpenPremium={onOpenPremium} />
       ) : null}
 
       {length >= COUNTER_THRESHOLD ? (

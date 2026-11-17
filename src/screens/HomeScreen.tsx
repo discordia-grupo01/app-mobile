@@ -619,7 +619,7 @@ export function HomeScreen({
   // ServerChannelsScreen abre su sección Boosts.
   useEffect(
     () =>
-      serverBoostsRequest.subscribe((serverId) => {
+      serverBoostsRequest.subscribe(({ serverId }) => {
         setView("servers");
         setSelectedServerId(serverId);
         setSelectedChannelId(null);
