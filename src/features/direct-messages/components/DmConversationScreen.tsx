@@ -35,6 +35,7 @@ interface DmConversationScreenProps {
   /** La sala personal esta unida: solo entonces se puede enviar. */
   isConnected: boolean;
   onBack: () => void;
+  onOpenPremium: () => void;
 }
 
 export function DmConversationScreen({
@@ -43,6 +44,7 @@ export function DmConversationScreen({
   onSend,
   isConnected,
   onBack,
+  onOpenPremium,
 }: DmConversationScreenProps) {
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
@@ -108,6 +110,7 @@ export function DmConversationScreen({
           blockedByMe={blockedByMe}
           onSend={onSend}
           isConnected={isConnected}
+          onOpenPremium={onOpenPremium}
           onOpenProfile={(userId) =>
             userId === currentAuthor.id
               ? setIsOwnProfileVisible(true)

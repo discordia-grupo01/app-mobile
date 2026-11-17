@@ -18,6 +18,7 @@ import {
   accountSettingsRequest,
   serverBoostsRequest,
 } from "../../../lib/navigationRequests";
+import type { AttachmentLimitOffer } from "../../attachments/selectAttachments";
 import { useAttachmentPicker } from "../../attachments/useAttachmentPicker";
 import { useAttachmentUploads } from "../../attachments/useAttachmentUploads";
 import { useOwnPremium } from "../../billing/useOwnPremium";
@@ -26,6 +27,7 @@ import type { SendMessageResult } from "../use-channel-messages";
 import { useMentionDraft } from "../useMentionDraft";
 import { AttachmentBoostOffer } from "./AttachmentBoostOffer";
 import { AttachmentChips } from "./AttachmentChips";
+import { AttachmentPremiumOffer } from "./AttachmentPremiumOffer";
 import { ComposerIconButton } from "./ComposerIconButton";
 import { EditingBanner, type ComposerEditing } from "./EditingBanner";
 import { EmojiPickerSheet } from "./EmojiPickerSheet";
@@ -48,6 +50,15 @@ interface MessageComposerProps {
   disabled?: boolean;
   /** Mientras hay un mensaje en edicion, el composer lo carga y guarda en lugar de enviar uno nuevo. */
   editing?: ComposerEditing | null;
+  /**
+   * Lleva a la suscripción Premium. Por defecto la pide a la barra de cuenta;
+   * donde esa barra no está montada (un DM abierto) hay que volver primero.
+   */
+  onOpenPremium?: () => void;
+}
+
+function requestPremiumSubscription() {
+  accountSettingsRequest.request("subscriptions");
 }
 
 export function MessageComposer({
@@ -57,6 +68,7 @@ export function MessageComposer({
   serverBoost,
   disabled = false,
   editing = null,
+  onOpenPremium = requestPremiumSubscription,
 }: MessageComposerProps) {
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
@@ -64,7 +76,9 @@ export function MessageComposer({
   const draft = useMentionDraft({ sources });
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [sendError, setSendError] = useState<string | undefined>();
-  const [showBoostOffer, setShowBoostOffer] = useState(false);
+  const [limitOffer, setLimitOffer] = useState<AttachmentLimitOffer | null>(
+    null,
+  );
   const [isSending, setIsSending] = useState(false);
   const premium = useOwnPremium();
   const {
@@ -78,9 +92,12 @@ export function MessageComposer({
     onError: showError,
   });
 
-  function showError(message: string | undefined, boostOffer = false) {
+  function showError(
+    message: string | undefined,
+    offer: AttachmentLimitOffer | null = null,
+  ) {
     setSendError(message);
-    setShowBoostOffer(boostOffer);
+    setLimitOffer(offer);
   }
   const inputRef = useRef<ComponentRef<typeof TextInput>>(null);
   const { uploadAll, forget } = useAttachmentUploads();
@@ -235,7 +252,7 @@ export function MessageComposer({
       {sendError ? (
         <Text className="mt-1.5 text-[12px] text-danger">{sendError}</Text>
       ) : null}
-      {showBoostOffer && serverBoost ? (
+      {limitOffer === "boost" && serverBoost ? (
         <AttachmentBoostOffer
           level={serverBoost.level}
           boostCount={serverBoost.boostCount}
@@ -245,8 +262,10 @@ export function MessageComposer({
               tab: "benefits",
             })
           }
-          onOpenPremium={() => accountSettingsRequest.request("premium")}
+          onOpenPremium={onOpenPremium}
         />
+      ) : limitOffer === "premium" ? (
+        <AttachmentPremiumOffer onOpenPremium={onOpenPremium} />
       ) : null}
 
       {length >= COUNTER_THRESHOLD ? (

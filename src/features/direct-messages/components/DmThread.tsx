@@ -36,6 +36,8 @@ interface DmThreadProps {
   /** La sala personal esta unida: solo entonces se puede enviar. */
   isConnected: boolean;
   onOpenProfile: (userId: string) => void;
+  /** Un archivo pasó los 10 MB del DM: llevar a la suscripción Premium. */
+  onOpenPremium: () => void;
 }
 
 /** Un borrador no tiene canal al que unirse: solo el composer. */
@@ -51,6 +53,7 @@ function DraftDmThread({
   onSend,
   isConnected,
   onOpenProfile,
+  onOpenPremium,
 }: DmThreadProps) {
   const pending = usePendingMessages({
     chatKey: partner.id,
@@ -80,6 +83,7 @@ function DraftDmThread({
         onSend={pending.onSend}
         uploadTarget={{ to: partner.id }}
         disabled={blockedByMe}
+        onOpenPremium={onOpenPremium}
       />
     </>
   );
@@ -99,6 +103,7 @@ function LiveDmThread({
   onSend,
   isConnected,
   onOpenProfile,
+  onOpenPremium,
 }: DmThreadProps & { conversationId: string }) {
   const {
     status,
@@ -201,6 +206,7 @@ function LiveDmThread({
         onSend={pending.onSend}
         uploadTarget={{ to: partner.id }}
         disabled={blockedByMe}
+        onOpenPremium={onOpenPremium}
         editing={
           editingMessage
             ? {
