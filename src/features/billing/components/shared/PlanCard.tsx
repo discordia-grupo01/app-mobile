@@ -1,5 +1,6 @@
 import {
   BILLING_COPY,
+  type BillingTone,
   formatArsFromCents,
   PREMIUM_BRAND_COLORS,
   PREMIUM_PRICE_CENTS,
@@ -8,45 +9,60 @@ import {
 import type { ReactNode } from "react";
 import { Text, View } from "react-native";
 
-import { withAlpha } from "../../../../lib/color";
+import { useTheme, useThemeColors } from "../../../../theme/theme-context";
+import { billingToneBackground, billingToneColor } from "./billingTone";
 import { DiscordiaPremiumMark } from "./DiscordiaIcons";
 
+export interface PlanStatus {
+  label: string;
+  tone: BillingTone;
+}
+
 interface PlanCardProps {
-  status?: { label: string; color: string } | null;
+  status?: PlanStatus | null;
   detail?: string;
   actions?: ReactNode;
 }
 
 /**
  * Tarjeta del plan pensada para el ancho de un celular: todo apilado, con el
- * precio grande y el estado en su propia línea para que no se corte.
+ * precio grande y el estado como chip debajo del título, igual que en web.
  */
 export function PlanCard({ status, detail, actions }: PlanCardProps) {
+  const { theme } = useTheme();
+  const colors = useThemeColors();
+
   return (
     <View
-      className="rounded-2xl border bg-surface-raised p-4"
-      style={{ borderColor: withAlpha(PREMIUM_BRAND_COLORS.yellow, 0.35) }}
+      className="rounded-2xl bg-surface-raised p-4"
+      style={{
+        borderColor: PREMIUM_BRAND_COLORS.yellow,
+        borderWidth: theme === "light" ? 1.5 : 1,
+      }}
     >
-      <DiscordiaPremiumMark size={56} />
-
-      <Text className="mt-3 text-[19px] font-bold text-content">
-        {BILLING_COPY.premiumTitle}
-      </Text>
-
-      {status ? (
-        <View className="mt-1.5 flex-row items-center gap-2">
-          <View
-            className="h-2 w-2 rounded-full"
-            style={{ backgroundColor: status.color }}
-          />
-          <Text
-            className="flex-1 text-[13px] font-semibold"
-            style={{ color: status.color }}
-          >
-            {status.label}
+      <View className="flex-row items-center gap-3">
+        <DiscordiaPremiumMark size={56} />
+        <View className="flex-1 items-start gap-1.5">
+          <Text className="text-[19px] font-bold text-content">
+            {BILLING_COPY.premiumTitle}
           </Text>
+          {status ? (
+            <View
+              className="rounded-full px-2 py-0.5"
+              style={{
+                backgroundColor: billingToneBackground(status.tone, colors),
+              }}
+            >
+              <Text
+                className="text-[10px] font-bold uppercase"
+                style={{ color: billingToneColor(status.tone, colors) }}
+              >
+                {status.label}
+              </Text>
+            </View>
+          ) : null}
         </View>
-      ) : null}
+      </View>
 
       <View className="mt-3 flex-row items-baseline gap-1.5">
         <Text className="text-[26px] font-bold text-content tabular-nums">
