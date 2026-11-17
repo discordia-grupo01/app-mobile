@@ -1,4 +1,7 @@
 import {
+  type BoostLevel,
+  type BoostSectionTab,
+  canSetVanityUrl,
   CHANGE_POLL_INTERVAL_MS,
   daysUntil,
   type Invitation,
@@ -34,6 +37,7 @@ import { withAlpha } from "../../../../lib/color";
 import { useThemeColors } from "../../../../theme/theme-context";
 import { ModalShell } from "../../../../components/ui/ModalShell";
 import { ModalCloseButton } from "../../../../components/ui/ModalCloseButton";
+import { LockedVanityLink } from "./LockedVanityLink";
 import { ServerVanityLink } from "./ServerVanityLink";
 
 interface InviteLinkModalProps {
@@ -42,7 +46,10 @@ interface InviteLinkModalProps {
   serverName: string;
   /** URL personalizada: servers solo la manda en el nivel 3. */
   vanityCode: string | null;
+  boostLevel: BoostLevel;
+  boostCount: number;
   onClose: () => void;
+  onOpenBoosts: (tab: BoostSectionTab) => void;
 }
 
 const STATUS_COPY: Record<
@@ -223,7 +230,10 @@ export function InviteLinkModal({
   serverId,
   serverName,
   vanityCode,
+  boostLevel,
+  boostCount,
   onClose,
+  onOpenBoosts,
 }: InviteLinkModalProps) {
   const colors = useThemeColors();
   const [invitations, setInvitations] = useState<Invitation[] | null>(null);
@@ -476,6 +486,18 @@ export function InviteLinkModal({
           </View>
         )}
       </ScrollView>
+
+      {canSetVanityUrl(boostLevel) ? null : (
+        <View className="border-t border-t-line px-7 py-5">
+          <LockedVanityLink
+            serverName={serverName}
+            level={boostLevel}
+            boostCount={boostCount}
+            onBoost={() => onOpenBoosts("boost")}
+            onShowBenefits={() => onOpenBoosts("benefits")}
+          />
+        </View>
+      )}
     </ModalShell>
   );
 }
