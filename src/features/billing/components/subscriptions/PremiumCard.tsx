@@ -13,10 +13,8 @@ import { Text, TouchableOpacity, View } from "react-native";
 
 import { Button } from "../../../../components/ui/Button";
 import { FormErrorBanner } from "../../../../components/ui/FormErrorBanner";
-import { useThemeColors } from "../../../../theme/theme-context";
 import { cancelPremium } from "../../api";
 import { CancelPremiumModal } from "./CancelPremiumModal";
-import { billingToneColor } from "../shared/billingTone";
 import { PlanCard } from "../shared/PlanCard";
 import { PremiumSubscribeButton } from "../shared/PremiumSubscribeButton";
 
@@ -33,7 +31,6 @@ export function PremiumCard({
   onChanged,
   onShowPlan,
 }: PremiumCardProps) {
-  const colors = useThemeColors();
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -59,7 +56,7 @@ export function PremiumCard({
       <PlanCard
         status={{
           label: copy.label,
-          color: billingToneColor(PREMIUM_STATE_TONE[premium.state], colors),
+          tone: PREMIUM_STATE_TONE[premium.state],
         }}
         detail={copy.detail}
         actions={
