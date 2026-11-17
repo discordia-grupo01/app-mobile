@@ -40,6 +40,8 @@ interface ServerSettingsModalProps {
   currentUserId: string | null;
   /** "boosts" si se entra desde "Boosts del servidor". */
   entry?: SettingsEntry;
+  /** Con qué pestaña abre Boosts del servidor. */
+  boostsTab?: BoostSectionTab;
   onClose: () => void;
   /** "Ir a comprar puntos" desde Boosts: quien lo usa cierra la configuracion. */
   onBuyPoints: () => void;
@@ -62,6 +64,7 @@ function SettingsBody({
   pendingReports,
   currentUserId,
   entry = "menu",
+  boostsTab: initialBoostsTab = "boost",
   onClose,
   onBuyPoints,
   onGoToMessage,
@@ -86,7 +89,7 @@ function SettingsBody({
     onConfirm: onConfirmDelete,
     onDeleted: onClose,
   });
-  const [boostsTab, setBoostsTab] = useState<BoostSectionTab>("boost");
+  const [boostsTab, setBoostsTab] = useState<BoostSectionTab>(initialBoostsTab);
   const backToMenu = () => setStep("menu");
 
   function selectStep(target: SettingsStep) {
