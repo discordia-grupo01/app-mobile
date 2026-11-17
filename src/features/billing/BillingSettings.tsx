@@ -117,6 +117,7 @@ export function BillingSettings({
       {tab === "premium" ? (
         <PremiumShowcase
           premium={state.premium}
+          profile={user}
           onManage={() => onNavigate("subscriptions")}
         />
       ) : null}
