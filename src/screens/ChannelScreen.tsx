@@ -11,6 +11,8 @@ import {
   VOICE_CONNECTING,
   VOICE_RECONNECTING,
   voiceConnectedCount,
+  serverBoostCount,
+  serverBoostLevel,
 } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
@@ -260,6 +262,8 @@ export function ChannelScreen({
           <ChannelChat
             key={channel.id}
             serverId={serverId}
+            boostLevel={serverBoostLevel(server)}
+            boostCount={serverBoostCount(server)}
             serverName={server.name}
             channel={channel}
             currentAuthor={currentAuthor}
