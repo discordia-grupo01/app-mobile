@@ -43,9 +43,6 @@ export function VanityUrlEditor({
 
   return (
     <View className="gap-2">
-      <Text className="text-[11px] font-bold uppercase tracking-[1.1px] text-content-muted">
-        {VANITY_URL_COPY.title}
-      </Text>
       <View
         className={cn(
           "min-h-12 flex-row items-center rounded-xl border bg-surface-input px-3.5",

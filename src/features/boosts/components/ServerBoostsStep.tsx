@@ -18,16 +18,18 @@ import { ServerBoostTab } from "./ServerBoostTab";
 
 interface ServerBoostsStepProps {
   server: ServerSummary;
+  initialTab?: BoostSectionTab;
   onBuyPoints: () => void;
 }
 
 export function ServerBoostsStep({
   server,
+  initialTab = "boost",
   onBuyPoints,
 }: ServerBoostsStepProps) {
   const colors = useThemeColors();
   const { summary, loadError, retry } = useServerBoostSummary(server.id);
-  const [tab, setTab] = useState<BoostSectionTab>("boost");
+  const [tab, setTab] = useState<BoostSectionTab>(initialTab);
 
   return (
     <ScrollView

@@ -1,17 +1,16 @@
 import {
   BANNER_PRESETS_LABEL,
-  BOOST_PERK_LEVEL,
-  boostLevelLabel,
+  type BoostLevel,
   boostPerkAvailableFrom,
-  boostPerkLevelLabel,
+  canSetServerBanner,
   PRESET_BANNERS,
   type PresetBanner,
 } from "@discordia/client-shared";
 import { Feather } from "@expo/vector-icons";
-import { Text, TouchableOpacity, View } from "react-native";
+import { TouchableOpacity, View } from "react-native";
 
 import { cn } from "../../../../../lib/cn";
-import { BoostLevelIcon } from "../../../../boosts/components/BoostLevelIcon";
+import { BoostBenefitField } from "../../../../boosts/components/BoostBenefitField";
 import { PresetGradientFill } from "./PresetGradientFill";
 
 const SWATCH_HEIGHT = 52;
@@ -93,37 +92,26 @@ function PresetSwatch({
 
 interface BannerPresetPickerProps {
   selectedId: string | null;
-  isLocked: boolean;
+  level: BoostLevel;
+  boostCount: number;
   onSelect: (preset: PresetBanner) => void;
 }
 
 export function BannerPresetPicker({
   selectedId,
-  isLocked,
+  level,
+  boostCount,
   onSelect,
 }: BannerPresetPickerProps) {
+  const isLocked = !canSetServerBanner(level);
+
   return (
-    <View className="px-7 mt-5">
-      <View className="mb-2 flex-row items-center justify-between gap-2">
-        <Text className="text-[11px] font-bold tracking-[1.1px] text-content-subtle uppercase">
-          {BANNER_PRESETS_LABEL}
-        </Text>
-        {isLocked ? (
-          <View className="flex-row items-center gap-1 rounded-full border border-line bg-surface-input px-2 py-1">
-            <BoostLevelIcon level={BOOST_PERK_LEVEL.custom_banner} size={14} />
-            <Text className="text-[10px] font-bold text-content-muted">
-              {boostLevelLabel(BOOST_PERK_LEVEL.custom_banner)}
-            </Text>
-          </View>
-        ) : (
-          <View
-            accessible
-            accessibilityLabel={boostPerkLevelLabel("custom_banner")}
-          >
-            <BoostLevelIcon level={BOOST_PERK_LEVEL.custom_banner} size={18} />
-          </View>
-        )}
-      </View>
+    <BoostBenefitField
+      perk="custom_banner"
+      level={level}
+      boostCount={boostCount}
+      title={BANNER_PRESETS_LABEL}
+    >
       <View className="gap-1">
         {chunk(PRESET_BANNERS, COLUMNS).map((row, index) => (
           <View key={index} className="flex-row gap-1">
@@ -139,6 +127,6 @@ export function BannerPresetPicker({
           </View>
         ))}
       </View>
-    </View>
+    </BoostBenefitField>
   );
 }

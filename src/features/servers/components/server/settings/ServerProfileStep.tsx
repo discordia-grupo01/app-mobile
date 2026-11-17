@@ -1,7 +1,7 @@
 import {
-  ANIMATED_SERVER_ICON_UNLOCKED,
-  BOOST_PERK_LEVEL,
-  nextBoostLevel,
+  canUseAnimatedServerIcon,
+  SERVER_BANNER_BENEFIT_COPY,
+  serverIconFormatsHint,
 } from "@discordia/client-shared";
 import type { ReactNode } from "react";
 import { ScrollView, Text, View } from "react-native";
@@ -9,11 +9,11 @@ import { ScrollView, Text, View } from "react-native";
 import { Button } from "../../../../../components/ui/Button";
 import { FieldError } from "../../../../../components/ui/FieldError";
 import { FormErrorBanner } from "../../../../../components/ui/FormErrorBanner";
-import { BoostPerkHint } from "../../../../boosts/components/BoostPerkHint";
+import { BoostBenefitField } from "../../../../boosts/components/BoostBenefitField";
 import { BoostProgressStrip } from "../../../../boosts/components/BoostProgressStrip";
-import { BoostServerButton } from "../../../../boosts/components/BoostServerButton";
 import type { ServerSettingsForm } from "../../../useServerSettingsForm";
 import { ServerNameField } from "../ServerNameField";
+import { AnimatedIconField } from "./AnimatedIconField";
 import { BannerPresetPicker } from "./BannerPresetPicker";
 import { ServerIdentityEditor } from "./ServerIdentityEditor";
 
@@ -22,6 +22,8 @@ interface ServerProfileStepProps {
   serverName: string;
   onCancel: () => void;
   onBoost?: () => void;
+  /** "Ver qué suma cada nivel": Boosts del servidor en la pestaña Beneficios. */
+  onShowBenefits?: () => void;
   /** URL de invitación personalizada: se guarda aparte, con su propio botón. */
   vanityField?: ReactNode;
 }
@@ -31,94 +33,78 @@ export function ServerProfileStep({
   serverName,
   onCancel,
   onBoost,
+  onShowBenefits,
   vanityField,
 }: ServerProfileStepProps) {
-  const boostStripInBanner =
-    nextBoostLevel(form.boostLevel) === BOOST_PERK_LEVEL.custom_banner;
-
   return (
     <ScrollView
       contentContainerClassName="pb-7"
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
     >
-      <View className="px-7 pt-6 mb-1">
+      <View className="gap-6 px-6 pt-5">
         <Text className="text-[13px] leading-[19px] text-content-muted">
           Tocá el banner o el ícono para cambiarlos.
         </Text>
-      </View>
 
-      {form.globalError ? (
-        <View className="mx-7 mt-4">
+        {form.globalError ? (
           <FormErrorBanner message={form.globalError} />
-        </View>
-      ) : null}
-
-      <ServerIdentityEditor
-        serverName={form.name || serverName}
-        iconUri={form.iconPreviewUri}
-        bannerUri={form.bannerPreviewUri}
-        bannerPreset={form.selectedPreset}
-        isBannerLocked={form.isBannerLocked}
-        boostCount={form.boostCount}
-        bannerFooter={
-          boostStripInBanner ? (
-            <BoostProgressStrip
-              level={form.boostLevel}
-              boostCount={form.boostCount}
-              compact
-            />
-          ) : undefined
-        }
-        bannerAction={
-          boostStripInBanner && onBoost ? (
-            <BoostServerButton onPress={onBoost} />
-          ) : undefined
-        }
-        onPickIcon={form.pickIcon}
-        onPickBanner={form.pickBanner}
-        onRemoveBanner={form.clearBanner}
-      />
-
-      <View className="mx-7">
-        <FieldError message={form.iconError} />
-        <FieldError message={form.bannerError} />
-        <View className="mt-3">
-          <BoostPerkHint
-            perk="animated_icon"
-            level={form.boostLevel}
-            boostCount={form.boostCount}
-            unlockedHint={ANIMATED_SERVER_ICON_UNLOCKED}
-          />
-        </View>
-        {form.isBannerLocked && !boostStripInBanner ? (
-          <View className="mt-3">
-            <BoostProgressStrip
-              level={form.boostLevel}
-              boostCount={form.boostCount}
-              onBoost={onBoost}
-            />
-          </View>
         ) : null}
-      </View>
 
-      <BannerPresetPicker
-        selectedId={form.selectedPreset?.id ?? null}
-        isLocked={form.isBannerLocked}
-        onSelect={form.choosePreset}
-      />
+        <BoostProgressStrip
+          level={form.boostLevel}
+          boostCount={form.boostCount}
+          onBoost={onBoost}
+          onShowBenefits={onShowBenefits}
+        />
 
-      {vanityField ? <View className="px-7 mt-7">{vanityField}</View> : null}
-
-      <View className="px-7 mt-7">
         <ServerNameField
           value={form.name}
           error={form.nameError}
           onChange={form.changeName}
         />
+
+        <BoostBenefitField
+          perk="custom_banner"
+          level={form.boostLevel}
+          boostCount={form.boostCount}
+          title={SERVER_BANNER_BENEFIT_COPY.title}
+        >
+          <ServerIdentityEditor
+            serverName={form.name || serverName}
+            iconUri={form.iconPreviewUri}
+            bannerUri={form.bannerPreviewUri}
+            bannerPreset={form.selectedPreset}
+            isBannerLocked={form.isBannerLocked}
+            canUseGif={canUseAnimatedServerIcon(form.boostLevel)}
+            onPickIcon={form.pickIcon}
+            onPickBanner={form.pickBanner}
+            onRemoveBanner={form.clearBanner}
+          />
+          <FieldError message={form.iconError} />
+          <FieldError message={form.bannerError} />
+          <Text className="text-[11px] text-content-subtle">
+            {serverIconFormatsHint(form.boostLevel)}
+          </Text>
+        </BoostBenefitField>
+
+        <AnimatedIconField
+          level={form.boostLevel}
+          boostCount={form.boostCount}
+          onPickIcon={form.pickIcon}
+        />
+
+        <BannerPresetPicker
+          selectedId={form.selectedPreset?.id ?? null}
+          level={form.boostLevel}
+          boostCount={form.boostCount}
+          onSelect={form.choosePreset}
+        />
+
+        {vanityField}
       </View>
 
-      <View className="flex-row gap-3 px-7 mt-7 pt-5 border-t border-t-line">
+      <View className="flex-row gap-3 px-6 mt-7 pt-5 border-t border-t-line">
         <Button
           title="Cancelar"
           variant="secondary"
