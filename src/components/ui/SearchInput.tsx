@@ -13,6 +13,7 @@ interface SearchInputProps {
   placeholder: string;
   /** Boton "buscar" del teclado. */
   onSubmit?: () => void;
+  onFocus?: () => void;
   inputRef?: Ref<ComponentRef<typeof TextInput>>;
 }
 
@@ -23,6 +24,7 @@ export function SearchInput({
   label,
   placeholder,
   onSubmit,
+  onFocus,
   inputRef,
 }: SearchInputProps) {
   const colors = useThemeColors();
@@ -49,7 +51,10 @@ export function SearchInput({
         autoCorrect={false}
         returnKeyType="search"
         onSubmitEditing={onSubmit}
-        onFocus={() => setIsFocused(true)}
+        onFocus={() => {
+          setIsFocused(true);
+          onFocus?.();
+        }}
         onBlur={() => setIsFocused(false)}
         className="flex-1 py-2.5 text-[14px] text-content"
       />

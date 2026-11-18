@@ -15,6 +15,7 @@ interface HistoryListProps<T> {
   items: readonly T[];
   keyOf: (item: T, index: number) => string;
   renderItem: (item: T) => ReactNode;
+  headerAccessory?: ReactNode;
 }
 
 export function HistoryList<T>({
@@ -25,6 +26,7 @@ export function HistoryList<T>({
   items,
   keyOf,
   renderItem,
+  headerAccessory,
 }: HistoryListProps<T>) {
   const paged = usePagination(items, BILLING_HISTORY_PAGE_SIZE);
 
@@ -33,6 +35,9 @@ export function HistoryList<T>({
       <View className="mb-3">
         <Text className="text-[16px] font-bold text-content">{title}</Text>
         <Text className="mt-1 text-[13px] text-content-subtle">{subtitle}</Text>
+        {headerAccessory ? (
+          <View className="mt-3">{headerAccessory}</View>
+        ) : null}
       </View>
 
       {items.length === 0 ? (
