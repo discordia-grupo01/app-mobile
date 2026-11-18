@@ -1,4 +1,6 @@
 import {
+  BANS_SECTION_SUBTITLE,
+  BANS_SECTION_TITLE,
   BOOSTS_SECTION_SUBTITLE,
   BOOSTS_SECTION_TITLE,
   EMOJIS_SECTION_SUBTITLE,
@@ -9,6 +11,8 @@ import {
   pendingReportsLabel,
   REPORTS_DESCRIPTION,
   REPORTS_TITLE,
+  ROLES_SECTION_SUBTITLE,
+  ROLES_SECTION_TITLE,
   type ServerSummary,
   WORD_FILTER_TITLE,
 } from "@discordia/client-shared";
@@ -93,6 +97,8 @@ interface SettingsMenuStepProps {
   canManageMessages: boolean;
   /** Moderador (`MANAGE_MESSAGES` + `KICK_MEMBERS` + `BAN_MEMBERS`). */
   canReviewReports: boolean;
+  canManageRoles: boolean;
+  canBanMembers: boolean;
   pendingReports: number;
   onSelect: (step: Exclude<SettingsStep, "menu">) => void;
 }
@@ -103,6 +109,8 @@ export function SettingsMenuStep({
   canManageServer,
   canManageMessages,
   canReviewReports,
+  canManageRoles,
+  canBanMembers,
   pendingReports,
   onSelect,
 }: SettingsMenuStepProps) {
@@ -158,6 +166,22 @@ export function SettingsMenuStep({
         }
         onPress={() => onSelect("emojis")}
       />
+      {canManageRoles ? (
+        <SettingsRow
+          icon="shield"
+          title={ROLES_SECTION_TITLE}
+          subtitle={ROLES_SECTION_SUBTITLE}
+          onPress={() => onSelect("roles")}
+        />
+      ) : null}
+      {canBanMembers ? (
+        <SettingsRow
+          icon="shield-off"
+          title={BANS_SECTION_TITLE}
+          subtitle={BANS_SECTION_SUBTITLE}
+          onPress={() => onSelect("bans")}
+        />
+      ) : null}
       {canManageMessages ? (
         <SettingsRow
           icon="slash"

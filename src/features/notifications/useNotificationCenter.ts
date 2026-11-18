@@ -6,6 +6,7 @@ import {
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { markTransfersRead } from "./api";
 import {
   latestIncomingMessageId,
   messagingUnreadCheck,
@@ -37,6 +38,10 @@ interface NotificationCenterInput {
 }
 
 const NO_SUSPENDED: ReadonlySet<string> = new Set();
+
+function syncTransfersRead(transferIds: string[]) {
+  void markTransfersRead(transferIds);
+}
 
 export function useNotificationCenter({
   userId,
@@ -78,6 +83,7 @@ export function useNotificationCenter({
     userId,
     history.items,
     isUnreadInMessaging,
+    syncTransfersRead,
   );
 
   const latestIncoming = latestIncomingMessageId(conversations, userId);

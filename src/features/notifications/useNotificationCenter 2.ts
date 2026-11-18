@@ -1,0 +1,171 @@
+import {
+  type ConversationSummary,
+  NOTIFICATIONS_MARK_ALL_READ_FAILED,
+  withoutSuspendedServers,
+} from "@discordia/client-shared";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+
+import {
+  latestIncomingMessageId,
+  messagingUnreadCheck,
+} from "./history/historyHelpers";
+import { useRefreshOnChange } from "../../hooks/useRefreshOnChange";
+import { useNotificationHistory } from "./history/useNotificationHistory";
+import { useNotificationReads } from "./history/useNotificationReads";
+import { useNotificationRefresh } from "./history/useNotificationRefresh";
+
+interface NotificationCenterInput {
+  userId: string | null;
+  mentions: {
+    isLoaded: boolean;
+    isUnread: (messageId: string) => boolean;
+    hasUnread: boolean;
+    markAllRead: () => Promise<boolean>;
+  };
+  unread: {
+    hasUnread: boolean;
+    markAllRead: () => Promise<boolean>;
+  };
+  conversations: readonly ConversationSummary[];
+  areConversationsLoading: boolean;
+  markConversationsRead: () => Promise<boolean>;
+  activitySignal: number;
+  openChannelId: string | null;
+  openConversationId: string | null;
+  suspendedServerIds?: ReadonlySet<string>;
+}
+
+const NO_SUSPENDED: ReadonlySet<string> = new Set();
+
+export function useNotificationCenter({
+  userId,
+  mentions,
+  unread,
+  conversations,
+  areConversationsLoading,
+  markConversationsRead,
+  activitySignal,
+  openChannelId,
+  openConversationId,
+  suspendedServerIds = NO_SUSPENDED,
+}: NotificationCenterInput) {
+  const fullHistory = useNotificationHistory(userId);
+  const visibleItems = useMemo(
+    () => withoutSuspendedServers(fullHistory.items, suspendedServerIds),
+    [fullHistory.items, suspendedServerIds],
+  );
+  const history = { ...fullHistory, items: visibleItems };
+  const [isOpen, setIsOpen] = useState(false);
+
+  const { isLoaded: areMentionsLoaded, isUnread: isMentionUnread } = mentions;
+  const isUnreadInMessaging = useMemo(
+    () =>
+      messagingUnreadCheck({
+        areMentionsLoaded,
+        isMentionUnread,
+        areConversationsLoading,
+        conversations,
+      }),
+    [
+      areMentionsLoaded,
+      isMentionUnread,
+      areConversationsLoading,
+      conversations,
+    ],
+  );
+  const reads = useNotificationReads(
+    userId,
+    history.items,
+    isUnreadInMessaging,
+  );
+
+  const latestIncoming = latestIncomingMessageId(conversations, userId);
+  const [seenIncoming, setSeenIncoming] = useState<string | null | undefined>(
+    undefined,
+  );
+  const [directSignal, setDirectSignal] = useState(0);
+  if (!areConversationsLoading && latestIncoming !== seenIncoming) {
+    setSeenIncoming(latestIncoming);
+    if (seenIncoming !== undefined && latestIncoming !== null) {
+      setDirectSignal((signal) => signal + 1);
+    }
+  }
+
+  useNotificationRefresh(activitySignal + directSignal, history.refresh);
+  useRefreshOnChange({ resources: ["notifications"] }, history.refresh, {
+    enabled: userId !== null,
+    pollMs: null,
+  });
+
+  const { markChannelRead, markConversationRead } = reads;
+  useEffect(() => {
+    if (openChannelId) markChannelRead(openChannelId);
+  }, [openChannelId, history.items, markChannelRead]);
+  useEffect(() => {
+    if (openConversationId) markConversationRead(openConversationId);
+  }, [openConversationId, history.items, markConversationRead]);
+
+  const [isMarkingAll, setIsMarkingAll] = useState(false);
+  const [markAllError, setMarkAllError] = useState<string | null>(null);
+  const { markAllRead: markHistoryRead } = reads;
+  const { hasUnread: hasUnreadChannels, markAllRead: markChannelsRead } =
+    unread;
+  const hasUnreadDirect = conversations.some(
+    (conversation) => conversation.isUnread,
+  );
+  const { hasUnread: hasUnreadMentions, markAllRead: markMentionsRead } =
+    mentions;
+  const markAllRead = useCallback(async () => {
+    markHistoryRead();
+    setMarkAllError(null);
+    const pending = [
+      hasUnreadChannels ? markChannelsRead() : null,
+      hasUnreadDirect ? markConversationsRead() : null,
+      hasUnreadMentions ? markMentionsRead() : null,
+    ].filter((request) => request !== null);
+    if (pending.length === 0) return;
+    setIsMarkingAll(true);
+    const results = await Promise.all(pending);
+    setIsMarkingAll(false);
+    if (results.includes(false)) {
+      setMarkAllError(NOTIFICATIONS_MARK_ALL_READ_FAILED);
+    }
+  }, [
+    markHistoryRead,
+    hasUnreadChannels,
+    markChannelsRead,
+    hasUnreadDirect,
+    markConversationsRead,
+    hasUnreadMentions,
+    markMentionsRead,
+  ]);
+  const canMarkAllRead =
+    !isMarkingAll &&
+    (reads.unreadCount > 0 ||
+      hasUnreadChannels ||
+      hasUnreadDirect ||
+      hasUnreadMentions);
+
+  const { refresh } = history;
+  const open = useCallback(() => {
+    void refresh();
+    setMarkAllError(null);
+    setIsOpen(true);
+  }, [refresh]);
+  const close = useCallback(() => setIsOpen(false), []);
+
+  return {
+    history,
+    reads,
+    isOpen,
+    open,
+    close,
+    markAllRead,
+    canMarkAllRead,
+    isMarkingAll,
+    markAllError,
+  };
+}
+
+export type NotificationCenterState = ReturnType<typeof useNotificationCenter>;

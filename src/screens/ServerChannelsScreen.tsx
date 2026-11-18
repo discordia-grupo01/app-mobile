@@ -63,6 +63,7 @@ import {
 } from "../features/channels/ChannelSettingsModal";
 import { InviteLinkModal } from "../features/servers/components/server/InviteLinkModal";
 import { LeaveServerModal } from "../features/servers/components/server/LeaveServerModal";
+import { ServerActionsSheet } from "../features/servers/components/server/ServerActionsSheet";
 import { ServerSettingsModal } from "../features/servers/components/server/settings/ServerSettingsModal";
 import type { SettingsEntry } from "../features/servers/components/server/settings/settingsSteps";
 import { TransferOwnershipModal } from "../features/servers/components/server/TransferOwnershipModal";
@@ -685,134 +686,37 @@ export function ServerChannelsScreen({
           </TouchableOpacity>
 
           {isServerMenuOpen ? (
-            <>
-              <Pressable
-                style={StyleSheet.absoluteFill}
-                onPress={() => setIsServerMenuOpen(false)}
-              />
-              <View
-                className="absolute top-[58px] left-2.5 right-2.5 z-20 rounded-xl border border-line-strong bg-surface-modal py-1.5"
-                style={[styles.serverMenu, { top: menuTop }]}
-              >
-                {canInvite ? (
-                  <ServerMenuItem
-                    icon="user-plus"
-                    label="Invitar miembros"
-                    onPress={runFromMenu(() => setIsInviteModalVisible(true))}
-                  />
-                ) : null}
-
-                {notificationSettings ? (
-                  <ServerMenuItem
-                    icon="bell"
-                    label={NOTIFICATION_SETTINGS_MENU_LABEL}
-                    onPress={runFromMenu(() =>
-                      setNotificationTarget({
-                        scope: "server",
-                        targetId: server.id,
-                        serverId: server.id,
-                        name: server.name,
-                      }),
-                    )}
-                  />
-                ) : null}
-
-                <ServerMenuItem
-                  icon={<BoostActionIcon size={16} />}
-                  label={BOOSTS_SECTION_TITLE}
-                  trailing={
-                    <View
-                      accessible
-                      accessibilityLabel={boostLevelLabel(
-                        serverBoostLevel(server),
-                      )}
-                    >
-                      <BoostLevelIcon
-                        level={serverBoostLevel(server)}
-                        size={18}
-                        bare
-                      />
-                    </View>
-                  }
-                  onPress={runFromMenu(() => openServerSettings("boosts"))}
-                />
-
-                {canOpenServerSettings ? (
-                  <ServerMenuItem
-                    icon="settings"
-                    label="Configuración del servidor"
-                    trailing={
-                      pendingReports > 0 ? (
-                        <ReportsBadge
-                          label={pendingReportsLabel(
-                            pendingReports,
-                            server.name,
-                          )}
-                        />
-                      ) : undefined
-                    }
-                    onPress={runFromMenu(() => openServerSettings("menu"))}
-                  />
-                ) : null}
-
-                {canManageChannels ? (
-                  <>
-                    <ServerMenuItem
-                      icon="plus"
-                      label="Crear canal"
-                      onPress={runFromMenu(() => {
-                        setCreateChannelDefaultCategoryId(null);
-                        setIsCreateChannelVisible(true);
-                      })}
-                    />
-                    <ServerMenuItem
-                      icon="folder-plus"
-                      label="Crear categoría"
-                      onPress={runFromMenu(() =>
-                        setIsCreateCategoryVisible(true),
-                      )}
-                    />
-                  </>
-                ) : null}
-
-                {canManageRoles ? (
-                  <ServerMenuItem
-                    icon="shield"
-                    label="Gestionar roles"
-                    onPress={runFromMenu(() => setIsRolesModalVisible(true))}
-                  />
-                ) : null}
-
-                {canBanMembers ? (
-                  <ServerMenuItem
-                    icon={<BanIcon size={16} color={colors.info} />}
-                    label={BANS_TITLE}
-                    onPress={runFromMenu(() => setIsBansModalVisible(true))}
-                  />
-                ) : null}
-
-                {showTransferMenuItem ? (
-                  <ServerMenuItem
-                    icon="repeat"
-                    label={
-                      incomingTransfer
-                        ? "Responder transferencia de propiedad"
-                        : "Transferir propiedad"
-                    }
-                    onPress={runFromMenu(() => setIsTransferModalVisible(true))}
-                  />
-                ) : null}
-
-                <View className="h-px bg-line my-1 mx-2" />
-
-                <ServerMenuItem
-                  icon="log-out"
-                  label="Abandonar servidor"
-                  tone="danger"
-                  onPress={runFromMenu(() => setIsLeaveModalVisible(true))}
-                />
-              </View>
-            </>
+            <ServerActionsSheet
+              visible={isServerMenuOpen}
+              server={server}
+              memberCount={server.channels.length}
+              isOwner={isOwner}
+              incomingTransfer={incomingTransfer !== null}
+              canInvite={canInvite}
+              canManageChannels={canManageChannels}
+              showTransfer={showTransferMenuItem}
+              onClose={() => setIsServerMenuOpen(false)}
+              onInvite={() => setIsInviteModalVisible(true)}
+              onNotifications={() =>
+                notificationSettings &&
+                setNotificationTarget({
+                  scope: "server",
+                  targetId: server.id,
+                  serverId: server.id,
+                  name: server.name,
+                })
+              }
+              onBoosts={() => openServerSettings("boosts")}
+              onEmojis={() => openServerSettings("emojis")}
+              onSettings={() => openServerSettings("menu")}
+              onCreateChannel={() => {
+                setCreateChannelDefaultCategoryId(null);
+                setIsCreateChannelVisible(true);
+              }}
+              onCreateCategory={() => setIsCreateCategoryVisible(true)}
+              onTransfer={() => setIsTransferModalVisible(true)}
+              onLeave={() => setIsLeaveModalVisible(true)}
+            />
           ) : null}
 
           {dragError ? (
@@ -913,6 +817,9 @@ export function ServerChannelsScreen({
         canManageServer={canManageServer}
         canManageMessages={canManageMessages}
         canReviewReports={canReviewReports}
+        canManageRoles={canManageRoles}
+        canBanMembers={canBanMembers}
+        myRoles={myRoles}
         pendingReports={pendingReports}
         currentUserId={currentUserId}
         entry={serverSettingsEntry}

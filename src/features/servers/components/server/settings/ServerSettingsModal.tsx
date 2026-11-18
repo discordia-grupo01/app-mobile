@@ -1,6 +1,7 @@
 import {
   type BoostSectionTab,
   type DeleteServerResult,
+  type Role,
   serverBoostCount,
   serverBoostLevel,
   type ServerSummary,
@@ -26,6 +27,8 @@ import {
   type SettingsEntry,
 } from "./settingsSteps";
 import { useModalInsets } from "../../../../platform-status/hooks/useModalInsets";
+import { RolesModal } from "../../../../roles/RolesModal";
+import { BansModal } from "../../../../bans/components/BansModal";
 
 interface ServerSettingsModalProps {
   visible: boolean;
@@ -37,8 +40,11 @@ interface ServerSettingsModalProps {
   canManageMessages: boolean;
   /** "Reportes" y "Registro de auditoría": solo moderadores. */
   canReviewReports: boolean;
-  pendingReports: number;
+  canManageRoles: boolean;
+  canBanMembers: boolean;
+  myRoles: Role[];
   currentUserId: string | null;
+  pendingReports: number;
   /** "boosts" si se entra desde "Boosts del servidor". */
   entry?: SettingsEntry;
   /** Con qué pestaña abre Boosts del servidor. */
@@ -62,6 +68,9 @@ function SettingsBody({
   canManageServer,
   canManageMessages,
   canReviewReports,
+  canManageRoles,
+  canBanMembers,
+  myRoles,
   pendingReports,
   currentUserId,
   entry = "menu",
@@ -78,6 +87,8 @@ function SettingsBody({
     canManageServer,
     canManageMessages,
     canReviewReports,
+    canManageRoles,
+    canBanMembers,
   });
   const [step, setStep] = useState<SettingsStep>(() =>
     initialSettingsStep(entry, hasMenu),
@@ -91,10 +102,20 @@ function SettingsBody({
     onDeleted: onClose,
   });
   const [boostsTab, setBoostsTab] = useState<BoostSectionTab>(initialBoostsTab);
+  const [isRolesOpen, setIsRolesOpen] = useState(false);
+  const [isBansOpen, setIsBansOpen] = useState(false);
   const backToMenu = () => setStep("menu");
 
   function selectStep(target: SettingsStep) {
     setBoostsTab("boost");
+    if (target === "roles") {
+      setIsRolesOpen(true);
+      return;
+    }
+    if (target === "bans") {
+      setIsBansOpen(true);
+      return;
+    }
     setStep(target);
   }
 
@@ -121,6 +142,8 @@ function SettingsBody({
           canManageServer={canManageServer}
           canManageMessages={canManageMessages}
           canReviewReports={canReviewReports}
+          canManageRoles={canManageRoles}
+          canBanMembers={canBanMembers}
           pendingReports={pendingReports}
           onSelect={selectStep}
         />
@@ -179,6 +202,26 @@ function SettingsBody({
           deletion={deletion}
           serverName={server.name}
           onCancel={backToMenu}
+        />
+      ) : null}
+
+      {/* Roles y Bans se abren como modales encima del modal de settings,
+          igual que lo hace RolesModal en ServerChannelsScreen. */}
+      <RolesModal
+        visible={isRolesOpen}
+        serverId={server.id}
+        serverName={server.name}
+        isOwner={isOwner}
+        myRoles={myRoles}
+        onClose={() => setIsRolesOpen(false)}
+      />
+      {canBanMembers && isBansOpen ? (
+        <BansModal
+          serverId={server.id}
+          ownerId={server.owner_id}
+          currentUserId={currentUserId}
+          canManageRoles={canManageRoles}
+          onClose={() => setIsBansOpen(false)}
         />
       ) : null}
     </>
