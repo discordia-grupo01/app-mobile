@@ -1,5 +1,6 @@
 import {
   NOTIFICATIONS_LOAD_FAILED,
+  NOTIFICATIONS_MARK_ALL_READ_FAILED,
   NOTIFICATION_SETTINGS_LOAD_FAILED,
   NOTIFICATION_SETTINGS_SAVE_FAILED,
 } from "@discordia/client-shared";
@@ -9,6 +10,7 @@ import { apiFetch } from "../../lib/api-client";
 import {
   listNotificationHistory,
   listNotificationSettings,
+  markTransfersRead,
   updateChannelNotificationSettings,
   updateServerNotificationSettings,
 } from "./api";
@@ -164,6 +166,36 @@ describe("listNotificationHistory", () => {
     expect(await listNotificationHistory()).toEqual({
       ok: false,
       message: NOTIFICATIONS_LOAD_FAILED,
+    });
+  });
+});
+
+describe("markTransfersRead", () => {
+  it("manda los ids de las transferencias por POST", async () => {
+    mockedFetch.mockResolvedValue({ ok: true, status: 204, data: null });
+
+    const result = await markTransfersRead(["t1", "t2"]);
+
+    expect(mockedFetch).toHaveBeenCalledWith(
+      "/v1/notifications/history/transfers/read",
+      { method: "POST", body: JSON.stringify({ transfer_ids: ["t1", "t2"] }) },
+    );
+    expect(result).toEqual({ ok: true });
+  });
+
+  it("si el servidor falla devuelve el mensaje de error", async () => {
+    mockedFetch.mockResolvedValue({
+      ok: false,
+      status: 503,
+      code: "HISTORY_UNAVAILABLE",
+      message: "x",
+    });
+
+    const result = await markTransfersRead(["t1"]);
+
+    expect(result).toEqual({
+      ok: false,
+      message: NOTIFICATIONS_MARK_ALL_READ_FAILED,
     });
   });
 });
