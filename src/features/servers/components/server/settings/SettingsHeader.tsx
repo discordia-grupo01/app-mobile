@@ -16,6 +16,8 @@ export type SettingsStep =
   | "profile"
   | "boosts"
   | "emojis"
+  | "roles"
+  | "bans"
   | "words"
   | "reports"
   | "audit"
@@ -25,6 +27,8 @@ const STEP_TITLES: Record<Exclude<SettingsStep, "boosts">, string> = {
   menu: "Configuración del servidor",
   profile: "Perfil del servidor",
   emojis: EMOJIS_SECTION_TITLE,
+  roles: "Roles",
+  bans: "Baneos",
   words: WORD_FILTER_TITLE,
   reports: REPORTS_TITLE,
   audit: MODERATION_AUDIT_TITLE,

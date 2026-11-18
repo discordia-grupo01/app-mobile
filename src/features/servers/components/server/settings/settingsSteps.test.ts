@@ -5,6 +5,8 @@ const NO_PERMISSIONS = {
   canManageServer: false,
   canManageMessages: false,
   canReviewReports: false,
+  canManageRoles: false,
+  canBanMembers: false,
 };
 
 describe("hasSettingsMenu", () => {
