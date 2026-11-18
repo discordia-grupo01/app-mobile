@@ -74,7 +74,10 @@ import { useMyChannelPermissions } from "../features/channels/useMyChannelPermis
 import { usePushNotificationTap } from "../features/push/notification-handler";
 import { usePushDeviceSync } from "../features/push/use-push-notifications";
 import { useVoiceSession } from "../features/voice/voice-session-context";
-import { serverBoostsRequest } from "../lib/navigationRequests";
+import {
+  accountSettingsRequest,
+  serverBoostsRequest,
+} from "../lib/navigationRequests";
 import { getLastLocation, setLastLocation } from "../lib/storage";
 import { avatarUriOf } from "../lib/userProfile";
 import { useStatusBarStyle, useThemeColors } from "../theme/theme-context";
@@ -634,6 +637,17 @@ export function HomeScreen({
     [],
   );
 
+  // "Ver Premium" o compras desde un canal abierto: cierra el canal para que
+  // UserProfileBar (en ServerChannelsScreen) monte y atienda el pedido.
+  useEffect(
+    () =>
+      accountSettingsRequest.subscribe(() => {
+        setSelectedChannelId(null);
+        setLostChannel(null);
+      }),
+    [],
+  );
+
   const addAndSelect = useCallback((server: ServerSummary) => {
     setServers((prev) => {
       const withoutDuplicate = prev.filter(
@@ -818,6 +832,11 @@ export function HomeScreen({
           jumpTarget={jumpTarget}
           onOpenSearchResult={openSearchResult}
           onJumpHandled={clearJumpTarget}
+          onOpenPremium={() => {
+            setSelectedChannelId(null);
+            setLostChannel(null);
+            accountSettingsRequest.request("subscriptions");
+          }}
           onBack={closeChannel}
         />
       </View>,

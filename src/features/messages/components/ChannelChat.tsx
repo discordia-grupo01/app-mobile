@@ -24,6 +24,7 @@ import {
   useChatPremiumOffer,
 } from "../../emojis/ChatPremiumOfferContext";
 import { useReactionEmojis } from "../../emojis/useReactionEmojis";
+import { accountSettingsRequest } from "../../../lib/navigationRequests";
 import { ReportSheet } from "../../reports/ReportSheet";
 import type { ReportTarget } from "../../reports/reportTarget";
 import { useServerMembers } from "../../servers/useServerMembers";
@@ -66,6 +67,8 @@ interface ChannelChatProps {
   jumpTarget?: MessageJumpTarget | null;
   /** El salto ya se hizo: quien lo pidio lo descarta para no repetirlo al volver al canal. */
   onJumpHandled?: () => void;
+  /** Lleva a suscribirse a Premium en la configuración de la cuenta. */
+  onOpenPremium?: () => void;
 }
 
 function ChannelChatInner({
@@ -86,6 +89,7 @@ function ChannelChatInner({
   onOpenProfile,
   jumpTarget = null,
   onJumpHandled,
+  onOpenPremium = () => accountSettingsRequest.request("subscriptions"),
 }: ChannelChatProps) {
   const reactionEmojis = useReactionEmojis(serverId);
   const { show: showPremiumOffer } = useChatPremiumOffer();
@@ -273,6 +277,7 @@ function ChannelChatInner({
         }}
         serverBoost={{ serverId, level: boostLevel, boostCount }}
         uploadTarget={{ channelId: channel.id }}
+        onOpenPremium={onOpenPremium}
         disabled={
           !currentAuthor ||
           !canSendMessages ||
@@ -376,6 +381,7 @@ function ChannelChatInner({
             void handleToggleReaction(reactingToId, picked.token);
           }
         }}
+        onOpenPremium={onOpenPremium}
         onClose={() => setReactingToId(null)}
       />
     </MessageMentionsProvider>

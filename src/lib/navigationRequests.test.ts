@@ -1,4 +1,5 @@
 import {
+  accountSettingsRequest,
   createNavigationRequest,
   serverBoostsRequest,
 } from "./navigationRequests";
@@ -46,5 +47,14 @@ describe("serverBoostsRequest", () => {
       serverId: "s1",
       tab: "benefits",
     });
+  });
+});
+
+describe("accountSettingsRequest", () => {
+  it("guarda y entrega la sección pedida (por ejemplo, subscriptions)", () => {
+    accountSettingsRequest.request("subscriptions");
+
+    expect(accountSettingsRequest.take()).toBe("subscriptions");
+    expect(accountSettingsRequest.take()).toBeNull();
   });
 });

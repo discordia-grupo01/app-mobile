@@ -58,6 +58,16 @@ export function DirectMessagesScreen({
     accountSettingsRequest.request("subscriptions");
   }, [activeSummary]);
 
+  // "Ver Premium" o compras desde un DM abierto: cierra la conversación para que
+  // UserProfileBar (en DmConversationList) atienda el pedido.
+  useEffect(
+    () =>
+      accountSettingsRequest.subscribe(() => {
+        closeConversation();
+      }),
+    [closeConversation],
+  );
+
   const { candidates, isLoading: isLoadingCandidates } = useDmCandidates(
     servers,
     currentAuthor?.id ?? null,
