@@ -14,6 +14,8 @@ import {
 import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import { FlatList, Text, TouchableOpacity, View } from "react-native";
 
+import { useChatPremiumOffer } from "../../emojis/ChatPremiumOfferContext";
+import { useReactionEmojis } from "../../emojis/useReactionEmojis";
 import { useMessageHighlight } from "../useMessageHighlight";
 import { MessageItem } from "./MessageItem";
 
@@ -34,6 +36,8 @@ interface MessageListProps {
   onLoadNewer?: () => void;
   /** Mensaje al que se salto: se centra y se resalta un momento. */
   focusedMessage?: FocusedMessage | null;
+  /** El servidor del canal actual: `null` en un mensaje directo. */
+  serverId?: string | null;
   /** Sin estas dos no se muestran reacciones (ej. en mensajes directos). */
   onToggleReaction?: (messageId: string, emoji: string) => void;
   onRequestReaction?: (messageId: string) => void;
@@ -58,6 +62,7 @@ export function MessageList({
   isLoadingNewer = false,
   onLoadNewer,
   focusedMessage = null,
+  serverId = null,
   onToggleReaction,
   onRequestReaction,
   canAddReactions = true,
@@ -66,6 +71,8 @@ export function MessageList({
   onDiscardMessage,
   onOpenProfile,
 }: MessageListProps) {
+  const reactionEmojis = useReactionEmojis(serverId);
+  const { show: showPremiumOffer } = useChatPremiumOffer();
   const newestFirst = useMemo(() => [...messages].reverse(), [messages]);
   const listRef = useRef<FlatList<Message>>(null);
   const highlightedId = useMessageHighlight(focusedMessage);
@@ -172,6 +179,8 @@ export function MessageList({
                 onRequestReaction && (() => onRequestReaction(item.id))
               }
               canAddReactions={canAddReactions}
+              reactionEmojis={reactionEmojis}
+              onNeedsPremium={() => showPremiumOffer("custom_emoji_reaction")}
               onRequestActions={() => onRequestActions(item.id)}
               onOpenProfile={onOpenProfile}
               onRetry={
