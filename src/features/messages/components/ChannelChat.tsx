@@ -13,11 +13,18 @@ import {
   type Role,
   SEND_MESSAGES_DENIED_PLACEHOLDER,
   unknownAuthor,
+  type BoostLevel,
 } from "@discordia/client-shared";
 
 import { useEffect, useRef, useState } from "react";
 import { Text } from "react-native";
 
+import {
+  ChatPremiumOfferProvider,
+  useChatPremiumOffer,
+} from "../../emojis/ChatPremiumOfferContext";
+import { useReactionEmojis } from "../../emojis/useReactionEmojis";
+import { accountSettingsRequest } from "../../../lib/navigationRequests";
 import { ReportSheet } from "../../reports/ReportSheet";
 import type { ReportTarget } from "../../reports/reportTarget";
 import { useServerMembers } from "../../servers/useServerMembers";
@@ -39,6 +46,8 @@ import { ViewingPastBar } from "./ViewingPastBar";
 
 interface ChannelChatProps {
   serverId: string;
+  boostLevel: BoostLevel;
+  boostCount: number;
   /** Para el aviso de quien ve un reporte ("Lo ven los moderadores de ..."). */
   serverName: string;
   channel: Channel;
@@ -58,10 +67,14 @@ interface ChannelChatProps {
   jumpTarget?: MessageJumpTarget | null;
   /** El salto ya se hizo: quien lo pidio lo descarta para no repetirlo al volver al canal. */
   onJumpHandled?: () => void;
+  /** Lleva a suscribirse a Premium en la configuración de la cuenta. */
+  onOpenPremium?: () => void;
 }
 
-export function ChannelChat({
+function ChannelChatInner({
   serverId,
+  boostLevel,
+  boostCount,
   serverName,
   channel,
   currentAuthor,
@@ -76,7 +89,10 @@ export function ChannelChat({
   onOpenProfile,
   jumpTarget = null,
   onJumpHandled,
+  onOpenPremium = () => accountSettingsRequest.request("subscriptions"),
 }: ChannelChatProps) {
+  const reactionEmojis = useReactionEmojis(serverId);
+  const { show: showPremiumOffer } = useChatPremiumOffer();
   const {
     status,
     statusMessage,
@@ -211,6 +227,7 @@ export function ChannelChat({
           welcome={<ChannelWelcome channelName={channel.name} />}
           messages={hasNewer ? messages : pending.withPending(messages)}
           authors={authors}
+          serverId={serverId}
           editingMessageId={editingMessageId}
           hasMore={hasMore}
           isLoadingOlder={isLoadingOlder}
@@ -258,7 +275,9 @@ export function ChannelChat({
           jumpToPresent();
           return pending.onSend(...args);
         }}
+        serverBoost={{ serverId, level: boostLevel, boostCount }}
         uploadTarget={{ channelId: channel.id }}
+        onOpenPremium={onOpenPremium}
         disabled={
           !currentAuthor ||
           !canSendMessages ||
@@ -347,11 +366,32 @@ export function ChannelChat({
       <EmojiPickerSheet
         visible={reactingToId !== null}
         title={ADD_REACTION_LABEL}
+        serverId={serverId}
         onPick={(emoji) => {
           if (reactingToId) void handleToggleReaction(reactingToId, emoji);
         }}
+        onPickCustomEmoji={(emoji) => {
+          if (!reactingToId) return;
+          const picked = reactionEmojis.pick(emoji.id);
+          if (picked.kind === "premium") {
+            showPremiumOffer("custom_emoji_reaction");
+            return;
+          }
+          if (picked.kind === "react") {
+            void handleToggleReaction(reactingToId, picked.token);
+          }
+        }}
+        onOpenPremium={onOpenPremium}
         onClose={() => setReactingToId(null)}
       />
     </MessageMentionsProvider>
+  );
+}
+
+export function ChannelChat(props: ChannelChatProps) {
+  return (
+    <ChatPremiumOfferProvider>
+      <ChannelChatInner {...props} />
+    </ChatPremiumOfferProvider>
   );
 }

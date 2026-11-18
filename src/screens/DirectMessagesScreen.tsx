@@ -4,7 +4,7 @@ import type {
   UnreadFlags,
 } from "@discordia/client-shared";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { View } from "react-native";
 
 import { DmConversationList } from "../features/direct-messages/components/DmConversationList";
@@ -13,6 +13,7 @@ import { StartDmSheet } from "../features/direct-messages/components/StartDmShee
 import { useDmCandidates } from "../features/direct-messages/useDmCandidates";
 import type { useDirectMessages } from "../features/direct-messages/useDirectMessages";
 import { ServerRail } from "../features/servers/components/rail/ServerRail";
+import { accountSettingsRequest } from "../lib/navigationRequests";
 
 interface DirectMessagesScreenProps {
   servers: ServerSummary[];
@@ -47,6 +48,26 @@ export function DirectMessagesScreen({
     isConnected,
     retry,
   } = directMessages;
+  // La barra de cuenta (que abre la configuración) solo está en la lista, no
+  // dentro de la conversación: se cierra el DM y se pide recién con la lista
+  // montada. Los efectos de los hijos corren antes, así que ya escucha.
+  const premiumAfterClose = useRef(false);
+  useEffect(() => {
+    if (activeSummary || !premiumAfterClose.current) return;
+    premiumAfterClose.current = false;
+    accountSettingsRequest.request("subscriptions");
+  }, [activeSummary]);
+
+  // "Ver Premium" o compras desde un DM abierto: cierra la conversación para que
+  // UserProfileBar (en DmConversationList) atienda el pedido.
+  useEffect(
+    () =>
+      accountSettingsRequest.subscribe(() => {
+        closeConversation();
+      }),
+    [closeConversation],
+  );
+
   const { candidates, isLoading: isLoadingCandidates } = useDmCandidates(
     servers,
     currentAuthor?.id ?? null,
@@ -61,6 +82,10 @@ export function DirectMessagesScreen({
         onSend={sendMessage}
         isConnected={isConnected}
         onBack={closeConversation}
+        onOpenPremium={() => {
+          premiumAfterClose.current = true;
+          closeConversation();
+        }}
       />
     );
   }

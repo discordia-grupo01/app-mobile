@@ -1,4 +1,8 @@
-import { createNavigationRequest } from "./navigationRequests";
+import {
+  accountSettingsRequest,
+  createNavigationRequest,
+  serverBoostsRequest,
+} from "./navigationRequests";
 
 describe("createNavigationRequest", () => {
   it("avisa a quien escucha y guarda el pedido hasta que lo toman", () => {
@@ -30,5 +34,27 @@ describe("createNavigationRequest", () => {
     channel.request("club");
 
     expect(seen).not.toHaveBeenCalled();
+  });
+});
+
+describe("serverBoostsRequest", () => {
+  it("lleva el servidor y la pestaña pedida", () => {
+    serverBoostsRequest.request({ serverId: "s1", tab: "benefits" });
+
+    expect(
+      serverBoostsRequest.take(({ serverId }) => serverId === "s1"),
+    ).toEqual({
+      serverId: "s1",
+      tab: "benefits",
+    });
+  });
+});
+
+describe("accountSettingsRequest", () => {
+  it("guarda y entrega la sección pedida (por ejemplo, subscriptions)", () => {
+    accountSettingsRequest.request("subscriptions");
+
+    expect(accountSettingsRequest.take()).toBe("subscriptions");
+    expect(accountSettingsRequest.take()).toBeNull();
   });
 });

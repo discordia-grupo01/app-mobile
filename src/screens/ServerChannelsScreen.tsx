@@ -16,6 +16,8 @@ import {
   pendingReportsLabel,
   type Role,
   hasBoostedBadge,
+  type BoostSectionTab,
+  serverBoostCount,
   serverBoostLevel,
   type ServerSummary,
   sortByPosition,
@@ -215,6 +217,8 @@ export function ServerChannelsScreen({
   const [isServerSettingsVisible, setIsServerSettingsVisible] = useState(false);
   const [serverSettingsEntry, setServerSettingsEntry] =
     useState<SettingsEntry>("menu");
+  const [serverBoostsTab, setServerBoostsTab] =
+    useState<BoostSectionTab>("boost");
   const [isLeaveModalVisible, setIsLeaveModalVisible] = useState(false);
   const [isInviteModalVisible, setIsInviteModalVisible] = useState(false);
   const [isCreateChannelVisible, setIsCreateChannelVisible] = useState(false);
@@ -315,6 +319,14 @@ export function ServerChannelsScreen({
 
   function openServerSettings(entry: SettingsEntry) {
     setServerSettingsEntry(entry);
+    setServerBoostsTab("boost");
+    setIsServerSettingsVisible(true);
+  }
+
+  function openServerBoosts(tab: BoostSectionTab) {
+    setIsInviteModalVisible(false);
+    setServerSettingsEntry("boosts");
+    setServerBoostsTab(tab);
     setIsServerSettingsVisible(true);
   }
 
@@ -322,8 +334,12 @@ export function ServerChannelsScreen({
   // se abre su sección Boosts (HomeScreen ya cambió de servidor si hacía falta).
   useEffect(() => {
     const openIfRequested = () => {
-      if (serverBoostsRequest.take((id) => id === server.id)) {
+      const target = serverBoostsRequest.take(
+        ({ serverId }) => serverId === server.id,
+      );
+      if (target) {
         setServerSettingsEntry("boosts");
+        setServerBoostsTab(target.tab);
         setIsServerSettingsVisible(true);
       }
     };
@@ -900,6 +916,7 @@ export function ServerChannelsScreen({
         pendingReports={pendingReports}
         currentUserId={currentUserId}
         entry={serverSettingsEntry}
+        boostsTab={serverBoostsTab}
         onClose={() => setIsServerSettingsVisible(false)}
         onBuyPoints={() => {
           setIsServerSettingsVisible(false);
@@ -936,7 +953,10 @@ export function ServerChannelsScreen({
               ? (server.vanity_code ?? null)
               : null
           }
+          boostLevel={serverBoostLevel(server)}
+          boostCount={serverBoostCount(server)}
           onClose={() => setIsInviteModalVisible(false)}
+          onOpenBoosts={openServerBoosts}
         />
       ) : null}
       <TransferOwnershipModal

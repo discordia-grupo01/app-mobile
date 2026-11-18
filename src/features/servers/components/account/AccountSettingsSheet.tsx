@@ -115,7 +115,7 @@ export function AccountSettingsSheet({
 
   function openServerBoosts(serverId: string) {
     handleClose();
-    serverBoostsRequest.request(serverId);
+    serverBoostsRequest.request({ serverId, tab: "boost" });
   }
 
   function goBack() {

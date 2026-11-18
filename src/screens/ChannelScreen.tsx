@@ -11,6 +11,8 @@ import {
   VOICE_CONNECTING,
   VOICE_RECONNECTING,
   voiceConnectedCount,
+  serverBoostCount,
+  serverBoostLevel,
 } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
@@ -69,6 +71,8 @@ interface ChannelScreenProps {
   /** Toque en un resultado de busqueda: abre su canal y salta al mensaje. */
   onOpenSearchResult?: (message: Message) => void;
   onJumpHandled?: () => void;
+  /** Lleva a suscribirse a Premium en la configuración de la cuenta. */
+  onOpenPremium?: () => void;
   onBack: () => void;
 }
 
@@ -95,6 +99,7 @@ export function ChannelScreen({
   jumpTarget = null,
   onOpenSearchResult,
   onJumpHandled,
+  onOpenPremium,
   onBack,
 }: ChannelScreenProps) {
   const colors = useThemeColors();
@@ -260,6 +265,8 @@ export function ChannelScreen({
           <ChannelChat
             key={channel.id}
             serverId={serverId}
+            boostLevel={serverBoostLevel(server)}
+            boostCount={serverBoostCount(server)}
             serverName={server.name}
             channel={channel}
             currentAuthor={currentAuthor}
@@ -275,6 +282,7 @@ export function ChannelScreen({
               jumpTarget?.channelId === channel.id ? jumpTarget : null
             }
             onJumpHandled={onJumpHandled}
+            onOpenPremium={onOpenPremium}
             onOpenProfile={(userId, member) => {
               if (userId === currentUserId) {
                 setIsOwnProfileVisible(true);

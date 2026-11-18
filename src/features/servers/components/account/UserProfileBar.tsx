@@ -52,20 +52,20 @@ export function UserProfileBar({ userName, onLogout }: UserProfileBarProps) {
   const statusText = user?.status_text?.trim();
   const activityStatus = usePresenceOf(user?.id);
 
-  // "Ir a comprar puntos" desde Boosts abre la configuración en esa solapa.
-  useEffect(
-    () =>
-      accountSettingsRequest.subscribe(() => {
-        const section = accountSettingsRequest.take();
-        if (!section) return;
-        setSettingsRequest((current) => ({
-          section,
-          id: (current?.id ?? 0) + 1,
-        }));
-        setIsSettingsVisible(true);
-      }),
-    [],
-  );
+  // "Ir a comprar puntos" desde Boosts o "Ver Premium" abre la configuración en esa solapa.
+  useEffect(() => {
+    const openIfRequested = () => {
+      const section = accountSettingsRequest.take();
+      if (!section) return;
+      setSettingsRequest((current) => ({
+        section,
+        id: (current?.id ?? 0) + 1,
+      }));
+      setIsSettingsVisible(true);
+    };
+    openIfRequested();
+    return accountSettingsRequest.subscribe(openIfRequested);
+  }, []);
 
   return (
     <>

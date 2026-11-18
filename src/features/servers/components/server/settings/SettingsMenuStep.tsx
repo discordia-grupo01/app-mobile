@@ -1,6 +1,9 @@
 import {
   BOOSTS_SECTION_SUBTITLE,
   BOOSTS_SECTION_TITLE,
+  EMOJIS_SECTION_SUBTITLE,
+  EMOJIS_SECTION_TITLE,
+  emojiSlotsBadge,
   MODERATION_AUDIT_DESCRIPTION,
   MODERATION_AUDIT_TITLE,
   pendingReportsLabel,
@@ -17,6 +20,7 @@ import { Avatar } from "../../../../../components/ui/Avatar";
 import { cn } from "../../../../../lib/cn";
 import { useThemeColors } from "../../../../../theme/theme-context";
 import { BoostsSectionIcon } from "../../../../boosts/components/BoostsSectionIcon";
+import { useServerEmojis } from "../../../../emojis/useServerEmojis";
 import { ReportsBadge } from "../../../../reports/components/shared/ReportsBadge";
 import { resolveServerIconUrl } from "../../../api";
 import type { SettingsStep } from "./SettingsHeader";
@@ -102,6 +106,11 @@ export function SettingsMenuStep({
   pendingReports,
   onSelect,
 }: SettingsMenuStepProps) {
+  const { page } = useServerEmojis(server.id);
+  const emojiBadgeText = page
+    ? emojiSlotsBadge(page.emojis.length, page.max_emojis)
+    : undefined;
+
   return (
     <ScrollView
       className="flex-1"
@@ -135,6 +144,19 @@ export function SettingsMenuStep({
         title={BOOSTS_SECTION_TITLE}
         subtitle={BOOSTS_SECTION_SUBTITLE}
         onPress={() => onSelect("boosts")}
+      />
+      <SettingsRow
+        icon="smile"
+        title={EMOJIS_SECTION_TITLE}
+        subtitle={EMOJIS_SECTION_SUBTITLE}
+        badge={
+          emojiBadgeText ? (
+            <Text className="text-[13px] font-semibold text-content-subtle">
+              {emojiBadgeText}
+            </Text>
+          ) : undefined
+        }
+        onPress={() => onSelect("emojis")}
       />
       {canManageMessages ? (
         <SettingsRow

@@ -1,4 +1,5 @@
 import {
+  type BoostSectionTab,
   type DeleteServerResult,
   serverBoostCount,
   serverBoostLevel,
@@ -8,6 +9,7 @@ import { useState } from "react";
 import { KeyboardAvoidingView, Modal, Platform } from "react-native";
 
 import { ServerBoostsStep } from "../../../../boosts/components/ServerBoostsStep";
+import { ServerEmojisStep } from "../../../../emojis/components/ServerEmojisStep";
 import { ModerationAuditStep } from "../../../../moderation/components/ModerationAuditStep";
 import { ReportsStep } from "../../../../reports/components/list/ReportsStep";
 import { useDeleteServerConfirm } from "../../../useDeleteServerConfirm";
@@ -39,6 +41,8 @@ interface ServerSettingsModalProps {
   currentUserId: string | null;
   /** "boosts" si se entra desde "Boosts del servidor". */
   entry?: SettingsEntry;
+  /** Con qué pestaña abre Boosts del servidor. */
+  boostsTab?: BoostSectionTab;
   onClose: () => void;
   /** "Ir a comprar puntos" desde Boosts: quien lo usa cierra la configuracion. */
   onBuyPoints: () => void;
@@ -61,6 +65,7 @@ function SettingsBody({
   pendingReports,
   currentUserId,
   entry = "menu",
+  boostsTab: initialBoostsTab = "boost",
   onClose,
   onBuyPoints,
   onGoToMessage,
@@ -85,7 +90,18 @@ function SettingsBody({
     onConfirm: onConfirmDelete,
     onDeleted: onClose,
   });
+  const [boostsTab, setBoostsTab] = useState<BoostSectionTab>(initialBoostsTab);
   const backToMenu = () => setStep("menu");
+
+  function selectStep(target: SettingsStep) {
+    setBoostsTab("boost");
+    setStep(target);
+  }
+
+  function openBoostsAt(tab: BoostSectionTab) {
+    setBoostsTab(tab);
+    setStep("boosts");
+  }
 
   return (
     <>
@@ -106,7 +122,7 @@ function SettingsBody({
           canManageMessages={canManageMessages}
           canReviewReports={canReviewReports}
           pendingReports={pendingReports}
-          onSelect={setStep}
+          onSelect={selectStep}
         />
       ) : null}
 
@@ -115,7 +131,8 @@ function SettingsBody({
           form={form}
           serverName={server.name}
           onCancel={onClose}
-          onBoost={() => setStep("boosts")}
+          onBoost={() => openBoostsAt("boost")}
+          onShowBenefits={() => openBoostsAt("benefits")}
           vanityField={
             <VanityUrlField
               serverId={server.id}
@@ -129,7 +146,15 @@ function SettingsBody({
       ) : null}
 
       {step === "boosts" ? (
-        <ServerBoostsStep server={server} onBuyPoints={onBuyPoints} />
+        <ServerBoostsStep
+          server={server}
+          initialTab={boostsTab}
+          onBuyPoints={onBuyPoints}
+        />
+      ) : null}
+
+      {step === "emojis" ? (
+        <ServerEmojisStep server={server} canManageServer={canManageServer} />
       ) : null}
 
       {step === "words" ? <WordFilterStep serverId={server.id} /> : null}

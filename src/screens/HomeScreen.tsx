@@ -42,6 +42,8 @@ import { notificationTargetOf } from "../features/notifications/history/historyH
 import { NotificationCenterModal } from "../features/notifications/components/center/NotificationCenterModal";
 import { NotificationSettingsProvider } from "../features/notifications/NotificationSettingsContext";
 import { NotificationsProvider } from "../features/notifications/NotificationsContext";
+import { CustomEmojisProvider } from "../features/emojis/CustomEmojisContext";
+import { ServerEmojisProvider } from "../features/emojis/ServerEmojisContext";
 import { PendingReportsProvider } from "../features/reports/ReportsContext";
 import { usePendingReports } from "../features/reports/usePendingReports";
 import { useNotificationCenter } from "../features/notifications/useNotificationCenter";
@@ -72,7 +74,10 @@ import { useMyChannelPermissions } from "../features/channels/useMyChannelPermis
 import { usePushNotificationTap } from "../features/push/notification-handler";
 import { usePushDeviceSync } from "../features/push/use-push-notifications";
 import { useVoiceSession } from "../features/voice/voice-session-context";
-import { serverBoostsRequest } from "../lib/navigationRequests";
+import {
+  accountSettingsRequest,
+  serverBoostsRequest,
+} from "../lib/navigationRequests";
 import { getLastLocation, setLastLocation } from "../lib/storage";
 import { avatarUriOf } from "../lib/userProfile";
 import { useStatusBarStyle, useThemeColors } from "../theme/theme-context";
@@ -578,7 +583,11 @@ export function HomeScreen({
         <NotificationsProvider value={notificationsValue}>
           <PendingReportsProvider value={pendingReportsValue}>
             <PlatformStatusLayer refreshSignal={unread.statusRevision}>
-              {screen}
+              <CustomEmojisProvider>
+                <ServerEmojisProvider servers={servers}>
+                  {screen}
+                </ServerEmojisProvider>
+              </CustomEmojisProvider>
             </PlatformStatusLayer>
           </PendingReportsProvider>
           <NotificationCenterModal
@@ -619,9 +628,20 @@ export function HomeScreen({
   // ServerChannelsScreen abre su sección Boosts.
   useEffect(
     () =>
-      serverBoostsRequest.subscribe((serverId) => {
+      serverBoostsRequest.subscribe(({ serverId }) => {
         setView("servers");
         setSelectedServerId(serverId);
+        setSelectedChannelId(null);
+        setLostChannel(null);
+      }),
+    [],
+  );
+
+  // "Ver Premium" o compras desde un canal abierto: cierra el canal para que
+  // UserProfileBar (en ServerChannelsScreen) monte y atienda el pedido.
+  useEffect(
+    () =>
+      accountSettingsRequest.subscribe(() => {
         setSelectedChannelId(null);
         setLostChannel(null);
       }),
@@ -812,6 +832,11 @@ export function HomeScreen({
           jumpTarget={jumpTarget}
           onOpenSearchResult={openSearchResult}
           onJumpHandled={clearJumpTarget}
+          onOpenPremium={() => {
+            setSelectedChannelId(null);
+            setLostChannel(null);
+            accountSettingsRequest.request("subscriptions");
+          }}
           onBack={closeChannel}
         />
       </View>,

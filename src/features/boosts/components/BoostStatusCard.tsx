@@ -18,6 +18,7 @@ import { Text, View } from "react-native";
 
 import { BoostedBadge } from "./BoostedBadge";
 import { BoostLevelIcon } from "./BoostLevelIcon";
+import { BoostProgressBar } from "./BoostProgressBar";
 
 interface BoostStatusCardProps {
   summary: ServerBoostSummary;
@@ -61,7 +62,6 @@ export function BoostStatusCard({ summary }: BoostStatusCardProps) {
           <NextLevelProgress
             level={nextLevel}
             boostCount={summary.boost_count}
-            ratio={progress.ratio}
             target={progress.target ?? 0}
           />
         ) : (
@@ -93,20 +93,15 @@ export function BoostStatusCard({ summary }: BoostStatusCardProps) {
 interface NextLevelProgressProps {
   level: Exclude<BoostLevel, 0>;
   boostCount: number;
-  ratio: number;
   target: number;
 }
-
-const MARKER_SIZE = 16;
 
 function NextLevelProgress({
   level,
   boostCount,
-  ratio,
   target,
 }: NextLevelProgressProps) {
   const parts = boostsToNextLevelParts(level, boostCount);
-  const percent = `${Math.round(ratio * 1000) / 10}%` as const;
 
   return (
     <View className="gap-2">
@@ -122,29 +117,11 @@ function NextLevelProgress({
           {boostProgressCountLabel(boostCount, target)}
         </Text>
       </View>
-      <View
-        accessibilityRole="progressbar"
-        accessibilityLabel={boostProgressAriaLabel(level, boostCount)}
-        accessibilityValue={{ min: 0, max: target, now: boostCount }}
-        className="justify-center"
-        style={{ height: MARKER_SIZE }}
-      >
-        <View className="h-2.5 overflow-hidden rounded-full bg-boost-track">
-          <View
-            className="h-full rounded-full bg-info"
-            style={{ width: percent }}
-          />
-        </View>
-        <View
-          className="absolute top-0 rounded border-2 border-boost-ink bg-boost-yellow"
-          style={{
-            left: percent,
-            width: MARKER_SIZE,
-            height: MARKER_SIZE,
-            marginLeft: -MARKER_SIZE / 2,
-          }}
-        />
-      </View>
+      <BoostProgressBar
+        boostCount={boostCount}
+        target={target}
+        label={boostProgressAriaLabel(level, boostCount)}
+      />
     </View>
   );
 }

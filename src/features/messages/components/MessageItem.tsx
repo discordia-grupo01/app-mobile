@@ -18,6 +18,7 @@ import { Animated, Pressable, Text, View } from "react-native";
 import { cn } from "../../../lib/cn";
 import { useThemeColors } from "../../../theme/theme-context";
 import { Avatar } from "../../../components/ui/Avatar";
+import type { ReactionEmojis } from "../../emojis/useReactionEmojis";
 import { useMessageMentions } from "./MentionsContext";
 import { MessageAttachments } from "./MessageAttachments";
 import { MessageContent } from "./MessageContent";
@@ -57,6 +58,8 @@ interface MessageItemProps {
   onRequestReaction?: () => void;
   /** `false` sin `ADD_REACTIONS`: no se ofrece reaccionar, solo sacar la propia. */
   canAddReactions?: boolean;
+  reactionEmojis?: ReactionEmojis;
+  onNeedsPremium?: () => void;
   /** Mantener presionado: abre el menu de reaccionar/editar/eliminar. */
   onRequestActions: () => void;
   /** Solo en un mensaje fallido. */
@@ -76,6 +79,8 @@ export function MessageItem({
   onToggleReaction,
   onRequestReaction,
   canAddReactions = true,
+  reactionEmojis,
+  onNeedsPremium,
   onRequestActions,
   onRetry,
   onDiscard,
@@ -254,6 +259,8 @@ export function MessageItem({
             onToggle={onToggleReaction}
             onAddPress={onRequestReaction}
             canAdd={canAddReactions}
+            reactionEmojis={reactionEmojis}
+            onNeedsPremium={onNeedsPremium}
           />
         ) : null}
       </View>

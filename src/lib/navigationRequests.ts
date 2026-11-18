@@ -1,4 +1,4 @@
-import type { BillingSection } from "@discordia/client-shared";
+import type { BillingSection, BoostSectionTab } from "@discordia/client-shared";
 
 type Listener<T> = (value: T) => void;
 
@@ -41,5 +41,11 @@ export function createNavigationRequest<T>(): NavigationRequest<T> {
 /** "Ir a comprar puntos" desde Boosts: abre la configuración de la cuenta en esa solapa. */
 export const accountSettingsRequest = createNavigationRequest<BillingSection>();
 
-/** "Gestionar" desde Facturación: abre la sección Boosts de ese servidor. */
-export const serverBoostsRequest = createNavigationRequest<string>();
+export interface ServerBoostsTarget {
+  serverId: string;
+  tab: BoostSectionTab;
+}
+
+/** Abre Boosts del servidor en esa pestaña ("Gestionar" desde Facturación, adjuntos). */
+export const serverBoostsRequest =
+  createNavigationRequest<ServerBoostsTarget>();

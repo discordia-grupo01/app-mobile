@@ -1,16 +1,17 @@
 import {
   ADD_BANNER_LABEL,
+  ANIMATED_SERVER_ICON_COPY,
+  boostBenefitLockedLabel,
   CHANGE_BANNER_LABEL,
   CHANGE_SERVER_ICON_LABEL,
   type PresetBanner,
   REMOVE_BANNER_LABEL,
+  SERVER_BANNER_BENEFIT_COPY,
 } from "@discordia/client-shared";
 import { Feather } from "@expo/vector-icons";
-import type { ReactNode } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 
 import { Avatar } from "../../../../../components/ui/Avatar";
-import { BoostPerkHint } from "../../../../boosts/components/BoostPerkHint";
 import { useThemeColors } from "../../../../../theme/theme-context";
 import { ServerBanner } from "../../ServerBanner";
 import { PresetGradientFill } from "./PresetGradientFill";
@@ -26,9 +27,8 @@ interface ServerIdentityEditorProps {
   bannerUri: string | null | undefined;
   bannerPreset: PresetBanner | null;
   isBannerLocked: boolean;
-  boostCount: number;
-  bannerFooter?: ReactNode;
-  bannerAction?: ReactNode;
+  /** Desde el nivel 1 el ícono puede ser un GIF: lo marca con una insignia. */
+  canUseGif: boolean;
   onPickIcon: () => void;
   onPickBanner: () => void;
   onRemoveBanner: () => void;
@@ -40,9 +40,7 @@ export function ServerIdentityEditor({
   bannerUri,
   bannerPreset,
   isBannerLocked,
-  boostCount,
-  bannerFooter,
-  bannerAction,
+  canUseGif,
   onPickIcon,
   onPickBanner,
   onRemoveBanner,
@@ -50,16 +48,9 @@ export function ServerIdentityEditor({
   const colors = useThemeColors();
 
   return (
-    <View
-      className="mx-7 mt-6"
-      style={{ height: BANNER_HEIGHT + ICON_BOX / 2 }}
-    >
+    <View style={{ height: BANNER_HEIGHT + ICON_BOX / 2 }}>
       {isBannerLocked ? (
-        <LockedBanner
-          boostCount={boostCount}
-          footer={bannerFooter}
-          action={bannerAction}
-        />
+        <LockedBanner />
       ) : (
         <>
           <TouchableOpacity
@@ -118,6 +109,16 @@ export function ServerIdentityEditor({
         >
           <Avatar name={serverName} uri={iconUri} size={ICON_SIZE} />
         </TouchableOpacity>
+        {canUseGif ? (
+          <View
+            pointerEvents="none"
+            className="absolute bottom-0 left-0 h-5 justify-center rounded-full border-2 border-surface-modal bg-boost-yellow px-1.5"
+          >
+            <Text className="text-[10px] font-extrabold tracking-[0.4px] text-boost-ink">
+              {ANIMATED_SERVER_ICON_COPY.badge}
+            </Text>
+          </View>
+        ) : null}
         <View
           pointerEvents="none"
           className="absolute right-0 bottom-0 w-6 h-6 rounded-xl items-center justify-center bg-[rgba(0,0,0,0.65)] border-2 border-surface-modal"
@@ -129,29 +130,20 @@ export function ServerIdentityEditor({
   );
 }
 
-function LockedBanner({
-  boostCount,
-  footer,
-  action,
-}: {
-  boostCount: number;
-  footer?: ReactNode;
-  action?: ReactNode;
-}) {
+function LockedBanner() {
+  const colors = useThemeColors();
+
   return (
     <View
       testID="locked-banner"
-      className="w-full justify-center gap-2 rounded-2xl border border-dashed border-line-strong pr-4"
-      style={{ height: BANNER_HEIGHT, paddingLeft: ICON_BOX + 24 }}
+      accessibilityLabel={boostBenefitLockedLabel("custom_banner")}
+      className="w-full flex-row items-center gap-2 rounded-2xl border border-dashed border-line-strong bg-surface-input pr-3"
+      style={{ height: BANNER_HEIGHT, paddingLeft: ICON_BOX + 20 }}
     >
-      <BoostPerkHint
-        perk="custom_banner"
-        level={0}
-        boostCount={boostCount}
-        unlockedHint=""
-      />
-      {footer}
-      {action ? <View className="items-end">{action}</View> : null}
+      <Feather name="lock" size={14} color={colors.textMuted} />
+      <Text className="flex-1 text-xs leading-[17px] text-content-muted">
+        {SERVER_BANNER_BENEFIT_COPY.locked}
+      </Text>
     </View>
   );
 }
