@@ -1,4 +1,5 @@
 import {
+  ADD_REACTION_LABEL,
   canDeleteMessage,
   canEditMessage,
   dmInputPlaceholder,
@@ -10,6 +11,12 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { Text } from "react-native";
 
+import {
+  ChatPremiumOfferProvider,
+  useChatPremiumOffer,
+} from "../../emojis/ChatPremiumOfferContext";
+import { useReactionEmojis } from "../../emojis/useReactionEmojis";
+import { EmojiPickerSheet } from "../../messages/components/EmojiPickerSheet";
 import { useChannelMessages } from "../../messages/use-channel-messages";
 import { usePendingMessages } from "../../messages/usePendingMessages";
 import { ChatStatusNotice } from "../../messages/components/ChatStatusNotice";
@@ -42,8 +49,15 @@ interface DmThreadProps {
 
 /** Un borrador no tiene canal al que unirse: solo el composer. */
 export function DmThread(props: DmThreadProps) {
-  if (props.conversationId === null) return <DraftDmThread {...props} />;
-  return <LiveDmThread {...props} conversationId={props.conversationId} />;
+  return (
+    <ChatPremiumOfferProvider>
+      {props.conversationId === null ? (
+        <DraftDmThread {...props} />
+      ) : (
+        <LiveDmThread {...props} conversationId={props.conversationId} />
+      )}
+    </ChatPremiumOfferProvider>
+  );
 }
 
 function DraftDmThread({
@@ -105,6 +119,8 @@ function LiveDmThread({
   onOpenProfile,
   onOpenPremium,
 }: DmThreadProps & { conversationId: string }) {
+  const reactionEmojis = useReactionEmojis(null);
+  const { show: showPremiumOffer } = useChatPremiumOffer();
   const {
     status,
     statusMessage,
@@ -113,9 +129,10 @@ function LiveDmThread({
     isLoadingOlder,
     loadOlder,
     retry,
+    toggleReaction,
     editMessage,
     deleteMessage,
-  } = useChannelMessages({ id: conversationId });
+  } = useChannelMessages({ id: conversationId }, currentAuthor.id);
   const pending = usePendingMessages({
     chatKey: conversationId,
     channelId: conversationId,
@@ -131,17 +148,24 @@ function LiveDmThread({
     () => ({ [partner.id]: partner, [currentAuthor.id]: currentAuthor }),
     [partner, currentAuthor],
   );
+  const [reactingToId, setReactingToId] = useState<string | null>(null);
   const [actionsMessageId, setActionsMessageId] = useState<string | null>(null);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [deletingMessageId, setDeletingMessageId] = useState<string | null>(
     null,
   );
-  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   async function handleDelete(messageId: string) {
-    setDeleteError(null);
+    setActionError(null);
     const result = await deleteMessage(messageId);
-    if (!result.ok) setDeleteError(result.message);
+    if (!result.ok) setActionError(result.message);
+  }
+
+  async function handleToggleReaction(messageId: string, emoji: string) {
+    setActionError(null);
+    const result = await toggleReaction(messageId, emoji);
+    if (!result.ok) setActionError(result.message);
   }
 
   if (statusMessage && status !== "ready") {
@@ -190,14 +214,17 @@ function LiveDmThread({
           onRetryMessage={pending.retry}
           onDiscardMessage={pending.discard}
           onOpenProfile={onOpenProfile}
+          onToggleReaction={handleToggleReaction}
+          onRequestReaction={setReactingToId}
+          canAddReactions={!blockedByMe}
         />
       )}
-      {deleteError ? (
+      {actionError ? (
         <Text
           accessibilityRole="alert"
           className="bg-danger/10 px-4 py-1 text-center text-[12px] text-danger"
         >
-          {deleteError}
+          {actionError}
         </Text>
       ) : null}
       {blockedByMe ? <DmBlockedNotice /> : null}
@@ -228,6 +255,14 @@ function LiveDmThread({
         visible={actionsMessageId !== null}
         canEdit={canEditActions}
         canDelete={canDeleteActions}
+        onReact={
+          !blockedByMe
+            ? () => {
+                setReactingToId(actionsMessageId);
+                setActionsMessageId(null);
+              }
+            : undefined
+        }
         onEdit={() => {
           setEditingMessageId(actionsMessageId);
           setActionsMessageId(null);
@@ -250,6 +285,28 @@ function LiveDmThread({
           setDeletingMessageId(null);
         }}
         onCancel={() => setDeletingMessageId(null)}
+      />
+
+      <EmojiPickerSheet
+        visible={reactingToId !== null}
+        title={ADD_REACTION_LABEL}
+        serverId={null}
+        onPick={(emoji) => {
+          if (reactingToId) void handleToggleReaction(reactingToId, emoji);
+        }}
+        onPickCustomEmoji={(emoji) => {
+          if (!reactingToId) return;
+          const picked = reactionEmojis.pick(emoji.id);
+          if (picked.kind === "premium") {
+            showPremiumOffer("custom_emoji_reaction");
+            return;
+          }
+          if (picked.kind === "react") {
+            void handleToggleReaction(reactingToId, picked.token);
+          }
+        }}
+        onOpenPremium={onOpenPremium}
+        onClose={() => setReactingToId(null)}
       />
     </>
   );

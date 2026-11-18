@@ -9,6 +9,7 @@ import { useState } from "react";
 import { KeyboardAvoidingView, Modal, Platform } from "react-native";
 
 import { ServerBoostsStep } from "../../../../boosts/components/ServerBoostsStep";
+import { ServerEmojisStep } from "../../../../emojis/components/ServerEmojisStep";
 import { ModerationAuditStep } from "../../../../moderation/components/ModerationAuditStep";
 import { ReportsStep } from "../../../../reports/components/list/ReportsStep";
 import { useDeleteServerConfirm } from "../../../useDeleteServerConfirm";
@@ -150,6 +151,10 @@ function SettingsBody({
           initialTab={boostsTab}
           onBuyPoints={onBuyPoints}
         />
+      ) : null}
+
+      {step === "emojis" ? (
+        <ServerEmojisStep server={server} canManageServer={canManageServer} />
       ) : null}
 
       {step === "words" ? <WordFilterStep serverId={server.id} /> : null}

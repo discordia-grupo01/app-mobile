@@ -2,11 +2,11 @@ import {
   ADD_REACTION_LABEL,
   type MessageReaction,
 } from "@discordia/client-shared";
-
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { TouchableOpacity, View } from "react-native";
 
 import { useThemeColors } from "../../../theme/theme-context";
+import type { ReactionEmojis } from "../../emojis/useReactionEmojis";
 import { ReactionChip } from "./ReactionChip";
 
 interface MessageReactionsProps {
@@ -15,6 +15,8 @@ interface MessageReactionsProps {
   onAddPress: () => void;
   /** Sin `ADD_REACTIONS`: solo se puede sacar la reaccion propia (CA2/CA3). */
   canAdd?: boolean;
+  reactionEmojis?: ReactionEmojis;
+  onNeedsPremium?: () => void;
 }
 
 export function MessageReactions({
@@ -22,6 +24,8 @@ export function MessageReactions({
   onToggle,
   onAddPress,
   canAdd = true,
+  reactionEmojis,
+  onNeedsPremium,
 }: MessageReactionsProps) {
   const colors = useThemeColors();
   if (reactions.length === 0) return null;
@@ -34,6 +38,8 @@ export function MessageReactions({
           reaction={reaction}
           onToggle={() => onToggle(reaction.emoji)}
           disabled={!canAdd && !reaction.reacted_by_me}
+          reactionEmojis={reactionEmojis}
+          onNeedsPremium={canAdd ? onNeedsPremium : undefined}
         />
       ))}
       {canAdd ? (

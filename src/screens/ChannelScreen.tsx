@@ -71,6 +71,8 @@ interface ChannelScreenProps {
   /** Toque en un resultado de busqueda: abre su canal y salta al mensaje. */
   onOpenSearchResult?: (message: Message) => void;
   onJumpHandled?: () => void;
+  /** Lleva a suscribirse a Premium en la configuración de la cuenta. */
+  onOpenPremium?: () => void;
   onBack: () => void;
 }
 
@@ -97,6 +99,7 @@ export function ChannelScreen({
   jumpTarget = null,
   onOpenSearchResult,
   onJumpHandled,
+  onOpenPremium,
   onBack,
 }: ChannelScreenProps) {
   const colors = useThemeColors();
@@ -279,6 +282,7 @@ export function ChannelScreen({
               jumpTarget?.channelId === channel.id ? jumpTarget : null
             }
             onJumpHandled={onJumpHandled}
+            onOpenPremium={onOpenPremium}
             onOpenProfile={(userId, member) => {
               if (userId === currentUserId) {
                 setIsOwnProfileVisible(true);

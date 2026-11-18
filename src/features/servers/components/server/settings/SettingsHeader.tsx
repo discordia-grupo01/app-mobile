@@ -1,5 +1,6 @@
 import {
   boostsSectionTitleFor,
+  EMOJIS_SECTION_TITLE,
   MODERATION_AUDIT_TITLE,
   REPORTS_TITLE,
   WORD_FILTER_TITLE,
@@ -11,11 +12,19 @@ import { withAlpha } from "../../../../../lib/color";
 import { useThemeColors } from "../../../../../theme/theme-context";
 
 export type SettingsStep =
-  "menu" | "profile" | "boosts" | "words" | "reports" | "audit" | "delete";
+  | "menu"
+  | "profile"
+  | "boosts"
+  | "emojis"
+  | "words"
+  | "reports"
+  | "audit"
+  | "delete";
 
 const STEP_TITLES: Record<Exclude<SettingsStep, "boosts">, string> = {
   menu: "Configuración del servidor",
   profile: "Perfil del servidor",
+  emojis: EMOJIS_SECTION_TITLE,
   words: WORD_FILTER_TITLE,
   reports: REPORTS_TITLE,
   audit: MODERATION_AUDIT_TITLE,

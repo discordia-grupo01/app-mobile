@@ -2,10 +2,12 @@ import {
   ATTACH_FILE_LABEL,
   type AttachmentTarget,
   type BoostLevel,
+  canUseCustomEmoji,
   decodeMentions,
   EMOJI_PICKER_LABEL,
   MAX_MESSAGE_LENGTH,
   SEND_MESSAGE_LABEL,
+  type ServerEmoji,
   validateMessageContent,
 } from "@discordia/client-shared";
 
@@ -23,6 +25,9 @@ import { useAttachmentPicker } from "../../attachments/useAttachmentPicker";
 import { useAttachmentUploads } from "../../attachments/useAttachmentUploads";
 import { useOwnPremium } from "../../billing/useOwnPremium";
 import { useThemeColors } from "../../../theme/theme-context";
+import { useChatPremiumOffer } from "../../emojis/ChatPremiumOfferContext";
+import { CustomEmojiPremiumOffer } from "../../emojis/components/CustomEmojiPremiumOffer";
+import { EmojiPreviewChips } from "../../emojis/components/EmojiPreviewChips";
 import type { SendMessageResult } from "../use-channel-messages";
 import { useMentionDraft } from "../useMentionDraft";
 import { AttachmentBoostOffer } from "./AttachmentBoostOffer";
@@ -74,6 +79,10 @@ export function MessageComposer({
   const insets = useSafeAreaInsets();
   const { sources, resolveMention } = useMessageMentions();
   const draft = useMentionDraft({ sources });
+  const chatOffer = useChatPremiumOffer();
+  const [customEmojiOffer, setCustomEmojiOffer] = useState<"compose" | null>(
+    null,
+  );
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [sendError, setSendError] = useState<string | undefined>();
   const [limitOffer, setLimitOffer] = useState<AttachmentLimitOffer | null>(
@@ -98,6 +107,22 @@ export function MessageComposer({
   ) {
     setSendError(message);
     setLimitOffer(offer);
+  }
+
+  function handlePickCustomEmoji(emoji: ServerEmoji) {
+    if (
+      !canUseCustomEmoji({
+        emoji,
+        serverId: serverBoost?.serverId ?? null,
+        isPremium: premium,
+      })
+    ) {
+      setCustomEmojiOffer("compose");
+      return;
+    }
+    chatOffer.clear();
+    setCustomEmojiOffer(null);
+    draft.pickEmoji(emoji);
   }
   const inputRef = useRef<ComponentRef<typeof TextInput>>(null);
   const { uploadAll, forget } = useAttachmentUploads();
@@ -202,6 +227,11 @@ export function MessageComposer({
         disabled={isSending}
         onRemove={removeAttachment}
       />
+      <EmojiPreviewChips
+        items={editing ? [] : draft.activeEmojis}
+        onRemove={draft.removeEmoji}
+        disabled={disabled || isSending}
+      />
       <View className="flex-row items-end rounded-[10px] border border-line bg-surface-input px-1.5 py-1">
         <ComposerIconButton
           name="paperclip"
@@ -268,6 +298,22 @@ export function MessageComposer({
         <AttachmentPremiumOffer onOpenPremium={onOpenPremium} />
       ) : null}
 
+      {customEmojiOffer === "compose" ? (
+        <CustomEmojiPremiumOffer
+          variant="compose"
+          onOpenPremium={onOpenPremium}
+          onClose={() => setCustomEmojiOffer(null)}
+        />
+      ) : null}
+
+      {!customEmojiOffer && chatOffer.offer === "custom_emoji_reaction" ? (
+        <CustomEmojiPremiumOffer
+          variant="reaction"
+          onOpenPremium={onOpenPremium}
+          onClose={chatOffer.clear}
+        />
+      ) : null}
+
       {length >= COUNTER_THRESHOLD ? (
         <Text
           className={cn(
@@ -282,7 +328,14 @@ export function MessageComposer({
       <EmojiPickerSheet
         visible={isEmojiPickerOpen}
         title={EMOJI_PICKER_LABEL}
-        onPick={draft.append}
+        serverId={serverBoost?.serverId ?? null}
+        onPick={(emoji) => {
+          chatOffer.clear();
+          setCustomEmojiOffer(null);
+          draft.append(emoji);
+        }}
+        onPickCustomEmoji={handlePickCustomEmoji}
+        onOpenPremium={onOpenPremium}
         onClose={() => setIsEmojiPickerOpen(false)}
       />
     </View>
