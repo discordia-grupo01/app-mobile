@@ -27,6 +27,7 @@ import {
 import { Avatar } from "../../../../components/ui/Avatar";
 import { useThemeColors } from "../../../../theme/theme-context";
 import { BoostActionIcon } from "../../../boosts/components/BoostActionIcon";
+import { BoostLevelIcon } from "../../../boosts/components/BoostLevelIcon";
 import { useServerEmojis } from "../../../emojis/useServerEmojis";
 import { resolveServerIconUrl } from "../../api";
 
@@ -46,51 +47,80 @@ function SheetRow({
   onPress: () => void;
 }) {
   const colors = useThemeColors();
+  const isCard = !!subtitle;
+
+  if (isCard) {
+    return (
+      <TouchableOpacity
+        activeOpacity={0.75}
+        onPress={onPress}
+        className="flex-row items-center gap-3.5 rounded-2xl bg-surface-raised p-3.5 mb-2"
+        accessibilityRole="button"
+        accessibilityLabel={label}
+      >
+        <View className="w-10 h-10 rounded-xl items-center justify-center bg-surface-input">
+          {typeof icon === "string" ? (
+            <Feather name={icon} size={20} color={colors.sky} />
+          ) : (
+            icon
+          )}
+        </View>
+        <View className="flex-1">
+          <Text
+            className="text-[15px] font-bold text-content mb-0.5"
+            numberOfLines={1}
+          >
+            {label}
+          </Text>
+          <Text className="text-[12px] text-content-subtle" numberOfLines={1}>
+            {subtitle}
+          </Text>
+        </View>
+        <Feather name="chevron-right" size={18} color={colors.textSubtle} />
+      </TouchableOpacity>
+    );
+  }
+
   return (
     <TouchableOpacity
       activeOpacity={0.75}
       onPress={onPress}
-      className="flex-row items-center gap-3.5 rounded-[14px] py-3 px-2"
+      className="flex-row items-center gap-3.5 py-2.5 px-2 rounded-xl"
       accessibilityRole="button"
       accessibilityLabel={label}
     >
       <View
         className="w-10 h-10 rounded-xl items-center justify-center"
-        style={{
-          backgroundColor: danger ? "rgba(224,82,82,0.14)" : "rgba(0,0,0,0.07)",
-        }}
+        style={danger ? { backgroundColor: "rgba(224,82,82,0.14)" } : undefined}
       >
-        {typeof icon === "string" ? (
-          <Feather
-            name={icon}
-            size={18}
-            color={danger ? colors.danger : colors.text}
-          />
-        ) : (
-          icon
-        )}
-      </View>
-      <View className="flex-1">
-        <Text
+        <View
           className={
             danger
-              ? "text-[15px] font-bold text-danger"
-              : "text-[15px] font-bold text-content"
+              ? "w-10 h-10 rounded-xl items-center justify-center"
+              : "w-10 h-10 rounded-xl items-center justify-center bg-surface-raised"
           }
-          numberOfLines={1}
         >
-          {label}
-        </Text>
-        {subtitle ? (
-          <Text
-            className="text-[12px] text-content-muted mt-0.5"
-            numberOfLines={1}
-          >
-            {subtitle}
-          </Text>
-        ) : null}
+          {typeof icon === "string" ? (
+            <Feather
+              name={icon}
+              size={18}
+              color={danger ? colors.danger : colors.sky}
+            />
+          ) : (
+            icon
+          )}
+        </View>
       </View>
-      <Feather name="chevron-right" size={17} color={colors.textSubtle} />
+      <Text
+        className={
+          danger
+            ? "flex-1 text-[15px] font-bold text-danger"
+            : "flex-1 text-[15px] font-bold text-content"
+        }
+        numberOfLines={1}
+      >
+        {label}
+      </Text>
     </TouchableOpacity>
   );
 }
@@ -98,49 +128,41 @@ function SheetRow({
 function QuickActionTile({
   icon,
   label,
-  badge,
+  topRight,
   onPress,
 }: {
   icon: FeatherIconName | ReactElement;
   label: string;
-  badge?: string;
+  topRight?: ReactElement;
   onPress: () => void;
 }) {
   const colors = useThemeColors();
   return (
-    <TouchableOpacity
-      activeOpacity={0.75}
-      onPress={onPress}
-      className="flex-1 items-center gap-2"
-      accessibilityRole="button"
-      accessibilityLabel={label}
-    >
-      <View className="relative">
-        <View
-          className="w-14 h-14 rounded-2xl items-center justify-center"
-          style={{ backgroundColor: "rgba(0,0,0,0.07)" }}
-        >
+    <View className="flex-1 items-center gap-1.5">
+      <TouchableOpacity
+        activeOpacity={0.75}
+        onPress={onPress}
+        className="w-14 h-14 rounded-2xl bg-surface-raised relative overflow-hidden"
+        accessibilityRole="button"
+        accessibilityLabel={label}
+      >
+        <View className="flex-1 items-center justify-center pt-1.5">
           {typeof icon === "string" ? (
-            <Feather name={icon} size={22} color={colors.text} />
+            <Feather name={icon} size={22} color={colors.sky} />
           ) : (
             icon
           )}
         </View>
-        {badge ? (
-          <View
-            className="absolute -top-1.5 -right-2 rounded-full px-1.5 py-0.5"
-            style={{ backgroundColor: colors.boostPaper }}
-          >
-            <Text className="text-[10px] font-bold text-content-muted">
-              {badge}
-            </Text>
+        {topRight ? (
+          <View className="absolute top-0 right-0 bg-surface-modal rounded-bl-xl pl-1.5 pr-1 pt-0.5 pb-0.5 items-center justify-center">
+            {topRight}
           </View>
         ) : null}
-      </View>
-      <Text className="text-[11px] font-semibold text-content-muted text-center">
+      </TouchableOpacity>
+      <Text className="text-[12px] font-semibold text-content text-center">
         {label}
       </Text>
-    </TouchableOpacity>
+    </View>
   );
 }
 
@@ -227,22 +249,25 @@ export function ServerActionsSheet({
               />
               <View className="flex-1">
                 <Text
-                  className="text-[16px] font-bold text-content"
+                  className="text-[17px] font-bold text-content"
                   numberOfLines={1}
                 >
                   {server.name}
                 </Text>
-                <Text
-                  className="text-[12px] text-content-muted mt-0.5"
-                  numberOfLines={1}
-                >
-                  {metaLabel}
-                </Text>
+                <View className="flex-row items-center gap-1.5 mt-0.5">
+                  <BoostLevelIcon level={level} size={14} tight bare />
+                  <Text
+                    className="text-[12px] text-content-muted"
+                    numberOfLines={1}
+                  >
+                    {metaLabel}
+                  </Text>
+                </View>
               </View>
             </View>
 
             {/* Quick action tiles */}
-            <View className="flex-row gap-2 mb-4">
+            <View className="flex-row gap-2.5 mb-4">
               {canInvite ? (
                 <QuickActionTile
                   icon="user-plus"
@@ -264,6 +289,7 @@ export function ServerActionsSheet({
               <QuickActionTile
                 icon={<BoostActionIcon size={22} />}
                 label={SERVER_QUICK_ACTION_LABELS.boosts}
+                topRight={<BoostLevelIcon level={level} size={13} tight bare />}
                 onPress={() => {
                   onClose();
                   onBoosts();
@@ -272,7 +298,13 @@ export function ServerActionsSheet({
               <QuickActionTile
                 icon="smile"
                 label={SERVER_QUICK_ACTION_LABELS.emojis}
-                badge={emojiBadge}
+                topRight={
+                  emojiBadge ? (
+                    <Text className="text-[10px] font-bold text-content-muted leading-tight">
+                      {emojiBadge}
+                    </Text>
+                  ) : undefined
+                }
                 onPress={() => {
                   onClose();
                   onEmojis();
@@ -290,9 +322,6 @@ export function ServerActionsSheet({
                 onSettings();
               }}
             />
-
-            {/* Separador */}
-            <View className="h-px bg-line mx-1 my-1" />
 
             {/* Crear canal / categoría */}
             {canManageChannels ? (
@@ -333,7 +362,7 @@ export function ServerActionsSheet({
             ) : null}
 
             {/* Separador antes de abandonar */}
-            <View className="h-px bg-line mx-1 my-1" />
+            <View className="h-px bg-line my-1.5 mx-2" />
 
             {/* Abandonar servidor */}
             <SheetRow
