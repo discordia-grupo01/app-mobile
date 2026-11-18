@@ -21,6 +21,12 @@ export type ComposerSegment =
   | DraftSegment
   | { kind: "custom_emoji"; value: string; id: string; animated: boolean };
 
+export interface ActiveDraftEmoji {
+  start: number;
+  end: number;
+  emoji: CustomEmojiRef;
+}
+
 const EVERYONE_PATTERN = new RegExp(
   `(^|[^\\w@&<])(${EVERYONE_MENTION})(?![\\w-])`,
   "g",
@@ -30,6 +36,61 @@ interface Marked {
   start: number;
   end: number;
   segment: Exclude<ComposerSegment, { kind: "text" }>;
+}
+
+/**
+ * Al borrar caracteres en el input, si la eliminacion toca o borra el final de
+ * un emoji del servidor elegido (:nombre:), se borra el emoji completo en vez
+ * de dejar un texto roto :nom.
+ */
+export function adjustTextForEmojiDeletion(
+  oldText: string,
+  newText: string,
+  pickedEmojis: readonly CustomEmojiRef[],
+): { text: string; cursor: number } | null {
+  if (pickedEmojis.length === 0 || newText.length >= oldText.length) {
+    return null;
+  }
+
+  const code = messageCodeRanges(oldText);
+  const matches = matchPickedEmojis(oldText, pickedEmojis, code);
+  if (matches.length === 0) return null;
+
+  let prefix = 0;
+  while (
+    prefix < newText.length &&
+    prefix < oldText.length &&
+    newText[prefix] === oldText[prefix]
+  ) {
+    prefix++;
+  }
+
+  let suffixOld = oldText.length - 1;
+  let suffixNew = newText.length - 1;
+  while (
+    suffixOld >= prefix &&
+    suffixNew >= prefix &&
+    oldText[suffixOld] === newText[suffixNew]
+  ) {
+    suffixOld--;
+    suffixNew--;
+  }
+
+  const deletedStart = prefix;
+  const deletedEnd = suffixOld + 1;
+
+  const touched = matches.find(
+    (m) =>
+      (deletedStart < m.end && deletedEnd > m.start) ||
+      (deletedEnd === m.end && deletedStart >= m.start),
+  );
+
+  if (!touched) return null;
+
+  const start = Math.min(deletedStart, touched.start);
+  const end = Math.max(deletedEnd, touched.end);
+  const text = oldText.slice(0, start) + oldText.slice(end);
+  return { text, cursor: start };
 }
 
 function composerSegments(
@@ -120,6 +181,21 @@ export function useMentionDraft({ sources }: UseMentionDraftOptions) {
 
   const handleChangeText = useCallback(
     (text: string) => {
+      const adjusted = adjustTextForEmojiDeletion(
+        state.text,
+        text,
+        state.pickedEmojis,
+      );
+      if (adjusted) {
+        dispatch({
+          type: "change",
+          text: adjusted.text,
+          cursor: adjusted.cursor,
+        });
+        setForcedCursor(adjusted.cursor);
+        return;
+      }
+
       // `onChangeText` no trae el cursor: se estima y `onSelectionChange` lo corrige enseguida.
       const estimated = state.cursor + (text.length - state.text.length);
       dispatch({
@@ -128,7 +204,7 @@ export function useMentionDraft({ sources }: UseMentionDraftOptions) {
         cursor: Math.max(0, Math.min(text.length, estimated)),
       });
     },
-    [state.cursor, state.text.length],
+    [state.cursor, state.text, state.pickedEmojis],
   );
 
   const handleSelectionChange = useCallback(
@@ -172,9 +248,26 @@ export function useMentionDraft({ sources }: UseMentionDraftOptions) {
     );
   }, [state.text, state.picked, state.pickedEmojis, sources]);
 
+  const activeEmojis = useMemo<ActiveDraftEmoji[]>(() => {
+    if (state.pickedEmojis.length === 0) return [];
+    const code = messageCodeRanges(state.text);
+    return matchPickedEmojis(state.text, state.pickedEmojis, code);
+  }, [state.text, state.pickedEmojis]);
+
+  const removeEmoji = useCallback(
+    (start: number, end: number) => {
+      const text = state.text.slice(0, start) + state.text.slice(end);
+      const cursor = Math.min(start, text.length);
+      dispatch({ type: "change", text, cursor });
+      setForcedCursor(cursor);
+    },
+    [state.text],
+  );
+
   return {
     text: state.text,
     segments,
+    activeEmojis,
     encoded: view.encoded,
     isOpen: view.isOpen,
     query: view.active?.query ?? "",
@@ -189,6 +282,7 @@ export function useMentionDraft({ sources }: UseMentionDraftOptions) {
     handleSelectionChange,
     pick,
     pickEmoji,
+    removeEmoji,
     load,
     /** Agrega texto al final (un emoji unicode) sin tocar las menciones elegidas. */
     append: (text: string) => dispatch({ type: "append", text }),

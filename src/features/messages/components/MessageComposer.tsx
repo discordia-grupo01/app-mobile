@@ -27,6 +27,7 @@ import { useOwnPremium } from "../../billing/useOwnPremium";
 import { useThemeColors } from "../../../theme/theme-context";
 import { useChatPremiumOffer } from "../../emojis/ChatPremiumOfferContext";
 import { CustomEmojiPremiumOffer } from "../../emojis/components/CustomEmojiPremiumOffer";
+import { EmojiPreviewChips } from "../../emojis/components/EmojiPreviewChips";
 import type { SendMessageResult } from "../use-channel-messages";
 import { useMentionDraft } from "../useMentionDraft";
 import { AttachmentBoostOffer } from "./AttachmentBoostOffer";
@@ -225,6 +226,11 @@ export function MessageComposer({
         attachments={editing ? [] : attachments}
         disabled={isSending}
         onRemove={removeAttachment}
+      />
+      <EmojiPreviewChips
+        items={editing ? [] : draft.activeEmojis}
+        onRemove={draft.removeEmoji}
+        disabled={disabled || isSending}
       />
       <View className="flex-row items-end rounded-[10px] border border-line bg-surface-input px-1.5 py-1">
         <ComposerIconButton
