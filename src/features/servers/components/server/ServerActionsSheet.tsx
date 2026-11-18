@@ -138,27 +138,31 @@ function QuickActionTile({
 }) {
   const colors = useThemeColors();
   return (
-    <TouchableOpacity
-      activeOpacity={0.75}
-      onPress={onPress}
-      className="flex-1 items-center gap-1.5"
-      accessibilityRole="button"
-      accessibilityLabel={label}
-    >
-      <View className="w-14 h-14 rounded-2xl items-center justify-center bg-surface-raised relative">
-        {typeof icon === "string" ? (
-          <Feather name={icon} size={22} color={colors.sky} />
-        ) : (
-          icon
-        )}
+    <View className="flex-1 items-center gap-1.5">
+      <TouchableOpacity
+        activeOpacity={0.75}
+        onPress={onPress}
+        className="w-14 h-14 rounded-2xl bg-surface-raised relative overflow-hidden"
+        accessibilityRole="button"
+        accessibilityLabel={label}
+      >
+        <View className="flex-1 items-center justify-center pt-1.5">
+          {typeof icon === "string" ? (
+            <Feather name={icon} size={22} color={colors.sky} />
+          ) : (
+            icon
+          )}
+        </View>
         {topRight ? (
-          <View className="absolute top-1.5 right-1.5">{topRight}</View>
+          <View className="absolute top-0 right-0 bg-surface-modal rounded-bl-xl pl-1.5 pr-1 pt-0.5 pb-0.5 items-center justify-center">
+            {topRight}
+          </View>
         ) : null}
-      </View>
-      <Text className="text-[11px] font-semibold text-content text-center">
+      </TouchableOpacity>
+      <Text className="text-[12px] font-semibold text-content text-center">
         {label}
       </Text>
-    </TouchableOpacity>
+    </View>
   );
 }
 
@@ -251,7 +255,7 @@ export function ServerActionsSheet({
                   {server.name}
                 </Text>
                 <View className="flex-row items-center gap-1.5 mt-0.5">
-                  <BoostLevelIcon level={level} size={14} bare />
+                  <BoostLevelIcon level={level} size={14} tight bare />
                   <Text
                     className="text-[12px] text-content-muted"
                     numberOfLines={1}
@@ -263,7 +267,7 @@ export function ServerActionsSheet({
             </View>
 
             {/* Quick action tiles */}
-            <View className="flex-row gap-2 mb-4">
+            <View className="flex-row gap-2.5 mb-4">
               {canInvite ? (
                 <QuickActionTile
                   icon="user-plus"
@@ -285,7 +289,7 @@ export function ServerActionsSheet({
               <QuickActionTile
                 icon={<BoostActionIcon size={22} />}
                 label={SERVER_QUICK_ACTION_LABELS.boosts}
-                topRight={<BoostLevelIcon level={level} size={13} bare />}
+                topRight={<BoostLevelIcon level={level} size={13} tight bare />}
                 onPress={() => {
                   onClose();
                   onBoosts();
@@ -296,7 +300,7 @@ export function ServerActionsSheet({
                 label={SERVER_QUICK_ACTION_LABELS.emojis}
                 topRight={
                   emojiBadge ? (
-                    <Text className="text-[10px] font-bold text-content">
+                    <Text className="text-[10px] font-bold text-content-muted leading-tight">
                       {emojiBadge}
                     </Text>
                   ) : undefined
