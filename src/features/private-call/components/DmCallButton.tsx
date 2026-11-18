@@ -27,13 +27,12 @@ export function DmCallButton({
   if (!privateCall) return null;
 
   const isBusy = privateCall.state.phase !== "idle";
-  const isDisabled = blockedByMe || !conversationId || isBusy;
+  const isDisabled = blockedByMe || isBusy;
   const label = blockedByMe ? PRIVATE_CALL_BLOCKED_HINT : PRIVATE_CALL_START;
 
   return (
     <TouchableOpacity
       onPress={() => {
-        if (!conversationId) return;
         privateCall.start(
           { id: partner.id, name: partner.name, avatarUrl: partner.avatarUrl },
           conversationId,

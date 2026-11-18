@@ -129,7 +129,7 @@ export async function fetchVoiceSocketTicket(): Promise<
 
 export async function startPrivateCall(
   recipientId: string,
-  conversationId: string,
+  conversationId: string | null,
 ): Promise<StartPrivateCallResult> {
   const result = await voiceRequest<unknown>(
     "/api/voice/calls",
