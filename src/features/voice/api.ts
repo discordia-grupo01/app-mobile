@@ -36,7 +36,11 @@ async function voiceRequest<T>(
   if (result.ok) return { ok: true, data: result.data };
   return {
     ok: false,
-    message: voiceErrorMessage(voiceErrorCodeOf(body), fallback),
+    message: voiceErrorMessage(
+      voiceErrorCodeOf({ error: String(result.code).toLowerCase() }) ??
+        voiceErrorCodeOf(body),
+      fallback,
+    ),
   };
 }
 

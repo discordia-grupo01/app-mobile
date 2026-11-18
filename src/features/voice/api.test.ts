@@ -40,6 +40,13 @@ function failure(status: number, body: unknown) {
   };
 }
 
+function newFormatFailure(status: number, code: string, message: string) {
+  return {
+    result: { ok: false as const, status, code, message },
+    body: { error: { code, message, details: {} } },
+  };
+}
+
 beforeEach(() => mockedFetch.mockReset());
 
 describe("requestVoiceToken", () => {
@@ -69,6 +76,39 @@ describe("requestVoiceToken", () => {
     expect(await requestVoiceToken("c1")).toEqual({
       ok: false,
       message: voiceErrorMessage("voice_forbidden"),
+    });
+  });
+
+  it("traduce el codigo del formato nuevo de error", async () => {
+    mockedFetch.mockResolvedValue(
+      newFormatFailure(403, "VOICE_FORBIDDEN", "sin permiso"),
+    );
+
+    expect(await requestVoiceToken("c1")).toEqual({
+      ok: false,
+      message: voiceErrorMessage("voice_forbidden"),
+    });
+  });
+
+  it("traduce otro codigo del formato nuevo (CALL_NOT_FOUND)", async () => {
+    mockedFetch.mockResolvedValue(
+      newFormatFailure(404, "CALL_NOT_FOUND", "no existe"),
+    );
+
+    expect(await requestVoiceToken("c1")).toEqual({
+      ok: false,
+      message: voiceErrorMessage("call_not_found"),
+    });
+  });
+
+  it("con INVALID_BODY del formato nuevo usa el mensaje generico", async () => {
+    mockedFetch.mockResolvedValue(
+      newFormatFailure(400, "INVALID_BODY", "body invalido"),
+    );
+
+    expect(await requestVoiceToken("c1")).toEqual({
+      ok: false,
+      message: VOICE_CONNECT_FAILED,
     });
   });
 
