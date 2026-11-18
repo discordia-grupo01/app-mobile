@@ -8,6 +8,8 @@ export interface SettingsAccess {
   canManageServer: boolean;
   canManageMessages: boolean;
   canReviewReports: boolean;
+  canManageRoles: boolean;
+  canBanMembers: boolean;
 }
 
 /**
