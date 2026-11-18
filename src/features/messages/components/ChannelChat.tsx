@@ -19,6 +19,11 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { Text } from "react-native";
 
+import {
+  ChatPremiumOfferProvider,
+  useChatPremiumOffer,
+} from "../../emojis/ChatPremiumOfferContext";
+import { useReactionEmojis } from "../../emojis/useReactionEmojis";
 import { ReportSheet } from "../../reports/ReportSheet";
 import type { ReportTarget } from "../../reports/reportTarget";
 import { useServerMembers } from "../../servers/useServerMembers";
@@ -63,7 +68,7 @@ interface ChannelChatProps {
   onJumpHandled?: () => void;
 }
 
-export function ChannelChat({
+function ChannelChatInner({
   serverId,
   boostLevel,
   boostCount,
@@ -82,6 +87,8 @@ export function ChannelChat({
   jumpTarget = null,
   onJumpHandled,
 }: ChannelChatProps) {
+  const reactionEmojis = useReactionEmojis(serverId);
+  const { show: showPremiumOffer } = useChatPremiumOffer();
   const {
     status,
     statusMessage,
@@ -216,6 +223,7 @@ export function ChannelChat({
           welcome={<ChannelWelcome channelName={channel.name} />}
           messages={hasNewer ? messages : pending.withPending(messages)}
           authors={authors}
+          serverId={serverId}
           editingMessageId={editingMessageId}
           hasMore={hasMore}
           isLoadingOlder={isLoadingOlder}
@@ -353,11 +361,31 @@ export function ChannelChat({
       <EmojiPickerSheet
         visible={reactingToId !== null}
         title={ADD_REACTION_LABEL}
+        serverId={serverId}
         onPick={(emoji) => {
           if (reactingToId) void handleToggleReaction(reactingToId, emoji);
+        }}
+        onPickCustomEmoji={(emoji) => {
+          if (!reactingToId) return;
+          const picked = reactionEmojis.pick(emoji.id);
+          if (picked.kind === "premium") {
+            showPremiumOffer("custom_emoji_reaction");
+            return;
+          }
+          if (picked.kind === "react") {
+            void handleToggleReaction(reactingToId, picked.token);
+          }
         }}
         onClose={() => setReactingToId(null)}
       />
     </MessageMentionsProvider>
+  );
+}
+
+export function ChannelChat(props: ChannelChatProps) {
+  return (
+    <ChatPremiumOfferProvider>
+      <ChannelChatInner {...props} />
+    </ChatPremiumOfferProvider>
   );
 }

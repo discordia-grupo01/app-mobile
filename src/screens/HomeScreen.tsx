@@ -42,6 +42,8 @@ import { notificationTargetOf } from "../features/notifications/history/historyH
 import { NotificationCenterModal } from "../features/notifications/components/center/NotificationCenterModal";
 import { NotificationSettingsProvider } from "../features/notifications/NotificationSettingsContext";
 import { NotificationsProvider } from "../features/notifications/NotificationsContext";
+import { CustomEmojisProvider } from "../features/emojis/CustomEmojisContext";
+import { ServerEmojisProvider } from "../features/emojis/ServerEmojisContext";
 import { PendingReportsProvider } from "../features/reports/ReportsContext";
 import { usePendingReports } from "../features/reports/usePendingReports";
 import { useNotificationCenter } from "../features/notifications/useNotificationCenter";
@@ -578,7 +580,11 @@ export function HomeScreen({
         <NotificationsProvider value={notificationsValue}>
           <PendingReportsProvider value={pendingReportsValue}>
             <PlatformStatusLayer refreshSignal={unread.statusRevision}>
-              {screen}
+              <CustomEmojisProvider>
+                <ServerEmojisProvider servers={servers}>
+                  {screen}
+                </ServerEmojisProvider>
+              </CustomEmojisProvider>
             </PlatformStatusLayer>
           </PendingReportsProvider>
           <NotificationCenterModal
