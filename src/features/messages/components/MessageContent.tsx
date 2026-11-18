@@ -1,5 +1,6 @@
 import {
   isActiveMention,
+  isEmojiOnlyContent,
   MENTION_DELETED_ROLE_NAME,
   type MessageBlock,
   type MessageInline,
@@ -13,6 +14,7 @@ import {
 import type { ReactNode } from "react";
 import { Linking, Platform, ScrollView, Text, View } from "react-native";
 
+import { CustomEmojiImage } from "../../emojis/components/CustomEmojiImage";
 import { HighlightedCode } from "./HighlightedCode";
 import { MentionChip } from "./MentionChip";
 import { useMessageMentions } from "./MentionsContext";
@@ -142,6 +144,15 @@ export function MessageContent({
         case "channel":
           if (concealed) return node.value;
           return <MentionChip key={index} text={node.value} />;
+        case "custom_emoji":
+          return (
+            <CustomEmojiImage
+              key={index}
+              id={node.id}
+              name={node.name}
+              size={isEmojiOnlyContent(content) ? 48 : 22}
+            />
+          );
       }
 
       if (!isActiveMention(node, mentions)) return node.value;
