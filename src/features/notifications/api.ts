@@ -1,7 +1,9 @@
 import {
   type ListNotificationHistoryResult,
   type ListNotificationSettingsResult,
+  type MarkTransfersReadResult,
   NOTIFICATIONS_LOAD_FAILED,
+  NOTIFICATIONS_MARK_ALL_READ_FAILED,
   type NotificationHistoryQuery,
   type NotificationHistoryResponse,
   NOTIFICATION_SETTINGS_LOAD_FAILED,
@@ -37,6 +39,18 @@ export async function listNotificationHistory({
     items: result.data.items,
     nextCursor: result.data.next_cursor ?? null,
   };
+}
+
+export async function markTransfersRead(
+  transferIds: readonly string[],
+): Promise<MarkTransfersReadResult> {
+  const result = await apiFetch("/v1/notifications/history/transfers/read", {
+    method: "POST",
+    body: JSON.stringify({ transfer_ids: transferIds }),
+  });
+  return result.ok
+    ? { ok: true }
+    : { ok: false, message: NOTIFICATIONS_MARK_ALL_READ_FAILED };
 }
 
 export async function listNotificationSettings(): Promise<ListNotificationSettingsResult> {
