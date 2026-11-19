@@ -28,6 +28,8 @@ import {
   type RegisterResult,
   type RegisterValues,
   REQUEST_FAILED_MESSAGE,
+  RESET_LINK_INVALID,
+  type ResetPasswordResult,
   SET_PASSWORD_UNAVAILABLE,
   type SetPasswordResult,
   type TwoFactorChallengePayload,
@@ -35,9 +37,11 @@ import {
 } from "@discordia/client-shared";
 
 import { apiFetch } from "../../lib/api-client";
-
-const RETURN_TO_APP = "app";
 import { getOrCreateDeviceId } from "../../lib/device-id";
+
+// Pide que el link del mail pase por la pagina puente de la web, que abre la
+// app con discordia://... en vez de dejar al usuario en el navegador.
+const RETURN_TO_APP = "app";
 
 export async function registerService(
   values: RegisterValues,
@@ -220,7 +224,7 @@ export async function forgotPasswordService(
 ): Promise<ForgotPasswordResult> {
   const result = await apiFetch<{ message: string }>("/v1/password-recovery", {
     method: "POST",
-    body: JSON.stringify({ email: email.trim() }),
+    body: JSON.stringify({ email: email.trim(), return_to: RETURN_TO_APP }),
   });
 
   if (!result.ok) {
@@ -236,6 +240,33 @@ export async function forgotPasswordService(
     return {
       ok: false,
       message: messageFor(result, {}, REQUEST_FAILED_MESSAGE),
+    };
+  }
+
+  return { ok: true };
+}
+
+export async function resetPasswordService(values: {
+  token: string;
+  newPassword: string;
+  confirmPassword: string;
+}): Promise<ResetPasswordResult> {
+  const result = await apiFetch<{ message: string }>("/v1/password-reset", {
+    method: "POST",
+    body: JSON.stringify({
+      token: values.token,
+      new_password: values.newPassword,
+      confirm_password: values.confirmPassword,
+    }),
+  });
+
+  if (!result.ok) {
+    if (result.status === 400 && result.code === "INVALID_RESET_TOKEN") {
+      return { ok: false, message: RESET_LINK_INVALID };
+    }
+    return {
+      ok: false,
+      message: messageFor(result, {}, RESET_LINK_INVALID),
     };
   }
 

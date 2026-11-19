@@ -2,7 +2,7 @@ import "./global.css";
 
 import { lockAsync, OrientationLock } from "expo-screen-orientation";
 import { useCallback, useEffect, useState } from "react";
-import { View } from "react-native";
+import { Linking, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { LoadingScreen } from "./src/components/ui/LoadingScreen";
@@ -15,6 +15,10 @@ import { usePendingInvite } from "./src/features/servers/usePendingInvite";
 import { configurePushNotifications } from "./src/features/push/notification-handler";
 import { PrivateCallRoot } from "./src/features/private-call/components/PrivateCallRoot";
 import { VoiceSessionProvider } from "./src/features/voice/voice-session-context";
+import {
+  getResetPasswordToken,
+  subscribeToResetPasswordLinks,
+} from "./src/lib/reset-password-links";
 
 import { ForgotPasswordScreen } from "./src/screens/ForgotPasswordScreen";
 import { HomeScreen } from "./src/screens/HomeScreen";
@@ -22,17 +26,21 @@ import { LoginScreen } from "./src/screens/LoginScreen";
 import { PinEntryScreen } from "./src/screens/PinEntryScreen";
 import { RegisterScreen } from "./src/screens/RegisterScreen";
 import { ConfirmEmailScreen } from "./src/screens/ConfirmEmailScreen";
+import { ResetPasswordScreen } from "./src/screens/ResetPasswordScreen";
 import { ThemeProvider } from "./src/theme/theme-context";
 
 configurePushNotifications();
 
-type AuthScreen = AuthMode | "forgot-password" | "confirm-email";
+type AuthScreen =
+  AuthMode | "forgot-password" | "confirm-email" | "reset-password";
 
 function AppContent() {
   const { isAuthenticated, isLoading, isRestoringSession, isPinEnabled } =
     useAuth();
   const [authScreen, setAuthScreen] = useState<AuthScreen>("login");
   const [justRegistered, setJustRegistered] = useState(false);
+  const [resetPasswordToken, setResetPasswordToken] = useState<string>("");
+
   const {
     email: confirmationEmail,
     token: confirmationToken,
@@ -43,6 +51,30 @@ function AppContent() {
   } = useEmailConfirmation(
     useCallback(() => setAuthScreen("confirm-email"), []),
   );
+
+  // Escucha el deep link de recuperación de contraseña al iniciar y en segundo plano.
+  useEffect(() => {
+    let cancelled = false;
+
+    const openResetPasswordLink = (token: string) => {
+      setResetPasswordToken(token);
+      setAuthScreen("reset-password");
+    };
+
+    Linking.getInitialURL()
+      .then((url) => {
+        if (cancelled || !url) return;
+        const token = getResetPasswordToken(url);
+        if (token) openResetPasswordLink(token);
+      })
+      .catch(() => {});
+
+    const unsubscribe = subscribeToResetPasswordLinks(openResetPasswordLink);
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, []);
 
   const pendingInvite = usePendingInvite();
 
@@ -89,6 +121,16 @@ function AppContent() {
         token={confirmationToken}
         canResend={canResendConfirmation}
         onBackToLogin={() => handleSwitchMode("login")}
+      />
+    );
+  }
+
+  if (authScreen === "reset-password") {
+    return (
+      <ResetPasswordScreen
+        token={resetPasswordToken}
+        onBack={() => handleSwitchMode("login")}
+        onSuccess={() => handleSwitchMode("login")}
       />
     );
   }
