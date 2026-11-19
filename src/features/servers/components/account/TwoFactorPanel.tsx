@@ -1,11 +1,9 @@
 import {
   hasErrors,
-  type SetPasswordErrors,
   type TwoFactorCodeErrors,
   type TwoFactorPasswordErrors,
   type TwoFactorSetup,
   type TwoFactorStatus,
-  validateSetPassword,
   validateTwoFactorActivationCode,
   validateTwoFactorPassword,
 } from "@discordia/client-shared";
@@ -21,7 +19,7 @@ import {
 import { ActivityIndicator, ScrollView, View } from "react-native";
 
 import { useThemeColors } from "../../../../theme/theme-context";
-import { setPasswordService } from "../../../auth/service";
+import { useSetPasswordForm } from "../../../auth/useSetPasswordForm";
 import {
   activateTwoFactorService,
   disableTwoFactorService,
@@ -69,12 +67,7 @@ export function TwoFactorPanel({ onClose, scrollRef }: TwoFactorPanelProps) {
   );
   const [copied, setCopied] = useState(false);
 
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [newPasswordErrors, setNewPasswordErrors] = useState<SetPasswordErrors>(
-    {},
-  );
-  const [passwordAlreadySet, setPasswordAlreadySet] = useState(false);
+  const setPasswordForm = useSetPasswordForm(() => void handleStartSetup());
 
   const loadStatus = useCallback(() => {
     return getTwoFactorStatusService().then((result) => {
@@ -123,10 +116,7 @@ export function TwoFactorPanel({ onClose, scrollRef }: TwoFactorPanelProps) {
     setPasswordErrors({});
     setFormError(null);
     setCopied(false);
-    setNewPassword("");
-    setConfirmPassword("");
-    setNewPasswordErrors({});
-    setPasswordAlreadySet(false);
+    setPasswordForm.reset();
   }
 
   function backToStatus() {
@@ -154,33 +144,6 @@ export function TwoFactorPanel({ onClose, scrollRef }: TwoFactorPanelProps) {
     }
     setSetup(result.setup);
     setStep("setup");
-  }
-
-  async function handleSetPassword() {
-    const nextErrors = validateSetPassword({
-      password: newPassword,
-      confirmPassword,
-    });
-    setNewPasswordErrors(nextErrors);
-    if (hasErrors(nextErrors)) return;
-
-    setFormError(null);
-    setIsSubmitting(true);
-    const result = await setPasswordService(newPassword);
-    setIsSubmitting(false);
-
-    if (!result.ok) {
-      // Carrera entre pestañas/dispositivos: la cuenta ya consiguió una
-      // contraseña mientras se completaba este paso. No bloquea -- se puede
-      // seguir directo al QR.
-      if (result.alreadySet) {
-        setPasswordAlreadySet(true);
-      }
-      setFormError(result.message);
-      return;
-    }
-
-    void handleStartSetup();
   }
 
   async function handleActivate() {
@@ -278,15 +241,15 @@ export function TwoFactorPanel({ onClose, scrollRef }: TwoFactorPanelProps) {
   } else if (step === "set-password") {
     content = (
       <TwoFactorSetPasswordStep
-        password={newPassword}
-        confirmPassword={confirmPassword}
-        errors={newPasswordErrors}
-        formError={formError}
-        alreadySet={passwordAlreadySet}
-        isSubmitting={isSubmitting}
-        onPasswordChange={setNewPassword}
-        onConfirmPasswordChange={setConfirmPassword}
-        onSubmit={handleSetPassword}
+        password={setPasswordForm.password}
+        confirmPassword={setPasswordForm.confirmPassword}
+        errors={setPasswordForm.errors}
+        formError={setPasswordForm.formError ?? formError}
+        alreadySet={setPasswordForm.alreadySet}
+        isSubmitting={setPasswordForm.isSubmitting || isSubmitting}
+        onPasswordChange={setPasswordForm.setPassword}
+        onConfirmPasswordChange={setPasswordForm.setConfirmPassword}
+        onSubmit={() => void setPasswordForm.submit()}
         onContinueAnyway={handleStartSetup}
         onCancel={backToStatus}
       />

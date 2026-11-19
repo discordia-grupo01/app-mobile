@@ -1,4 +1,5 @@
 import {
+  ACCOUNT_PASSWORD_COPY,
   BILLING_BOOSTS_COPY,
   BILLING_COPY,
   type BillingSection,
@@ -22,10 +23,13 @@ import { BillingSettings } from "../../../billing/BillingSettings";
 import { BillingTabs } from "../../../billing/components/navigation/BillingTabs";
 import { PlatformStatusStep } from "../../../platform-status/components/PlatformStatusStep";
 import { useThemeColors } from "../../../../theme/theme-context";
+import { useAuth } from "../../../auth/auth-context";
 import { AccountSettingsMenu } from "./account-settings/AccountSettingsMenu";
 import { AppearanceSettingsStep } from "./account-settings/AppearanceSettingsStep";
+import { ChangePasswordStep } from "./account-settings/ChangePasswordStep";
 import { PushSettingsStep } from "./account-settings/PushSettingsStep";
 import { SecuritySettingsStep } from "./account-settings/SecuritySettingsStep";
+import { SetPasswordStep } from "./account-settings/SetPasswordStep";
 import { LogoutConfirmModal } from "./LogoutConfirmModal";
 import { PinSetupPanel } from "./PinSetupPanel";
 import { TwoFactorPanel } from "./TwoFactorPanel";
@@ -38,6 +42,8 @@ type Section =
   | "notifications"
   | "security"
   | "two-factor"
+  | "change-password"
+  | "set-password"
   | "pin"
   | "status"
   | BillingSection;
@@ -48,6 +54,8 @@ const TITLES: Record<Section, string> = {
   notifications: "Notificaciones",
   security: "Seguridad",
   "two-factor": "Verificación en dos pasos",
+  "change-password": ACCOUNT_PASSWORD_COPY.changeRowTitle,
+  "set-password": ACCOUNT_PASSWORD_COPY.setRowTitle,
   pin: "PIN de acceso rápido",
   status: "Estado de la plataforma",
   premium: "Premium",
@@ -63,6 +71,8 @@ const BACK_TARGET: Record<Section, Section> = {
   notifications: "menu",
   security: "menu",
   "two-factor": "security",
+  "change-password": "security",
+  "set-password": "security",
   pin: "security",
   status: "menu",
   premium: "menu",
@@ -96,6 +106,8 @@ export function AccountSettingsSheet({
   const insets = useModalInsets();
   const [section, setSection] = useState<Section>(initialSection ?? "menu");
   const [isConfirmVisible, setIsConfirmVisible] = useState(false);
+  const [securityNotice, setSecurityNotice] = useState<string | null>(null);
+  const { user, updateUser } = useAuth();
   const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
 
   useEffect(() => {
@@ -104,6 +116,7 @@ export function AccountSettingsSheet({
 
   function handleClose() {
     setSection("menu");
+    setSecurityNotice(null);
     onClose();
   }
 
@@ -119,7 +132,23 @@ export function AccountSettingsSheet({
   }
 
   function goBack() {
+    if (section === "security") setSecurityNotice(null);
     setSection(BACK_TARGET[section]);
+  }
+
+  function openPassword() {
+    setSecurityNotice(null);
+    setSection(user?.has_password ? "change-password" : "set-password");
+  }
+
+  function switchToSetPassword() {
+    if (user?.has_password) updateUser({ ...user, has_password: false });
+    setSection("set-password");
+  }
+
+  function finishPassword(notice: string) {
+    setSecurityNotice(notice);
+    setSection("security");
   }
 
   return (
@@ -180,8 +209,22 @@ export function AccountSettingsSheet({
           ) : section === "security" ? (
             <SecuritySettingsStep
               isPinEnabled={isPinEnabled}
+              hasPassword={user ? user.has_password : null}
+              notice={securityNotice}
               onOpenTwoFactor={() => setSection("two-factor")}
+              onOpenPassword={openPassword}
               onOpenPinSetup={() => setSection("pin")}
+            />
+          ) : section === "change-password" ? (
+            <ChangePasswordStep
+              onCancel={goBack}
+              onChanged={() => finishPassword(ACCOUNT_PASSWORD_COPY.changed)}
+              onPasswordNotSet={switchToSetPassword}
+            />
+          ) : section === "set-password" ? (
+            <SetPasswordStep
+              onCancel={goBack}
+              onPasswordReady={() => finishPassword(ACCOUNT_PASSWORD_COPY.set)}
             />
           ) : section === "status" ? (
             <PlatformStatusStep />

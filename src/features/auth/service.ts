@@ -1,6 +1,9 @@
 import {
   ACCOUNT_SUSPENDED_MESSAGE,
   type AuthResponse,
+  changePasswordFailure,
+  type ChangePasswordResult,
+  type ChangePasswordValues,
   type EmailConfirmationResult,
   EMAIL_ALREADY_REGISTERED,
   EMAIL_NOT_VERIFIED,
@@ -335,4 +338,19 @@ export async function setPasswordService(
   }
 
   return { ok: true };
+}
+
+export async function changePasswordService(
+  values: ChangePasswordValues,
+): Promise<ChangePasswordResult> {
+  const result = await apiFetch("/v1/me/password", {
+    method: "PUT",
+    body: JSON.stringify({
+      current_password: values.currentPassword,
+      new_password: values.newPassword,
+      confirm_password: values.confirmPassword,
+    }),
+  });
+
+  return result.ok ? { ok: true } : changePasswordFailure(result);
 }

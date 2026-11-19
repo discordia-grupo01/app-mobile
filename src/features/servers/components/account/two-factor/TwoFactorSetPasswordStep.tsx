@@ -9,7 +9,23 @@ import { withAlpha } from "../../../../../lib/color";
 import { useThemeColors } from "../../../../../theme/theme-context";
 import { FormErrorBanner } from "../../../../../components/ui/FormErrorBanner";
 
+export interface SetPasswordStepCopy {
+  title: string;
+  description: string;
+  submitLabel: string;
+  continueLabel: string;
+}
+
+const TWO_FACTOR_COPY: SetPasswordStepCopy = {
+  title: "Creá una contraseña primero",
+  description:
+    "Tu cuenta usa Google y todavía no tiene una contraseña propia. La vas a necesitar para recuperar códigos o desactivar el segundo factor más adelante.",
+  submitLabel: "Guardar y continuar",
+  continueLabel: "Continuar al QR",
+};
+
 interface TwoFactorSetPasswordStepProps {
+  copy?: SetPasswordStepCopy;
   password: string;
   confirmPassword: string;
   errors: SetPasswordErrors;
@@ -23,12 +39,8 @@ interface TwoFactorSetPasswordStepProps {
   onCancel: () => void;
 }
 
-/**
- * Paso previo al QR para una cuenta sin contraseña propia (alta puramente
- * federada por Google): sin una, no habría forma de reingresarla después
- * para desactivar el 2FA o regenerar códigos de recuperación.
- */
 export function TwoFactorSetPasswordStep({
+  copy = TWO_FACTOR_COPY,
   password,
   confirmPassword,
   errors,
@@ -56,12 +68,10 @@ export function TwoFactorSetPasswordStep({
           <Feather name="lock" size={26} color={colors.info} />
         </View>
         <Text className="text-center text-[17px] font-bold text-content">
-          Creá una contraseña primero
+          {copy.title}
         </Text>
         <Text className="mt-2 text-center text-[13px] leading-[18px] text-content-muted">
-          Tu cuenta usa Google y todavía no tiene una contraseña propia. La vas
-          a necesitar para recuperar códigos o desactivar el segundo factor más
-          adelante.
+          {copy.description}
         </Text>
       </View>
 
@@ -89,13 +99,13 @@ export function TwoFactorSetPasswordStep({
 
       {alreadySet ? (
         <Button
-          title="Continuar al QR"
+          title={copy.continueLabel}
           onPress={onContinueAnyway}
           isLoading={isSubmitting}
         />
       ) : (
         <Button
-          title="Guardar y continuar"
+          title={copy.submitLabel}
           onPress={onSubmit}
           isLoading={isSubmitting}
         />
