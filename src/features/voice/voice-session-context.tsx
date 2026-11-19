@@ -49,6 +49,7 @@ import { avatarUriOf } from "../../lib/userProfile";
 import { useTheme, useThemeColors } from "../../theme/theme-context";
 import { useAuth } from "../auth/auth-context";
 import { leaveVoiceSession, requestVoiceToken } from "./api";
+import { playDisconnectSound } from "./sounds";
 import { ExpandedCallOverlay } from "./components/call/ExpandedCallOverlay";
 import { channelTargetOf } from "./channel-target";
 import { participantProfilesOf } from "./participant-profiles";
@@ -300,6 +301,9 @@ export function VoiceSessionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const leave = useCallback(async () => {
+    if (stateRef.current.target !== null) {
+      playDisconnectSound();
+    }
     const channelId = channelTargetOf(stateRef.current.target)?.channelId;
     if (isReadyRef.current && !leaveTimeoutRef.current) disconnectThenClose();
     else end(null);
