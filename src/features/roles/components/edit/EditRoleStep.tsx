@@ -21,7 +21,7 @@ import { useThemeColors } from "../../../../theme/theme-context";
 import { ColorGrid } from "../shared/ColorGrid";
 import { FieldError } from "../../../../components/ui/FieldError";
 import { PermissionToggle } from "../shared/PermissionToggle";
-import { RolePreviewBadge } from "../shared/RolePreviewBadge";
+import { RolePreviewRow } from "../shared/RolePreviewBadge";
 
 import { useRoleEditForm } from "./useRoleEditForm";
 import { SettingsGroupLabel } from "../../../../components/ui/SettingsGroup";
@@ -122,9 +122,9 @@ export function EditRoleStep({
               editable={!isEveryoneSelected}
               className="flex-1 text-content text-[14px]"
             />
-            <RolePreviewBadge name={form.editName} color={form.editColor} />
           </View>
           <FieldError message={form.nameError} />
+          <RolePreviewRow name={form.editName} color={form.editColor} />
           {isEveryoneSelected ? (
             <Text className="text-[12px] text-content-subtle mt-1.5">
               @everyone es automático: lo tiene todo el mundo y no se puede

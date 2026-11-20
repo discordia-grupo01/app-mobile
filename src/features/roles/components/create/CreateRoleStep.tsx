@@ -8,7 +8,7 @@ import { useThemeColors } from "../../../../theme/theme-context";
 
 import { ColorGrid } from "../shared/ColorGrid";
 import { FieldError } from "../../../../components/ui/FieldError";
-import { RolePreviewBadge } from "../shared/RolePreviewBadge";
+import { RolePreviewRow } from "../shared/RolePreviewBadge";
 import { SettingsGroupLabel } from "../../../../components/ui/SettingsGroup";
 
 interface CreateRoleStepProps {
@@ -71,9 +71,9 @@ export function CreateRoleStep({
               maxLength={MAX_NAME + 10}
               className="flex-1 text-content text-[14px]"
             />
-            <RolePreviewBadge name={newName} color={newColor} />
           </View>
           <FieldError message={newNameError} />
+          <RolePreviewRow name={newName} color={newColor} />
         </View>
 
         <View className="gap-0">
