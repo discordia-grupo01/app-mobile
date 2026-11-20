@@ -18,7 +18,6 @@ import {
   Modal,
   Pressable,
   StyleSheet,
-  Switch,
   Text,
   TouchableOpacity,
   View,
@@ -32,6 +31,7 @@ import {
   useNotificationTarget,
 } from "./useNotificationTarget";
 import { NotificationLevelOption } from "./NotificationLevelOption";
+import { Switch } from "../../../../components/ui/Switch";
 
 interface NotificationSettingsSheetProps {
   target: NotificationTarget | null;
@@ -96,12 +96,10 @@ export function NotificationSettingsSheet({
               </Text>
             </View>
             <Switch
-              value={state.isMuted}
-              onValueChange={state.toggleMuted}
+              checked={state.isMuted}
+              onChange={() => state.toggleMuted()}
               disabled={state.isSaving}
-              accessibilityLabel={muteLabel}
-              trackColor={{ false: colors.bgHover, true: colors.accent }}
-              thumbColor="#ffffff"
+              label={muteLabel}
             />
           </View>
 

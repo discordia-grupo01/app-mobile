@@ -15,7 +15,7 @@ import {
 } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
-import { Linking, Switch, Text, View } from "react-native";
+import { Linking, Text, View } from "react-native";
 
 import { Button } from "../../../../../components/ui/Button";
 import { FormErrorBanner } from "../../../../../components/ui/FormErrorBanner";
@@ -23,7 +23,8 @@ import { LoadingSpinner } from "../../../../../components/ui/LoadingSpinner";
 import { useAuth } from "../../../../auth/auth-context";
 import { usePushNotifications } from "../../../../push/use-push-notifications";
 import { useThemeColors } from "../../../../../theme/theme-context";
-import { SettingsGroupLabel } from "../../../../../components/ui/SettingsGroup";
+import { SettingsGroup } from "../../../../../components/ui/SettingsGroup";
+import { Switch } from "../../../../../components/ui/Switch";
 
 export function PushSettingsStep() {
   const colors = useThemeColors();
@@ -38,83 +39,81 @@ export function PushSettingsStep() {
   if (isLoading) return <LoadingSpinner />;
 
   return (
-    <View className="w-full max-w-[560px] self-center px-4.5 pt-5">
+    <View className="w-full max-w-[560px] gap-6 self-center px-4.5 pt-5">
       <FormErrorBanner message={push.error} />
 
-      <View className="mb-4 flex-row items-center gap-3 rounded-2xl border border-line bg-surface-input p-4">
-        <Feather
-          name={isAccountOff ? "bell-off" : "bell"}
-          size={20}
-          color={colors.textSubtle}
-        />
+      <View className="flex-row items-center gap-4 rounded-2xl border border-line bg-surface-raised p-4">
         <View className="flex-1">
-          <Text className="mb-0.5 text-[15px] font-bold text-content">
-            {PUSH_ACCOUNT_LABEL}
-          </Text>
-          <Text className="text-[12px] leading-[17px] text-content-muted">
+          <View className="flex-row items-center gap-2">
+            <Feather
+              name={isAccountOff ? "bell-off" : "bell"}
+              size={16}
+              color={colors.textSubtle}
+            />
+            <Text className="shrink text-[15px] font-medium text-content">
+              {PUSH_ACCOUNT_LABEL}
+            </Text>
+          </View>
+          <Text className="mt-1 text-[12px] leading-[18px] text-content-subtle">
             {PUSH_ACCOUNT_HINT}
           </Text>
         </View>
         <Switch
-          value={push.accountEnabled === true}
+          checked={push.accountEnabled === true}
           disabled={push.accountEnabled === null}
-          onValueChange={(enabled) => void push.setAccountEnabled(enabled)}
-          trackColor={{ false: colors.bgHover, true: colors.accent }}
-          thumbColor="#ffffff"
-          accessibilityLabel={PUSH_ACCOUNT_LABEL}
+          onChange={(enabled) => void push.setAccountEnabled(enabled)}
+          label={PUSH_ACCOUNT_LABEL}
         />
       </View>
 
-      <View className="rounded-2xl border border-line bg-surface-raised p-4">
-        <SettingsGroupLabel className="mb-2">
-          {PUSH_THIS_DEVICE_TITLE}
-        </SettingsGroupLabel>
-
-        {push.deviceStatus === "unsupported" ? (
-          <Text className="text-[14px] leading-[19px] text-content-muted">
-            {PUSH_DEVICE_UNSUPPORTED}
-          </Text>
-        ) : push.deviceStatus === "denied" ? (
-          <>
-            <Text className="mb-3 text-[14px] leading-[19px] text-content-muted">
-              {PUSH_DEVICE_PERMISSION_DENIED}
+      <SettingsGroup label={PUSH_THIS_DEVICE_TITLE}>
+        <View className="rounded-2xl border border-line bg-surface-raised p-4">
+          {push.deviceStatus === "unsupported" ? (
+            <Text className="text-[14px] leading-[19px] text-content-muted">
+              {PUSH_DEVICE_UNSUPPORTED}
             </Text>
-            <Button
-              title={PUSH_OPEN_SETTINGS_LABEL}
-              variant="secondary"
-              onPress={() => void Linking.openSettings()}
-            />
-          </>
-        ) : (
-          <>
-            <Text className="mb-3 text-[14px] leading-[19px] text-content-muted">
-              {isOn ? PUSH_THIS_DEVICE_ON : PUSH_THIS_DEVICE_OFF}
-            </Text>
-            <Button
-              title={
-                push.isBusy
-                  ? isOn
-                    ? PUSH_DISABLING_LABEL
-                    : PUSH_ENABLING_LABEL
-                  : isOn
-                    ? PUSH_DISABLE_DEVICE_LABEL
-                    : PUSH_ENABLE_DEVICE_LABEL
-              }
-              variant={isOn ? "secondary" : "primary"}
-              isLoading={push.isBusy}
-              disabled={push.deviceStatus === "loading"}
-              onPress={() =>
-                void (isOn ? push.disableDevice() : push.enableDevice())
-              }
-            />
-            {isAccountOff && isOn ? (
-              <Text className="mt-3 text-[12px] leading-[17px] text-content-subtle">
-                {PUSH_ACCOUNT_OFF_NOTE}
+          ) : push.deviceStatus === "denied" ? (
+            <>
+              <Text className="mb-3 text-[14px] leading-[19px] text-content-muted">
+                {PUSH_DEVICE_PERMISSION_DENIED}
               </Text>
-            ) : null}
-          </>
-        )}
-      </View>
+              <Button
+                title={PUSH_OPEN_SETTINGS_LABEL}
+                variant="secondary"
+                onPress={() => void Linking.openSettings()}
+              />
+            </>
+          ) : (
+            <>
+              <Text className="mb-3 text-[14px] leading-[19px] text-content-muted">
+                {isOn ? PUSH_THIS_DEVICE_ON : PUSH_THIS_DEVICE_OFF}
+              </Text>
+              <Button
+                title={
+                  push.isBusy
+                    ? isOn
+                      ? PUSH_DISABLING_LABEL
+                      : PUSH_ENABLING_LABEL
+                    : isOn
+                      ? PUSH_DISABLE_DEVICE_LABEL
+                      : PUSH_ENABLE_DEVICE_LABEL
+                }
+                variant={isOn ? "secondary" : "primary"}
+                isLoading={push.isBusy}
+                disabled={push.deviceStatus === "loading"}
+                onPress={() =>
+                  void (isOn ? push.disableDevice() : push.enableDevice())
+                }
+              />
+              {isAccountOff && isOn ? (
+                <Text className="mt-3 text-[12px] leading-[17px] text-content-subtle">
+                  {PUSH_ACCOUNT_OFF_NOTE}
+                </Text>
+              ) : null}
+            </>
+          )}
+        </View>
+      </SettingsGroup>
     </View>
   );
 }
