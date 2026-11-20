@@ -8,7 +8,7 @@ import {
   TwoFactorSetPasswordStep,
 } from "../two-factor/TwoFactorSetPasswordStep";
 
-const SET_PASSWORD_COPY: SetPasswordStepCopy = {
+export const SET_PASSWORD_COPY: SetPasswordStepCopy = {
   title: ACCOUNT_PASSWORD_COPY.setFormTitle,
   description: ACCOUNT_PASSWORD_COPY.setFormDescription,
   submitLabel: ACCOUNT_PASSWORD_COPY.submit,
@@ -16,14 +16,10 @@ const SET_PASSWORD_COPY: SetPasswordStepCopy = {
 };
 
 interface SetPasswordStepProps {
-  onCancel: () => void;
   onPasswordReady: () => void;
 }
 
-export function SetPasswordStep({
-  onCancel,
-  onPasswordReady,
-}: SetPasswordStepProps) {
+export function SetPasswordStep({ onPasswordReady }: SetPasswordStepProps) {
   const form = useSetPasswordForm(onPasswordReady);
 
   return (
@@ -40,7 +36,6 @@ export function SetPasswordStep({
         onConfirmPasswordChange={form.setConfirmPassword}
         onSubmit={() => void form.submit()}
         onContinueAnyway={onPasswordReady}
-        onCancel={onCancel}
       />
     </View>
   );

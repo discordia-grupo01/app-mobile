@@ -1,10 +1,7 @@
-import { Feather } from "@expo/vector-icons";
 import { useState } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { Text, View } from "react-native";
 
 import { Button } from "../../../../../components/ui/Button";
-import { withAlpha } from "../../../../../lib/color";
-import { useThemeColors } from "../../../../../theme/theme-context";
 
 interface TwoFactorCodesStepProps {
   recoveryCodes: string[];
@@ -19,7 +16,6 @@ export function TwoFactorCodesStep({
   onCopy,
   onDone,
 }: TwoFactorCodesStepProps) {
-  const colors = useThemeColors();
   const [saved, setSaved] = useState(false);
 
   function handleCopy() {
@@ -29,21 +25,10 @@ export function TwoFactorCodesStep({
 
   return (
     <>
-      <View className="mb-3 items-center">
-        <View
-          className="mb-3 size-14 items-center justify-center rounded-2xl"
-          style={{ backgroundColor: withAlpha(colors.success, 0.15) }}
-        >
-          <Feather name="check-circle" size={26} color={colors.success} />
-        </View>
-        <Text className="text-center text-[17px] font-bold text-content">
-          Guardá tus códigos de recuperación
-        </Text>
-        <Text className="mt-1 text-center text-[13px] leading-[18px] text-content-muted">
-          Cada código sirve una sola vez. Esta es la única vez que mostraremos
-          esta lista.
-        </Text>
-      </View>
+      <Text className="mb-5 text-[14px] leading-5 text-content-muted">
+        Cada código sirve una sola vez. Esta es la única vez que mostraremos
+        esta lista.
+      </Text>
 
       <View className="mb-4 flex-row flex-wrap gap-2 rounded-2xl border border-line bg-surface-raised p-4">
         {recoveryCodes.map((recoveryCode, index) => (
@@ -66,21 +51,11 @@ export function TwoFactorCodesStep({
         iconRight={copied ? "check" : "copy"}
         className="mb-2.5"
       />
-      <TouchableOpacity
-        activeOpacity={0.75}
-        className="items-center py-3"
+      <Button
+        title={saved ? "Listo, cerrar" : "Ya los guardé"}
+        variant={saved ? "primary" : "secondary"}
         onPress={() => (saved ? onDone() : setSaved(true))}
-      >
-        <Text
-          className={
-            saved
-              ? "text-[13px] font-bold text-info"
-              : "text-[13px] font-bold text-content-muted"
-          }
-        >
-          {saved ? "Listo, cerrar" : "Ya los guardé"}
-        </Text>
-      </TouchableOpacity>
+      />
     </>
   );
 }

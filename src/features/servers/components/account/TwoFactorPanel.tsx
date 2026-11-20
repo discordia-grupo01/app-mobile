@@ -13,6 +13,7 @@ import {
   useCallback,
   useEffect,
   useState,
+  type MutableRefObject,
   type RefObject,
   type ComponentRef,
 } from "react";
@@ -29,14 +30,22 @@ import {
 import { TwoFactorCodesStep } from "./two-factor/TwoFactorCodesStep";
 import { TwoFactorDisabledConfirmationStep } from "./two-factor/TwoFactorDisabledConfirmationStep";
 import { TwoFactorPasswordStep } from "./two-factor/TwoFactorPasswordStep";
-import { TwoFactorSetPasswordStep } from "./two-factor/TwoFactorSetPasswordStep";
+import {
+  TWO_FACTOR_SET_PASSWORD_COPY,
+  TwoFactorSetPasswordStep,
+} from "./two-factor/TwoFactorSetPasswordStep";
 import { TwoFactorSetupStep } from "./two-factor/TwoFactorSetupStep";
 import { TwoFactorStatusStep } from "./two-factor/TwoFactorStatusStep";
 import { LoadingSpinner } from "../../../../components/ui/LoadingSpinner";
 
 interface TwoFactorPanelProps {
+  /** Vuelve a Seguridad. */
   onClose: () => void;
   scrollRef: RefObject<ComponentRef<typeof ScrollView> | null>;
+  /** El titulo del paso va en el encabezado de la hoja, como en web. */
+  onTitleChange: (title: string) => void;
+  /** La flecha de la hoja vuelve un paso adentro del panel. */
+  backRef: MutableRefObject<(() => void) | null>;
 }
 
 type Step =
@@ -48,7 +57,25 @@ type Step =
   | "regenerate"
   | "disabled-confirmation";
 
-export function TwoFactorPanel({ onClose, scrollRef }: TwoFactorPanelProps) {
+const STEP_TITLES: Record<Step, string> = {
+  status: "Verificación en dos pasos",
+  "set-password": TWO_FACTOR_SET_PASSWORD_COPY.title,
+  setup: "Conectá tu app autenticadora",
+  codes: "Guardá tus códigos de recuperación",
+  disable: "Desactivar verificación en dos pasos",
+  regenerate: "Generar códigos nuevos",
+  "disabled-confirmation": "Verificación en dos pasos desactivada",
+};
+
+/** Desde estos pasos la flecha sale a Seguridad; desde el resto, vuelve al estado. */
+const EXITS_TO_SECURITY: Step[] = ["status", "setup", "disabled-confirmation"];
+
+export function TwoFactorPanel({
+  onClose,
+  scrollRef,
+  onTitleChange,
+  backRef,
+}: TwoFactorPanelProps) {
   const [step, setStep] = useState<Step>("status");
   const [status, setStatus] = useState<TwoFactorStatus | null>(null);
   const [setup, setSetup] = useState<TwoFactorSetup | null>(null);
@@ -106,6 +133,14 @@ export function TwoFactorPanel({ onClose, scrollRef }: TwoFactorPanelProps) {
   useEffect(() => {
     scrollRef.current?.scrollTo({ y: 0, animated: false });
   }, [step, scrollRef]);
+
+  useEffect(() => {
+    onTitleChange(STEP_TITLES[step]);
+  }, [step, onTitleChange]);
+
+  useEffect(() => {
+    backRef.current = EXITS_TO_SECURITY.includes(step) ? onClose : backToStatus;
+  });
 
   function resetForms() {
     setCode("");
@@ -229,7 +264,6 @@ export function TwoFactorPanel({ onClose, scrollRef }: TwoFactorPanelProps) {
           resetForms();
           setStep("disable");
         }}
-        onClose={onClose}
       />
     );
   } else if (step === "set-password") {
@@ -245,7 +279,6 @@ export function TwoFactorPanel({ onClose, scrollRef }: TwoFactorPanelProps) {
         onConfirmPasswordChange={setPasswordForm.setConfirmPassword}
         onSubmit={() => void setPasswordForm.submit()}
         onContinueAnyway={handleStartSetup}
-        onCancel={backToStatus}
       />
     );
   } else if (step === "setup" && setup) {
@@ -258,7 +291,6 @@ export function TwoFactorPanel({ onClose, scrollRef }: TwoFactorPanelProps) {
         isSubmitting={isSubmitting}
         onCodeChange={setCode}
         onActivate={handleActivate}
-        onCancel={onClose}
       />
     );
   } else if (step === "codes") {
@@ -280,11 +312,6 @@ export function TwoFactorPanel({ onClose, scrollRef }: TwoFactorPanelProps) {
   } else {
     content = (
       <TwoFactorPasswordStep
-        title={
-          step === "disable"
-            ? "Desactivar verificación en dos pasos"
-            : "Generar códigos nuevos"
-        }
         description={
           step === "disable"
             ? "Reingresá tu contraseña para confirmar. Después de esto solo te vamos a pedir tu contraseña para entrar."
@@ -298,7 +325,6 @@ export function TwoFactorPanel({ onClose, scrollRef }: TwoFactorPanelProps) {
         isSubmitting={isSubmitting}
         onPasswordChange={setPassword}
         onConfirm={step === "disable" ? handleDisable : handleRegenerate}
-        onCancel={backToStatus}
       />
     );
   }

@@ -25,7 +25,6 @@ interface TwoFactorSetupStepProps {
   isSubmitting: boolean;
   onCodeChange: (code: string) => void;
   onActivate: () => void;
-  onCancel: () => void;
 }
 
 export function TwoFactorSetupStep({
@@ -36,7 +35,6 @@ export function TwoFactorSetupStep({
   isSubmitting,
   onCodeChange,
   onActivate,
-  onCancel,
 }: TwoFactorSetupStepProps) {
   const colors = useThemeColors();
   const [secretCopied, setSecretCopied] = useState(false);
@@ -48,10 +46,7 @@ export function TwoFactorSetupStep({
 
   return (
     <>
-      <Text className="mb-1.5 text-[17px] font-bold text-content">
-        Conectá tu app autenticadora
-      </Text>
-      <Text className="mb-4 text-[13px] leading-[18px] text-content-muted">
+      <Text className="mb-5 text-[14px] leading-5 text-content-muted">
         {TWO_FACTOR_SCAN_INSTRUCTIONS}
       </Text>
 
@@ -107,16 +102,6 @@ export function TwoFactorSetupStep({
       {formError ? <FormErrorBanner message={formError} /> : null}
 
       <Button title="Activar" onPress={onActivate} isLoading={isSubmitting} />
-
-      <TouchableOpacity
-        activeOpacity={0.75}
-        className="mt-2.5 items-center py-3"
-        onPress={onCancel}
-      >
-        <Text className="text-[13px] font-bold text-content-muted">
-          Cancelar
-        </Text>
-      </TouchableOpacity>
     </>
   );
 }
