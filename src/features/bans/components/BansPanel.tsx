@@ -13,7 +13,8 @@ import { ScrollView, Text, View } from "react-native";
 
 import { FormErrorBanner } from "../../../components/ui/FormErrorBanner";
 import { PaginationFooter } from "../../../components/ui/PaginationFooter";
-import { SuccessNotice } from "../../../components/ui/SuccessNotice";
+import { Toast } from "../../../components/ui/Toast";
+import { useToast } from "../../../hooks/useToast";
 import { avatarUriOf } from "../../../lib/userProfile";
 import { useThemeColors } from "../../../theme/theme-context";
 import { PublicProfileModal } from "../../profile/components/PublicProfileModal";
@@ -46,7 +47,7 @@ export function BansPanel({
   canManageRoles,
 }: BansPanelProps) {
   const colors = useThemeColors();
-  const [notice, setNotice] = useState("");
+  const { toast, showToast } = useToast();
   const [revokeError, setRevokeError] = useState("");
   const [revokingUserId, setRevokingUserId] = useState<string | null>(null);
   const [viewingUserId, setViewingUserId] = useState<string | null>(null);
@@ -57,12 +58,10 @@ export function BansPanel({
 
   function handleTabChange(next: BansTab) {
     view.changeTab(next);
-    setNotice("");
     setRevokeError("");
   }
 
   async function handleRevoke({ userId, profile }: UserListItem) {
-    setNotice("");
     setRevokeError("");
     setRevokingUserId(userId);
     const result = await view.unban(userId);
@@ -71,7 +70,7 @@ export function BansPanel({
       setRevokeError(result.message);
       return;
     }
-    setNotice(unbanSuccessNotice(displayNameOf(profile)));
+    showToast(unbanSuccessNotice(displayNameOf(profile)));
   }
 
   function handleSelect({ userId }: UserListItem) {
@@ -113,10 +112,10 @@ export function BansPanel({
         search={view.search}
         onSearchChange={view.changeSearch}
         results={
-          view.isSearching && view.matchCount !== null
+          view.isBans && view.isSearching
             ? {
-                matches: view.matchCount,
-                total: view.items?.length ?? 0,
+                matches: pagination.total,
+                total: view.bansCount,
                 noun: view.noun,
               }
             : null
@@ -132,32 +131,31 @@ export function BansPanel({
           {view.isBans ? BANS_REVOKE_HINT : BANS_MEMBERS_HINT}
         </Text>
 
-        {notice ? <SuccessNotice message={notice} /> : null}
         <FormErrorBanner message={view.errorMessage || revokeError} />
 
         {view.items === null ? (
           <LoadingSpinner />
         ) : (
           <UserList
-            items={pagination.pageItems}
+            items={view.items}
             emptyMessage={view.emptyMessage}
             actionsFor={actionsFor}
             onSelect={view.isBans ? undefined : handleSelect}
             disableActions={revokingUserId !== null}
           />
         )}
+        {pagination.pageCount > 1 ? (
+          <PaginationFooter
+            className="mt-1"
+            page={pagination.page}
+            pageCount={pagination.pageCount}
+            range={pagination.range}
+            total={pagination.total}
+            noun={view.isSearching ? "resultados" : view.noun}
+            onPageChange={pagination.setPage}
+          />
+        ) : null}
       </ScrollView>
-
-      {pagination.total > 0 ? (
-        <PaginationFooter
-          page={pagination.page}
-          pageCount={pagination.pageCount}
-          range={pagination.range}
-          total={pagination.total}
-          noun={view.isSearching ? "resultados" : view.noun}
-          onPageChange={pagination.setPage}
-        />
-      ) : null}
 
       <PublicProfileModal
         visible={viewingUserId !== null}
@@ -168,6 +166,8 @@ export function BansPanel({
         onBanned={view.reload}
         onClose={() => setViewingUserId(null)}
       />
+
+      <Toast message={toast} />
 
       {banTarget ? (
         <BanMemberModal

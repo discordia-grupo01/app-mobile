@@ -1,7 +1,7 @@
 import { outranksRole, type Role } from "@discordia/client-shared";
 
 import { type ReactNode, useState } from "react";
-import { Text, View } from "react-native";
+import { View } from "react-native";
 
 import { RoleDetailTabs, roleStepTitle } from "./components/RolesModalChrome";
 import { CreateRolePermissionsStep } from "./components/create/CreateRolePermissionsStep";
@@ -13,7 +13,8 @@ import { useRolesList } from "./components/list/useRolesList";
 import { RoleMembersStep } from "./components/members/RoleMembersStep";
 import { useRoleMembers } from "./components/members/useRoleMembers";
 import { type Step } from "./constants";
-import { useToast } from "./useToast";
+import { Toast } from "../../components/ui/Toast";
+import { useToast } from "../../hooks/useToast";
 
 export interface RolesHeaderInfo {
   step: Step;
@@ -180,17 +181,7 @@ export function RolesPanel({
         />
       ) : null}
 
-      {toast ? (
-        <View className="absolute bottom-6 left-6 right-6 max-w-105 flex-row items-center gap-2.5 self-center rounded-[14px] border border-line-strong bg-surface-raised px-4 py-3">
-          <View className="h-2 w-2 rounded-sm bg-accent-strong" />
-          <Text
-            className="flex-1 text-[13px] font-semibold text-content"
-            numberOfLines={2}
-          >
-            {toast}
-          </Text>
-        </View>
-      ) : null}
+      <Toast message={toast} />
     </View>
   );
 }
