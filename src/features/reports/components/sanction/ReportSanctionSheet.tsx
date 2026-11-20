@@ -22,6 +22,7 @@ import {
 import { withAlpha } from "../../../../lib/color";
 import { useThemeColors } from "../../../../theme/theme-context";
 import { BanIcon } from "../../../bans/components/BanIcon";
+import { Button } from "../../../../components/ui/Button";
 
 const LABELS: Record<ReportSanction, string> = {
   delete: DELETE_MESSAGE_LABEL,
@@ -109,16 +110,12 @@ export function ReportSanctionSheet({
             ),
           )}
 
-          <TouchableOpacity
-            activeOpacity={0.75}
-            className="mt-2 items-center rounded-xl bg-surface-input py-3.5"
+          <Button
+            title="Cancelar"
+            variant="secondary"
+            className="mt-2"
             onPress={onClose}
-            accessibilityRole="button"
-          >
-            <Text className="text-[14px] font-bold text-content-muted">
-              Cancelar
-            </Text>
-          </TouchableOpacity>
+          />
         </View>
       </View>
     </Modal>

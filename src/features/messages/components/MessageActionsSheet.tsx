@@ -16,6 +16,7 @@ import {
 } from "react-native";
 
 import { useThemeColors } from "../../../theme/theme-context";
+import { Button } from "../../../components/ui/Button";
 
 interface MessageActionsSheetProps {
   visible: boolean;
@@ -115,15 +116,12 @@ export function MessageActionsSheet({
             </TouchableOpacity>
           ) : null}
 
-          <TouchableOpacity
-            activeOpacity={0.75}
-            className="mt-2 items-center rounded-xl bg-surface-input py-3.5"
+          <Button
+            title="Cancelar"
+            variant="secondary"
+            className="mt-2"
             onPress={onClose}
-          >
-            <Text className="text-[14px] font-bold text-content-muted">
-              Cancelar
-            </Text>
-          </TouchableOpacity>
+          />
         </View>
       </View>
     </Modal>

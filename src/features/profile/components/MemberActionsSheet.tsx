@@ -24,6 +24,7 @@ import { cn } from "../../../lib/cn";
 import { withAlpha } from "../../../lib/color";
 import { useThemeColors } from "../../../theme/theme-context";
 import { BanIcon } from "../../bans/components/BanIcon";
+import { Button } from "../../../components/ui/Button";
 
 interface MemberActionsSheetProps {
   visible: boolean;
@@ -178,16 +179,12 @@ export function MemberActionsSheet({
             />
           ) : null}
 
-          <TouchableOpacity
-            activeOpacity={0.75}
-            className="mt-2 items-center rounded-xl bg-surface-input py-3.5"
+          <Button
+            title="Cancelar"
+            variant="secondary"
+            className="mt-2"
             onPress={onClose}
-            accessibilityRole="button"
-          >
-            <Text className="text-[14px] font-bold text-content-muted">
-              Cancelar
-            </Text>
-          </TouchableOpacity>
+          />
         </View>
       </View>
     </Modal>

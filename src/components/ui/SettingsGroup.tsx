@@ -24,7 +24,7 @@ export function SettingsGroup({
   return (
     <View className={cn("gap-3", className)}>
       <View className="flex-row items-center justify-between gap-3">
-        <View className="min-w-0 shrink flex-row items-center gap-2">
+        <View className="min-w-0 flex-1 flex-row items-center gap-2">
           <SettingsGroupLabel>{label}</SettingsGroupLabel>
           {count !== undefined ? (
             <View className="rounded-full bg-surface-input px-2 py-0.5">

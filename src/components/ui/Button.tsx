@@ -72,7 +72,12 @@ export function Button({
       {isLoading ? (
         <ActivityIndicator color={colors.onAccent} size="small" />
       ) : (
-        <View className="w-full flex-row items-center justify-center">
+        <View
+          className={cn(
+            "flex-row items-center justify-center",
+            fullWidth && "w-full",
+          )}
+        >
           {iconLeft ? <View className="mr-2">{iconLeft}</View> : null}
           <Text
             className={cn(

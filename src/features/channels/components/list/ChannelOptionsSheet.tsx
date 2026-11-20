@@ -20,6 +20,7 @@ import {
 import { withAlpha } from "../../../../lib/color";
 import { cn } from "../../../../lib/cn";
 import { useThemeColors } from "../../../../theme/theme-context";
+import { Button } from "../../../../components/ui/Button";
 
 interface ChannelOptionsSheetProps {
   visible: boolean;
@@ -149,15 +150,12 @@ export function ChannelOptionsSheet({
             />
           ) : null}
 
-          <TouchableOpacity
-            activeOpacity={0.75}
-            className="mt-2 items-center py-3.5 rounded-xl bg-surface-input"
+          <Button
+            title="Cancelar"
+            variant="secondary"
+            className="mt-2"
             onPress={onClose}
-          >
-            <Text className="text-[14px] font-bold text-content-muted">
-              Cancelar
-            </Text>
-          </TouchableOpacity>
+          />
         </View>
       </View>
     </Modal>
