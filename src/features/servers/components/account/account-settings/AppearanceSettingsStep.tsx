@@ -91,9 +91,6 @@ export function AppearanceSettingsStep({
 
   return (
     <View className="px-4.5 pt-5">
-      <Text className="mb-1 text-[17px] font-bold text-content">
-        Elegí cómo se ve Discordia
-      </Text>
       <Text className="mb-4 text-[13px] leading-[18px] text-content-muted">
         El tema se aplica inmediatamente en toda la aplicación.
       </Text>
