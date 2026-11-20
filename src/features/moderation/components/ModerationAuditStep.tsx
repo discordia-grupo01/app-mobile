@@ -37,18 +37,18 @@ export function ModerationAuditStep({ serverId }: { serverId: string }) {
             ))}
           </View>
         )}
+        {audit.pageCount > 1 ? (
+          <PaginationFooter
+            className="mt-1"
+            page={audit.page}
+            pageCount={audit.pageCount}
+            range={audit.range}
+            total={audit.total}
+            noun="acciones"
+            onPageChange={audit.setPage}
+          />
+        ) : null}
       </ScrollView>
-
-      {audit.pageCount > 1 ? (
-        <PaginationFooter
-          page={audit.page}
-          pageCount={audit.pageCount}
-          range={audit.range}
-          total={audit.total}
-          noun="acciones"
-          onPageChange={audit.setPage}
-        />
-      ) : null}
     </>
   );
 }

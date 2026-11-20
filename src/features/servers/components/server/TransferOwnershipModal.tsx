@@ -390,6 +390,19 @@ export function TransferOwnershipModal({
               style={styles.list}
               contentContainerStyle={styles.listContent}
               showsVerticalScrollIndicator={false}
+              ListFooterComponent={
+                memberPages.pageCount > 1 ? (
+                  <PaginationFooter
+                    className="pt-3"
+                    page={memberPages.page}
+                    pageCount={memberPages.pageCount}
+                    range={memberPages.range}
+                    total={memberPages.total}
+                    noun={memberPages.isSearching ? "resultados" : "miembros"}
+                    onPageChange={memberPages.setPage}
+                  />
+                ) : undefined
+              }
               renderItem={({ item }) => {
                 const name = displayNameOf(item.profile);
                 const selected = item.user_id === selectedUserId;
@@ -435,17 +448,6 @@ export function TransferOwnershipModal({
               }}
             />
           )}
-
-          {memberPages.pageCount > 1 ? (
-            <PaginationFooter
-              page={memberPages.page}
-              pageCount={memberPages.pageCount}
-              range={memberPages.range}
-              total={memberPages.total}
-              noun={memberPages.isSearching ? "resultados" : "miembros"}
-              onPageChange={memberPages.setPage}
-            />
-          ) : null}
 
           {hasOtherMembers ? (
             <View

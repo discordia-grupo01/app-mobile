@@ -271,18 +271,18 @@ export function ReportsStep({
             })}
           </View>
         )}
+        {list.pageCount > 1 ? (
+          <PaginationFooter
+            className="mt-1"
+            page={list.page}
+            pageCount={list.pageCount}
+            range={list.range}
+            total={list.total}
+            noun="reportes"
+            onPageChange={list.setPage}
+          />
+        ) : null}
       </ScrollView>
-
-      {list.pageCount > 1 ? (
-        <PaginationFooter
-          page={list.page}
-          pageCount={list.pageCount}
-          range={list.range}
-          total={list.total}
-          noun="reportes"
-          onPageChange={list.setPage}
-        />
-      ) : null}
 
       <ReportSanctionSheet
         available={sanctionsFor?.available ?? null}

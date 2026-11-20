@@ -164,18 +164,18 @@ export function RoleMembersStep({
             />
           ))
         )}
+        {list.pageCount > 1 ? (
+          <PaginationFooter
+            className="mt-3"
+            page={list.page}
+            pageCount={list.pageCount}
+            range={list.range}
+            total={list.total}
+            noun={list.isSearching ? "resultados" : "miembros"}
+            onPageChange={list.setPage}
+          />
+        ) : null}
       </ScrollView>
-
-      {list.pageCount > 1 ? (
-        <PaginationFooter
-          page={list.page}
-          pageCount={list.pageCount}
-          range={list.range}
-          total={list.total}
-          noun={list.isSearching ? "resultados" : "miembros"}
-          onPageChange={list.setPage}
-        />
-      ) : null}
     </View>
   );
 }
