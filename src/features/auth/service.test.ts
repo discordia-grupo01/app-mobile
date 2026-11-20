@@ -1,11 +1,16 @@
 import {
   CURRENT_PASSWORD_INVALID,
   PASSWORD_NOT_SET,
+  RESET_LINK_INVALID,
 } from "@discordia/client-shared";
 
 import { apiFetch } from "../../lib/api-client";
 
-import { changePasswordService } from "./service";
+import {
+  changePasswordService,
+  forgotPasswordService,
+  resetPasswordService,
+} from "./service";
 
 jest.mock("../../lib/api-client", () => ({ apiFetch: jest.fn() }));
 jest.mock("../../lib/device-id", () => ({ getOrCreateDeviceId: jest.fn() }));
@@ -61,5 +66,62 @@ describe("changePasswordService", () => {
       message: PASSWORD_NOT_SET,
       passwordNotSet: true,
     });
+  });
+});
+
+describe("forgotPasswordService", () => {
+  // Sin return_to el back manda el link de la web y el usuario queda en el
+  // navegador en vez de volver a la app.
+  it("pide el link que vuelve a la app", async () => {
+    mockedFetch.mockResolvedValueOnce({ ok: true, status: 202, data: null });
+
+    const result = await forgotPasswordService("  ada@example.com  ");
+
+    expect(mockedFetch).toHaveBeenCalledWith("/v1/password-recovery", {
+      method: "POST",
+      body: JSON.stringify({ email: "ada@example.com", return_to: "app" }),
+    });
+    expect(result.ok).toBe(true);
+  });
+});
+
+const resetValues = {
+  token: "plain-token-abc",
+  newPassword: "Nueva1234",
+  confirmPassword: "Nueva1234",
+};
+
+describe("resetPasswordService", () => {
+  it("manda token y contraseñas con los nombres del back", async () => {
+    mockedFetch.mockResolvedValueOnce({ ok: true, status: 200, data: null });
+
+    const result = await resetPasswordService(resetValues);
+
+    expect(mockedFetch).toHaveBeenCalledWith("/v1/password-reset", {
+      method: "POST",
+      body: JSON.stringify({
+        token: "plain-token-abc",
+        new_password: "Nueva1234",
+        confirm_password: "Nueva1234",
+      }),
+    });
+    expect(result).toEqual({ ok: true });
+  });
+
+  it("trata el token inválido como RESET_LINK_INVALID", async () => {
+    mockedFetch.mockResolvedValueOnce(failure(400, "INVALID_RESET_TOKEN"));
+
+    expect(await resetPasswordService(resetValues)).toEqual({
+      ok: false,
+      message: RESET_LINK_INVALID,
+    });
+  });
+
+  it("devuelve RESET_LINK_INVALID en errores genéricos", async () => {
+    mockedFetch.mockResolvedValueOnce(failure(500, "INTERNAL_ERROR"));
+
+    const result = await resetPasswordService(resetValues);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.message).toBeTruthy();
   });
 });
