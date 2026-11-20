@@ -147,8 +147,8 @@ export function JoinServerModal({
             ) : null}
 
             <View className="mb-3">
-              <Text className="text-[11px] font-bold tracking-[1.1px] text-content-subtle mb-1.5">
-                ENLACE O CÓDIGO DE INVITACIÓN
+              <Text className="text-[14px] font-semibold text-content mb-1.5">
+                Enlace o código de invitación
               </Text>
               <View
                 className={cn(

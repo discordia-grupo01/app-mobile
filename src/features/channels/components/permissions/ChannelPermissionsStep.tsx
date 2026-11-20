@@ -156,7 +156,7 @@ function RoleList({
         {CHANNEL_PERMISSIONS_ADMINS_NOTE}
       </Text>
 
-      <Text className="text-[11px] font-bold tracking-[1.1px] text-content-subtle uppercase mb-2 ml-1">
+      <Text className="text-[14px] font-semibold text-content mb-2 ml-1">
         {CHANNEL_PERMISSIONS_ROLES_LABEL}
       </Text>
 

@@ -113,7 +113,7 @@ export function UploadEmojiSheet({
 
               {/* Imagen */}
               <View>
-                <Text className="mb-1.5 text-[12px] font-bold uppercase tracking-wider text-content-subtle">
+                <Text className="text-[14px] font-semibold text-content mb-1.5">
                   {EMOJI_UPLOAD_COPY.imageLabel}
                 </Text>
 
@@ -177,7 +177,7 @@ export function UploadEmojiSheet({
 
               {/* Nombre */}
               <View>
-                <Text className="mb-1.5 text-[12px] font-bold uppercase tracking-wider text-content-subtle">
+                <Text className="text-[14px] font-semibold text-content mb-1.5">
                   {EMOJI_UPLOAD_COPY.nameLabel}
                 </Text>
                 <View
@@ -212,7 +212,7 @@ export function UploadEmojiSheet({
               {/* Vista previa */}
               {image && name ? (
                 <View>
-                  <Text className="mb-1.5 text-[12px] font-bold uppercase tracking-wider text-content-subtle">
+                  <Text className="text-[14px] font-semibold text-content mb-1.5">
                     {EMOJI_UPLOAD_COPY.previewLabel}
                   </Text>
                   <View className="flex-row items-center gap-2 rounded-xl border border-line bg-surface-input px-3.5 py-2.5">

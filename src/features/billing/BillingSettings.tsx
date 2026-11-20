@@ -141,7 +141,7 @@ export function BillingSettings({
           <View className="flex-row items-center gap-3 rounded-2xl border border-line bg-surface-raised p-4">
             <DiscordiaPointIcon size={32} />
             <View className="flex-1">
-              <Text className="text-[11px] font-bold uppercase tracking-[1.2px] text-content-subtle">
+              <Text className="text-[14px] font-semibold text-content">
                 {BILLING_COPY.balanceLabel}
               </Text>
               <Text className="mt-0.5 text-[22px] font-bold text-content tabular-nums">

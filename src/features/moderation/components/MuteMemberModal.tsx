@@ -119,7 +119,7 @@ export function MuteMemberModal({
           </View>
 
           <View>
-            <Text className="mb-1.5 text-[11px] font-bold uppercase tracking-[1.2px] text-content-subtle">
+            <Text className="text-[14px] font-semibold text-content mb-1.5">
               {MUTE_DURATION_LABEL}
             </Text>
             <View className="gap-2" accessibilityRole="radiogroup">
@@ -163,7 +163,7 @@ export function MuteMemberModal({
 
           <View>
             <View className="mb-1.5 flex-row items-center justify-between gap-2">
-              <Text className="shrink text-[11px] font-bold uppercase tracking-[1.2px] text-content-subtle">
+              <Text className="text-[14px] font-semibold text-content shrink">
                 {MUTE_REASON_LABEL} (opcional)
               </Text>
               <Text

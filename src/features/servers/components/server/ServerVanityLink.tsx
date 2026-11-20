@@ -14,7 +14,7 @@ export function ServerVanityLink({ code }: { code: string }) {
   return (
     <View className="gap-2 rounded-2xl border border-accent bg-surface-raised p-3.5">
       <View className="flex-row items-center gap-2">
-        <Text className="flex-1 text-[11px] font-bold uppercase tracking-[1.1px] text-content-muted">
+        <Text className="text-[14px] font-semibold text-content flex-1">
           {VANITY_INVITE_COPY.title}
         </Text>
         <BoostedBadge size={16} />
