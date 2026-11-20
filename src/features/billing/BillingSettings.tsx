@@ -11,11 +11,10 @@ import {
 } from "@discordia/client-shared";
 
 import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
 import { Button } from "../../components/ui/Button";
 import { FormErrorBanner } from "../../components/ui/FormErrorBanner";
-import { useThemeColors } from "../../theme/theme-context";
 import { useAuth } from "../auth/auth-context";
 import { getOwnProfile } from "../profile/service";
 import { useBillingOverview } from "./useBillingOverview";
@@ -30,6 +29,7 @@ import { PointsShop } from "./components/points/PointsShop";
 import { PremiumCard } from "./components/subscriptions/PremiumCard";
 import { PremiumFacts } from "./components/shared/PremiumFacts";
 import { PremiumShowcase } from "./components/premium/PremiumShowcase";
+import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
 
 interface BillingSettingsProps {
   tab: BillingSection;
@@ -43,7 +43,6 @@ export function BillingSettings({
   onNavigate,
   onOpenServerBoosts,
 }: BillingSettingsProps) {
-  const colors = useThemeColors();
   const { user, updateUser } = useAuth();
   const { state, reload, setPremium } = useBillingOverview();
   const [item, setItem] = useState<CheckoutItem | null>(null);
@@ -89,14 +88,7 @@ export function BillingSettings({
   }
 
   if (state.status === "loading") {
-    return (
-      <View className="items-center gap-3 py-10">
-        <ActivityIndicator color={colors.textMuted} />
-        <Text className="text-[13px] text-content-muted">
-          {BILLING_COPY.loading}
-        </Text>
-      </View>
-    );
+    return <LoadingSpinner label={BILLING_COPY.loading} />;
   }
 
   if (state.status === "error") {

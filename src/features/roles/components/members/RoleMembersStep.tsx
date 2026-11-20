@@ -14,17 +14,18 @@ import {
 } from "@discordia/client-shared";
 
 import { useCallback, useState } from "react";
-import { ActivityIndicator, ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 
 import { FormErrorBanner } from "../../../../components/ui/FormErrorBanner";
 import { PaginationFooter } from "../../../../components/ui/PaginationFooter";
 import { SearchInput } from "../../../../components/ui/SearchInput";
 import { SegmentedTabs } from "../../../../components/ui/SegmentedTabs";
 import { useMemberPages } from "../../../../hooks/useMemberPages";
-import { useThemeColors } from "../../../../theme/theme-context";
 import { assignRole, listRoleMembers, removeRole } from "../../api";
 
 import { MemberRoleRow } from "./MemberRoleRow";
+import { LoadingSpinner } from "../../../../components/ui/LoadingSpinner";
+import { EmptyState } from "../../../../components/ui/EmptyState";
 
 type Tab = "with" | "without";
 
@@ -61,7 +62,6 @@ export function RoleMembersStep({
   onMembershipChange,
   onToast,
 }: RoleMembersStepProps) {
-  const colors = useThemeColors();
   const [tab, setTab] = useState<Tab>("with");
   const [search, setSearch] = useState("");
   const [busyMemberId, setBusyMemberId] = useState<string | null>(null);
@@ -144,16 +144,13 @@ export function RoleMembersStep({
         <FormErrorBanner message={list.errorMessage} />
         {list.members === null ? (
           list.errorMessage ? null : (
-            <ActivityIndicator
-              size="small"
-              color={colors.accentBright}
-              className="mt-6"
-            />
+            <LoadingSpinner />
           )
         ) : list.members.length === 0 ? (
-          <Text className="text-content-subtle text-[13px] mt-2">
-            {emptyMessage}
-          </Text>
+          <EmptyState
+            icon={list.isSearching ? "search" : "users"}
+            text={emptyMessage}
+          />
         ) : (
           list.members.map((member) => (
             <MemberRoleRow

@@ -5,16 +5,16 @@ import {
   type ServerSummary,
 } from "@discordia/client-shared";
 import { useState } from "react";
-import { ActivityIndicator, ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 
 import { Button } from "../../../components/ui/Button";
 import { FormErrorBanner } from "../../../components/ui/FormErrorBanner";
-import { useThemeColors } from "../../../theme/theme-context";
 import { useServerBoostSummary } from "../useServerBoostSummary";
 import { BoostPerksTable } from "./BoostPerksTable";
 import { BoostShowcase } from "./BoostShowcase";
 import { BoostSectionTabs } from "./navigation/BoostSectionTabs";
 import { ServerBoostTab } from "./ServerBoostTab";
+import { LoadingSpinner } from "../../../components/ui/LoadingSpinner";
 
 interface ServerBoostsStepProps {
   server: ServerSummary;
@@ -27,7 +27,6 @@ export function ServerBoostsStep({
   initialTab = "boost",
   onBuyPoints,
 }: ServerBoostsStepProps) {
-  const colors = useThemeColors();
   const { summary, loadError, retry } = useServerBoostSummary(server.id);
   const [tab, setTab] = useState<BoostSectionTab>(initialTab);
 
@@ -65,9 +64,7 @@ export function ServerBoostsStep({
           />
         </View>
       ) : (
-        <View className="items-center py-6">
-          <ActivityIndicator size="small" color={colors.accentBright} />
-        </View>
+        <LoadingSpinner />
       )}
     </ScrollView>
   );

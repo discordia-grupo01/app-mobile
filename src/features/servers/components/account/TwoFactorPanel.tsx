@@ -16,9 +16,8 @@ import {
   type RefObject,
   type ComponentRef,
 } from "react";
-import { ActivityIndicator, ScrollView, View } from "react-native";
+import { ScrollView, View } from "react-native";
 
-import { useThemeColors } from "../../../../theme/theme-context";
 import { useSetPasswordForm } from "../../../auth/useSetPasswordForm";
 import {
   activateTwoFactorService,
@@ -33,6 +32,7 @@ import { TwoFactorPasswordStep } from "./two-factor/TwoFactorPasswordStep";
 import { TwoFactorSetPasswordStep } from "./two-factor/TwoFactorSetPasswordStep";
 import { TwoFactorSetupStep } from "./two-factor/TwoFactorSetupStep";
 import { TwoFactorStatusStep } from "./two-factor/TwoFactorStatusStep";
+import { LoadingSpinner } from "../../../../components/ui/LoadingSpinner";
 
 interface TwoFactorPanelProps {
   onClose: () => void;
@@ -49,8 +49,6 @@ type Step =
   | "disabled-confirmation";
 
 export function TwoFactorPanel({ onClose, scrollRef }: TwoFactorPanelProps) {
-  const colors = useThemeColors();
-
   const [step, setStep] = useState<Step>("status");
   const [status, setStatus] = useState<TwoFactorStatus | null>(null);
   const [setup, setSetup] = useState<TwoFactorSetup | null>(null);
@@ -215,11 +213,7 @@ export function TwoFactorPanel({ onClose, scrollRef }: TwoFactorPanelProps) {
 
   let content;
   if (isLoading) {
-    content = (
-      <View className="items-center py-10">
-        <ActivityIndicator color={colors.accent} />
-      </View>
-    );
+    content = <LoadingSpinner />;
   } else if (step === "status") {
     content = (
       <TwoFactorStatusStep

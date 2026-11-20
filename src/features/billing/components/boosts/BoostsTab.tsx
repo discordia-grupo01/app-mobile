@@ -12,13 +12,12 @@ import {
   type ServerSummary,
 } from "@discordia/client-shared";
 
-import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 
 import { Avatar } from "../../../../components/ui/Avatar";
 import { Button } from "../../../../components/ui/Button";
 import { FormErrorBanner } from "../../../../components/ui/FormErrorBanner";
 import { cn } from "../../../../lib/cn";
-import { useThemeColors } from "../../../../theme/theme-context";
 import { BoostedBadge } from "../../../boosts/components/BoostedBadge";
 import { BoostLevelIcon } from "../../../boosts/components/BoostLevelIcon";
 import { BoostedRing } from "../../../boosts/components/BoostedRing";
@@ -27,6 +26,7 @@ import { EmptyHistory } from "../history/EmptyHistory";
 import { ListPagination } from "../history/ListPagination";
 import { useBoostedServersPage } from "./useBoostedServersPage";
 import { useServerDirectory } from "./useServerDirectory";
+import { LoadingSpinner } from "../../../../components/ui/LoadingSpinner";
 
 function HowBoostsWork({ onBuyPoints }: { onBuyPoints: () => void }) {
   return (
@@ -139,7 +139,6 @@ interface BoostsTabProps {
 }
 
 export function BoostsTab({ onBuyPoints, onManageServer }: BoostsTabProps) {
-  const colors = useThemeColors();
   const boosted = useBoostedServersPage();
   const servers = useServerDirectory();
   const rows = boosted.data?.servers ?? [];
@@ -172,9 +171,7 @@ export function BoostsTab({ onBuyPoints, onManageServer }: BoostsTabProps) {
             />
           </View>
         ) : boosted.data === null || servers === null ? (
-          <View className="items-center py-6">
-            <ActivityIndicator size="small" color={colors.textMuted} />
-          </View>
+          <LoadingSpinner />
         ) : rows.length === 0 ? (
           <EmptyHistory text={BILLING_BOOSTS_COPY.empty} />
         ) : (

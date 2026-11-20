@@ -19,13 +19,7 @@ import {
 } from "@discordia/client-shared";
 
 import { useMemo, useState } from "react";
-import {
-  ActivityIndicator,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 import { FormErrorBanner } from "../../../../components/ui/FormErrorBanner";
 import { PaginationFooter } from "../../../../components/ui/PaginationFooter";
@@ -36,7 +30,6 @@ import {
 import { SuccessNotice } from "../../../../components/ui/SuccessNotice";
 import { cn } from "../../../../lib/cn";
 import { avatarUriOf } from "../../../../lib/userProfile";
-import { useThemeColors } from "../../../../theme/theme-context";
 import { BanMemberModal } from "../../../bans/components/BanMemberModal";
 import { DeleteMessageModal } from "../../../messages/components/DeleteMessageModal";
 import { useMessageAuthors } from "../../../messages/useMessageAuthors";
@@ -49,6 +42,8 @@ import { useReportedMessages } from "./useReportedMessages";
 import { type ReportsTab, useReportsList } from "./useReportsList";
 import { type ReportedMessageState, ReportRow } from "./ReportRow";
 import { ReportSanctionSheet } from "../sanction/ReportSanctionSheet";
+import { LoadingSpinner } from "../../../../components/ui/LoadingSpinner";
+import { EmptyState } from "../../../../components/ui/EmptyState";
 
 const TABS: SegmentedTab<ReportsTab>[] = [
   { value: "pending", label: REPORTS_PENDING_TAB },
@@ -85,7 +80,6 @@ export function ReportsStep({
   onGoToMessage,
   onPendingChanged,
 }: ReportsStepProps) {
-  const colors = useThemeColors();
   const list = useReportsList(serverId, onPendingChanged);
   const action = useReportAction(list.close);
   const reported = useReportedMessages(list.reports);
@@ -229,13 +223,9 @@ export function ReportsStep({
         <FormErrorBanner message={list.loadError} />
 
         {list.reports === null ? (
-          <View className="items-center py-6">
-            <ActivityIndicator size="small" color={colors.accentBright} />
-          </View>
+          <LoadingSpinner />
         ) : list.reports.length === 0 && !list.loadError ? (
-          <Text className="py-6 text-center text-[14px] text-content-subtle">
-            {EMPTY_TEXT[list.status]}
-          </Text>
+          <EmptyState icon="flag" text={EMPTY_TEXT[list.status]} />
         ) : (
           <View className="gap-3">
             {list.reports.map((report) => {

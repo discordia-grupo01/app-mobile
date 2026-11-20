@@ -17,7 +17,6 @@ import {
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useCallback, useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   FlatList,
   ScrollView,
   StyleSheet,
@@ -44,6 +43,7 @@ import { ModalShell } from "../../../../components/ui/ModalShell";
 import { ModalCloseButton } from "../../../../components/ui/ModalCloseButton";
 import { PaginationFooter } from "../../../../components/ui/PaginationFooter";
 import { SearchInput } from "../../../../components/ui/SearchInput";
+import { LoadingSpinner } from "../../../../components/ui/LoadingSpinner";
 
 interface TransferOwnershipModalProps {
   visible: boolean;
@@ -232,11 +232,7 @@ export function TransferOwnershipModal({
 
   function renderContent() {
     if (isLoadingPendingTransfer) {
-      return (
-        <View className="p-7 pt-8 items-center justify-center gap-3.5">
-          <ActivityIndicator size="small" color={colors.textSubtle} />
-        </View>
-      );
+      return <LoadingSpinner />;
     }
 
     if (pendingTransfer && isIncoming) {
@@ -338,14 +334,7 @@ export function TransferOwnershipModal({
     }
 
     if (members === null && !memberPages.errorMessage) {
-      return (
-        <View className="p-7 pt-8 items-center justify-center gap-3.5">
-          <ActivityIndicator size="small" color={colors.textSubtle} />
-          <Text className="text-[13px] leading-[19px] text-content-muted text-center">
-            Cargando miembros...
-          </Text>
-        </View>
-      );
+      return <LoadingSpinner label="Cargando miembros" />;
     }
 
     if (members === null) {
