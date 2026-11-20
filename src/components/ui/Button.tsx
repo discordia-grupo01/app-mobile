@@ -8,9 +8,11 @@ import {
 } from "react-native";
 
 import { cn } from "../../lib/cn";
+import { withAlpha } from "../../lib/color";
 import { useThemeColors } from "../../theme/theme-context";
+import { ButtonFill, buttonFillFor } from "./ButtonFill";
 
-type ButtonVariant = "primary" | "secondary" | "danger";
+export type ButtonVariant = "primary" | "secondary" | "danger";
 type ButtonSize = "md" | "sm";
 
 interface ButtonProps extends TouchableOpacityProps {
@@ -34,6 +36,12 @@ const CONTAINER_SIZE: Record<ButtonSize, string> = {
   sm: "min-h-9 rounded-lg px-3 py-2",
 };
 
+/** Mismo radio que `CONTAINER_SIZE`: el degradé se recorta con él. */
+const RADIUS: Record<ButtonSize, string> = {
+  md: "rounded-xl",
+  sm: "rounded-lg",
+};
+
 const TEXT_VARIANT: Record<ButtonVariant, string> = {
   primary: "text-on-accent",
   secondary: "text-content-muted",
@@ -54,6 +62,7 @@ export function Button({
 }: ButtonProps) {
   const colors = useThemeColors();
   const isButtonDisabled = disabled || isLoading;
+  const fill = buttonFillFor(variant, colors);
 
   return (
     <TouchableOpacity
@@ -62,13 +71,22 @@ export function Button({
         CONTAINER_SIZE[size],
         fullWidth && "w-full",
         CONTAINER_VARIANT[variant],
-        isButtonDisabled && "opacity-50",
+        isButtonDisabled && "opacity-60",
         className,
       )}
       disabled={isButtonDisabled}
       accessibilityRole="button"
       {...props}
+      style={[
+        fill && !isButtonDisabled
+          ? // `boxShadow` y no `elevation`: en Android la elevacion sale gris y
+            // corrida, sin el halo de color que tiene web.
+            { boxShadow: `0 6px 20px ${withAlpha(fill.shadow, 0.4)}` }
+          : null,
+        props.style,
+      ]}
     >
+      {fill ? <ButtonFill fill={fill} rounded={RADIUS[size]} /> : null}
       {isLoading ? (
         <ActivityIndicator color={colors.onAccent} size="small" />
       ) : (
