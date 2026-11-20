@@ -1,6 +1,8 @@
 import {
   type ListNotificationHistoryResult,
   type ListNotificationSettingsResult,
+  type ListStaffNoticesResult,
+  type MarkStaffNoticeSeenResult,
   type MarkTransfersReadResult,
   NOTIFICATIONS_LOAD_FAILED,
   NOTIFICATIONS_MARK_ALL_READ_FAILED,
@@ -12,6 +14,9 @@ import {
   type NotificationSettingsResponse,
   type NotificationSettingState,
   type SocketTicketResult,
+  STAFF_NOTICE_SEEN_FAILED,
+  STAFF_NOTICES_LOAD_FAILED,
+  type StaffNoticesResponse,
   type UpdateNotificationSettingsResult,
   isAccountSuspended,
 } from "@discordia/client-shared";
@@ -51,6 +56,29 @@ export async function markTransfersRead(
   return result.ok
     ? { ok: true }
     : { ok: false, message: NOTIFICATIONS_MARK_ALL_READ_FAILED };
+}
+
+export async function listStaffNotices(): Promise<ListStaffNoticesResult> {
+  const result = await apiFetch<StaffNoticesResponse>(
+    "/v1/notifications/notices",
+    { method: "GET" },
+  );
+  if (!result.ok || !Array.isArray(result.data?.items)) {
+    return { ok: false, message: STAFF_NOTICES_LOAD_FAILED };
+  }
+  return { ok: true, notices: result.data.items };
+}
+
+export async function markStaffNoticeSeen(
+  noticeId: string,
+): Promise<MarkStaffNoticeSeenResult> {
+  const result = await apiFetch(
+    `/v1/notifications/notices/${encodeURIComponent(noticeId)}/seen`,
+    { method: "POST" },
+  );
+  return result.ok
+    ? { ok: true }
+    : { ok: false, message: STAFF_NOTICE_SEEN_FAILED };
 }
 
 export async function listNotificationSettings(): Promise<ListNotificationSettingsResult> {
