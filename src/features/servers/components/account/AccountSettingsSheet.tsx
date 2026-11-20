@@ -42,7 +42,7 @@ import {
 import { LogoutConfirmModal } from "./LogoutConfirmModal";
 import { PinSetupPanel } from "./PinSetupPanel";
 import { TwoFactorPanel } from "./TwoFactorPanel";
-import { useModalInsets } from "../../../platform-status/hooks/useModalInsets";
+import { useModalInsets } from "../../../../hooks/useModalInsets";
 import { serverBoostsRequest } from "../../../../lib/navigationRequests";
 
 type Section =

@@ -35,8 +35,8 @@ import { useRefreshOnChange } from "../../../../hooks/useRefreshOnChange";
 import { cn } from "../../../../lib/cn";
 import { withAlpha } from "../../../../lib/color";
 import { useThemeColors } from "../../../../theme/theme-context";
-import { ModalShell } from "../../../../components/ui/ModalShell";
-import { ModalCloseButton } from "../../../../components/ui/ModalCloseButton";
+import { FullScreenModal } from "../../../../components/ui/FullScreenModal";
+import { LoadingSpinner } from "../../../../components/ui/LoadingSpinner";
 import { LockedVanityLink } from "./LockedVanityLink";
 import { ServerVanityLink } from "./ServerVanityLink";
 
@@ -331,174 +331,161 @@ export function InviteLinkModal({
     activeTab === "active" ? activeInvitations : inactiveInvitations;
 
   return (
-    <ModalShell visible={visible} onClose={onClose} className="max-w-115">
-      <ModalCloseButton onPress={onClose} />
-
-      <View className="flex-row items-center gap-3 px-7 pt-8 pb-5">
-        <View className="w-9 h-9 rounded-xl items-center justify-center bg-[rgba(107,149,189,0.15)]">
-          <Feather name="link-2" size={17} color={colors.info} />
-        </View>
-        <View className="flex-1">
-          <Text className="text-[17px] font-bold text-content">
-            Invitar miembros
-          </Text>
-          <Text
-            className="text-[12px] text-content-subtle mt-0.5"
-            numberOfLines={1}
-          >
-            {serverName}
-          </Text>
-        </View>
-      </View>
-
-      {vanityCode ? (
-        <View className="gap-4 px-7 pb-5">
-          <ServerVanityLink code={vanityCode} />
-          <View className="flex-row items-center gap-2.5">
-            <View className="h-px flex-1 bg-line" />
-            <Text className="text-xs text-content-subtle">
-              {VANITY_INVITE_COPY.divider}
-            </Text>
-            <View className="h-px flex-1 bg-line" />
-          </View>
-        </View>
-      ) : null}
-
-      <View className="border-t border-t-line px-7 py-5">
-        <Text className="text-[11px] font-bold tracking-[1.1px] text-content-subtle mb-2 uppercase">
-          Generar invitación (vence en 7 días)
-        </Text>
-        <View className="flex-row gap-2">
-          <View className="flex-1 rounded-xl border border-line bg-surface-input px-3.5 min-h-12 justify-center">
-            <TextInput
-              value={maxUsesInput}
-              onChangeText={(text) => {
-                setMaxUsesInput(text.replace(/[^0-9]/g, ""));
-                setErrorMessage("");
-              }}
-              placeholder={MAX_USES_LABEL}
-              placeholderTextColor={colors.textSubtle}
-              keyboardType="number-pad"
-              className="text-[14px] text-content"
-            />
-          </View>
-          <TouchableOpacity
-            onPress={handleGenerate}
-            disabled={isGenerating}
-            className={cn(
-              "flex-row items-center gap-1.5 rounded-xl px-4 min-h-12 bg-accent",
-              isGenerating ? "opacity-[0.6]" : null,
-            )}
-            accessibilityRole="button"
-          >
-            {isGenerating ? (
-              <ActivityIndicator size="small" color="#ffffff" />
-            ) : (
-              <>
-                <Feather name="plus" size={14} color="#ffffff" />
-                <Text className="text-[13px] font-bold text-white">
-                  Generar
-                </Text>
-              </>
-            )}
-          </TouchableOpacity>
-        </View>
-        {errorMessage ? (
-          <View className="flex-row items-start gap-2.5 rounded-xl border border-[rgba(224,82,82,0.3)] bg-[rgba(224,82,82,0.1)] px-3.5 py-3 mt-3">
-            <Feather name="alert-circle" size={15} color={colors.danger} />
-            <Text className="flex-1 text-danger text-[13px] leading-[18px]">
-              {errorMessage}
-            </Text>
-          </View>
-        ) : null}
-      </View>
-
+    <FullScreenModal
+      visible={visible}
+      title="Invitar miembros"
+      onClose={onClose}
+    >
       <ScrollView
-        className="border-t border-t-line"
-        contentContainerClassName="px-7 py-5"
+        className="flex-1"
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <Text className="text-[11px] font-bold tracking-[1.1px] text-content-subtle mb-2 uppercase">
-          Invitaciones
-        </Text>
+        {vanityCode ? (
+          <View className="gap-4 px-4.5 pt-5">
+            <ServerVanityLink code={vanityCode} />
+            <View className="flex-row items-center gap-2.5">
+              <View className="h-px flex-1 bg-line" />
+              <Text className="text-xs text-content-subtle">
+                {VANITY_INVITE_COPY.divider}
+              </Text>
+              <View className="h-px flex-1 bg-line" />
+            </View>
+          </View>
+        ) : null}
 
-        <View className="flex-row items-center gap-1 rounded-xl bg-surface-input p-1 mb-3">
-          <TouchableOpacity
-            onPress={() => setActiveTab("active")}
-            className={cn(
-              "flex-1 rounded-lg px-3 py-1.5",
-              activeTab === "active" ? "bg-accent" : null,
-            )}
-            accessibilityRole="button"
-          >
-            <Text
+        <View className="px-4.5 pt-5">
+          <Text className="text-[14px] font-semibold text-content mb-2">
+            Generar invitación (vence en 7 días)
+          </Text>
+          <View className="flex-row gap-2">
+            <View className="flex-1 rounded-xl border border-line bg-surface-input px-3.5 min-h-12 justify-center">
+              <TextInput
+                value={maxUsesInput}
+                onChangeText={(text) => {
+                  setMaxUsesInput(text.replace(/[^0-9]/g, ""));
+                  setErrorMessage("");
+                }}
+                placeholder={MAX_USES_LABEL}
+                placeholderTextColor={colors.textSubtle}
+                keyboardType="number-pad"
+                className="text-[14px] text-content"
+              />
+            </View>
+            <TouchableOpacity
+              onPress={handleGenerate}
+              disabled={isGenerating}
               className={cn(
-                "text-center text-[12px] font-bold",
-                activeTab === "active" ? "text-white" : "text-content-muted",
+                "flex-row items-center gap-1.5 rounded-xl px-4 min-h-12 bg-accent",
+                isGenerating ? "opacity-[0.6]" : null,
               )}
+              accessibilityRole="button"
             >
-              Activas ({activeInvitations.length})
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setActiveTab("inactive")}
-            className={cn(
-              "flex-1 rounded-lg px-3 py-1.5",
-              activeTab === "inactive" ? "bg-accent" : null,
-            )}
-            accessibilityRole="button"
-          >
-            <Text
-              className={cn(
-                "text-center text-[12px] font-bold",
-                activeTab === "inactive" ? "text-white" : "text-content-muted",
+              {isGenerating ? (
+                <ActivityIndicator size="small" color="#ffffff" />
+              ) : (
+                <>
+                  <Feather name="plus" size={14} color="#ffffff" />
+                  <Text className="text-[13px] font-bold text-white">
+                    Generar
+                  </Text>
+                </>
               )}
-            >
-              Inactivas ({inactiveInvitations.length})
-            </Text>
-          </TouchableOpacity>
+            </TouchableOpacity>
+          </View>
+          {errorMessage ? (
+            <View className="flex-row items-start gap-2.5 rounded-xl border border-[rgba(224,82,82,0.3)] bg-[rgba(224,82,82,0.1)] px-3.5 py-3 mt-3">
+              <Feather name="alert-circle" size={15} color={colors.danger} />
+              <Text className="flex-1 text-danger text-[13px] leading-[18px]">
+                {errorMessage}
+              </Text>
+            </View>
+          ) : null}
         </View>
 
-        {invitations === null ? (
-          <View className="py-6 items-center">
-            <ActivityIndicator size="small" color={colors.textSubtle} />
+        <View className="px-4.5 pt-6">
+          <Text className="text-[14px] font-semibold text-content mb-2">
+            Invitaciones
+          </Text>
+
+          <View className="flex-row items-center gap-1 rounded-xl bg-surface-input p-1 mb-3">
+            <TouchableOpacity
+              onPress={() => setActiveTab("active")}
+              className={cn(
+                "flex-1 rounded-lg px-3 py-1.5",
+                activeTab === "active" ? "bg-accent" : null,
+              )}
+              accessibilityRole="button"
+            >
+              <Text
+                className={cn(
+                  "text-center text-[12px] font-bold",
+                  activeTab === "active" ? "text-white" : "text-content-muted",
+                )}
+              >
+                Activas ({activeInvitations.length})
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setActiveTab("inactive")}
+              className={cn(
+                "flex-1 rounded-lg px-3 py-1.5",
+                activeTab === "inactive" ? "bg-accent" : null,
+              )}
+              accessibilityRole="button"
+            >
+              <Text
+                className={cn(
+                  "text-center text-[12px] font-bold",
+                  activeTab === "inactive"
+                    ? "text-white"
+                    : "text-content-muted",
+                )}
+              >
+                Inactivas ({inactiveInvitations.length})
+              </Text>
+            </TouchableOpacity>
           </View>
-        ) : invitations.length === 0 ? (
-          <Text className="py-4 text-center text-[13px] text-content-muted">
-            Todavía no hay invitaciones. Generá una arriba.
-          </Text>
-        ) : visibleInvitations.length === 0 ? (
-          <Text className="py-4 text-center text-[13px] text-content-muted">
-            {activeTab === "active"
-              ? "No tenés invitaciones activas en este momento."
-              : "Todavía no hay invitaciones inactivas."}
-          </Text>
-        ) : (
-          <View className="gap-2.5">
-            {visibleInvitations.map((inv) => (
-              <InvitationRow
-                key={inv.code}
-                invitation={inv}
-                onRevoked={handleRevoked}
-              />
-            ))}
+
+          {invitations === null ? (
+            <LoadingSpinner />
+          ) : invitations.length === 0 ? (
+            <Text className="py-4 text-center text-[13px] text-content-muted">
+              Todavía no hay invitaciones. Generá una arriba.
+            </Text>
+          ) : visibleInvitations.length === 0 ? (
+            <Text className="py-4 text-center text-[13px] text-content-muted">
+              {activeTab === "active"
+                ? "No tenés invitaciones activas en este momento."
+                : "Todavía no hay invitaciones inactivas."}
+            </Text>
+          ) : (
+            <View className="gap-2.5">
+              {visibleInvitations.map((inv) => (
+                <InvitationRow
+                  key={inv.code}
+                  invitation={inv}
+                  onRevoked={handleRevoked}
+                />
+              ))}
+            </View>
+          )}
+        </View>
+
+        {canSetVanityUrl(boostLevel) ? null : (
+          <View className="px-4.5 pt-6">
+            <LockedVanityLink
+              serverName={serverName}
+              level={boostLevel}
+              boostCount={boostCount}
+              onBoost={() => onOpenBoosts("boost")}
+              onShowBenefits={() => onOpenBoosts("benefits")}
+            />
           </View>
         )}
+        <View className="h-8" />
       </ScrollView>
-
-      {canSetVanityUrl(boostLevel) ? null : (
-        <View className="border-t border-t-line px-7 py-5">
-          <LockedVanityLink
-            serverName={serverName}
-            level={boostLevel}
-            boostCount={boostCount}
-            onBoost={() => onOpenBoosts("boost")}
-            onShowBenefits={() => onOpenBoosts("benefits")}
-          />
-        </View>
-      )}
-    </ModalShell>
+    </FullScreenModal>
   );
 }
 

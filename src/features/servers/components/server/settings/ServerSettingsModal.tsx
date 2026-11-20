@@ -26,7 +26,7 @@ import {
   initialSettingsStep,
   type SettingsEntry,
 } from "./settingsSteps";
-import { useModalInsets } from "../../../../platform-status/hooks/useModalInsets";
+import { useModalInsets } from "../../../../../hooks/useModalInsets";
 import { RolesPanel } from "../../../../roles/RolesPanel";
 import { BansPanel } from "../../../../bans/components/BansPanel";
 

@@ -33,7 +33,7 @@ import { useChannelOverrides } from "./useChannelOverrides";
 import { ChannelOverviewStep } from "./components/overview/ChannelOverviewStep";
 import { ChannelPermissionsStep } from "./components/permissions/ChannelPermissionsStep";
 import { useChannelOverviewForm } from "./components/overview/useChannelOverviewForm";
-import { useModalInsets } from "../platform-status/hooks/useModalInsets";
+import { useModalInsets } from "../../hooks/useModalInsets";
 
 export type ChannelSettingsSection = "overview" | "permissions";
 type SettingsStep = "list" | ChannelSettingsSection;

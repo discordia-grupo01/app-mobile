@@ -6,7 +6,7 @@ import { ModalShell } from "../../components/ui/ModalShell";
 
 import { RolesModalHeader } from "./components/RolesModalChrome";
 import { RolesPanel } from "./RolesPanel";
-import { useModalInsets } from "../platform-status/hooks/useModalInsets";
+import { useModalInsets } from "../../hooks/useModalInsets";
 
 interface RolesModalProps {
   visible: boolean;
