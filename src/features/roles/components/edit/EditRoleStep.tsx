@@ -6,13 +6,7 @@ import {
 } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
-import {
-  ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ScrollView, Text, TextInput, View } from "react-native";
 
 import { Button } from "../../../../components/ui/Button";
 import { cn } from "../../../../lib/cn";
@@ -23,6 +17,7 @@ import { FieldError } from "../../../../components/ui/FieldError";
 import { PermissionToggle } from "../shared/PermissionToggle";
 import { RolePreviewRow } from "../shared/RolePreviewBadge";
 
+import { RoleDangerZone } from "./RoleDangerZone";
 import { useRoleEditForm } from "./useRoleEditForm";
 import { SettingsGroupLabel } from "../../../../components/ui/SettingsGroup";
 
@@ -185,101 +180,12 @@ export function EditRoleStep({
         </View>
 
         {!isEveryoneSelected ? (
-          <View className="rounded-[14px] border border-[rgba(224,82,82,0.2)] bg-[rgba(224,82,82,0.06)] p-3.5 gap-3">
-            <Text className="text-[10px] font-bold tracking-[1px] uppercase text-danger">
-              Zona peligrosa
-            </Text>
-            {!canManage ? (
-              <Text className="text-[12px] text-content-subtle">
-                No tenés jerarquía suficiente para gestionar este rol.
-              </Text>
-            ) : null}
-
-            {!isDefaultRole ? (
-              <View className="flex-row items-center gap-2.5">
-                <View className="flex-1">
-                  <Text className="text-[13px] font-semibold text-content">
-                    Definir como rol por defecto
-                  </Text>
-                  <Text className="text-[12px] text-content-subtle mt-[1px]">
-                    Se asigna automáticamente a los nuevos miembros.
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  onPress={form.handleSetDefault}
-                  disabled={form.settingDefault || !canManage}
-                  className={cn(
-                    "flex-row items-center gap-1.5 rounded-[10px] border border-[rgba(252,227,164,0.3)] bg-[rgba(252,227,164,0.12)] px-3 py-[9px]",
-                    !canManage && "opacity-50",
-                  )}
-                >
-                  <Feather name="star" size={11} color={colors.highlight} />
-                  <Text className="text-[12px] font-bold text-highlight">
-                    {form.settingDefault ? "Definiendo..." : "Definir"}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <View className="flex-row items-start gap-2">
-                <Feather name="star" size={11} color={colors.textSubtle} />
-                <Text className="flex-1 text-[12px] leading-[17px] text-content-subtle">
-                  Este es el rol por defecto. Para eliminarlo, primero definí
-                  otro rol como predeterminado.
-                </Text>
-              </View>
-            )}
-
-            {!form.deleteConfirm ? (
-              <TouchableOpacity
-                onPress={form.requestDelete}
-                disabled={!canManage}
-                className={cn(
-                  "flex-row items-center justify-center gap-1.5 self-start rounded-[10px] border border-[rgba(224,82,82,0.25)] bg-[rgba(224,82,82,0.1)] px-3 py-[9px]",
-                  !canManage && "opacity-50",
-                )}
-              >
-                <Feather name="trash-2" size={12} color={colors.danger} />
-                <Text className="text-[12px] font-bold text-danger">
-                  Eliminar rol
-                </Text>
-              </TouchableOpacity>
-            ) : (
-              <View className="gap-2">
-                <Text className="text-[13px] font-semibold text-danger">
-                  ¿Confirmar eliminación de &quot;{role.name}
-                  &quot;?
-                </Text>
-                {form.deleteError ? (
-                  <View className="flex-row items-start gap-2 rounded-[10px] border border-[rgba(224,82,82,0.2)] bg-[rgba(224,82,82,0.1)] px-2.5 py-2">
-                    <Feather
-                      name="alert-circle"
-                      size={13}
-                      color={colors.danger}
-                    />
-                    <Text className="flex-1 text-[12px] text-danger">
-                      {form.deleteError}
-                    </Text>
-                  </View>
-                ) : null}
-                <View className="flex-row gap-2.5">
-                  <Button
-                    title="Cancelar"
-                    variant="secondary"
-                    onPress={form.cancelDelete}
-                    style={{ flex: 1, width: undefined }}
-                  />
-                  <Button
-                    title="Eliminar"
-                    variant="danger"
-                    onPress={form.handleDelete}
-                    isLoading={form.deleting}
-                    disabled={!canManage}
-                    style={{ flex: 1, width: undefined }}
-                  />
-                </View>
-              </View>
-            )}
-          </View>
+          <RoleDangerZone
+            role={role}
+            form={form}
+            canManage={canManage}
+            isDefaultRole={isDefaultRole}
+          />
         ) : null}
 
         {form.savedOk ? (

@@ -39,8 +39,7 @@ export function RolePreviewRow({
   color: string;
 }) {
   return (
-    <View className="mt-2.5 flex-row items-center gap-2">
-      <Text className="text-[12px] text-content-subtle">Vista previa</Text>
+    <View className="mt-2.5">
       <RolePreviewBadge name={name} color={color} />
     </View>
   );
