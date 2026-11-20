@@ -30,7 +30,7 @@ export function CustomEmojiPremiumOffer({
   const copy = COPY[variant];
 
   return (
-    <View className="relative mt-2 gap-2 rounded-xl border border-[#F0B232]/35 bg-surface-modal p-3.5">
+    <View className="relative mt-2 gap-2 rounded-xl border border-amber/35 bg-surface-modal p-3.5">
       {onClose ? (
         <TouchableOpacity
           activeOpacity={0.7}
@@ -56,7 +56,7 @@ export function CustomEmojiPremiumOffer({
         className="flex-row items-center gap-1.5 self-start py-0.5"
       >
         <DiscordiaPremiumIcon size={14} />
-        <Text className="text-[12px] font-bold text-[#F0B232]">{copy.cta}</Text>
+        <Text className="text-[12px] font-bold text-amber">{copy.cta}</Text>
       </TouchableOpacity>
     </View>
   );

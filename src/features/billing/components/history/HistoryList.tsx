@@ -1,4 +1,4 @@
-import { BILLING_HISTORY_PAGE_SIZE } from "@discordia/client-shared";
+import { DEFAULT_PAGE_SIZE } from "@discordia/client-shared";
 
 import type { ReactNode } from "react";
 import { Text, View } from "react-native";
@@ -28,7 +28,7 @@ export function HistoryList<T>({
   renderItem,
   headerAccessory,
 }: HistoryListProps<T>) {
-  const paged = usePagination(items, BILLING_HISTORY_PAGE_SIZE);
+  const paged = usePagination(items, DEFAULT_PAGE_SIZE);
 
   return (
     <View>

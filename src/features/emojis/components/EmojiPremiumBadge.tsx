@@ -19,7 +19,7 @@ export function EmojiPremiumBadge({
       accessibilityLabel={EMOJI_PREMIUM_REQUIRED_LABEL}
       style={{ width: size, height: size }}
       className={cn(
-        "items-center justify-center rounded-md border border-[#F0B232]/50 bg-surface-modal",
+        "items-center justify-center rounded-md border border-amber/50 bg-surface-modal",
         className,
       )}
     >
