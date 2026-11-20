@@ -5,6 +5,13 @@ import { cn } from "../../../lib/cn";
 import { useThemeColors } from "../../../theme/theme-context";
 import { type Step } from "../constants";
 
+export function roleStepTitle(step: Step, roleName: string | undefined) {
+  if (step === "list") return "Roles";
+  if (step === "create") return "Crear rol";
+  if (step === "create-permissions") return "Permisos del rol";
+  return roleName ?? "Rol";
+}
+
 interface RolesModalHeaderProps {
   step: Step;
   roleName: string | undefined;
@@ -19,15 +26,7 @@ export function RolesModalHeader({
   onClose,
 }: RolesModalHeaderProps) {
   const colors = useThemeColors();
-
-  const title =
-    step === "list"
-      ? "Roles"
-      : step === "create"
-        ? "Crear rol"
-        : step === "create-permissions"
-          ? "Permisos del rol"
-          : (roleName ?? "Rol");
+  const title = roleStepTitle(step, roleName);
 
   return (
     <View className="flex-row items-center gap-2 px-3 py-3 border-b border-b-line">

@@ -8,7 +8,13 @@ import {
 } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
-import { useEffect, useRef, useState, type ComponentRef } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ComponentRef,
+} from "react";
 import {
   KeyboardAvoidingView,
   Modal,
@@ -29,11 +35,14 @@ import { AppearanceSettingsStep } from "./account-settings/AppearanceSettingsSte
 import { ChangePasswordStep } from "./account-settings/ChangePasswordStep";
 import { PushSettingsStep } from "./account-settings/PushSettingsStep";
 import { SecuritySettingsStep } from "./account-settings/SecuritySettingsStep";
-import { SetPasswordStep } from "./account-settings/SetPasswordStep";
+import {
+  SET_PASSWORD_COPY,
+  SetPasswordStep,
+} from "./account-settings/SetPasswordStep";
 import { LogoutConfirmModal } from "./LogoutConfirmModal";
 import { PinSetupPanel } from "./PinSetupPanel";
 import { TwoFactorPanel } from "./TwoFactorPanel";
-import { useModalInsets } from "../../../platform-status/hooks/useModalInsets";
+import { useModalInsets } from "../../../../hooks/useModalInsets";
 import { serverBoostsRequest } from "../../../../lib/navigationRequests";
 
 type Section =
@@ -54,8 +63,8 @@ const TITLES: Record<Section, string> = {
   notifications: "Notificaciones",
   security: "Seguridad",
   "two-factor": "Verificación en dos pasos",
-  "change-password": ACCOUNT_PASSWORD_COPY.changeRowTitle,
-  "set-password": ACCOUNT_PASSWORD_COPY.setRowTitle,
+  "change-password": ACCOUNT_PASSWORD_COPY.changeFormTitle,
+  "set-password": SET_PASSWORD_COPY.title,
   pin: "PIN de acceso rápido",
   status: "Estado de la plataforma",
   premium: "Premium",
@@ -109,6 +118,12 @@ export function AccountSettingsSheet({
   const [securityNotice, setSecurityNotice] = useState<string | null>(null);
   const { user, updateUser } = useAuth();
   const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
+  const [twoFactorTitle, setTwoFactorTitle] = useState<string | null>(null);
+  const twoFactorBackRef = useRef<(() => void) | null>(null);
+  const title =
+    section === "two-factor" && twoFactorTitle
+      ? twoFactorTitle
+      : TITLES[section];
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ y: 0, animated: false });
@@ -116,6 +131,7 @@ export function AccountSettingsSheet({
 
   function handleClose() {
     setSection("menu");
+    setTwoFactorTitle(null);
     setSecurityNotice(null);
     onClose();
   }
@@ -132,9 +148,19 @@ export function AccountSettingsSheet({
   }
 
   function goBack() {
+    if (section === "two-factor" && twoFactorBackRef.current) {
+      twoFactorBackRef.current();
+      return;
+    }
     if (section === "security") setSecurityNotice(null);
     setSection(BACK_TARGET[section]);
   }
+
+  const exitTwoFactor = useCallback(() => {
+    setTwoFactorTitle(null);
+    twoFactorBackRef.current = null;
+    setSection("security");
+  }, []);
 
   function openPassword() {
     setSecurityNotice(null);
@@ -175,7 +201,7 @@ export function AccountSettingsSheet({
             </TouchableOpacity>
           ) : null}
           <Text className="flex-1 text-[17px] font-bold text-content">
-            {TITLES[section]}
+            {title}
           </Text>
           <TouchableOpacity
             className="w-10 h-10 rounded-xl items-center justify-center"
@@ -217,13 +243,11 @@ export function AccountSettingsSheet({
             />
           ) : section === "change-password" ? (
             <ChangePasswordStep
-              onCancel={goBack}
               onChanged={() => finishPassword(ACCOUNT_PASSWORD_COPY.changed)}
               onPasswordNotSet={switchToSetPassword}
             />
           ) : section === "set-password" ? (
             <SetPasswordStep
-              onCancel={goBack}
               onPasswordReady={() => finishPassword(ACCOUNT_PASSWORD_COPY.set)}
             />
           ) : section === "status" ? (
@@ -240,7 +264,12 @@ export function AccountSettingsSheet({
               </View>
             </View>
           ) : section === "two-factor" ? (
-            <TwoFactorPanel onClose={goBack} scrollRef={scrollRef} />
+            <TwoFactorPanel
+              onClose={exitTwoFactor}
+              scrollRef={scrollRef}
+              onTitleChange={setTwoFactorTitle}
+              backRef={twoFactorBackRef}
+            />
           ) : (
             <PinSetupPanel
               isPinEnabled={isPinEnabled}

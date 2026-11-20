@@ -64,7 +64,7 @@ export function DeleteServerFields({
       ) : null}
 
       <View className="w-full mt-4">
-        <Text className="text-[11px] font-bold tracking-[1.1px] text-content-subtle mb-1.5 uppercase">
+        <Text className="text-[14px] font-semibold text-content mb-1.5">
           {DELETE_SERVER_NAME_LABEL}
         </Text>
         <View className="rounded-xl border border-line bg-surface-input px-3.5 min-h-12 justify-center">

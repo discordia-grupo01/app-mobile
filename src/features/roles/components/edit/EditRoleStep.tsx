@@ -6,13 +6,7 @@ import {
 } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
-import {
-  ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ScrollView, Text, TextInput, View } from "react-native";
 
 import { Button } from "../../../../components/ui/Button";
 import { cn } from "../../../../lib/cn";
@@ -21,9 +15,12 @@ import { useThemeColors } from "../../../../theme/theme-context";
 import { ColorGrid } from "../shared/ColorGrid";
 import { FieldError } from "../../../../components/ui/FieldError";
 import { PermissionToggle } from "../shared/PermissionToggle";
-import { RolePreviewBadge } from "../shared/RolePreviewBadge";
+import { RolePreviewRow } from "../shared/RolePreviewBadge";
 
+import { DefaultRoleCard } from "./DefaultRoleCard";
+import { RoleDangerZone } from "./RoleDangerZone";
 import { useRoleEditForm } from "./useRoleEditForm";
+import { SettingsGroupLabel } from "../../../../components/ui/SettingsGroup";
 
 interface EditRoleStepProps {
   role: Role;
@@ -100,9 +97,9 @@ export function EditRoleStep({
 
         <View className="gap-0">
           <View className="flex-row items-center justify-between mb-2">
-            <Text className="text-[11px] font-bold tracking-[1px] uppercase text-content-subtle">
+            <SettingsGroupLabel>
               Nombre <Text className="text-danger">*</Text>
-            </Text>
+            </SettingsGroupLabel>
             <Text className="text-[11px] text-content-subtle">
               {form.editName.length}/{MAX_NAME}
             </Text>
@@ -121,9 +118,9 @@ export function EditRoleStep({
               editable={!isEveryoneSelected}
               className="flex-1 text-content text-[14px]"
             />
-            <RolePreviewBadge name={form.editName} color={form.editColor} />
           </View>
           <FieldError message={form.nameError} />
+          <RolePreviewRow name={form.editName} color={form.editColor} />
           {isEveryoneSelected ? (
             <Text className="text-[12px] text-content-subtle mt-1.5">
               @everyone es automático: lo tiene todo el mundo y no se puede
@@ -133,14 +130,9 @@ export function EditRoleStep({
         </View>
 
         <View className="gap-0">
-          <Text
-            className={cn(
-              "text-[11px] font-bold tracking-[1px] uppercase text-content-subtle",
-              "mb-2.5",
-            )}
-          >
+          <SettingsGroupLabel className="mb-2.5">
             Color <Text className="text-danger">*</Text>
-          </Text>
+          </SettingsGroupLabel>
           {isEveryoneSelected ? (
             <View className="flex-row items-center gap-3 rounded-xl border border-line bg-surface-input px-3.5 py-3">
               <View
@@ -167,15 +159,16 @@ export function EditRoleStep({
           )}
         </View>
 
+        {!isEveryoneSelected ? (
+          <DefaultRoleCard
+            isDefault={isDefaultRole}
+            disabled={form.settingDefault || !canManage}
+            onSetDefault={() => void form.handleSetDefault()}
+          />
+        ) : null}
+
         <View className="gap-0">
-          <Text
-            className={cn(
-              "text-[11px] font-bold tracking-[1px] uppercase text-content-subtle",
-              "mb-2.5",
-            )}
-          >
-            Permisos
-          </Text>
+          <SettingsGroupLabel className="mb-2.5">Permisos</SettingsGroupLabel>
           <View className="gap-2">
             {ROLE_PERMISSIONS.map((perm) => (
               <PermissionToggle
@@ -196,101 +189,12 @@ export function EditRoleStep({
         </View>
 
         {!isEveryoneSelected ? (
-          <View className="rounded-[14px] border border-[rgba(224,82,82,0.2)] bg-[rgba(224,82,82,0.06)] p-3.5 gap-3">
-            <Text className="text-[10px] font-bold tracking-[1px] uppercase text-danger">
-              Zona peligrosa
-            </Text>
-            {!canManage ? (
-              <Text className="text-[12px] text-content-subtle">
-                No tenés jerarquía suficiente para gestionar este rol.
-              </Text>
-            ) : null}
-
-            {!isDefaultRole ? (
-              <View className="flex-row items-center gap-2.5">
-                <View className="flex-1">
-                  <Text className="text-[13px] font-semibold text-content">
-                    Definir como rol por defecto
-                  </Text>
-                  <Text className="text-[12px] text-content-subtle mt-[1px]">
-                    Se asigna automáticamente a los nuevos miembros.
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  onPress={form.handleSetDefault}
-                  disabled={form.settingDefault || !canManage}
-                  className={cn(
-                    "flex-row items-center gap-1.5 rounded-[10px] border border-[rgba(252,227,164,0.3)] bg-[rgba(252,227,164,0.12)] px-3 py-[9px]",
-                    !canManage && "opacity-50",
-                  )}
-                >
-                  <Feather name="star" size={11} color={colors.highlight} />
-                  <Text className="text-[12px] font-bold text-highlight">
-                    {form.settingDefault ? "Definiendo..." : "Definir"}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <View className="flex-row items-start gap-2">
-                <Feather name="star" size={11} color={colors.textSubtle} />
-                <Text className="flex-1 text-[12px] leading-[17px] text-content-subtle">
-                  Este es el rol por defecto. Para eliminarlo, primero definí
-                  otro rol como predeterminado.
-                </Text>
-              </View>
-            )}
-
-            {!form.deleteConfirm ? (
-              <TouchableOpacity
-                onPress={form.requestDelete}
-                disabled={!canManage}
-                className={cn(
-                  "flex-row items-center justify-center gap-1.5 self-start rounded-[10px] border border-[rgba(224,82,82,0.25)] bg-[rgba(224,82,82,0.1)] px-3 py-[9px]",
-                  !canManage && "opacity-50",
-                )}
-              >
-                <Feather name="trash-2" size={12} color={colors.danger} />
-                <Text className="text-[12px] font-bold text-danger">
-                  Eliminar rol
-                </Text>
-              </TouchableOpacity>
-            ) : (
-              <View className="gap-2">
-                <Text className="text-[13px] font-semibold text-danger">
-                  ¿Confirmar eliminación de &quot;{role.name}
-                  &quot;?
-                </Text>
-                {form.deleteError ? (
-                  <View className="flex-row items-start gap-2 rounded-[10px] border border-[rgba(224,82,82,0.2)] bg-[rgba(224,82,82,0.1)] px-2.5 py-2">
-                    <Feather
-                      name="alert-circle"
-                      size={13}
-                      color={colors.danger}
-                    />
-                    <Text className="flex-1 text-[12px] text-danger">
-                      {form.deleteError}
-                    </Text>
-                  </View>
-                ) : null}
-                <View className="flex-row gap-2.5">
-                  <Button
-                    title="Cancelar"
-                    variant="secondary"
-                    onPress={form.cancelDelete}
-                    style={{ flex: 1, width: undefined }}
-                  />
-                  <Button
-                    title="Eliminar"
-                    variant="danger"
-                    onPress={form.handleDelete}
-                    isLoading={form.deleting}
-                    disabled={!canManage}
-                    style={{ flex: 1, width: undefined }}
-                  />
-                </View>
-              </View>
-            )}
-          </View>
+          <RoleDangerZone
+            role={role}
+            form={form}
+            canManage={canManage}
+            isDefaultRole={isDefaultRole}
+          />
         ) : null}
 
         {form.savedOk ? (

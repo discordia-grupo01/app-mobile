@@ -17,7 +17,6 @@ import {
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useCallback, useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   FlatList,
   ScrollView,
   StyleSheet,
@@ -40,10 +39,10 @@ import { cn } from "../../../../lib/cn";
 import { useThemeColors } from "../../../../theme/theme-context";
 import { Button } from "../../../../components/ui/Button";
 import { Avatar } from "../../../../components/ui/Avatar";
-import { ModalShell } from "../../../../components/ui/ModalShell";
-import { ModalCloseButton } from "../../../../components/ui/ModalCloseButton";
+import { FullScreenModal } from "../../../../components/ui/FullScreenModal";
 import { PaginationFooter } from "../../../../components/ui/PaginationFooter";
 import { SearchInput } from "../../../../components/ui/SearchInput";
+import { LoadingSpinner } from "../../../../components/ui/LoadingSpinner";
 
 interface TransferOwnershipModalProps {
   visible: boolean;
@@ -232,17 +231,13 @@ export function TransferOwnershipModal({
 
   function renderContent() {
     if (isLoadingPendingTransfer) {
-      return (
-        <View className="p-7 pt-8 items-center justify-center gap-3.5">
-          <ActivityIndicator size="small" color={colors.textSubtle} />
-        </View>
-      );
+      return <LoadingSpinner />;
     }
 
     if (pendingTransfer && isIncoming) {
       return (
         <ScrollView
-          contentContainerClassName="p-7 pt-8"
+          contentContainerClassName="px-4.5 pb-8"
           showsVerticalScrollIndicator={false}
         >
           {errorBanner}
@@ -285,7 +280,7 @@ export function TransferOwnershipModal({
     if (pendingTransfer && isOutgoing) {
       return (
         <ScrollView
-          contentContainerClassName="p-7 pt-8"
+          contentContainerClassName="px-4.5 pb-8"
           showsVerticalScrollIndicator={false}
         >
           {errorBanner}
@@ -319,7 +314,7 @@ export function TransferOwnershipModal({
     if (pendingTransfer) {
       // Otro miembro (ni el owner ni el destinatario) mirando el estado.
       return (
-        <View className="p-7 pt-8">
+        <View className="px-4.5">
           <Text className="text-[13px] leading-[19px] text-content-muted text-center">
             {TRANSFER_PENDING_OTHER_VIEWER}
           </Text>
@@ -329,7 +324,7 @@ export function TransferOwnershipModal({
 
     if (!isOwner) {
       return (
-        <View className="p-7 pt-8">
+        <View className="px-4.5">
           <Text className="text-[13px] leading-[19px] text-content-muted text-center">
             {TRANSFER_NONE_PENDING}
           </Text>
@@ -338,19 +333,12 @@ export function TransferOwnershipModal({
     }
 
     if (members === null && !memberPages.errorMessage) {
-      return (
-        <View className="p-7 pt-8 items-center justify-center gap-3.5">
-          <ActivityIndicator size="small" color={colors.textSubtle} />
-          <Text className="text-[13px] leading-[19px] text-content-muted text-center">
-            Cargando miembros...
-          </Text>
-        </View>
-      );
+      return <LoadingSpinner label="Cargando miembros" />;
     }
 
     if (members === null) {
       return (
-        <View className="p-7 pt-8">
+        <View className="px-4.5">
           <View className="flex-row items-start gap-2.5 rounded-xl border border-[rgba(224,82,82,0.3)] bg-[rgba(224,82,82,0.1)] px-3.5 py-3 mb-4">
             <Feather name="alert-circle" size={15} color={colors.danger} />
             <Text className="flex-1 text-danger text-[13px] leading-[18px]">
@@ -364,12 +352,12 @@ export function TransferOwnershipModal({
 
     if (initiateStep === "form") {
       return (
-        <View>
-          {errorMessage ? <View className="px-7">{errorBanner}</View> : null}
+        <View className="flex-1">
+          {errorMessage ? <View className="px-4.5">{errorBanner}</View> : null}
           <Text
             className={cn(
-              "text-[11px] font-bold tracking-[1.1px] text-content-subtle uppercase",
-              "px-7 mb-2",
+              "text-[14px] font-semibold text-content",
+              "px-4.5 mb-2",
             )}
           >
             {TRANSFER_CHOOSE_NEW_OWNER}
@@ -401,6 +389,19 @@ export function TransferOwnershipModal({
               style={styles.list}
               contentContainerStyle={styles.listContent}
               showsVerticalScrollIndicator={false}
+              ListFooterComponent={
+                memberPages.pageCount > 1 ? (
+                  <PaginationFooter
+                    className="pt-3"
+                    page={memberPages.page}
+                    pageCount={memberPages.pageCount}
+                    range={memberPages.range}
+                    total={memberPages.total}
+                    noun={memberPages.isSearching ? "resultados" : "miembros"}
+                    onPageChange={memberPages.setPage}
+                  />
+                ) : undefined
+              }
               renderItem={({ item }) => {
                 const name = displayNameOf(item.profile);
                 const selected = item.user_id === selectedUserId;
@@ -447,36 +448,18 @@ export function TransferOwnershipModal({
             />
           )}
 
-          {memberPages.pageCount > 1 ? (
-            <PaginationFooter
-              page={memberPages.page}
-              pageCount={memberPages.pageCount}
-              range={memberPages.range}
-              total={memberPages.total}
-              noun={memberPages.isSearching ? "resultados" : "miembros"}
-              onPageChange={memberPages.setPage}
-            />
-          ) : null}
-
           {hasOtherMembers ? (
             <View
               className={cn(
-                "flex-row gap-3 p-7 pt-6",
+                "p-4.5 pt-4",
                 memberPages.pageCount > 1 ? null : "border-t border-t-line",
               )}
             >
-              <Button
-                title="Cancelar"
-                variant="secondary"
-                onPress={onClose}
-                style={{ flex: 1, width: undefined }}
-              />
               <Button
                 title="Continuar"
                 onPress={handleContinue}
                 disabled={!selectedUserId}
                 iconRight="arrow-right"
-                style={{ flex: 1, width: undefined }}
               />
             </View>
           ) : null}
@@ -487,7 +470,7 @@ export function TransferOwnershipModal({
     // initiateStep === "confirm"
     return (
       <ScrollView
-        contentContainerClassName="p-7 pt-8"
+        contentContainerClassName="px-4.5 pb-8"
         showsVerticalScrollIndicator={false}
       >
         {errorBanner}
@@ -501,7 +484,7 @@ export function TransferOwnershipModal({
             size={40}
           />
           <View className="flex-1">
-            <Text className="text-[11px] font-bold tracking-[0.6px] text-content-subtle uppercase mb-0.5">
+            <Text className="text-[14px] font-semibold text-content mb-0.5">
               Miembro seleccionado
             </Text>
             <Text
@@ -525,22 +508,11 @@ export function TransferOwnershipModal({
           </Text>
         </View>
 
-        <View className="flex-row gap-3 mt-4 pt-5 border-t border-t-line">
-          <Button
-            title="Volver"
-            variant="secondary"
-            onPress={() => {
-              setInitiateStep("form");
-              setErrorMessage("");
-            }}
-            disabled={isSubmitting}
-            style={{ flex: 1, width: undefined }}
-          />
+        <View className="mt-4 pt-5 border-t border-t-line">
           <Button
             title="Enviar solicitud"
             onPress={handleInitiate}
             isLoading={isSubmitting}
-            style={{ flex: 1, width: undefined }}
           />
         </View>
       </ScrollView>
@@ -548,38 +520,28 @@ export function TransferOwnershipModal({
   }
 
   return (
-    <ModalShell visible={visible} onClose={onClose} className="max-w-110">
-      <ModalCloseButton onPress={onClose} />
-
-      <View className="p-7 pt-8 pb-0">
-        <View className="flex-row items-center gap-3 mb-5 pr-6">
-          <View className="w-9 h-9 rounded-xl items-center justify-center bg-[rgba(107,149,189,0.15)]">
-            <MaterialCommunityIcons
-              name="swap-horizontal"
-              size={19}
-              color={colors.info}
-            />
-          </View>
-          <View className="flex-1">
-            <Text
-              className="text-[17px] font-bold text-content"
-              numberOfLines={1}
-            >
-              Transferir propiedad
-            </Text>
-          </View>
-        </View>
-      </View>
-
+    <FullScreenModal
+      visible={visible}
+      title="Transferir propiedad"
+      onClose={onClose}
+      onBack={
+        initiateStep === "confirm" && !pendingTransfer
+          ? () => {
+              setInitiateStep("form");
+              setErrorMessage("");
+            }
+          : undefined
+      }
+    >
+      <View className="pt-5" />
       {renderContent()}
-    </ModalShell>
+    </FullScreenModal>
   );
 }
 
 const styles = StyleSheet.create({
   list: {
-    flexGrow: 0,
-    maxHeight: 280,
+    flex: 1,
   },
   listContent: {
     paddingHorizontal: 20,

@@ -11,7 +11,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { getPublicProfile } from "../features/profile/service";
 import { useProfileChanges } from "./useProfileChanges";
 
-interface ProfiledUser {
+export interface ProfiledUser {
   user_id: string;
   /** `null` mientras el back no replico el perfil de este usuario. */
   profile?: MemberProfile | null;

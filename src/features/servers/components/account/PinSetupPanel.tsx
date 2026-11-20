@@ -11,7 +11,6 @@ import { ScrollView, Text, View } from "react-native";
 import { Button } from "../../../../components/ui/Button";
 import { FormErrorBanner } from "../../../../components/ui/FormErrorBanner";
 import { TextField } from "../../../../components/ui/TextField";
-import { withAlpha } from "../../../../lib/color";
 import { setPinOwner } from "../../../../lib/storage";
 import { useThemeColors } from "../../../../theme/theme-context";
 import { useAuth } from "../../../auth/auth-context";
@@ -65,21 +64,20 @@ export function PinSetupPanel({
 
   if (isDone) {
     return (
-      <View className="px-4.5 pt-6 items-center">
-        <View
-          className="w-14 h-14 rounded-2xl items-center justify-center mb-4"
-          style={{ backgroundColor: withAlpha(colors.success, 0.12) }}
-        >
-          <Feather name="check" size={26} color={colors.success} />
+      <View className="px-4.5 pt-6">
+        <View className="mb-5 flex-row items-start gap-3 rounded-2xl border border-line bg-surface-raised p-4">
+          <Feather name="check-circle" size={18} color={colors.success} />
+          <View className="flex-1">
+            <Text className="text-[14px] font-bold text-content">
+              {isPinEnabled ? "PIN actualizado" : "PIN activado"}
+            </Text>
+            <Text className="mt-1 text-[13px] leading-[18px] text-content-muted">
+              {isPinEnabled
+                ? "Tu PIN de acceso rápido en este dispositivo se actualizó correctamente."
+                : "Ya podés usarlo para entrar más rápido en este dispositivo."}
+            </Text>
+          </View>
         </View>
-        <Text className="text-[17px] font-bold text-content mb-1.5">
-          {isPinEnabled ? "PIN actualizado" : "PIN activado"}
-        </Text>
-        <Text className="text-[13px] text-content-muted text-center mb-5">
-          {isPinEnabled
-            ? "Tu PIN de acceso rápido en este dispositivo se actualizó correctamente."
-            : "Ya podés usarlo para entrar más rápido en este dispositivo."}
-        </Text>
         <Button title="Listo" onPress={onClose} />
       </View>
     );
@@ -87,14 +85,15 @@ export function PinSetupPanel({
 
   return (
     <View className="px-4.5 pt-6">
-      <Text className="text-[13px] leading-[18px] text-content-muted mb-4">
+      <Text className="mb-5 text-[14px] leading-5 text-content-muted">
         {isPinEnabled
           ? "Este dispositivo ya tiene un PIN configurado. Elegí uno nuevo para reemplazarlo."
           : "Entrá más rápido en este dispositivo sin escribir tu email y contraseña cada vez. Elegí un PIN de 6 a 8 dígitos."}
       </Text>
 
       <TextField
-        label="ELEGÍ TU PIN"
+        labelVariant="sentence"
+        label="Elegí tu PIN"
         placeholder="••••••"
         keyboardType="number-pad"
         maxLength={PIN_MAX_LENGTH}
@@ -106,7 +105,8 @@ export function PinSetupPanel({
       />
 
       <TextField
-        label="CONFIRMÁ TU PIN"
+        labelVariant="sentence"
+        label="Confirmá tu PIN"
         placeholder="••••••"
         keyboardType="number-pad"
         maxLength={PIN_MAX_LENGTH}

@@ -24,7 +24,7 @@ export function BoostBenefitField({
       <View className="flex-row items-center justify-between gap-2.5">
         <Text
           accessibilityRole="header"
-          className="flex-1 text-[11px] font-bold uppercase tracking-[1.1px] text-content-muted"
+          className="flex-1 text-[14px] font-semibold text-content"
         >
           {title}
         </Text>

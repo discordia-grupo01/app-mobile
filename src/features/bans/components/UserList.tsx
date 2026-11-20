@@ -1,7 +1,11 @@
 import { type UserListItem } from "@discordia/client-shared";
 
-import { Text, View } from "react-native";
+import { View } from "react-native";
 
+import {
+  EMPTY_STATE_ICON_SIZE,
+  EmptyState,
+} from "../../../components/ui/EmptyState";
 import { useThemeColors } from "../../../theme/theme-context";
 import { BanIcon } from "./BanIcon";
 import { type UserRowAction } from "./RowActionButton";
@@ -28,12 +32,12 @@ export function UserList({
 
   if (items.length === 0) {
     return (
-      <View className="items-center gap-2 rounded-xl bg-surface-raised px-4 py-8">
-        <BanIcon size={28} color={colors.textMuted} />
-        <Text className="text-center text-sm text-content-muted">
-          {emptyMessage}
-        </Text>
-      </View>
+      <EmptyState
+        media={
+          <BanIcon size={EMPTY_STATE_ICON_SIZE} color={colors.textSubtle} />
+        }
+        text={emptyMessage}
+      />
     );
   }
 

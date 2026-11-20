@@ -11,11 +11,10 @@ import {
 } from "@discordia/client-shared";
 
 import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
 import { Button } from "../../components/ui/Button";
 import { FormErrorBanner } from "../../components/ui/FormErrorBanner";
-import { useThemeColors } from "../../theme/theme-context";
 import { useAuth } from "../auth/auth-context";
 import { getOwnProfile } from "../profile/service";
 import { useBillingOverview } from "./useBillingOverview";
@@ -30,6 +29,7 @@ import { PointsShop } from "./components/points/PointsShop";
 import { PremiumCard } from "./components/subscriptions/PremiumCard";
 import { PremiumFacts } from "./components/shared/PremiumFacts";
 import { PremiumShowcase } from "./components/premium/PremiumShowcase";
+import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
 
 interface BillingSettingsProps {
   tab: BillingSection;
@@ -43,7 +43,6 @@ export function BillingSettings({
   onNavigate,
   onOpenServerBoosts,
 }: BillingSettingsProps) {
-  const colors = useThemeColors();
   const { user, updateUser } = useAuth();
   const { state, reload, setPremium } = useBillingOverview();
   const [item, setItem] = useState<CheckoutItem | null>(null);
@@ -89,14 +88,7 @@ export function BillingSettings({
   }
 
   if (state.status === "loading") {
-    return (
-      <View className="items-center gap-3 py-10">
-        <ActivityIndicator color={colors.textMuted} />
-        <Text className="text-[13px] text-content-muted">
-          {BILLING_COPY.loading}
-        </Text>
-      </View>
-    );
+    return <LoadingSpinner label={BILLING_COPY.loading} />;
   }
 
   if (state.status === "error") {
@@ -149,7 +141,7 @@ export function BillingSettings({
           <View className="flex-row items-center gap-3 rounded-2xl border border-line bg-surface-raised p-4">
             <DiscordiaPointIcon size={32} />
             <View className="flex-1">
-              <Text className="text-[11px] font-bold uppercase tracking-[1.2px] text-content-subtle">
+              <Text className="text-[14px] font-semibold text-content">
                 {BILLING_COPY.balanceLabel}
               </Text>
               <Text className="mt-0.5 text-[22px] font-bold text-content tabular-nums">

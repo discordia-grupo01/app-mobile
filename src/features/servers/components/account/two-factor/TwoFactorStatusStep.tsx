@@ -20,7 +20,6 @@ interface TwoFactorStatusStepProps {
   onActivate: () => void;
   onRegenerate: () => void;
   onDisable: () => void;
-  onClose: () => void;
 }
 
 export function TwoFactorStatusStep({
@@ -30,7 +29,6 @@ export function TwoFactorStatusStep({
   onActivate,
   onRegenerate,
   onDisable,
-  onClose,
 }: TwoFactorStatusStepProps) {
   const colors = useThemeColors();
   const enabled = status?.enabled ?? false;
@@ -157,14 +155,6 @@ export function TwoFactorStatusStep({
       ) : (
         <Button title="Activar" onPress={onActivate} isLoading={isSubmitting} />
       )}
-
-      <TouchableOpacity
-        activeOpacity={0.75}
-        className="mt-2.5 items-center py-3"
-        onPress={onClose}
-      >
-        <Text className="text-[13px] font-bold text-content-muted">Cerrar</Text>
-      </TouchableOpacity>
     </>
   );
 }

@@ -93,7 +93,7 @@ export function BanMemberModal({
 
           <View>
             <View className="mb-1.5 flex-row items-center justify-between gap-2">
-              <Text className="shrink text-[11px] font-bold uppercase tracking-[1.2px] text-content-subtle">
+              <Text className="text-[14px] font-semibold text-content shrink">
                 {BAN_REASON_LABEL} (opcional)
               </Text>
               <Text

@@ -16,6 +16,8 @@ interface TextFieldProps extends TextInputProps {
   error?: string;
   isPassword?: boolean;
   iconName?: keyof typeof Feather.glyphMap;
+  /** `caps` en las pantallas de acceso; `sentence` dentro de la configuracion. */
+  labelVariant?: "caps" | "sentence";
 }
 
 export function TextField({
@@ -23,6 +25,7 @@ export function TextField({
   error,
   isPassword = false,
   iconName,
+  labelVariant = "caps",
   className,
   ...props
 }: TextFieldProps) {
@@ -32,7 +35,13 @@ export function TextField({
 
   return (
     <View className="mb-[18px] w-full">
-      <Text className="mb-2 text-[11px] font-bold tracking-[1.2px] uppercase text-content-subtle">
+      <Text
+        className={
+          labelVariant === "sentence"
+            ? "mb-2 text-[14px] font-semibold text-content"
+            : "mb-2 text-[11px] font-bold tracking-[1.2px] uppercase text-content-subtle"
+        }
+      >
         {label}
       </Text>
       <View

@@ -100,7 +100,7 @@ export function RegisterForm({
   return (
     <View className="w-full">
       <TextField
-        label="NOMBRE DE USUARIO"
+        label="Nombre de usuario"
         placeholder="tucoolusername"
         autoCapitalize="none"
         autoComplete="username"
@@ -111,7 +111,7 @@ export function RegisterForm({
       />
 
       <TextField
-        label="CORREO ELECTRÓNICO"
+        label="Correo electrónico"
         placeholder="tu@email.com"
         keyboardType="email-address"
         autoCapitalize="none"
@@ -123,7 +123,7 @@ export function RegisterForm({
       />
 
       <TextField
-        label="CONTRASEÑA"
+        label="Contraseña"
         placeholder="••••••••"
         isPassword
         iconName="lock"

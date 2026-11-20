@@ -8,6 +8,7 @@ import { Feather } from "@expo/vector-icons";
 import { useState, type ReactNode } from "react";
 import { Pressable, Text, TouchableOpacity, View } from "react-native";
 
+import { MenuGroupLabel } from "../../../../../components/ui/MenuGroupLabel";
 import { withAlpha } from "../../../../../lib/color";
 import { useThemeColors } from "../../../../../theme/theme-context";
 import {
@@ -106,14 +107,6 @@ function SettingsRow({
   );
 }
 
-function GroupLabel({ children }: { children: string }) {
-  return (
-    <Text className="mb-2.5 mt-3 px-1 text-[14px] font-semibold text-content-muted">
-      {children}
-    </Text>
-  );
-}
-
 interface AccountSettingsMenuProps {
   onSelectAppearance: () => void;
   onSelectNotifications: () => void;
@@ -136,7 +129,7 @@ export function AccountSettingsMenu({
 
   return (
     <View className="px-4.5 pt-2">
-      <GroupLabel>Mi cuenta</GroupLabel>
+      <MenuGroupLabel>Mi cuenta</MenuGroupLabel>
       <SettingsRow
         icon={<Feather name="moon" size={20} color={colors.sky} />}
         iconBackground={skyTint}
@@ -153,20 +146,20 @@ export function AccountSettingsMenu({
       />
       <SettingsRow
         icon={<Feather name="shield" size={20} color={colors.sky} />}
-        iconBackground={withAlpha(PREMIUM_BRAND_COLORS.petrol, 0.3)}
+        iconBackground={skyTint}
         title="Seguridad"
         subtitle="Acceso y verificación"
         onPress={onSelectSecurity}
       />
 
-      <GroupLabel>{BILLING_COPY.groupTitle}</GroupLabel>
+      <MenuGroupLabel>{BILLING_COPY.groupTitle}</MenuGroupLabel>
       {BILLING_MENU_ITEMS.map((item) => {
         const Icon = item.icon;
         return (
           <SettingsRow
             key={item.id}
             icon={<Icon size={22} />}
-            iconBackground={withAlpha(colors.info, 0.15)}
+            iconBackground={skyTint}
             title={item.label}
             subtitle={item.description}
             highlight={item.tone}
@@ -175,7 +168,7 @@ export function AccountSettingsMenu({
         );
       })}
 
-      <GroupLabel>Plataforma</GroupLabel>
+      <MenuGroupLabel>Plataforma</MenuGroupLabel>
       <SettingsRow
         icon={<Feather name="activity" size={20} color={colors.sky} />}
         iconBackground={skyTint}

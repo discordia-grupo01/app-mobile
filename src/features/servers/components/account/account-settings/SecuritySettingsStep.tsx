@@ -27,9 +27,6 @@ export function SecuritySettingsStep({
 
   return (
     <View className="px-4.5 pt-5">
-      <Text className="mb-1 text-[17px] font-bold text-content">
-        Seguridad y acceso
-      </Text>
       <Text className="mb-4 text-[13px] leading-[18px] text-content-muted">
         Administrá las medidas que protegen tu cuenta.
       </Text>

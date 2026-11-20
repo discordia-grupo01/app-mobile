@@ -6,7 +6,7 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 
-import { DeviceInsetsContext } from "../hooks/useModalInsets";
+import { DeviceInsetsContext } from "../../../hooks/useModalInsets";
 import { usePlatformStatus } from "../hooks/usePlatformStatus";
 import {
   PlatformStatusBanner,

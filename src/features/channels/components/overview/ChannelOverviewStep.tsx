@@ -41,7 +41,7 @@ export function ChannelOverviewStep({ kind, form }: ChannelOverviewStepProps) {
     <View className="gap-6">
       <View>
         <View className="flex-row items-center justify-between mb-2">
-          <Text className="text-[11px] font-bold tracking-[1.1px] text-content-subtle uppercase">
+          <Text className="text-[14px] font-semibold text-content">
             {CHANNEL_NAME_LABEL} <Text className="text-danger">*</Text>
           </Text>
           <Counter length={form.name.trim().length} max={MAX_NAME} />
@@ -72,7 +72,7 @@ export function ChannelOverviewStep({ kind, form }: ChannelOverviewStepProps) {
       {kind === "text" ? (
         <View>
           <View className="flex-row items-center justify-between mb-2">
-            <Text className="text-[11px] font-bold tracking-[1.1px] text-content-subtle uppercase">
+            <Text className="text-[14px] font-semibold text-content">
               {CHANNEL_TOPIC_LABEL}
             </Text>
             <Counter

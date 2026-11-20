@@ -2,27 +2,30 @@ import { NO_ROLES_YET, type Role } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
 import {
-  ActivityIndicator,
   type GestureResponderHandlers,
   ScrollView,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 
 import { Button } from "../../../../components/ui/Button";
+import { EmptyState } from "../../../../components/ui/EmptyState";
+import { FormErrorBanner } from "../../../../components/ui/FormErrorBanner";
+import { LoadingSpinner } from "../../../../components/ui/LoadingSpinner";
+import { SettingsGroup } from "../../../../components/ui/SettingsGroup";
 import { useThemeColors } from "../../../../theme/theme-context";
 
 import { DraggableRoleList } from "./DraggableRoleList";
+import { RoleListRow } from "./RoleListRow";
 
 interface RoleListStepProps {
-  serverName: string;
   isLoading: boolean;
   loadError: string;
   sortedRoles: Role[];
   draggableRoles: Role[];
   everyoneRole: Role | undefined;
   defaultRoleId: string | null;
+  memberCounts: Record<string, number>;
   canManageRole: (position: number) => boolean;
   isRoleDragActive: boolean;
   onDragActiveChange: (active: boolean) => void;
@@ -31,46 +34,14 @@ interface RoleListStepProps {
   onSelectRole: (role: Role) => void;
 }
 
-const GRIP_DOT_POSITIONS = [
-  { x: 8 / 24, y: 6 / 24 },
-  { x: 16 / 24, y: 6 / 24 },
-  { x: 8 / 24, y: 12 / 24 },
-  { x: 16 / 24, y: 12 / 24 },
-  { x: 8 / 24, y: 18 / 24 },
-  { x: 16 / 24, y: 18 / 24 },
-];
-
-function GripIcon({ color, opacity }: { color: string; opacity: number }) {
-  const size = 14;
-  const dotSize = size * (3 / 24);
-  return (
-    <View style={{ width: size, height: size, opacity }}>
-      {GRIP_DOT_POSITIONS.map((position, index) => (
-        <View
-          key={index}
-          style={{
-            position: "absolute",
-            left: position.x * size - dotSize / 2,
-            top: position.y * size - dotSize / 2,
-            width: dotSize,
-            height: dotSize,
-            borderRadius: dotSize / 2,
-            backgroundColor: color,
-          }}
-        />
-      ))}
-    </View>
-  );
-}
-
 export function RoleListStep({
-  serverName,
   isLoading,
   loadError,
   sortedRoles,
   draggableRoles,
   everyoneRole,
   defaultRoleId,
+  memberCounts,
   canManageRole,
   isRoleDragActive,
   onDragActiveChange,
@@ -86,6 +57,8 @@ export function RoleListStep({
   const manageableRoles = draggableRoles.filter((role) =>
     canManageRole(role.position),
   );
+  const showGripColumn = manageableRoles.length > 1;
+  const lastDraggableId = draggableRoles.at(-1)?.id;
 
   function handleManageableReorder(orderedManageableIds: string[]) {
     onReorder([
@@ -95,121 +68,81 @@ export function RoleListStep({
   }
 
   function renderRole(role: Role, panHandlers: GestureResponderHandlers) {
-    const showGripColumn = !role.is_everyone && draggableRoles.length > 1;
-    const canDrag = showGripColumn && canManageRole(role.position);
-    const isDefault = role.id === defaultRoleId;
-
     return (
-      <View
-        className="mb-1 flex-row items-center gap-1 rounded-xl"
-        {...(canDrag ? panHandlers : {})}
-      >
-        {showGripColumn ? (
-          <View
-            className="items-center justify-center py-3"
-            style={{ width: 26 }}
-            onStartShouldSetResponder={() => true}
-          >
-            <GripIcon color={colors.textSubtle} opacity={canDrag ? 1 : 0.35} />
+      <RoleListRow
+        role={role}
+        memberCount={memberCounts[role.id]}
+        isDefault={role.id === defaultRoleId}
+        showGripColumn={showGripColumn}
+        canDrag={showGripColumn && canManageRole(role.position)}
+        panHandlers={panHandlers}
+        isLast={role.is_everyone || role.id === lastDraggableId}
+        onSelect={() => onSelectRole(role)}
+      />
+    );
+  }
+
+  function renderList() {
+    if (isLoading) return <LoadingSpinner />;
+    if (loadError) return <FormErrorBanner message={loadError} />;
+    if (sortedRoles.length === 0) {
+      return <EmptyState icon="shield" text={NO_ROLES_YET} />;
+    }
+    return (
+      <View>
+        {protectedRoles.map((role) => (
+          <View key={role.id}>{renderRole(role, {})}</View>
+        ))}
+        {manageableRoles.length > 1 ? (
+          <DraggableRoleList
+            roles={manageableRoles}
+            onReorder={handleManageableReorder}
+            onDragActiveChange={onDragActiveChange}
+            renderRole={renderRole}
+          />
+        ) : (
+          manageableRoles.map((role) => (
+            <View key={role.id}>{renderRole(role, {})}</View>
+          ))
+        )}
+        {everyoneRole ? (
+          <View className="mt-2 border-t border-line-strong pt-2">
+            {renderRole(everyoneRole, {})}
           </View>
         ) : null}
-        <TouchableOpacity
-          activeOpacity={0.75}
-          className="flex-1 flex-row items-center gap-2.5 rounded-xl px-2 py-3"
-          onPress={() => onSelectRole(role)}
-          accessibilityHint={
-            role.is_everyone
-              ? "@everyone lo tiene todo el mundo: siempre queda al final y no se puede reordenar"
-              : undefined
-          }
-        >
-          <View
-            className="w-3 h-3 rounded-md"
-            style={{ backgroundColor: role.color }}
-          />
-          <Text
-            className="flex-1 text-[14px] font-semibold text-content"
-            numberOfLines={1}
-          >
-            {role.name}
-          </Text>
-          {!role.is_everyone ? (
-            <Text
-              className="text-[10px] text-content-subtle"
-              accessibilityLabel="Posición en la jerarquía"
-            >
-              #{role.position}
-            </Text>
-          ) : null}
-          {isDefault ? (
-            <Feather
-              name="star"
-              size={12}
-              color={colors.highlight}
-              style={{ marginRight: 2 }}
-            />
-          ) : null}
-          <Feather name="chevron-right" size={16} color={colors.textSubtle} />
-        </TouchableOpacity>
       </View>
     );
   }
 
   return (
-    <View className="shrink">
-      <View className="gap-2.5 px-4 pt-3.5 pb-1">
-        <Text className="text-[12px] text-content-subtle" numberOfLines={1}>
-          {serverName}
-        </Text>
-        <Button
-          title="Crear rol"
-          iconLeft={<Feather name="plus" size={13} color="#fff" />}
-          onPress={onCreateRole}
-        />
-      </View>
-      <ScrollView
-        className="shrink"
-        contentContainerClassName="px-3 pt-2.5 pb-5"
-        showsVerticalScrollIndicator={false}
-        scrollEnabled={!isRoleDragActive}
-      >
-        {isLoading ? (
-          <ActivityIndicator
-            size="small"
-            color={colors.accentBright}
-            className="mt-6"
+    <ScrollView
+      className="shrink"
+      contentContainerClassName="gap-5 px-4.5 pt-5 pb-8"
+      showsVerticalScrollIndicator={false}
+      scrollEnabled={!isRoleDragActive}
+    >
+      <Text className="text-[14px] leading-5 text-content-muted">
+        {showGripColumn
+          ? "Arrastrá un rol para cambiar su lugar en la jerarquía."
+          : "Definí qué puede hacer cada miembro del servidor."}
+      </Text>
+
+      <SettingsGroup
+        label="Roles del servidor"
+        count={isLoading ? undefined : sortedRoles.length}
+        aside={
+          <Button
+            title="Crear rol"
+            size="sm"
+            fullWidth={false}
+            disabled={isLoading}
+            iconLeft={<Feather name="plus" size={14} color={colors.onAccent} />}
+            onPress={onCreateRole}
           />
-        ) : loadError ? (
-          <Text className="text-danger text-[13px] text-center mt-4">
-            {loadError}
-          </Text>
-        ) : sortedRoles.length === 0 ? (
-          <Text className="text-content-subtle text-[13px] mt-2">
-            {NO_ROLES_YET}
-          </Text>
-        ) : (
-          <>
-            {protectedRoles.map((role) => (
-              <View key={role.id}>{renderRole(role, {})}</View>
-            ))}
-            {manageableRoles.length > 1 ? (
-              <DraggableRoleList
-                roles={manageableRoles}
-                onReorder={handleManageableReorder}
-                onDragActiveChange={onDragActiveChange}
-                renderRole={renderRole}
-              />
-            ) : (
-              manageableRoles.map((role) => (
-                <View key={role.id}>{renderRole(role, {})}</View>
-              ))
-            )}
-            {everyoneRole ? (
-              <View key={everyoneRole.id}>{renderRole(everyoneRole, {})}</View>
-            ) : null}
-          </>
-        )}
-      </ScrollView>
-    </View>
+        }
+      >
+        {renderList()}
+      </SettingsGroup>
+    </ScrollView>
   );
 }

@@ -28,6 +28,7 @@ import { useServerEmojis } from "../../../../emojis/useServerEmojis";
 import { ReportsBadge } from "../../../../reports/components/shared/ReportsBadge";
 import { resolveServerIconUrl } from "../../../api";
 import type { SettingsStep } from "./SettingsHeader";
+import { MenuGroupLabel } from "../../../../../components/ui/MenuGroupLabel";
 
 type FeatherIconName = ComponentProps<typeof Feather>["name"];
 
@@ -53,14 +54,14 @@ function SettingsRow({
     <TouchableOpacity
       activeOpacity={0.75}
       onPress={onPress}
-      className="flex-row items-center gap-4 rounded-2xl border border-line bg-surface-raised p-4"
+      className="mb-3 flex-row items-center gap-4 rounded-2xl border border-line bg-surface-raised p-4"
       accessibilityRole="button"
       accessibilityLabel={title}
     >
       <View
         className={cn(
           "w-11 h-11 rounded-xl items-center justify-center",
-          danger ? "bg-[rgba(224,82,82,0.14)]" : "bg-[rgba(36,92,107,0.3)]",
+          danger ? "bg-danger/15" : "bg-info/15",
         )}
       >
         {typeof icon === "string" ? (
@@ -120,10 +121,7 @@ export function SettingsMenuStep({
     : undefined;
 
   return (
-    <ScrollView
-      className="flex-1"
-      contentContainerClassName="px-4.5 gap-3 pb-6"
-    >
+    <ScrollView className="flex-1" contentContainerClassName="px-4.5 pb-6">
       <View className="items-center pt-7 pb-6">
         <Avatar
           name={server.name}
@@ -139,6 +137,7 @@ export function SettingsMenuStep({
         </Text>
       </View>
 
+      <MenuGroupLabel>Servidor</MenuGroupLabel>
       {canManageServer ? (
         <SettingsRow
           icon="edit-2"
@@ -166,6 +165,9 @@ export function SettingsMenuStep({
         }
         onPress={() => onSelect("emojis")}
       />
+      {canManageRoles || canBanMembers ? (
+        <MenuGroupLabel>Miembros</MenuGroupLabel>
+      ) : null}
       {canManageRoles ? (
         <SettingsRow
           icon="shield"
@@ -181,6 +183,9 @@ export function SettingsMenuStep({
           subtitle={BANS_SECTION_SUBTITLE}
           onPress={() => onSelect("bans")}
         />
+      ) : null}
+      {canManageMessages || canReviewReports ? (
+        <MenuGroupLabel>Moderación</MenuGroupLabel>
       ) : null}
       {canManageMessages ? (
         <SettingsRow
@@ -216,7 +221,7 @@ export function SettingsMenuStep({
       ) : null}
       {isOwner ? (
         <>
-          <View className="h-px bg-line mx-1 my-1" />
+          <View className="mx-1 mb-3 mt-2 h-px bg-line" />
           <SettingsRow
             icon="trash-2"
             title="Eliminar servidor"

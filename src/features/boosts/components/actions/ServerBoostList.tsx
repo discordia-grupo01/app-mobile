@@ -5,16 +5,16 @@ import {
   boostRowMeta,
 } from "@discordia/client-shared";
 
-import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 
 import { FormErrorBanner } from "../../../../components/ui/FormErrorBanner";
 import { cn } from "../../../../lib/cn";
-import { useThemeColors } from "../../../../theme/theme-context";
 import { EmptyHistory } from "../../../billing/components/history/EmptyHistory";
 import { ListPagination } from "../../../billing/components/history/ListPagination";
 import type { ServerBoostsPage } from "../../useServerBoostsPage";
 import { BoostActionIcon } from "../BoostActionIcon";
 import { BoostStatusChip } from "./BoostStatusChip";
+import { LoadingSpinner } from "../../../../components/ui/LoadingSpinner";
 
 interface ServerBoostListProps {
   list: ServerBoostsPage;
@@ -61,7 +61,6 @@ function BoostRow({
 }
 
 export function ServerBoostList({ list, onRemove }: ServerBoostListProps) {
-  const colors = useThemeColors();
   const active = list.data?.active ?? 0;
   const boosts = list.data?.boosts ?? [];
 
@@ -87,9 +86,7 @@ export function ServerBoostList({ list, onRemove }: ServerBoostListProps) {
       ) : null}
       {list.data === null ? (
         list.loadError ? null : (
-          <View className="items-center py-6">
-            <ActivityIndicator size="small" color={colors.accentBright} />
-          </View>
+          <LoadingSpinner />
         )
       ) : boosts.length === 0 ? (
         <EmptyHistory text={BOOST_LIST_COPY.empty} />

@@ -8,6 +8,7 @@ import { Text, TextInput, View } from "react-native";
 import { FieldError } from "../../../../components/ui/FieldError";
 import { cn } from "../../../../lib/cn";
 import { useThemeColors } from "../../../../theme/theme-context";
+import { SettingsGroupLabel } from "../../../../components/ui/SettingsGroup";
 
 interface ServerNameFieldProps {
   value: string;
@@ -27,9 +28,9 @@ export function ServerNameField({
   return (
     <View>
       <View className="flex-row items-center justify-between mb-1.5">
-        <Text className="text-[11px] font-bold tracking-[1.1px] text-content-subtle uppercase">
+        <SettingsGroupLabel>
           {SERVER_NAME_LABEL} <Text className="text-danger">*</Text>
-        </Text>
+        </SettingsGroupLabel>
         <Text
           className={cn(
             "text-[11px]",
