@@ -17,6 +17,7 @@ import { FieldError } from "../../../../components/ui/FieldError";
 import { PermissionToggle } from "../shared/PermissionToggle";
 import { RolePreviewRow } from "../shared/RolePreviewBadge";
 
+import { DefaultRoleCard } from "./DefaultRoleCard";
 import { RoleDangerZone } from "./RoleDangerZone";
 import { useRoleEditForm } from "./useRoleEditForm";
 import { SettingsGroupLabel } from "../../../../components/ui/SettingsGroup";
@@ -157,6 +158,14 @@ export function EditRoleStep({
             </>
           )}
         </View>
+
+        {!isEveryoneSelected ? (
+          <DefaultRoleCard
+            isDefault={isDefaultRole}
+            disabled={form.settingDefault || !canManage}
+            onSetDefault={() => void form.handleSetDefault()}
+          />
+        ) : null}
 
         <View className="gap-0">
           <SettingsGroupLabel className="mb-2.5">Permisos</SettingsGroupLabel>

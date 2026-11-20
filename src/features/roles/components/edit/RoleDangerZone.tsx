@@ -5,7 +5,7 @@ import { Text, View } from "react-native";
 
 import { Button } from "../../../../components/ui/Button";
 import { ConfirmDialog } from "../../../../components/ui/ConfirmDialog";
-import { Switch } from "../../../../components/ui/Switch";
+import { withAlpha } from "../../../../lib/color";
 import { useThemeColors } from "../../../../theme/theme-context";
 
 import { type RoleEditForm } from "./useRoleEditForm";
@@ -17,7 +17,7 @@ interface RoleDangerZoneProps {
   isDefaultRole: boolean;
 }
 
-/** "Rol por defecto" y "Eliminar rol", igual que en web. No se muestra para @everyone. */
+/** "Eliminar rol" con su confirmacion, igual que en web. No se muestra para @everyone. */
 export function RoleDangerZone({
   role,
   form,
@@ -28,28 +28,13 @@ export function RoleDangerZone({
 
   return (
     <>
-      <View className="flex-row items-center gap-4 rounded-2xl border border-line bg-surface-raised p-4">
-        <View className="flex-1">
-          <Text className="text-[14px] font-medium text-content">
-            Rol por defecto
-          </Text>
-          <Text className="mt-0.5 text-[12px] leading-[17px] text-content-subtle">
-            {isDefaultRole
-              ? "Se asigna automáticamente a los nuevos miembros. Para cambiarlo, definí otro rol como predeterminado."
-              : "Se asigna automáticamente a los nuevos miembros."}
-          </Text>
-        </View>
-        <Switch
-          checked={isDefaultRole}
-          label="Rol por defecto"
-          disabled={isDefaultRole || form.settingDefault || !canManage}
-          onChange={(on) => {
-            if (on) void form.handleSetDefault();
-          }}
-        />
-      </View>
-
-      <View className="gap-3 rounded-2xl border border-danger/20 bg-danger/5 p-4">
+      <View
+        className="gap-3 rounded-2xl border p-4"
+        style={{
+          borderColor: withAlpha(colors.danger, 0.2),
+          backgroundColor: withAlpha(colors.danger, 0.06),
+        }}
+      >
         <Text className="text-[14px] font-semibold text-danger">
           Zona peligrosa
         </Text>
