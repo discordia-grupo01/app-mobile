@@ -1,5 +1,5 @@
 import {
-  boostsSectionTitleFor,
+  BOOSTS_SECTION_TITLE,
   EMOJIS_SECTION_TITLE,
   MODERATION_AUDIT_TITLE,
   REPORTS_TITLE,
@@ -23,9 +23,10 @@ export type SettingsStep =
   | "audit"
   | "delete";
 
-const STEP_TITLES: Record<Exclude<SettingsStep, "boosts">, string> = {
+const STEP_TITLES: Record<SettingsStep, string> = {
   menu: "Configuración del servidor",
   profile: "Perfil del servidor",
+  boosts: BOOSTS_SECTION_TITLE,
   emojis: EMOJIS_SECTION_TITLE,
   roles: "Roles",
   bans: "Baneos",
@@ -37,8 +38,6 @@ const STEP_TITLES: Record<Exclude<SettingsStep, "boosts">, string> = {
 
 interface SettingsHeaderProps {
   step: SettingsStep;
-  /** Boosts nombra al servidor en el título ("Boosts de Club de Lectura"). */
-  serverName: string;
   /** Solo se muestra en el paso "reports", al lado del titulo. */
   pendingReports?: number;
   /** `false` si no hay menú al que volver (un miembro que solo ve Boosts). */
@@ -51,7 +50,6 @@ interface SettingsHeaderProps {
 
 export function SettingsHeader({
   step,
-  serverName,
   pendingReports = 0,
   canGoBack = true,
   title,
@@ -85,10 +83,7 @@ export function SettingsHeader({
         className="flex-1 text-[17px] font-bold text-content"
         numberOfLines={1}
       >
-        {title ??
-          (step === "boosts"
-            ? boostsSectionTitleFor(serverName)
-            : STEP_TITLES[step])}
+        {title ?? STEP_TITLES[step]}
         {isReports && pendingReports > 0 ? (
           <Text className="text-warning"> ({pendingReports})</Text>
         ) : null}

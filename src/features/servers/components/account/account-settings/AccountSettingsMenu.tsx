@@ -153,7 +153,7 @@ export function AccountSettingsMenu({
       />
       <SettingsRow
         icon={<Feather name="shield" size={20} color={colors.sky} />}
-        iconBackground={withAlpha(PREMIUM_BRAND_COLORS.petrol, 0.3)}
+        iconBackground={skyTint}
         title="Seguridad"
         subtitle="Acceso y verificación"
         onPress={onSelectSecurity}
@@ -166,7 +166,7 @@ export function AccountSettingsMenu({
           <SettingsRow
             key={item.id}
             icon={<Icon size={22} />}
-            iconBackground={withAlpha(colors.info, 0.15)}
+            iconBackground={skyTint}
             title={item.label}
             subtitle={item.description}
             highlight={item.tone}

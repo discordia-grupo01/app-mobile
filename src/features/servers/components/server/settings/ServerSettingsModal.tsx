@@ -119,7 +119,6 @@ function SettingsBody({
       {step !== "roles" ? (
         <SettingsHeader
           step={step}
-          serverName={server.name}
           pendingReports={pendingReports}
           canGoBack={hasMenu}
           onBack={backToMenu}
@@ -145,7 +144,6 @@ function SettingsBody({
         <ServerProfileStep
           form={form}
           serverName={server.name}
-          onCancel={onClose}
           onBoost={() => openBoostsAt("boost")}
           onShowBenefits={() => openBoostsAt("benefits")}
           vanityField={
@@ -208,7 +206,6 @@ function SettingsBody({
             <SettingsHeader
               step="roles"
               title={title}
-              serverName={server.name}
               canGoBack={onBack !== undefined}
               onBack={onBack ?? backToMenu}
               onClose={onClose}

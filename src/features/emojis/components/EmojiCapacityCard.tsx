@@ -31,7 +31,7 @@ export function EmojiCapacityCard({
 
   return (
     <View className="rounded-2xl border border-line bg-surface-raised p-4">
-      <View className="flex-row items-baseline justify-between">
+      <View className="gap-1.5">
         <SettingsGroupLabel>{title}</SettingsGroupLabel>
         <View className="flex-row items-baseline gap-1">
           <Text className="font-display text-[26px] font-bold text-content">

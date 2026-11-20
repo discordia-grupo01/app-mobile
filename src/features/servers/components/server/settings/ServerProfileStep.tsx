@@ -20,7 +20,6 @@ import { ServerIdentityEditor } from "./ServerIdentityEditor";
 interface ServerProfileStepProps {
   form: ServerSettingsForm;
   serverName: string;
-  onCancel: () => void;
   onBoost?: () => void;
   /** "Ver qué suma cada nivel": Boosts del servidor en la pestaña Beneficios. */
   onShowBenefits?: () => void;
@@ -31,7 +30,6 @@ interface ServerProfileStepProps {
 export function ServerProfileStep({
   form,
   serverName,
-  onCancel,
   onBoost,
   onShowBenefits,
   vanityField,
@@ -104,19 +102,12 @@ export function ServerProfileStep({
         {vanityField}
       </View>
 
-      <View className="flex-row gap-3 px-6 mt-7 pt-5 border-t border-t-line">
-        <Button
-          title="Cancelar"
-          variant="secondary"
-          onPress={onCancel}
-          style={{ flex: 1, width: undefined }}
-        />
+      <View className="px-6 mt-7 pt-5 border-t border-t-line">
         <Button
           title="Guardar cambios"
           onPress={form.submit}
           disabled={!form.canSubmit}
           isLoading={form.isSubmitting}
-          style={{ flex: 1, width: undefined }}
         />
       </View>
     </ScrollView>
