@@ -135,7 +135,7 @@ export function ResetPasswordForm({
       </Text>
 
       <TextField
-        label="NUEVA CONTRASEÑA"
+        label="Nueva contraseña"
         placeholder="••••••••"
         isPassword
         autoComplete="new-password"
@@ -145,7 +145,7 @@ export function ResetPasswordForm({
       />
 
       <TextField
-        label="CONFIRMAR CONTRASEÑA"
+        label="Confirmar contraseña"
         placeholder="••••••••"
         isPassword
         autoComplete="new-password"

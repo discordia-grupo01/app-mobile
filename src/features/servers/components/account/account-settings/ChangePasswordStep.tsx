@@ -45,7 +45,8 @@ export function ChangePasswordStep({
       </View>
 
       <TextField
-        label={ACCOUNT_PASSWORD_COPY.currentPasswordLabel.toUpperCase()}
+        labelVariant="sentence"
+        label={ACCOUNT_PASSWORD_COPY.currentPasswordLabel}
         isPassword
         iconName="lock"
         value={form.currentPassword}
@@ -54,7 +55,8 @@ export function ChangePasswordStep({
       />
 
       <TextField
-        label={ACCOUNT_PASSWORD_COPY.newPasswordLabel.toUpperCase()}
+        labelVariant="sentence"
+        label={ACCOUNT_PASSWORD_COPY.newPasswordLabel}
         placeholder="Mínimo 8 caracteres"
         isPassword
         iconName="lock"
@@ -64,7 +66,8 @@ export function ChangePasswordStep({
       />
 
       <TextField
-        label={ACCOUNT_PASSWORD_COPY.confirmPasswordLabel.toUpperCase()}
+        labelVariant="sentence"
+        label={ACCOUNT_PASSWORD_COPY.confirmPasswordLabel}
         placeholder="Repetí la contraseña"
         isPassword
         iconName="lock"

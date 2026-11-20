@@ -76,7 +76,8 @@ export function TwoFactorSetPasswordStep({
       </View>
 
       <TextField
-        label="NUEVA CONTRASEÑA"
+        labelVariant="sentence"
+        label="Nueva contraseña"
         placeholder="Mínimo 8 caracteres"
         isPassword
         iconName="lock"
@@ -86,7 +87,8 @@ export function TwoFactorSetPasswordStep({
       />
 
       <TextField
-        label="CONFIRMAR CONTRASEÑA"
+        labelVariant="sentence"
+        label="Confirmar contraseña"
         placeholder="Repetí la contraseña"
         isPassword
         iconName="lock"

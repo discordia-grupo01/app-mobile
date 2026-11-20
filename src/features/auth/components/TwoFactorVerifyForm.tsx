@@ -82,7 +82,7 @@ export function TwoFactorVerifyForm({
       </View>
 
       <TextField
-        label="CÓDIGO DE SEGURIDAD"
+        label="Código de seguridad"
         placeholder="123456 o A1B2C-D3E4F"
         autoCapitalize="characters"
         autoComplete="one-time-code"

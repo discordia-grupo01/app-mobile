@@ -20,7 +20,7 @@ import { withAlpha } from "../../../lib/color";
 import { useThemeColors } from "../../../theme/theme-context";
 import { requestAccountRecoveryService } from "../../two-factor/service";
 
-const MESSAGE_LABEL = "CONTANOS QUÉ PASÓ";
+const MESSAGE_LABEL = "Contanos qué pasó";
 
 interface RecoveryRequestFormProps {
   challengeToken: string;

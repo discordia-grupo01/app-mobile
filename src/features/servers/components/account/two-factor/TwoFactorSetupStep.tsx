@@ -93,7 +93,8 @@ export function TwoFactorSetupStep({
       </View>
 
       <TextField
-        label="CÓDIGO DE TU APP"
+        labelVariant="sentence"
+        label="Código de tu app"
         placeholder="123456"
         keyboardType="number-pad"
         maxLength={TOTP_CODE_LENGTH}

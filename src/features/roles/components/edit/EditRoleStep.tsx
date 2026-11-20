@@ -24,6 +24,7 @@ import { PermissionToggle } from "../shared/PermissionToggle";
 import { RolePreviewBadge } from "../shared/RolePreviewBadge";
 
 import { useRoleEditForm } from "./useRoleEditForm";
+import { SettingsGroupLabel } from "../../../../components/ui/SettingsGroup";
 
 interface EditRoleStepProps {
   role: Role;
@@ -100,9 +101,9 @@ export function EditRoleStep({
 
         <View className="gap-0">
           <View className="flex-row items-center justify-between mb-2">
-            <Text className="text-[11px] font-bold tracking-[1px] uppercase text-content-subtle">
+            <SettingsGroupLabel>
               Nombre <Text className="text-danger">*</Text>
-            </Text>
+            </SettingsGroupLabel>
             <Text className="text-[11px] text-content-subtle">
               {form.editName.length}/{MAX_NAME}
             </Text>
@@ -133,14 +134,9 @@ export function EditRoleStep({
         </View>
 
         <View className="gap-0">
-          <Text
-            className={cn(
-              "text-[11px] font-bold tracking-[1px] uppercase text-content-subtle",
-              "mb-2.5",
-            )}
-          >
+          <SettingsGroupLabel className="mb-2.5">
             Color <Text className="text-danger">*</Text>
-          </Text>
+          </SettingsGroupLabel>
           {isEveryoneSelected ? (
             <View className="flex-row items-center gap-3 rounded-xl border border-line bg-surface-input px-3.5 py-3">
               <View
@@ -168,14 +164,7 @@ export function EditRoleStep({
         </View>
 
         <View className="gap-0">
-          <Text
-            className={cn(
-              "text-[11px] font-bold tracking-[1px] uppercase text-content-subtle",
-              "mb-2.5",
-            )}
-          >
-            Permisos
-          </Text>
+          <SettingsGroupLabel className="mb-2.5">Permisos</SettingsGroupLabel>
           <View className="gap-2">
             {ROLE_PERMISSIONS.map((perm) => (
               <PermissionToggle

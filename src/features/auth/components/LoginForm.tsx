@@ -200,7 +200,7 @@ export function LoginForm({
       ) : null}
 
       <TextField
-        label="CORREO ELECTRÓNICO"
+        label="Correo electrónico"
         placeholder="tu@email.com"
         keyboardType="email-address"
         autoCapitalize="none"
@@ -212,7 +212,7 @@ export function LoginForm({
       />
 
       <TextField
-        label="CONTRASEÑA"
+        label="Contraseña"
         placeholder="••••••••"
         isPassword
         iconName="lock"

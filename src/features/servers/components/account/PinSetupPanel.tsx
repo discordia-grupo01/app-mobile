@@ -94,7 +94,8 @@ export function PinSetupPanel({
       </Text>
 
       <TextField
-        label="ELEGÍ TU PIN"
+        labelVariant="sentence"
+        label="Elegí tu PIN"
         placeholder="••••••"
         keyboardType="number-pad"
         maxLength={PIN_MAX_LENGTH}
@@ -106,7 +107,8 @@ export function PinSetupPanel({
       />
 
       <TextField
-        label="CONFIRMÁ TU PIN"
+        labelVariant="sentence"
+        label="Confirmá tu PIN"
         placeholder="••••••"
         keyboardType="number-pad"
         maxLength={PIN_MAX_LENGTH}

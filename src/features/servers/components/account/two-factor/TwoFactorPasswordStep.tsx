@@ -49,7 +49,8 @@ export function TwoFactorPasswordStep({
       </Text>
 
       <TextField
-        label="CONTRASEÑA"
+        labelVariant="sentence"
+        label="Contraseña"
         placeholder="••••••••"
         isPassword
         iconName="lock"

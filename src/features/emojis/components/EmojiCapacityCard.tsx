@@ -8,6 +8,7 @@ import { Text, View } from "react-native";
 
 import { cn } from "../../../lib/cn";
 import { BoostBenefitChip } from "../../boosts/components/BoostBenefitChip";
+import { SettingsGroupLabel } from "../../../components/ui/SettingsGroup";
 
 interface EmojiCapacityCardProps {
   serverName: string;
@@ -31,9 +32,7 @@ export function EmojiCapacityCard({
   return (
     <View className="rounded-2xl border border-line bg-surface-raised p-4">
       <View className="flex-row items-baseline justify-between">
-        <Text className="text-[12px] font-bold uppercase tracking-wider text-content-subtle">
-          {title}
-        </Text>
+        <SettingsGroupLabel>{title}</SettingsGroupLabel>
         <View className="flex-row items-baseline gap-1">
           <Text className="font-display text-[26px] font-bold text-content">
             {used}
