@@ -3,6 +3,8 @@ import {
   NOTIFICATIONS_MARK_ALL_READ_FAILED,
   NOTIFICATION_SETTINGS_LOAD_FAILED,
   NOTIFICATION_SETTINGS_SAVE_FAILED,
+  STAFF_NOTICE_SEEN_FAILED,
+  STAFF_NOTICES_LOAD_FAILED,
 } from "@discordia/client-shared";
 
 import { apiFetch } from "../../lib/api-client";
@@ -10,6 +12,8 @@ import { apiFetch } from "../../lib/api-client";
 import {
   listNotificationHistory,
   listNotificationSettings,
+  listStaffNotices,
+  markStaffNoticeSeen,
   markTransfersRead,
   updateChannelNotificationSettings,
   updateServerNotificationSettings,
@@ -196,6 +200,73 @@ describe("markTransfersRead", () => {
     expect(result).toEqual({
       ok: false,
       message: NOTIFICATIONS_MARK_ALL_READ_FAILED,
+    });
+  });
+});
+
+describe("listStaffNotices", () => {
+  const notice = {
+    id: "n1",
+    kind: "server_deleted",
+    server_id: "s1",
+    server_name: "Club de Lectura",
+    occurred_at: "2026-11-20T14:03:11Z",
+  };
+
+  it("devuelve los avisos sin ver", async () => {
+    mockedFetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { items: [notice] },
+    });
+
+    const result = await listStaffNotices();
+
+    expect(mockedFetch).toHaveBeenCalledWith("/v1/notifications/notices", {
+      method: "GET",
+    });
+    expect(result).toEqual({ ok: true, notices: [notice] });
+  });
+
+  it("si el servidor falla devuelve el mensaje de error", async () => {
+    mockedFetch.mockResolvedValue({
+      ok: false,
+      status: 503,
+      code: "NOTICES_UNAVAILABLE",
+      message: "x",
+    });
+
+    expect(await listStaffNotices()).toEqual({
+      ok: false,
+      message: STAFF_NOTICES_LOAD_FAILED,
+    });
+  });
+});
+
+describe("markStaffNoticeSeen", () => {
+  it("marca el aviso como visto", async () => {
+    mockedFetch.mockResolvedValue({ ok: true, status: 204, data: null });
+
+    const result = await markStaffNoticeSeen("n1");
+
+    expect(mockedFetch).toHaveBeenCalledWith(
+      "/v1/notifications/notices/n1/seen",
+      { method: "POST" },
+    );
+    expect(result).toEqual({ ok: true });
+  });
+
+  it("si el servidor falla devuelve el mensaje de error", async () => {
+    mockedFetch.mockResolvedValue({
+      ok: false,
+      status: 503,
+      code: "NOTICES_UNAVAILABLE",
+      message: "x",
+    });
+
+    expect(await markStaffNoticeSeen("n1")).toEqual({
+      ok: false,
+      message: STAFF_NOTICE_SEEN_FAILED,
     });
   });
 });

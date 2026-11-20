@@ -12,6 +12,7 @@ import { AccountSuspendedModal } from "./src/features/auth/components/AccountSus
 import { BlockedUsersProvider } from "./src/features/blocks/blocked-users-context";
 import { useEmailConfirmation } from "./src/features/auth/use-email-confirmation";
 import { usePendingInvite } from "./src/features/servers/usePendingInvite";
+import { ServerDeletedModal } from "./src/features/servers/components/ServerDeletedModal";
 import { configurePushNotifications } from "./src/features/push/notification-handler";
 import { PrivateCallRoot } from "./src/features/private-call/components/PrivateCallRoot";
 import { VoiceSessionProvider } from "./src/features/voice/voice-session-context";
@@ -145,6 +146,7 @@ function AppContent() {
               pendingInviteCode={pendingInvite.code}
               onInviteOpened={pendingInvite.clear}
             />
+            <ServerDeletedModal />
           </PrivateCallRoot>
         </VoiceSessionProvider>
       </BlockedUsersProvider>
