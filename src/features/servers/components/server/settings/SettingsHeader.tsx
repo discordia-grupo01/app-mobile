@@ -43,6 +43,8 @@ interface SettingsHeaderProps {
   pendingReports?: number;
   /** `false` si no hay menú al que volver (un miembro que solo ve Boosts). */
   canGoBack?: boolean;
+  /** Pisa el título del paso: Roles lo cambia a "Crear rol" o al nombre del rol. */
+  title?: string;
   onBack: () => void;
   onClose: () => void;
 }
@@ -52,6 +54,7 @@ export function SettingsHeader({
   serverName,
   pendingReports = 0,
   canGoBack = true,
+  title,
   onBack,
   onClose,
 }: SettingsHeaderProps) {
@@ -82,9 +85,10 @@ export function SettingsHeader({
         className="flex-1 text-[17px] font-bold text-content"
         numberOfLines={1}
       >
-        {step === "boosts"
-          ? boostsSectionTitleFor(serverName)
-          : STEP_TITLES[step]}
+        {title ??
+          (step === "boosts"
+            ? boostsSectionTitleFor(serverName)
+            : STEP_TITLES[step])}
         {isReports && pendingReports > 0 ? (
           <Text className="text-warning"> ({pendingReports})</Text>
         ) : null}

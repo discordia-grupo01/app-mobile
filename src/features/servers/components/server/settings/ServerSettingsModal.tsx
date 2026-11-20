@@ -27,8 +27,8 @@ import {
   type SettingsEntry,
 } from "./settingsSteps";
 import { useModalInsets } from "../../../../platform-status/hooks/useModalInsets";
-import { RolesModal } from "../../../../roles/RolesModal";
-import { BansModal } from "../../../../bans/components/BansModal";
+import { RolesPanel } from "../../../../roles/RolesPanel";
+import { BansPanel } from "../../../../bans/components/BansPanel";
 
 interface ServerSettingsModalProps {
   visible: boolean;
@@ -102,20 +102,10 @@ function SettingsBody({
     onDeleted: onClose,
   });
   const [boostsTab, setBoostsTab] = useState<BoostSectionTab>(initialBoostsTab);
-  const [isRolesOpen, setIsRolesOpen] = useState(false);
-  const [isBansOpen, setIsBansOpen] = useState(false);
   const backToMenu = () => setStep("menu");
 
   function selectStep(target: SettingsStep) {
     setBoostsTab("boost");
-    if (target === "roles") {
-      setIsRolesOpen(true);
-      return;
-    }
-    if (target === "bans") {
-      setIsBansOpen(true);
-      return;
-    }
     setStep(target);
   }
 
@@ -126,14 +116,16 @@ function SettingsBody({
 
   return (
     <>
-      <SettingsHeader
-        step={step}
-        serverName={server.name}
-        pendingReports={pendingReports}
-        canGoBack={hasMenu}
-        onBack={backToMenu}
-        onClose={onClose}
-      />
+      {step !== "roles" ? (
+        <SettingsHeader
+          step={step}
+          serverName={server.name}
+          pendingReports={pendingReports}
+          canGoBack={hasMenu}
+          onBack={backToMenu}
+          onClose={onClose}
+        />
+      ) : null}
 
       {step === "menu" ? (
         <SettingsMenuStep
@@ -205,23 +197,32 @@ function SettingsBody({
         />
       ) : null}
 
-      {/* Roles y Bans se abren como modales encima del modal de settings,
-          igual que lo hace RolesModal en ServerChannelsScreen. */}
-      <RolesModal
-        visible={isRolesOpen}
-        serverId={server.id}
-        serverName={server.name}
-        isOwner={isOwner}
-        myRoles={myRoles}
-        onClose={() => setIsRolesOpen(false)}
-      />
-      {canBanMembers && isBansOpen ? (
-        <BansModal
+      {step === "roles" ? (
+        <RolesPanel
+          serverId={server.id}
+          serverName={server.name}
+          isOwner={isOwner}
+          myRoles={myRoles}
+          onExit={hasMenu ? backToMenu : undefined}
+          renderHeader={({ title, onBack }) => (
+            <SettingsHeader
+              step="roles"
+              title={title}
+              serverName={server.name}
+              canGoBack={onBack !== undefined}
+              onBack={onBack ?? backToMenu}
+              onClose={onClose}
+            />
+          )}
+        />
+      ) : null}
+
+      {step === "bans" && canBanMembers ? (
+        <BansPanel
           serverId={server.id}
           ownerId={server.owner_id}
           currentUserId={currentUserId}
           canManageRoles={canManageRoles}
-          onClose={() => setIsBansOpen(false)}
         />
       ) : null}
     </>
