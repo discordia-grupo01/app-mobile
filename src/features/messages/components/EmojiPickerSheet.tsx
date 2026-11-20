@@ -285,7 +285,7 @@ export function EmojiPickerSheet({
                   className="flex-row items-center gap-1 pl-2"
                 >
                   <DiscordiaPremiumIcon size={14} />
-                  <Text className="text-[12px] font-bold text-[#F0B232]">
+                  <Text className="text-[12px] font-bold text-amber">
                     {CUSTOM_EMOJI_PICKER_COPY.cta}
                   </Text>
                 </TouchableOpacity>

@@ -51,7 +51,7 @@ export function ReactionChip({
         reaction.reacted_by_me
           ? "border-accent bg-accent/15"
           : locked
-            ? "border-[#F0B232]/50 bg-surface-input"
+            ? "border-amber/50 bg-surface-input"
             : "border-line bg-surface-input",
       )}
       accessibilityRole="button"
