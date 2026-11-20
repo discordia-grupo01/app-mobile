@@ -7,7 +7,7 @@ import {
   MEMBERS_SEARCH_PLACEHOLDER,
   type OwnershipTransfer,
   resolveImageUrl,
-  TRANSFER_CANDIDATES_PAGE_SIZE,
+  DEFAULT_PAGE_SIZE,
   TRANSFER_CHOOSE_NEW_OWNER,
   TRANSFER_NONE_PENDING,
   TRANSFER_NO_OTHER_MEMBERS,
@@ -118,7 +118,7 @@ export function TransferOwnershipModal({
     fetchPage,
     search,
     enabled: visible && canInitiate,
-    pageSize: TRANSFER_CANDIDATES_PAGE_SIZE,
+    pageSize: DEFAULT_PAGE_SIZE,
   });
   // El back pagina a todos los miembros; el propietario (uno mismo) no es
   // candidato, asi que su pagina muestra uno menos.
