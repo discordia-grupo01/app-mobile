@@ -20,12 +20,14 @@ import { ScrollView, Text, View } from "react-native";
 
 import { Avatar } from "../../../../../components/ui/Avatar";
 import { SettingsMenuRow } from "../../../../../components/ui/SettingsMenuRow";
+import { BanIcon } from "../../../../bans/components/BanIcon";
 import { BoostsSectionIcon } from "../../../../boosts/components/BoostsSectionIcon";
 import { useServerEmojis } from "../../../../emojis/useServerEmojis";
 import { ReportsBadge } from "../../../../reports/components/shared/ReportsBadge";
 import { resolveServerIconUrl } from "../../../api";
 import type { SettingsStep } from "./SettingsHeader";
 import { MenuGroupLabel } from "../../../../../components/ui/MenuGroupLabel";
+import { useThemeColors } from "../../../../../theme/theme-context";
 
 interface SettingsMenuStepProps {
   server: ServerSummary;
@@ -51,6 +53,7 @@ export function SettingsMenuStep({
   pendingReports,
   onSelect,
 }: SettingsMenuStepProps) {
+  const colors = useThemeColors();
   const { page } = useServerEmojis(server.id);
   const emojiBadgeText = page
     ? emojiSlotsBadge(page.emojis.length, page.max_emojis)
@@ -114,7 +117,7 @@ export function SettingsMenuStep({
       ) : null}
       {canBanMembers ? (
         <SettingsMenuRow
-          icon="shield-off"
+          icon={<BanIcon size={20} color={colors.sky} />}
           title={BANS_SECTION_TITLE}
           subtitle={BANS_SECTION_SUBTITLE}
           onPress={() => onSelect("bans")}
