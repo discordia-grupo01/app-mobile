@@ -1,5 +1,6 @@
 import { type ReactNode, useEffect } from "react";
 import { BackHandler, Modal, StyleSheet, View } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { avatarUriOf } from "../../../lib/userProfile";
 import { useAuth } from "../../auth/auth-context";
@@ -34,7 +35,8 @@ export function PrivateCallScreen() {
         navigationBarTranslucent
         onRequestClose={noop}
       >
-        {content}
+        {/* El Modal es otra ventana que dibuja debajo de las barras del sistema: necesita sus propios insets. */}
+        <SafeAreaProvider>{content}</SafeAreaProvider>
       </Modal>
     );
   }
