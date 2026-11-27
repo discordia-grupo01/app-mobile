@@ -126,9 +126,9 @@ function ServerRailIcon({
       {isSuspended ? (
         <View
           pointerEvents="none"
-          className="absolute bottom-0 right-1.5 rounded-[5px] bg-surface-servers p-[3px]"
+          className="absolute bottom-0 right-2 h-[18px] w-[18px] items-center justify-center rounded-full border-2 border-surface-servers bg-warning"
         >
-          <Feather name="alert-triangle" size={14} color={colors.warning} />
+          <Feather name="alert-triangle" size={10} color={colors.onAccent} />
         </View>
       ) : null}
       {/* Desde el nivel 1, el ícono de nivel en la esquina; con menciones sin
