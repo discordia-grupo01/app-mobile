@@ -4,6 +4,8 @@ import {
   type MessageAuthor,
   type Report,
   REPORT_AUTO_RESOLVE_PENDING,
+  REPORT_DISMISSED_NOTICE,
+  REPORT_RESOLVED_NOTICE,
   type ReportResolutionAction,
   type ReportSanction,
   reportSanctionNotice,
@@ -29,11 +31,6 @@ export type ActiveSanction =
       target: BanTarget;
     };
 
-export interface ReportNotice {
-  tone: "success" | "error";
-  text: string;
-}
-
 /**
  * Sancionar desde un reporte con los modales de siempre y, si sale bien,
  * marcarlo como resuelto. Si la sancion falla el reporte no se toca; si falla
@@ -45,9 +42,10 @@ export function useReportAction(
     status: ClosedReportStatus,
     action?: ReportResolutionAction | null,
   ) => Promise<CloseOutcome>,
+  onSuccess: (message: string) => void,
 ) {
   const [active, setActive] = useState<ActiveSanction | null>(null);
-  const [notice, setNotice] = useState<ReportNotice | null>(null);
+  const [errorMessage, setErrorMessage] = useState("");
   const [closingId, setClosingId] = useState<string | null>(null);
 
   async function resolveAfter(
@@ -60,19 +58,15 @@ export function useReportAction(
       "resolved",
       resolutionActionFor(sanction),
     );
-    setNotice(
-      outcome.ok
-        ? { tone: "success", text: reportSanctionNotice(sanction, name) }
-        : { tone: "error", text: REPORT_AUTO_RESOLVE_PENDING },
-    );
+    if (outcome.ok) onSuccess(reportSanctionNotice(sanction, name));
+    else setErrorMessage(REPORT_AUTO_RESOLVE_PENDING);
   }
 
   function start(next: ActiveSanction) {
-    setNotice(null);
+    setErrorMessage("");
     setActive(next);
   }
 
-  /** Lo llaman `onMuted` / `onKicked` / `onBanned`: el modal sigue abierto. */
   function sanctionApplied() {
     if (!active || active.sanction === "delete") return;
     void resolveAfter(active.sanction, active.report, active.target.name);
@@ -84,31 +78,34 @@ export function useReportAction(
     setActive(null);
     const result = await deleteReportedMessage(message.channel_id, message.id);
     if (!result.ok) {
-      setNotice({ tone: "error", text: result.message });
+      setErrorMessage(result.message);
       return;
     }
     await resolveAfter("delete", report, author.name);
   }
 
   async function closeManually(report: Report, status: ClosedReportStatus) {
-    setNotice(null);
+    setErrorMessage("");
     setClosingId(report.id);
     const outcome = await close(report.id, status);
     setClosingId(null);
-    if (!outcome.ok) setNotice({ tone: "error", text: outcome.message });
-    else if (outcome.alreadyClosed)
-      setNotice({ tone: "error", text: outcome.message });
+    if (!outcome.ok || outcome.alreadyClosed) {
+      setErrorMessage(outcome.message);
+      return;
+    }
+    onSuccess(
+      status === "resolved" ? REPORT_RESOLVED_NOTICE : REPORT_DISMISSED_NOTICE,
+    );
   }
 
   return {
     active,
-    notice,
+    errorMessage,
     closingId,
     start,
     cancel: () => setActive(null),
     sanctionApplied,
     confirmDelete,
     closeManually,
-    dismissNotice: () => setNotice(null),
   };
 }

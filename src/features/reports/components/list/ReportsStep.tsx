@@ -27,7 +27,8 @@ import {
   type SegmentedTab,
   SegmentedTabs,
 } from "../../../../components/ui/SegmentedTabs";
-import { SuccessNotice } from "../../../../components/ui/SuccessNotice";
+import { Toast } from "../../../../components/ui/Toast";
+import { useToast } from "../../../../hooks/useToast";
 import { cn } from "../../../../lib/cn";
 import { avatarUriOf } from "../../../../lib/userProfile";
 import { BanMemberModal } from "../../../bans/components/BanMemberModal";
@@ -81,7 +82,8 @@ export function ReportsStep({
   onPendingChanged,
 }: ReportsStepProps) {
   const list = useReportsList(serverId, onPendingChanged);
-  const action = useReportAction(list.close);
+  const { toast, showToast } = useToast();
+  const action = useReportAction(list.close, showToast);
   const reported = useReportedMessages(list.reports);
   const members = useServerMembers(serverId);
   const loadedMessages = useMemo(
@@ -168,7 +170,7 @@ export function ReportsStep({
   const active = action.active;
 
   return (
-    <>
+    <View className="flex-1">
       <ScrollView
         className="flex-1"
         contentContainerClassName="gap-4 px-4.5 pt-5 pb-8"
@@ -215,11 +217,7 @@ export function ReportsStep({
           </View>
         )}
 
-        {action.notice?.tone === "success" ? (
-          <SuccessNotice message={action.notice.text} />
-        ) : (
-          <FormErrorBanner message={action.notice?.text} />
-        )}
+        <FormErrorBanner message={action.errorMessage} />
         <FormErrorBanner message={list.loadError} />
 
         {list.reports === null ? (
@@ -252,7 +250,7 @@ export function ReportsStep({
                       ? () => onGoToMessage(channelId, messageId)
                       : undefined
                   }
-                  onViewProfile={
+                  onOpenProfile={
                     isPending && reportedUserId
                       ? () => setProfileUserId(reportedUserId)
                       : undefined
@@ -336,6 +334,8 @@ export function ReportsStep({
         serverId={serverId}
         onClose={() => setProfileUserId(null)}
       />
-    </>
+
+      <Toast message={toast} />
+    </View>
   );
 }
