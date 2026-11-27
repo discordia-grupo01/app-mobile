@@ -1,17 +1,16 @@
 import { displayNameOf, type UserListItem } from "@discordia/client-shared";
 
-import { Feather } from "@expo/vector-icons";
+import { useState } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 
 import { avatarUriOf } from "../../../lib/userProfile";
-import { useThemeColors } from "../../../theme/theme-context";
 import { Avatar } from "../../../components/ui/Avatar";
 import { RowActionButton, type UserRowAction } from "./RowActionButton";
 
 interface UserRowProps {
   item: UserListItem;
   actions: UserRowAction[];
-  /** Si esta, tocar el avatar o el nombre abre el perfil. */
+  /** Si esta, tocar el avatar o el nombre abre el perfil; si no, despliega el detalle. */
   onSelect?: (item: UserListItem) => void;
   /** Bloquea los botones mientras otra accion de la lista esta en curso. */
   isDisabled?: boolean;
@@ -28,17 +27,21 @@ export function UserRow({
   onSelect,
   isDisabled = false,
 }: UserRowProps) {
-  const colors = useThemeColors();
   const name = displayNameOf(item.profile);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const canExpand = !onSelect && Boolean(item.subtitle);
 
   return (
-    <View className="flex-row items-center gap-2 rounded-xl border border-line bg-surface-raised px-3 py-2">
+    <View className="flex-row items-center gap-2 px-3.5 py-3">
       <TouchableOpacity
         activeOpacity={0.7}
-        disabled={!onSelect}
-        onPress={() => onSelect?.(item)}
-        accessibilityRole={onSelect ? "button" : undefined}
+        disabled={!onSelect && !canExpand}
+        onPress={() =>
+          onSelect ? onSelect(item) : setIsExpanded((current) => !current)
+        }
+        accessibilityRole={onSelect || canExpand ? "button" : undefined}
         accessibilityLabel={onSelect ? `Ver perfil de ${name}` : undefined}
+        accessibilityState={canExpand ? { expanded: isExpanded } : undefined}
         className="min-w-0 flex-1 flex-row items-center gap-2.5"
       >
         <Avatar name={name} uri={avatarUriOf(item.profile)} size={32} />
@@ -51,16 +54,13 @@ export function UserRow({
           </Text>
           {item.subtitle ? (
             <Text
-              numberOfLines={1}
+              numberOfLines={isExpanded ? undefined : 1}
               className="text-xs leading-[17px] text-content-muted"
             >
               {item.subtitle}
             </Text>
           ) : null}
         </View>
-        {onSelect ? (
-          <Feather name="chevron-right" size={16} color={colors.textSubtle} />
-        ) : null}
       </TouchableOpacity>
 
       <View className="shrink-0 flex-row gap-2">

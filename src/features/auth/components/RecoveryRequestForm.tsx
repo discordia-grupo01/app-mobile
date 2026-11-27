@@ -19,6 +19,7 @@ import { cn } from "../../../lib/cn";
 import { withAlpha } from "../../../lib/color";
 import { useThemeColors } from "../../../theme/theme-context";
 import { requestAccountRecoveryService } from "../../two-factor/service";
+import { CharacterCounter } from "../../../components/ui/CharacterCounter";
 
 const MESSAGE_LABEL = "Contanos qué pasó";
 
@@ -111,16 +112,10 @@ export function RecoveryRequestForm({
             {MESSAGE_LABEL}{" "}
             <Text className="font-normal normal-case">(opcional)</Text>
           </Text>
-          <Text
-            className={cn(
-              "text-xs",
-              length > ACCOUNT_RECOVERY_MESSAGE_MAX_LENGTH
-                ? "text-danger"
-                : "text-content-subtle",
-            )}
-          >
-            {length}/{ACCOUNT_RECOVERY_MESSAGE_MAX_LENGTH}
-          </Text>
+          <CharacterCounter
+            length={length}
+            max={ACCOUNT_RECOVERY_MESSAGE_MAX_LENGTH}
+          />
         </View>
         <TextInput
           value={message}

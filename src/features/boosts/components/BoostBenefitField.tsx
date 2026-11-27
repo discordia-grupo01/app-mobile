@@ -1,6 +1,8 @@
 import { type BoostLevel, type BoostPerk } from "@discordia/client-shared";
 import type { ReactNode } from "react";
-import { Text, View } from "react-native";
+import { View } from "react-native";
+
+import { FieldLabel } from "../../../components/ui/FieldLabel";
 
 import { BoostBenefitChip } from "./BoostBenefitChip";
 
@@ -22,12 +24,7 @@ export function BoostBenefitField({
   return (
     <View className="gap-2">
       <View className="flex-row items-center justify-between gap-2.5">
-        <Text
-          accessibilityRole="header"
-          className="flex-1 text-[14px] font-semibold text-content"
-        >
-          {title}
-        </Text>
+        <FieldLabel className="flex-1">{title}</FieldLabel>
         <BoostBenefitChip perk={perk} level={level} boostCount={boostCount} />
       </View>
       {children}

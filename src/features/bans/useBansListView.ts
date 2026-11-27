@@ -21,9 +21,9 @@ interface UseBansListViewOptions {
 }
 
 /**
- * Lo que muestra el modal de moderacion: la pestaña activa (baneados o
- * miembros), su busqueda por nombre y la pagina actual. Las dos listas las
- * busca y pagina el back; los miembros recien se piden al abrir su pestaña.
+ * Lo que muestra Baneos: la lista de baneados o la eleccion del miembro a
+ * banear, cada una con su busqueda por nombre. Las dos listas las busca el
+ * back; los miembros recien se piden al abrir la eleccion.
  */
 export function useBansListView({
   serverId,
@@ -34,16 +34,16 @@ export function useBansListView({
   const [hasOpenedMembers, setHasOpenedMembers] = useState(false);
   const [search, setSearch] = useState("");
 
-  const banList = useBanList(serverId, tab === "bans" ? search : "");
+  const isBans = tab === "bans";
+  const banList = useBanList(serverId, isBans ? search : "");
   const candidates = useBanCandidates({
     serverId,
     ownerId,
     currentUserId,
-    search,
+    search: isBans ? "" : search,
     enabled: hasOpenedMembers,
   });
 
-  const isBans = tab === "bans";
   const isSearching = search.trim() !== "";
 
   const banItems = useMemo<UserListItem[] | null>(
@@ -55,15 +55,7 @@ export function useBansListView({
     [candidates.candidates],
   );
 
-  const items = isBans ? banItems : memberItems;
-  const pages = isBans ? banList : candidates;
-  const pagination = {
-    page: pages.page,
-    pageCount: pages.pageCount,
-    total: pages.total,
-    range: pages.range,
-    setPage: pages.setPage,
-  };
+  const list = isBans ? banList : candidates;
 
   const emptyMessage = isBans
     ? isSearching
@@ -91,11 +83,20 @@ export function useBansListView({
     isSearching,
     noun: isBans ? "baneados" : "miembros",
     emptyMessage,
-    errorMessage: isBans ? banList.errorMessage : candidates.errorMessage,
-    items,
-    /** Total de baneados sin la busqueda, para la pestaña y el resumen. */
-    bansCount: banList.allTotal,
-    pagination,
+    errorMessage: list.errorMessage,
+    items: isBans ? banItems : memberItems,
+    /** El total sin la busqueda; de los miembros solo se sabe si no se busca. */
+    count: isBans
+      ? banList.allTotal
+      : isSearching
+        ? undefined
+        : candidates.candidatesTotal,
+    /** Coincidencias de la busqueda en la lista que se ve. */
+    matches: list.total,
+    page: list.page,
+    pageCount: list.pageCount,
+    range: list.range,
+    setPage: list.setPage,
     unban: banList.unban,
     changeTab,
     changeSearch: setSearch,

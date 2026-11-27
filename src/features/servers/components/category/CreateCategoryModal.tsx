@@ -14,6 +14,7 @@ import { useThemeColors } from "../../../../theme/theme-context";
 import { Button } from "../../../../components/ui/Button";
 import { FormErrorBanner } from "../../../../components/ui/FormErrorBanner";
 import { FullScreenModal } from "../../../../components/ui/FullScreenModal";
+import { FieldLabel } from "../../../../components/ui/FieldLabel";
 
 interface CreateCategoryModalProps {
   visible: boolean;
@@ -97,9 +98,9 @@ export function CreateCategoryModal({
         <FormErrorBanner message={globalError} />
 
         <View className="mb-3">
-          <Text className="text-[14px] font-semibold text-content mb-2">
+          <FieldLabel required className="mb-2">
             Nombre de la categoría
-          </Text>
+          </FieldLabel>
           <View
             className={cn(
               "flex-row items-center gap-2 rounded-xl border bg-surface-input px-3.5 min-h-12",

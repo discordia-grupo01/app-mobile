@@ -31,11 +31,9 @@ import { listBannedWords, saveBannedWords } from "../../../word-filter/api";
 import { LoadingSpinner } from "../../../../components/ui/LoadingSpinner";
 import { EmptyState } from "../../../../components/ui/EmptyState";
 import { SettingsGroupLabel } from "../../../../components/ui/SettingsGroup";
+import { FieldLabel } from "../../../../components/ui/FieldLabel";
+import { CharacterCounter } from "../../../../components/ui/CharacterCounter";
 
-/**
- * Lista de palabras prohibidas (CA2). Los cambios quedan locales hasta
- * "Guardar cambios", que manda la lista entera.
- */
 export function WordFilterStep({ serverId }: { serverId: string }) {
   const colors = useThemeColors();
   const [saved, setSaved] = useState<string[] | null>(null);
@@ -124,9 +122,9 @@ export function WordFilterStep({ serverId }: { serverId: string }) {
       {saved !== null ? (
         <>
           <View className="px-7 mt-5">
-            <SettingsGroupLabel className="mb-2">
+            <FieldLabel className="mb-2">
               {WORD_FILTER_INPUT_PLACEHOLDER}
-            </SettingsGroupLabel>
+            </FieldLabel>
             <View className="flex-row items-center gap-2">
               <View
                 className={cn(
@@ -177,9 +175,7 @@ export function WordFilterStep({ serverId }: { serverId: string }) {
           <View className="px-7 mt-6">
             <View className="flex-row items-center justify-between mb-2">
               <SettingsGroupLabel>{WORD_FILTER_TITLE}</SettingsGroupLabel>
-              <Text className="text-[11px] text-content-subtle">
-                {words.length}/{BANNED_WORDS_MAX}
-              </Text>
+              <CharacterCounter length={words.length} max={BANNED_WORDS_MAX} />
             </View>
             {words.length === 0 ? (
               <EmptyState icon="slash" text={WORD_FILTER_EMPTY} />

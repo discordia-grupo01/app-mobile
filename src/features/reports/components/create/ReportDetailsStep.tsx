@@ -17,6 +17,8 @@ import { Button } from "../../../../components/ui/Button";
 import { FormErrorBanner } from "../../../../components/ui/FormErrorBanner";
 import { cn } from "../../../../lib/cn";
 import { useThemeColors } from "../../../../theme/theme-context";
+import { FieldLabel } from "../../../../components/ui/FieldLabel";
+import { CharacterCounter } from "../../../../components/ui/CharacterCounter";
 
 interface ReportDetailsStepProps {
   preview: ReactNode;
@@ -54,20 +56,13 @@ export function ReportDetailsStep({
 
       <View>
         <View className="mb-1.5 flex-row items-center justify-between gap-2">
-          <Text className="text-[14px] font-semibold text-content shrink">
+          <FieldLabel required={isReportDetailRequired(category)}>
             {REPORT_DETAIL_LABEL}
             {isReportDetailRequired(category)
               ? ""
               : ` ${REPORT_DETAIL_OPTIONAL_HINT}`}
-          </Text>
-          <Text
-            className={cn(
-              "text-xs",
-              length > maxLength ? "text-danger" : "text-content-subtle",
-            )}
-          >
-            {length}/{maxLength}
-          </Text>
+          </FieldLabel>
+          <CharacterCounter length={length} max={maxLength} />
         </View>
         <TextInput
           value={detail}

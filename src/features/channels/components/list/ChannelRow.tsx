@@ -20,6 +20,8 @@ import type { SidebarVoiceParticipant } from "../../../voice/useServerVoice";
 interface ChannelRowProps {
   channel: Channel;
   hasOptions: boolean;
+  /** Último canal abierto: se resalta como en web. */
+  isActive?: boolean;
   unread?: UnreadFlags;
   isMuted?: boolean;
   onPress: () => void;
@@ -35,6 +37,7 @@ interface ChannelRowProps {
 export function ChannelRow({
   channel,
   hasOptions,
+  isActive = false,
   unread = NO_UNREAD_FLAGS,
   isMuted = false,
   onPress,
@@ -47,10 +50,11 @@ export function ChannelRow({
 }: ChannelRowProps) {
   const colors = useThemeColors();
   const { mentionCount } = unread;
+  const isUnread = unread.unread && !isActive;
   return (
     <View>
       <View className="relative flex-row items-center">
-        {unread.unread ? (
+        {isUnread ? (
           <View className="absolute left-0 top-1/2 -mt-1 h-2 w-1 rounded-r-full bg-content" />
         ) : null}
         <TouchableOpacity
@@ -59,26 +63,41 @@ export function ChannelRow({
           accessibilityLabel={
             mentionCount > 0
               ? `${channel.name}, ${mentionCount} menciones sin leer`
-              : unread.unread
+              : isUnread
                 ? `${channel.name}, ${UNREAD_MESSAGES_LABEL.toLowerCase()}`
                 : undefined
           }
           className="flex-1 flex-row items-center gap-2.5 rounded-lg px-2.5 py-[10px]"
+          accessibilityState={{ selected: isActive }}
           style={
             isVoiceConnected
-              ? { backgroundColor: withAlpha(colors.success, 0.14) }
-              : undefined
+              ? {
+                  backgroundColor: withAlpha(
+                    colors.success,
+                    isActive ? 0.24 : 0.14,
+                  ),
+                }
+              : isActive
+                ? { backgroundColor: withAlpha(colors.accent, 0.2) }
+                : undefined
           }
         >
           <Feather
             name={channel.kind === "text" ? "hash" : "volume-2"}
             size={20}
-            color={isVoiceConnected ? colors.success : colors.textMuted}
+            color={
+              isVoiceConnected
+                ? colors.success
+                : isActive
+                  ? colors.accent
+                  : colors.textMuted
+            }
           />
           <Text
             className={cn(
               "flex-1 text-[16px] font-medium text-content-muted",
-              unread.unread && "font-bold text-content",
+              isActive && "text-content",
+              isUnread && "font-bold text-content",
               isVoiceConnected && "font-semibold text-success",
             )}
             numberOfLines={1}

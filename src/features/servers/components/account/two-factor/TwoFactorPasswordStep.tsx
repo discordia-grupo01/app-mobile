@@ -36,7 +36,7 @@ export function TwoFactorPasswordStep({
       </Text>
 
       <TextField
-        labelVariant="sentence"
+        requiredMark
         label="Contraseña"
         placeholder="••••••••"
         isPassword

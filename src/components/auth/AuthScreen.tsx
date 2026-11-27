@@ -19,7 +19,6 @@ export function AuthScreen({ children }: { children: ReactNode }) {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <StatusBar style={statusBarStyle} />
-      <ThemeToggleButton />
       <ScrollView
         contentContainerClassName="grow items-center justify-center px-6"
         contentContainerStyle={{
@@ -28,6 +27,7 @@ export function AuthScreen({ children }: { children: ReactNode }) {
         }}
         keyboardShouldPersistTaps="handled"
       >
+        <ThemeToggleButton />
         <View className="w-full max-w-[420px]">
           <View className="mb-5 items-center">
             <AuthLogo />

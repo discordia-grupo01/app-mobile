@@ -39,6 +39,7 @@ import { FullScreenModal } from "../../../../components/ui/FullScreenModal";
 import { LoadingSpinner } from "../../../../components/ui/LoadingSpinner";
 import { LockedVanityLink } from "./LockedVanityLink";
 import { ServerVanityLink } from "./ServerVanityLink";
+import { FieldLabel } from "../../../../components/ui/FieldLabel";
 
 interface InviteLinkModalProps {
   visible: boolean;
@@ -355,9 +356,9 @@ export function InviteLinkModal({
         ) : null}
 
         <View className="px-4.5 pt-5">
-          <Text className="text-[14px] font-semibold text-content mb-2">
+          <FieldLabel className="mb-2">
             Generar invitación (vence en 7 días)
-          </Text>
+          </FieldLabel>
           <View className="flex-row gap-2">
             <View className="flex-1 rounded-xl border border-line bg-surface-input px-3.5 min-h-12 justify-center">
               <TextInput

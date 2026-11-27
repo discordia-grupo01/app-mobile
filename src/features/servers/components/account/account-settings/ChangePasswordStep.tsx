@@ -25,7 +25,7 @@ export function ChangePasswordStep({
       </Text>
 
       <TextField
-        labelVariant="sentence"
+        requiredMark
         label={ACCOUNT_PASSWORD_COPY.currentPasswordLabel}
         isPassword
         iconName="lock"
@@ -35,7 +35,7 @@ export function ChangePasswordStep({
       />
 
       <TextField
-        labelVariant="sentence"
+        requiredMark
         label={ACCOUNT_PASSWORD_COPY.newPasswordLabel}
         placeholder="Mínimo 8 caracteres"
         isPassword
@@ -46,7 +46,7 @@ export function ChangePasswordStep({
       />
 
       <TextField
-        labelVariant="sentence"
+        requiredMark
         label={ACCOUNT_PASSWORD_COPY.confirmPasswordLabel}
         placeholder="Repetí la contraseña"
         isPassword

@@ -8,7 +8,6 @@ import {
 import { Feather } from "@expo/vector-icons";
 import { Text, TouchableOpacity, View } from "react-native";
 
-import { withAlpha } from "../../../../../lib/color";
 import { useThemeColors } from "../../../../../theme/theme-context";
 
 export type SettingsStep =
@@ -70,14 +69,6 @@ export function SettingsHeader({
         >
           <Feather name="arrow-left" size={18} color={colors.textMuted} />
         </TouchableOpacity>
-      ) : null}
-      {isReports ? (
-        <View
-          className="w-10 h-10 rounded-full items-center justify-center"
-          style={{ backgroundColor: withAlpha(colors.warning, 0.15) }}
-        >
-          <Feather name="flag" size={18} color={colors.warning} />
-        </View>
       ) : null}
       <Text
         className="flex-1 text-[17px] font-bold text-content"
