@@ -89,6 +89,13 @@ export function usePagedList<T extends ProfiledUser>({
         return;
       }
       setErrorMessage("");
+      // La lista se achico (un baneo revocado) y esta pagina ya no existe.
+      const lastPage = pageCountOf(result.total, pageSize);
+      if (page > lastPage) {
+        setTotal(result.total);
+        setPageState(lastPage);
+        return;
+      }
       setLoaded(result.items);
       setTotal(result.total);
     });

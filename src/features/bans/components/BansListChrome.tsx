@@ -9,7 +9,7 @@ import { Text, View } from "react-native";
 
 import { Button } from "../../../components/ui/Button";
 import { FormErrorBanner } from "../../../components/ui/FormErrorBanner";
-import { LoadMoreFooter } from "../../../components/ui/LoadMoreFooter";
+import { PaginationFooter } from "../../../components/ui/PaginationFooter";
 import { SettingsGroup } from "../../../components/ui/SettingsGroup";
 import { useThemeColors } from "../../../theme/theme-context";
 
@@ -50,31 +50,35 @@ export function BansListHeader({
 
 interface BansListFooterProps {
   isBans: boolean;
-  hasItems: boolean;
-  hasMore: boolean;
-  isLoadingMore: boolean;
-  onLoadMore: () => void;
+  page: number;
+  pageCount: number;
+  range: { from: number; to: number };
+  total: number;
   noun: string;
+  onPageChange: (page: number) => void;
 }
 
 export function BansListFooter({
   isBans,
-  hasItems,
-  hasMore,
-  isLoadingMore,
-  onLoadMore,
+  page,
+  pageCount,
+  range,
+  total,
   noun,
+  onPageChange,
 }: BansListFooterProps) {
   const colors = useThemeColors();
 
   return (
     <>
-      {hasItems ? (
-        <LoadMoreFooter
-          hasMore={hasMore}
-          isLoading={isLoadingMore}
-          onLoadMore={onLoadMore}
+      {pageCount > 1 ? (
+        <PaginationFooter
+          page={page}
+          pageCount={pageCount}
+          range={range}
+          total={total}
           noun={noun}
+          onPageChange={onPageChange}
         />
       ) : null}
       {isBans ? (

@@ -6,8 +6,8 @@ import {
 
 import { useCallback, useMemo } from "react";
 
+import { usePagedList } from "../../hooks/usePagedList";
 import { listMembers } from "../servers/api";
-import { useLoadMoreList } from "./useLoadMoreList";
 
 interface UseBanCandidatesOptions {
   serverId: string;
@@ -20,7 +20,7 @@ interface UseBanCandidatesOptions {
 
 /**
  * Miembros que se pueden ofrecer para banear (ver `eligibleBanCandidates`),
- * cargados de a una pagina. El propietario y uno mismo se sacan de lo
+ * paginados en el back. El propietario y uno mismo se sacan de lo
  * cargado, asi que esa pagina muestra uno menos.
  */
 export function useBanCandidates({
@@ -39,7 +39,7 @@ export function useBanCandidates({
     },
     [serverId],
   );
-  const list = useLoadMoreList<Member>({ fetchPage, search, enabled });
+  const list = usePagedList<Member>({ fetchPage, search, enabled });
 
   const candidates = useMemo(
     () =>

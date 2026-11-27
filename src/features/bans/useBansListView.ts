@@ -93,9 +93,10 @@ export function useBansListView({
         : candidates.candidatesTotal,
     /** Coincidencias de la busqueda en la lista que se ve. */
     matches: list.total,
-    hasMore: list.hasMore,
-    isLoadingMore: list.isLoadingMore,
-    loadMore: list.loadMore,
+    page: list.page,
+    pageCount: list.pageCount,
+    range: list.range,
+    setPage: list.setPage,
     unban: banList.unban,
     changeTab,
     changeSearch: setSearch,

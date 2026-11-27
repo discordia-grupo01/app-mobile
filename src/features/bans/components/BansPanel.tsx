@@ -94,11 +94,12 @@ export function BansPanel({
         footer={
           <BansListFooter
             isBans={view.isBans}
-            hasItems={Boolean(view.items?.length)}
-            hasMore={view.hasMore}
-            isLoadingMore={view.isLoadingMore}
-            onLoadMore={view.loadMore}
+            page={view.page}
+            pageCount={view.pageCount}
+            range={view.range}
+            total={view.matches}
             noun={view.noun}
+            onPageChange={view.setPage}
           />
         }
       />
