@@ -1,5 +1,6 @@
+import { Feather } from "@expo/vector-icons";
 import type { ReactNode } from "react";
-import { Text, View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 
 import { withAlpha } from "../../../lib/color";
 import { useThemeColors } from "../../../theme/theme-context";
@@ -10,14 +11,30 @@ interface BanModalHeaderProps {
   subtitle: string;
   /** Icono de la accion (ya con su color); por defecto el de baneo. */
   icon?: ReactNode;
+  onBack?: () => void;
 }
 
 /** Encabezado de los modales de moderacion: icono, titulo y subtitulo. */
-export function BanModalHeader({ title, subtitle, icon }: BanModalHeaderProps) {
+export function BanModalHeader({
+  title,
+  subtitle,
+  icon,
+  onBack,
+}: BanModalHeaderProps) {
   const colors = useThemeColors();
 
   return (
     <View className="shrink-0 flex-row items-center gap-3 border-b border-line px-5 py-5 pr-16">
+      {onBack ? (
+        <TouchableOpacity
+          onPress={onBack}
+          accessibilityRole="button"
+          accessibilityLabel="Volver"
+          className="-ml-2 size-9 items-center justify-center rounded-xl"
+        >
+          <Feather name="arrow-left" size={18} color={colors.textMuted} />
+        </TouchableOpacity>
+      ) : null}
       <View
         className="size-10 shrink-0 items-center justify-center rounded-xl"
         style={{ backgroundColor: withAlpha(colors.danger, 0.15) }}

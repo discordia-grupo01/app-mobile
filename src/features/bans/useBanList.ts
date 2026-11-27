@@ -6,13 +6,13 @@ import {
 
 import { useCallback, useState } from "react";
 
-import { usePagedList } from "../../hooks/usePagedList";
 import { useRefreshOnChange } from "../../hooks/useRefreshOnChange";
 import { listBans, unbanMember } from "./api";
+import { useLoadMoreList } from "./useLoadMoreList";
 
 /**
- * Los baneados de un servidor, de a una pagina del back y filtrados por nombre
- * en el back. Cada uno trae el perfil del usuario (el del baneo, o
+ * Los baneados de un servidor, filtrados por nombre en el back y cargados de a
+ * una pagina. Cada uno trae el perfil del usuario (el del baneo, o
  * `GET /users/:id` si todavia no se replico).
  */
 export function useBanList(serverId: string, search: string) {
@@ -25,10 +25,10 @@ export function useBanList(serverId: string, search: string) {
     },
     [serverId],
   );
-  const pages = usePagedList<Ban>({ fetchPage, search });
-  const { items, page, setPage, total, isSearching, reload } = pages;
+  const list = useLoadMoreList<Ban>({ fetchPage, search });
+  const { total, isSearching, reload, remove } = list;
 
-  // El total de la pestaña es el de todos los baneados, no el de la busqueda.
+  // El total del encabezado es el de todos los baneados, no el de la busqueda.
   const [allTotal, setAllTotal] = useState(0);
   if (!isSearching && allTotal !== total) setAllTotal(total);
 
@@ -37,14 +37,11 @@ export function useBanList(serverId: string, search: string) {
   const unban = useCallback(
     async (userId: string): Promise<UnbanMemberResult> => {
       const result = await unbanMember(serverId, userId);
-      if (!result.ok) return result;
-      // Si era el ultimo de la pagina, la pagina ya no existe: vuelve a la anterior.
-      if (items?.length === 1 && page > 1) setPage(page - 1);
-      else reload();
+      if (result.ok) remove(userId);
       return result;
     },
-    [serverId, items, page, setPage, reload],
+    [serverId, remove],
   );
 
-  return { ...pages, bans: items, allTotal, unban };
+  return { ...list, bans: list.items, allTotal, unban };
 }

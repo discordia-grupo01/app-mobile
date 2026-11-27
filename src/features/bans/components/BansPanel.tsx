@@ -1,165 +1,132 @@
 import {
-  BAN_ACTION_LABEL,
-  BAN_REVOKE_LABEL,
-  BANS_MEMBERS_HINT,
+  BAN_MEMBER_TITLE,
   BANS_REVOKE_HINT,
-  displayNameOf,
-  unbanSuccessNotice,
+  BANS_SECTION_SUBTITLE,
   banSuccessNotice,
-  type UserListItem,
 } from "@discordia/client-shared";
 
-import { useState } from "react";
+import { Feather } from "@expo/vector-icons";
+import { type ReactNode, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 
-import { FormErrorBanner } from "../../../components/ui/FormErrorBanner";
-import { PaginationFooter } from "../../../components/ui/PaginationFooter";
+import { Button } from "../../../components/ui/Button";
 import { Toast } from "../../../components/ui/Toast";
 import { useToast } from "../../../hooks/useToast";
-import { avatarUriOf } from "../../../lib/userProfile";
 import { useThemeColors } from "../../../theme/theme-context";
 import { PublicProfileModal } from "../../profile/components/PublicProfileModal";
-import { type BansTab, type BanTarget } from "../types";
+import { useBanRowActions } from "../useBanRowActions";
 import { useBansListView } from "../useBansListView";
-import { BanIcon } from "./BanIcon";
 import { BanMemberModal } from "./BanMemberModal";
+import { BansListSection } from "./BansListSection";
 import { BansToolbar } from "./BansToolbar";
-import { type UserRowAction } from "./RowActionButton";
-import { UserList } from "./UserList";
-import { LoadingSpinner } from "../../../components/ui/LoadingSpinner";
+
+export interface BansHeaderInfo {
+  isPicking: boolean;
+  /** En la lista es `onExit`, si quien lo monta tiene adonde volver. */
+  onBack: (() => void) | undefined;
+}
 
 export interface BansPanelProps {
   serverId: string;
   ownerId: string;
   currentUserId: string | null;
   canManageRoles: boolean;
+  renderHeader: (info: BansHeaderInfo) => ReactNode;
+  onExit?: () => void;
 }
 
 /**
- * Moderacion del servidor en dos pestañas: los baneados (con su revocacion) y
- * los miembros que se pueden banear. El perfil y la confirmacion de baneo se
- * abren anidados, dentro de quien lo monta, porque iOS no deja presentar dos
- * modales hermanos a la vez.
+ * Los baneados del servidor y, en otro paso, la eleccion del miembro a banear.
+ * El perfil y la confirmacion de baneo se abren anidados, dentro de quien lo
+ * monta, porque iOS no deja presentar dos modales hermanos a la vez.
  */
 export function BansPanel({
   serverId,
   ownerId,
   currentUserId,
   canManageRoles,
+  renderHeader,
+  onExit,
 }: BansPanelProps) {
   const colors = useThemeColors();
   const { toast, showToast } = useToast();
-  const [revokeError, setRevokeError] = useState("");
-  const [revokingUserId, setRevokingUserId] = useState<string | null>(null);
   const [viewingUserId, setViewingUserId] = useState<string | null>(null);
-  const [banTarget, setBanTarget] = useState<BanTarget | null>(null);
 
   const view = useBansListView({ serverId, ownerId, currentUserId });
-  const { pagination } = view;
+  const rows = useBanRowActions({
+    isBans: view.isBans,
+    unban: view.unban,
+    showToast,
+  });
+  const { banTarget } = rows;
 
-  function handleTabChange(next: BansTab) {
-    view.changeTab(next);
-    setRevokeError("");
-  }
-
-  async function handleRevoke({ userId, profile }: UserListItem) {
-    setRevokeError("");
-    setRevokingUserId(userId);
-    const result = await view.unban(userId);
-    setRevokingUserId(null);
-    if (!result.ok) {
-      setRevokeError(result.message);
-      return;
-    }
-    showToast(unbanSuccessNotice(displayNameOf(profile)));
+  function openPicker() {
+    rows.clearRevokeError();
+    view.changeTab("members");
   }
 
   function handleBanned(name: string) {
     view.reload();
+    view.changeTab("bans");
     showToast(banSuccessNotice(name));
-  }
-
-  function handleSelect({ userId }: UserListItem) {
-    setViewingUserId(userId);
-  }
-
-  function actionsFor(item: UserListItem): UserRowAction[] {
-    const { userId, profile } = item;
-    if (view.isBans) {
-      return [
-        {
-          label: BAN_REVOKE_LABEL,
-          isLoading: revokingUserId === userId,
-          onPress: () => handleRevoke(item),
-        },
-      ];
-    }
-    return [
-      {
-        label: BAN_ACTION_LABEL,
-        tone: "danger",
-        icon: <BanIcon size={17} color={colors.danger} />,
-        onPress: () =>
-          setBanTarget({
-            userId,
-            name: displayNameOf(profile),
-            avatarUri: avatarUriOf(profile),
-          }),
-      },
-    ];
   }
 
   return (
     <View className="min-h-0 flex-1">
+      {renderHeader({
+        isPicking: !view.isBans,
+        onBack: view.isBans ? onExit : () => view.changeTab("bans"),
+      })}
+
       <BansToolbar
-        tab={view.tab}
-        onTabChange={handleTabChange}
-        bansCount={view.bansCount}
+        isBans={view.isBans}
         search={view.search}
         onSearchChange={view.changeSearch}
         results={
           view.isBans && view.isSearching
-            ? {
-                matches: pagination.total,
-                total: view.bansCount,
-                noun: view.noun,
-              }
+            ? { matches: view.matches, total: view.count ?? 0, noun: view.noun }
             : null
         }
       />
 
       <ScrollView
         className="min-h-0 flex-1"
-        contentContainerClassName="gap-3 px-5 py-4"
+        contentContainerClassName="gap-4 px-5 py-4"
         keyboardShouldPersistTaps="handled"
       >
-        <Text className="text-sm text-content-muted">
-          {view.isBans ? BANS_REVOKE_HINT : BANS_MEMBERS_HINT}
-        </Text>
-
-        <FormErrorBanner message={view.errorMessage || revokeError} />
-
-        {view.items === null ? (
-          <LoadingSpinner />
-        ) : (
-          <UserList
-            items={view.items}
-            emptyMessage={view.emptyMessage}
-            actionsFor={actionsFor}
-            onSelect={view.isBans ? undefined : handleSelect}
-            disableActions={revokingUserId !== null}
+        {view.isBans ? (
+          <Button
+            title={BAN_MEMBER_TITLE}
+            iconLeft={<Feather name="plus" size={18} color={colors.onAccent} />}
+            onPress={openPicker}
+            fullWidth
           />
-        )}
-        {pagination.pageCount > 1 ? (
-          <PaginationFooter
-            className="mt-1"
-            page={pagination.page}
-            pageCount={pagination.pageCount}
-            range={pagination.range}
-            total={pagination.total}
-            noun={view.isSearching ? "resultados" : view.noun}
-            onPageChange={pagination.setPage}
-          />
+        ) : null}
+
+        <BansListSection
+          label={view.isBans ? BANS_SECTION_SUBTITLE : "Miembros"}
+          count={view.count}
+          errorMessage={view.errorMessage || rows.revokeError}
+          items={view.items}
+          emptyMessage={view.emptyMessage}
+          actionsFor={rows.actionsFor}
+          onSelect={
+            view.isBans ? undefined : ({ userId }) => setViewingUserId(userId)
+          }
+          disableActions={rows.isRevoking}
+          noun={view.noun}
+          hasMore={view.hasMore}
+          isLoadingMore={view.isLoadingMore}
+          onLoadMore={view.loadMore}
+        />
+
+        {view.isBans ? (
+          <View className="flex-row gap-2">
+            <Feather name="info" size={14} color={colors.textMuted} />
+            <Text className="flex-1 text-xs leading-[17px] text-content-muted">
+              {BANS_REVOKE_HINT}
+            </Text>
+          </View>
         ) : null}
       </ScrollView>
 
@@ -179,7 +146,7 @@ export function BansPanel({
         <BanMemberModal
           serverId={serverId}
           target={banTarget}
-          onClose={() => setBanTarget(null)}
+          onClose={rows.clearBanTarget}
           onBanned={() => handleBanned(banTarget.name)}
         />
       ) : null}

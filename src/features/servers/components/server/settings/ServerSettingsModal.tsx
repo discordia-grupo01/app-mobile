@@ -1,4 +1,5 @@
 import {
+  BAN_MEMBER_TITLE,
   type BoostSectionTab,
   type DeleteServerResult,
   type Role,
@@ -116,7 +117,7 @@ function SettingsBody({
 
   return (
     <>
-      {step !== "roles" ? (
+      {step !== "roles" && step !== "bans" ? (
         <SettingsHeader
           step={step}
           pendingReports={pendingReports}
@@ -220,6 +221,16 @@ function SettingsBody({
           ownerId={server.owner_id}
           currentUserId={currentUserId}
           canManageRoles={canManageRoles}
+          onExit={hasMenu ? backToMenu : undefined}
+          renderHeader={({ isPicking, onBack }) => (
+            <SettingsHeader
+              step="bans"
+              title={isPicking ? BAN_MEMBER_TITLE : undefined}
+              canGoBack={onBack !== undefined}
+              onBack={onBack ?? backToMenu}
+              onClose={onClose}
+            />
+          )}
         />
       ) : null}
     </>

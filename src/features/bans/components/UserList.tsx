@@ -42,15 +42,19 @@ export function UserList({
   }
 
   return (
-    <View className="gap-2">
-      {items.map((item) => (
-        <UserRow
+    <View className="overflow-hidden rounded-2xl border border-line bg-surface-raised">
+      {items.map((item, index) => (
+        <View
           key={item.userId}
-          item={item}
-          actions={actionsFor(item)}
-          onSelect={onSelect}
-          isDisabled={disableActions}
-        />
+          className={index > 0 ? "border-t border-line" : undefined}
+        >
+          <UserRow
+            item={item}
+            actions={actionsFor(item)}
+            onSelect={onSelect}
+            isDisabled={disableActions}
+          />
+        </View>
       ))}
     </View>
   );
