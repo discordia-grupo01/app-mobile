@@ -45,6 +45,7 @@ import { clearStatus, updateOwnProfile, updateStatus } from "../service";
 import type { PickedProfileImage } from "../types";
 import { ModalShell } from "../../../components/ui/ModalShell";
 import { useRevealOnKeyboard } from "../useRevealOnKeyboard";
+import { CharacterCounter } from "../../../components/ui/CharacterCounter";
 
 const MAX_AVATAR_DIMENSION = 1024;
 
@@ -422,9 +423,10 @@ export function OwnProfileModal({
           {editingField === "description" ? (
             <View className="gap-2">
               <View className="items-end">
-                <Text className="text-[11px] text-content-subtle">
-                  {descriptionDraft.length}/{MAX_DESCRIPTION}
-                </Text>
+                <CharacterCounter
+                  length={descriptionDraft.length}
+                  max={MAX_DESCRIPTION}
+                />
               </View>
               <TextInput
                 value={descriptionDraft}

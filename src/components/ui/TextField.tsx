@@ -10,14 +10,15 @@ import {
 
 import { cn } from "../../lib/cn";
 import { useThemeColors } from "../../theme/theme-context";
+import { FieldLabel } from "./FieldLabel";
 
 interface TextFieldProps extends TextInputProps {
   label: string;
   error?: string;
   isPassword?: boolean;
   iconName?: keyof typeof Feather.glyphMap;
-  /** `caps` en las pantallas de acceso; `sentence` dentro de la configuracion. */
-  labelVariant?: "caps" | "sentence";
+  /** Muestra el asterisco rojo de campo obligatorio. */
+  requiredMark?: boolean;
 }
 
 export function TextField({
@@ -25,7 +26,7 @@ export function TextField({
   error,
   isPassword = false,
   iconName,
-  labelVariant = "caps",
+  requiredMark = false,
   className,
   ...props
 }: TextFieldProps) {
@@ -35,15 +36,9 @@ export function TextField({
 
   return (
     <View className="mb-[18px] w-full">
-      <Text
-        className={
-          labelVariant === "sentence"
-            ? "mb-2 text-[14px] font-semibold text-content"
-            : "mb-2 text-[11px] font-bold tracking-[1.2px] uppercase text-content-subtle"
-        }
-      >
+      <FieldLabel required={requiredMark} className="mb-2">
         {label}
-      </Text>
+      </FieldLabel>
       <View
         className={cn(
           "min-h-12 flex-row items-center rounded-xl border bg-surface-input px-3.5",

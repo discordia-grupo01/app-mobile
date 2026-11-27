@@ -23,20 +23,16 @@ import { banMember } from "../api";
 import { type BanTarget } from "../types";
 import { BanModalHeader } from "./BanModalHeader";
 import { ModalCloseButton } from "../../../components/ui/ModalCloseButton";
+import { FieldLabel } from "../../../components/ui/FieldLabel";
+import { CharacterCounter } from "../../../components/ui/CharacterCounter";
 
 interface BanMemberModalProps {
   serverId: string;
   target: BanTarget;
   onClose: () => void;
-  /** Se dispara apenas el back confirma el baneo (el modal sigue abierto). */
   onBanned: () => void;
 }
 
-/**
- * Confirmacion de baneo con motivo opcional. Los rechazos por jerarquia o
- * falta de permiso los decide el back y se muestran tal cual llegan.
- * Se monta solo mientras hay a quien banear, asi el estado se reinicia solo.
- */
 export function BanMemberModal({
   serverId,
   target,
@@ -93,18 +89,11 @@ export function BanMemberModal({
 
           <View>
             <View className="mb-1.5 flex-row items-center justify-between gap-2">
-              <Text className="text-[14px] font-semibold text-content shrink">
-                {BAN_REASON_LABEL} (opcional)
-              </Text>
-              <Text
-                className={
-                  reasonError
-                    ? "text-xs text-danger"
-                    : "text-xs text-content-subtle"
-                }
-              >
-                {reasonLength}/{BAN_REASON_MAX_LENGTH}
-              </Text>
+              <FieldLabel>{BAN_REASON_LABEL} (opcional)</FieldLabel>
+              <CharacterCounter
+                length={reasonLength}
+                max={BAN_REASON_MAX_LENGTH}
+              />
             </View>
             <TextInput
               value={reason}

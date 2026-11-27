@@ -92,7 +92,7 @@ export function PinSetupPanel({
       </Text>
 
       <TextField
-        labelVariant="sentence"
+        requiredMark
         label="Elegí tu PIN"
         placeholder="••••••"
         keyboardType="number-pad"
@@ -105,7 +105,7 @@ export function PinSetupPanel({
       />
 
       <TextField
-        labelVariant="sentence"
+        requiredMark
         label="Confirmá tu PIN"
         placeholder="••••••"
         keyboardType="number-pad"

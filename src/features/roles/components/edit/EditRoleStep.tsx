@@ -21,6 +21,8 @@ import { DefaultRoleCard } from "./DefaultRoleCard";
 import { RoleDangerZone } from "./RoleDangerZone";
 import { useRoleEditForm } from "./useRoleEditForm";
 import { SettingsGroupLabel } from "../../../../components/ui/SettingsGroup";
+import { FieldLabel } from "../../../../components/ui/FieldLabel";
+import { CharacterCounter } from "../../../../components/ui/CharacterCounter";
 
 interface EditRoleStepProps {
   role: Role;
@@ -97,12 +99,8 @@ export function EditRoleStep({
 
         <View className="gap-0">
           <View className="flex-row items-center justify-between mb-2">
-            <SettingsGroupLabel>
-              Nombre <Text className="text-danger">*</Text>
-            </SettingsGroupLabel>
-            <Text className="text-[11px] text-content-subtle">
-              {form.editName.length}/{MAX_NAME}
-            </Text>
+            <FieldLabel required>Nombre</FieldLabel>
+            <CharacterCounter length={form.editName.length} max={MAX_NAME} />
           </View>
           <View
             className={cn(
@@ -130,9 +128,9 @@ export function EditRoleStep({
         </View>
 
         <View className="gap-0">
-          <SettingsGroupLabel className="mb-2.5">
-            Color <Text className="text-danger">*</Text>
-          </SettingsGroupLabel>
+          <FieldLabel required className="mb-2.5">
+            Color
+          </FieldLabel>
           {isEveryoneSelected ? (
             <View className="flex-row items-center gap-3 rounded-xl border border-line bg-surface-input px-3.5 py-3">
               <View

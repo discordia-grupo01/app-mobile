@@ -106,6 +106,7 @@ function CheckoutForm({
           </Text>
           <TextField
             label={BILLING_COPY.payerEmailLabel}
+            requiredMark
             keyboardType="email-address"
             autoComplete="email"
             textContentType="emailAddress"

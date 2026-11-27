@@ -11,6 +11,7 @@ import { Text, TextInput, TouchableOpacity, View } from "react-native";
 import { Button } from "../../../components/ui/Button";
 import { cn } from "../../../lib/cn";
 import { useThemeColors } from "../../../theme/theme-context";
+import { CharacterCounter } from "../../../components/ui/CharacterCounter";
 
 interface CustomStatusEditorProps {
   statusText: string;
@@ -83,9 +84,7 @@ export function CustomStatusEditor({
       {isEditing ? (
         <View className="gap-2">
           <View className="items-end">
-            <Text className="text-[11px] text-content-subtle">
-              {draft.length}/{MAX_CUSTOM_STATUS}
-            </Text>
+            <CharacterCounter length={draft.length} max={MAX_CUSTOM_STATUS} />
           </View>
           <TextInput
             ref={inputRef}

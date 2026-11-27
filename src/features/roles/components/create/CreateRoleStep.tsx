@@ -9,7 +9,8 @@ import { useThemeColors } from "../../../../theme/theme-context";
 import { ColorGrid } from "../shared/ColorGrid";
 import { FieldError } from "../../../../components/ui/FieldError";
 import { RolePreviewRow } from "../shared/RolePreviewBadge";
-import { SettingsGroupLabel } from "../../../../components/ui/SettingsGroup";
+import { FieldLabel } from "../../../../components/ui/FieldLabel";
+import { CharacterCounter } from "../../../../components/ui/CharacterCounter";
 
 interface CreateRoleStepProps {
   newName: string;
@@ -49,12 +50,8 @@ export function CreateRoleStep({
 
         <View className="gap-0">
           <View className="flex-row items-center justify-between mb-2">
-            <SettingsGroupLabel>
-              Nombre <Text className="text-danger">*</Text>
-            </SettingsGroupLabel>
-            <Text className="text-[11px] text-content-subtle">
-              {newName.length}/{MAX_NAME}
-            </Text>
+            <FieldLabel required>Nombre</FieldLabel>
+            <CharacterCounter length={newName.length} max={MAX_NAME} />
           </View>
           <View
             className={cn(
@@ -77,9 +74,9 @@ export function CreateRoleStep({
         </View>
 
         <View className="gap-0">
-          <SettingsGroupLabel className="mb-2.5">
-            Color <Text className="text-danger">*</Text>
-          </SettingsGroupLabel>
+          <FieldLabel required className="mb-2.5">
+            Color
+          </FieldLabel>
           <ColorGrid value={newColor} onChange={onColorChange} />
           <FieldError message={newColorError} />
         </View>

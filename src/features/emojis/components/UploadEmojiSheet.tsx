@@ -34,6 +34,7 @@ import {
 } from "../../../lib/pickImageFromLibrary";
 import { useThemeColors } from "../../../theme/theme-context";
 import { useUploadEmoji } from "../useUploadEmoji";
+import { FieldLabel } from "../../../components/ui/FieldLabel";
 
 interface UploadEmojiSheetProps {
   visible: boolean;
@@ -113,9 +114,9 @@ export function UploadEmojiSheet({
 
               {/* Imagen */}
               <View>
-                <Text className="text-[14px] font-semibold text-content mb-1.5">
+                <FieldLabel required className="mb-1.5">
                   {EMOJI_UPLOAD_COPY.imageLabel}
-                </Text>
+                </FieldLabel>
 
                 {image === null ? (
                   <TouchableOpacity
@@ -177,9 +178,9 @@ export function UploadEmojiSheet({
 
               {/* Nombre */}
               <View>
-                <Text className="text-[14px] font-semibold text-content mb-1.5">
+                <FieldLabel required className="mb-1.5">
                   {EMOJI_UPLOAD_COPY.nameLabel}
-                </Text>
+                </FieldLabel>
                 <View
                   className={cn(
                     "flex-row items-center rounded-xl border bg-surface-input px-3.5 py-2.5",
@@ -212,9 +213,9 @@ export function UploadEmojiSheet({
               {/* Vista previa */}
               {image && name ? (
                 <View>
-                  <Text className="text-[14px] font-semibold text-content mb-1.5">
+                  <FieldLabel className="mb-1.5">
                     {EMOJI_UPLOAD_COPY.previewLabel}
-                  </Text>
+                  </FieldLabel>
                   <View className="flex-row items-center gap-2 rounded-xl border border-line bg-surface-input px-3.5 py-2.5">
                     <Image
                       source={{ uri: image.asset.uri }}

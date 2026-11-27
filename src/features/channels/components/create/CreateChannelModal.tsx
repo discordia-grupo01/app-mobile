@@ -24,6 +24,7 @@ import { Button } from "../../../../components/ui/Button";
 import { FieldError } from "../../../../components/ui/FieldError";
 import { FormErrorBanner } from "../../../../components/ui/FormErrorBanner";
 import { FullScreenModal } from "../../../../components/ui/FullScreenModal";
+import { FieldLabel } from "../../../../components/ui/FieldLabel";
 
 interface CreateChannelModalProps {
   visible: boolean;
@@ -133,9 +134,9 @@ export function CreateChannelModal({
         <FormErrorBanner message={globalError} />
 
         <View className="mb-4.5">
-          <Text className="text-[14px] font-semibold text-content mb-2">
+          <FieldLabel required className="mb-2">
             Tipo de canal
-          </Text>
+          </FieldLabel>
           <View className="flex-row gap-2">
             <TouchableOpacity
               onPress={() => setKind("text")}
@@ -181,9 +182,9 @@ export function CreateChannelModal({
         </View>
 
         <View className="mb-4.5">
-          <Text className="text-[14px] font-semibold text-content mb-2">
+          <FieldLabel required className="mb-2">
             Nombre del canal
-          </Text>
+          </FieldLabel>
           <View
             className={cn(
               "flex-row items-center gap-2 rounded-xl border bg-surface-input px-3.5 min-h-12",
@@ -210,9 +211,7 @@ export function CreateChannelModal({
         </View>
 
         <View className="mb-4.5">
-          <Text className="text-[14px] font-semibold text-content mb-2">
-            Categoría
-          </Text>
+          <FieldLabel className="mb-2">Categoría</FieldLabel>
           <TouchableOpacity
             onPress={() => setIsCategoryDropdownOpen((prev) => !prev)}
             className={cn(

@@ -88,7 +88,7 @@ export function TwoFactorSetupStep({
       </View>
 
       <TextField
-        labelVariant="sentence"
+        requiredMark
         label="Código de tu app"
         placeholder="123456"
         keyboardType="number-pad"

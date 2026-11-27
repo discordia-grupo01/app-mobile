@@ -15,7 +15,6 @@ import { useEffect, useRef, useState, type ComponentRef } from "react";
 import { Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { cn } from "../../../lib/cn";
 import {
   accountSettingsRequest,
   serverBoostsRequest,
@@ -39,6 +38,7 @@ import { EmojiPickerSheet } from "./EmojiPickerSheet";
 import { useMentionDraftChildren } from "./useMentionDraftChildren";
 import { MentionSuggestions } from "./MentionSuggestions";
 import { useMessageMentions } from "./MentionsContext";
+import { CharacterCounter } from "../../../components/ui/CharacterCounter";
 
 const COUNTER_THRESHOLD = MAX_MESSAGE_LENGTH - 200;
 
@@ -315,14 +315,11 @@ export function MessageComposer({
       ) : null}
 
       {length >= COUNTER_THRESHOLD ? (
-        <Text
-          className={cn(
-            "mt-1 self-end text-[12px]",
-            length > MAX_MESSAGE_LENGTH ? "text-danger" : "text-highlight",
-          )}
-        >
-          {length}/{MAX_MESSAGE_LENGTH}
-        </Text>
+        <CharacterCounter
+          length={length}
+          max={MAX_MESSAGE_LENGTH}
+          className="mt-1 self-end"
+        />
       ) : null}
 
       <EmojiPickerSheet
