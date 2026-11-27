@@ -5,6 +5,7 @@ import {
   BANS_REVOKE_HINT,
   displayNameOf,
   unbanSuccessNotice,
+  banSuccessNotice,
   type UserListItem,
 } from "@discordia/client-shared";
 
@@ -71,6 +72,11 @@ export function BansPanel({
       return;
     }
     showToast(unbanSuccessNotice(displayNameOf(profile)));
+  }
+
+  function handleBanned(name: string) {
+    view.reload();
+    showToast(banSuccessNotice(name));
   }
 
   function handleSelect({ userId }: UserListItem) {
@@ -174,7 +180,7 @@ export function BansPanel({
           serverId={serverId}
           target={banTarget}
           onClose={() => setBanTarget(null)}
-          onBanned={view.reload}
+          onBanned={() => handleBanned(banTarget.name)}
         />
       ) : null}
     </View>

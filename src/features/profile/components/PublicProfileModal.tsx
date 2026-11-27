@@ -187,6 +187,12 @@ export function PublicProfileModal({
     onBanned?.();
   }
 
+  function handleMemberBanned() {
+    setIsBanOpen(false);
+    onBanned?.();
+    onClose();
+  }
+
   const isMuted = isMemberMuted({ muted_until: currentMutedUntil });
   const isProfileUnavailable = isUnavailable || Boolean(profile?.is_suspended);
   const hasModeratorActions =
@@ -442,8 +448,8 @@ export function PublicProfileModal({
             name: profile.name,
             avatarUri: avatarUriOf(profile),
           }}
-          onClose={handleBanClosed}
-          onBanned={handleBanned}
+          onClose={() => setIsBanOpen(false)}
+          onBanned={handleMemberBanned}
         />
       ) : null}
     </ModalShell>
