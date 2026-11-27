@@ -1,13 +1,12 @@
 import type { TwoFactorPasswordErrors } from "@discordia/client-shared";
 
-import { Text, TouchableOpacity } from "react-native";
+import { Text } from "react-native";
 
 import { Button } from "../../../../../components/ui/Button";
 import { TextField } from "../../../../../components/ui/TextField";
 import { FormErrorBanner } from "../../../../../components/ui/FormErrorBanner";
 
 interface TwoFactorPasswordStepProps {
-  title: string;
   description: string;
   confirmLabel: string;
   danger?: boolean;
@@ -17,11 +16,9 @@ interface TwoFactorPasswordStepProps {
   isSubmitting: boolean;
   onPasswordChange: (password: string) => void;
   onConfirm: () => void;
-  onCancel: () => void;
 }
 
 export function TwoFactorPasswordStep({
-  title,
   description,
   confirmLabel,
   danger,
@@ -31,25 +28,16 @@ export function TwoFactorPasswordStep({
   isSubmitting,
   onPasswordChange,
   onConfirm,
-  onCancel,
 }: TwoFactorPasswordStepProps) {
   return (
     <>
-      <Text
-        className={
-          danger
-            ? "mb-1.5 text-[17px] font-bold text-danger"
-            : "mb-1.5 text-[17px] font-bold text-content"
-        }
-      >
-        {title}
-      </Text>
-      <Text className="mb-4 text-[13px] leading-[18px] text-content-muted">
+      <Text className="mb-5 text-[14px] leading-5 text-content-muted">
         {description}
       </Text>
 
       <TextField
-        label="CONTRASEÑA"
+        requiredMark
+        label="Contraseña"
         placeholder="••••••••"
         isPassword
         iconName="lock"
@@ -66,16 +54,6 @@ export function TwoFactorPasswordStep({
         onPress={onConfirm}
         isLoading={isSubmitting}
       />
-
-      <TouchableOpacity
-        activeOpacity={0.75}
-        className="mt-2.5 items-center py-3"
-        onPress={onCancel}
-      >
-        <Text className="text-[13px] font-bold text-content-muted">
-          Cancelar
-        </Text>
-      </TouchableOpacity>
     </>
   );
 }

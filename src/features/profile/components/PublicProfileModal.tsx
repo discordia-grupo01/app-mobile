@@ -187,6 +187,12 @@ export function PublicProfileModal({
     onBanned?.();
   }
 
+  function handleMemberBanned() {
+    setIsBanOpen(false);
+    onBanned?.();
+    onClose();
+  }
+
   const isMuted = isMemberMuted({ muted_until: currentMutedUntil });
   const isProfileUnavailable = isUnavailable || Boolean(profile?.is_suspended);
   const hasModeratorActions =
@@ -197,37 +203,38 @@ export function PublicProfileModal({
     !isProfileUnavailable &&
     (hasModeratorActions || canBlock || isReportable);
 
+  const banner = (
+    <ProfileBanner
+      onClose={onClose}
+      dimmed={isProfileUnavailable}
+      action={
+        hasMemberActions ? (
+          <TouchableOpacity
+            onPress={() => setIsActionsOpen(true)}
+            disabled={isUnmuting}
+            className="h-7.5 w-7.5 items-center justify-center rounded-full bg-[rgba(0,0,0,0.3)]"
+            accessibilityRole="button"
+            accessibilityLabel="Más acciones"
+            accessibilityState={{ busy: isUnmuting }}
+          >
+            {isUnmuting ? (
+              <ActivityIndicator size="small" color="rgba(255,255,255,0.85)" />
+            ) : (
+              <Feather
+                name="more-vertical"
+                size={14}
+                color="rgba(255,255,255,0.85)"
+              />
+            )}
+          </TouchableOpacity>
+        ) : undefined
+      }
+    />
+  );
+
   return (
     <ModalShell visible={visible} onClose={onClose} className="max-w-100">
-      <ProfileBanner
-        onClose={onClose}
-        dimmed={isProfileUnavailable}
-        action={
-          hasMemberActions ? (
-            <TouchableOpacity
-              onPress={() => setIsActionsOpen(true)}
-              disabled={isUnmuting}
-              className="h-7.5 w-7.5 items-center justify-center rounded-full bg-[rgba(0,0,0,0.3)]"
-              accessibilityRole="button"
-              accessibilityLabel="Más acciones"
-              accessibilityState={{ busy: isUnmuting }}
-            >
-              {isUnmuting ? (
-                <ActivityIndicator
-                  size="small"
-                  color="rgba(255,255,255,0.85)"
-                />
-              ) : (
-                <Feather
-                  name="more-vertical"
-                  size={14}
-                  color="rgba(255,255,255,0.85)"
-                />
-              )}
-            </TouchableOpacity>
-          ) : undefined
-        }
-      />
+      {isProfileUnavailable || isLoading || !profile ? banner : null}
 
       {isProfileUnavailable ? (
         <View className="items-center gap-2.5 px-6 py-8">
@@ -254,10 +261,12 @@ export function PublicProfileModal({
       ) : (
         <>
           <ScrollView
-            contentContainerClassName="px-5.5 pt-17 pb-6.5"
+            contentContainerClassName="px-5.5 pb-6.5"
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
+            <View className="-mx-5.5 mb-17">{banner}</View>
+
             <View className="mb-4">
               <View className="flex-row items-center gap-1.5">
                 <Text
@@ -327,27 +336,27 @@ export function PublicProfileModal({
                 canManage={canManageRoles}
               />
             ) : null}
-          </ScrollView>
 
-          <View className="absolute top-18 left-5.5 z-10">
-            <View className="w-20 h-20">
-              <View className="absolute top-0 left-0 w-20 h-20 rounded-[40px] bg-surface-modal" />
-              <View className="absolute top-1 left-1 w-18 h-18">
-                <Avatar
-                  name={profile.name}
-                  uri={avatarSrc}
-                  size={72}
-                  borderRadius={36}
+            <View className="absolute top-18 left-5.5 z-10">
+              <View className="w-20 h-20">
+                <View className="absolute top-0 left-0 w-20 h-20 rounded-[40px] bg-surface-modal" />
+                <View className="absolute top-1 left-1 w-18 h-18">
+                  <Avatar
+                    name={profile.name}
+                    uri={avatarSrc}
+                    size={72}
+                    borderRadius={36}
+                  />
+                </View>
+                <UserActivityStatusDot
+                  userId={profile.id}
+                  size={18}
+                  ringWidth={3}
+                  className="absolute right-0 bottom-1 border-surface-modal"
                 />
               </View>
-              <UserActivityStatusDot
-                userId={profile.id}
-                size={18}
-                ringWidth={3}
-                className="absolute right-0 bottom-1 border-surface-modal"
-              />
             </View>
-          </View>
+          </ScrollView>
         </>
       )}
 
@@ -442,8 +451,8 @@ export function PublicProfileModal({
             name: profile.name,
             avatarUri: avatarUriOf(profile),
           }}
-          onClose={handleBanClosed}
-          onBanned={handleBanned}
+          onClose={() => setIsBanOpen(false)}
+          onBanned={handleMemberBanned}
         />
       ) : null}
     </ModalShell>

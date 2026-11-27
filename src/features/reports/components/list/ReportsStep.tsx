@@ -19,13 +19,7 @@ import {
 } from "@discordia/client-shared";
 
 import { useMemo, useState } from "react";
-import {
-  ActivityIndicator,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 import { FormErrorBanner } from "../../../../components/ui/FormErrorBanner";
 import { PaginationFooter } from "../../../../components/ui/PaginationFooter";
@@ -33,10 +27,10 @@ import {
   type SegmentedTab,
   SegmentedTabs,
 } from "../../../../components/ui/SegmentedTabs";
-import { SuccessNotice } from "../../../../components/ui/SuccessNotice";
+import { Toast } from "../../../../components/ui/Toast";
+import { useToast } from "../../../../hooks/useToast";
 import { cn } from "../../../../lib/cn";
 import { avatarUriOf } from "../../../../lib/userProfile";
-import { useThemeColors } from "../../../../theme/theme-context";
 import { BanMemberModal } from "../../../bans/components/BanMemberModal";
 import { DeleteMessageModal } from "../../../messages/components/DeleteMessageModal";
 import { useMessageAuthors } from "../../../messages/useMessageAuthors";
@@ -49,6 +43,8 @@ import { useReportedMessages } from "./useReportedMessages";
 import { type ReportsTab, useReportsList } from "./useReportsList";
 import { type ReportedMessageState, ReportRow } from "./ReportRow";
 import { ReportSanctionSheet } from "../sanction/ReportSanctionSheet";
+import { LoadingSpinner } from "../../../../components/ui/LoadingSpinner";
+import { EmptyState } from "../../../../components/ui/EmptyState";
 
 const TABS: SegmentedTab<ReportsTab>[] = [
   { value: "pending", label: REPORTS_PENDING_TAB },
@@ -85,9 +81,9 @@ export function ReportsStep({
   onGoToMessage,
   onPendingChanged,
 }: ReportsStepProps) {
-  const colors = useThemeColors();
   const list = useReportsList(serverId, onPendingChanged);
-  const action = useReportAction(list.close);
+  const { toast, showToast } = useToast();
+  const action = useReportAction(list.close, showToast);
   const reported = useReportedMessages(list.reports);
   const members = useServerMembers(serverId);
   const loadedMessages = useMemo(
@@ -174,7 +170,7 @@ export function ReportsStep({
   const active = action.active;
 
   return (
-    <>
+    <View className="flex-1">
       <ScrollView
         className="flex-1"
         contentContainerClassName="gap-4 px-4.5 pt-5 pb-8"
@@ -221,21 +217,13 @@ export function ReportsStep({
           </View>
         )}
 
-        {action.notice?.tone === "success" ? (
-          <SuccessNotice message={action.notice.text} />
-        ) : (
-          <FormErrorBanner message={action.notice?.text} />
-        )}
+        <FormErrorBanner message={action.errorMessage} />
         <FormErrorBanner message={list.loadError} />
 
         {list.reports === null ? (
-          <View className="items-center py-6">
-            <ActivityIndicator size="small" color={colors.accentBright} />
-          </View>
+          <LoadingSpinner />
         ) : list.reports.length === 0 && !list.loadError ? (
-          <Text className="py-6 text-center text-[14px] text-content-subtle">
-            {EMPTY_TEXT[list.status]}
-          </Text>
+          <EmptyState icon="flag" text={EMPTY_TEXT[list.status]} />
         ) : (
           <View className="gap-3">
             {list.reports.map((report) => {
@@ -262,7 +250,7 @@ export function ReportsStep({
                       ? () => onGoToMessage(channelId, messageId)
                       : undefined
                   }
-                  onViewProfile={
+                  onOpenProfile={
                     isPending && reportedUserId
                       ? () => setProfileUserId(reportedUserId)
                       : undefined
@@ -281,18 +269,18 @@ export function ReportsStep({
             })}
           </View>
         )}
+        {list.pageCount > 1 ? (
+          <PaginationFooter
+            className="mt-1"
+            page={list.page}
+            pageCount={list.pageCount}
+            range={list.range}
+            total={list.total}
+            noun="reportes"
+            onPageChange={list.setPage}
+          />
+        ) : null}
       </ScrollView>
-
-      {list.pageCount > 1 ? (
-        <PaginationFooter
-          page={list.page}
-          pageCount={list.pageCount}
-          range={list.range}
-          total={list.total}
-          noun="reportes"
-          onPageChange={list.setPage}
-        />
-      ) : null}
 
       <ReportSanctionSheet
         available={sanctionsFor?.available ?? null}
@@ -346,6 +334,8 @@ export function ReportsStep({
         serverId={serverId}
         onClose={() => setProfileUserId(null)}
       />
-    </>
+
+      <Toast message={toast} />
+    </View>
   );
 }

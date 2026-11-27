@@ -4,14 +4,12 @@ import {
   BANS_MEMBERS_EMPTY,
   BANS_MEMBERS_EMPTY_SEARCH,
   banListItems,
-  filterByDisplayName,
   memberListItems,
   type UserListItem,
 } from "@discordia/client-shared";
 
 import { useMemo, useState } from "react";
 
-import { usePagination } from "../../hooks/usePagination";
 import { type BansTab } from "./types";
 import { useBanCandidates } from "./useBanCandidates";
 import { useBanList } from "./useBanList";
@@ -23,10 +21,9 @@ interface UseBansListViewOptions {
 }
 
 /**
- * Lo que muestra el modal de moderacion: la pestaña activa (baneados o
- * miembros), su busqueda por nombre y la pagina actual. Los baneados se buscan
- * y paginan en memoria (el back no los filtra por nombre); los miembros los
- * busca y pagina el back, y recien se piden al abrir su pestaña.
+ * Lo que muestra Baneos: la lista de baneados o la eleccion del miembro a
+ * banear, cada una con su busqueda por nombre. Las dos listas las busca el
+ * back; los miembros recien se piden al abrir la eleccion.
  */
 export function useBansListView({
   serverId,
@@ -37,45 +34,28 @@ export function useBansListView({
   const [hasOpenedMembers, setHasOpenedMembers] = useState(false);
   const [search, setSearch] = useState("");
 
-  const banList = useBanList(serverId);
+  const isBans = tab === "bans";
+  const banList = useBanList(serverId, isBans ? search : "");
   const candidates = useBanCandidates({
     serverId,
     ownerId,
     currentUserId,
-    search,
+    search: isBans ? "" : search,
     enabled: hasOpenedMembers,
   });
 
-  const isBans = tab === "bans";
   const isSearching = search.trim() !== "";
 
   const banItems = useMemo<UserListItem[] | null>(
     () => banList.bans && banListItems(banList.bans),
     [banList.bans],
   );
-  const banMatches = useMemo(
-    () => filterByDisplayName(banItems ?? [], search),
-    [banItems, search],
-  );
-  const banPagination = usePagination(banMatches);
-
   const memberItems = useMemo<UserListItem[] | null>(
     () => candidates.candidates && memberListItems(candidates.candidates),
     [candidates.candidates],
   );
 
-  // Lo que dibuja la pestaña activa, venga de memoria o del back.
-  const items = isBans ? banItems : memberItems;
-  const pagination = isBans
-    ? banPagination
-    : {
-        pageItems: memberItems ?? [],
-        page: candidates.page,
-        pageCount: candidates.pageCount,
-        total: candidates.total,
-        range: candidates.range,
-        setPage: candidates.setPage,
-      };
+  const list = isBans ? banList : candidates;
 
   const emptyMessage = isBans
     ? isSearching
@@ -89,12 +69,6 @@ export function useBansListView({
     setTab(next);
     if (next === "members") setHasOpenedMembers(true);
     setSearch("");
-    banPagination.resetPage();
-  }
-
-  function changeSearch(value: string) {
-    setSearch(value);
-    banPagination.resetPage();
   }
 
   function reload() {
@@ -109,15 +83,23 @@ export function useBansListView({
     isSearching,
     noun: isBans ? "baneados" : "miembros",
     emptyMessage,
-    errorMessage: isBans ? banList.errorMessage : candidates.errorMessage,
-    items,
-    /** Solo para baneados: la busqueda de miembros la resume la paginacion. */
-    matchCount: isBans ? banMatches.length : null,
-    bansCount: banList.bans?.length ?? 0,
-    pagination,
+    errorMessage: list.errorMessage,
+    items: isBans ? banItems : memberItems,
+    /** El total sin la busqueda; de los miembros solo se sabe si no se busca. */
+    count: isBans
+      ? banList.allTotal
+      : isSearching
+        ? undefined
+        : candidates.candidatesTotal,
+    /** Coincidencias de la busqueda en la lista que se ve. */
+    matches: list.total,
+    page: list.page,
+    pageCount: list.pageCount,
+    range: list.range,
+    setPage: list.setPage,
     unban: banList.unban,
     changeTab,
-    changeSearch,
+    changeSearch: setSearch,
     reload,
   };
 }

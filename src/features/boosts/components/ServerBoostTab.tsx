@@ -7,11 +7,10 @@ import {
 } from "@discordia/client-shared";
 
 import { useEffect, useState } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { View } from "react-native";
 
 import { Button } from "../../../components/ui/Button";
 import { FormErrorBanner } from "../../../components/ui/FormErrorBanner";
-import { useThemeColors } from "../../../theme/theme-context";
 import { usePointsBalance } from "../usePointsBalance";
 import { useServerBoostsPage } from "../useServerBoostsPage";
 import { BoostActionCard } from "./actions/BoostActionCard";
@@ -24,6 +23,7 @@ import { ServerBoostList } from "./actions/ServerBoostList";
 import { useBoostServer } from "./actions/useBoostServer";
 import { useRemoveBoost } from "./actions/useRemoveBoost";
 import { BoostStatusCard } from "./BoostStatusCard";
+import { LoadingSpinner } from "../../../components/ui/LoadingSpinner";
 
 interface ServerBoostTabProps {
   server: ServerSummary;
@@ -39,7 +39,6 @@ export function ServerBoostTab({
   onSummaryStale,
   onBuyPoints,
 }: ServerBoostTabProps) {
-  const colors = useThemeColors();
   const points = usePointsBalance();
   const list = useServerBoostsPage(server.id);
   const boosting = useBoostServer(server.id);
@@ -94,9 +93,7 @@ export function ServerBoostTab({
           />
         </View>
       ) : points.state.status === "loading" ? (
-        <View className="items-center py-6">
-          <ActivityIndicator size="small" color={colors.accentBright} />
-        </View>
+        <LoadingSpinner />
       ) : (
         <BoostActionCard
           serverName={server.name}

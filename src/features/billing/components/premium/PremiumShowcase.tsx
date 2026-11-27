@@ -18,6 +18,7 @@ import {
   type PremiumArtProfile,
   PremiumShowcaseArt,
 } from "./PremiumShowcaseArt";
+import { SettingsGroupLabel } from "../../../../components/ui/SettingsGroup";
 
 interface PremiumShowcaseProps {
   premium: PremiumView;
@@ -71,9 +72,7 @@ export function PremiumShowcase({
       />
 
       <View className="gap-3">
-        <Text className="px-1 text-[11px] font-bold uppercase tracking-[1.4px] text-content-subtle">
-          {BILLING_COPY.benefitsTitle}
-        </Text>
+        <SettingsGroupLabel>{BILLING_COPY.benefitsTitle}</SettingsGroupLabel>
         {PREMIUM_SHOWCASE_BENEFITS.map((benefit) => (
           <View
             key={benefit.id}

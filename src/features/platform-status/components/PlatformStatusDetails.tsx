@@ -13,6 +13,8 @@ import { Text, View } from "react-native";
 import { withAlpha } from "../../../lib/color";
 import { useThemeColors } from "../../../theme/theme-context";
 import { STATUS_TONES } from "./statusTone";
+import { EmptyState } from "../../../components/ui/EmptyState";
+import { SettingsGroup } from "../../../components/ui/SettingsGroup";
 
 export function PlatformStatusDetails({
   status,
@@ -49,23 +51,12 @@ export function PlatformStatusDetails({
       </View>
 
       {showIncidents ? (
-        <View>
-          <View className="mb-3 flex-row items-center gap-2">
-            <Text className="text-[12px] font-bold uppercase tracking-wide text-content-subtle">
-              Incidentes activos
-            </Text>
-            <View className="rounded-full bg-surface-input px-2 py-0.5">
-              <Text className="text-[11px] font-semibold text-content-muted">
-                {incidents.length}
-              </Text>
-            </View>
-          </View>
+        <SettingsGroup label="Incidentes activos" count={incidents.length}>
           {incidents.length === 0 ? (
-            <View className="rounded-2xl border border-dashed border-line px-4 py-8">
-              <Text className="text-center text-[13px] text-content-subtle">
-                No hay incidentes en este momento.
-              </Text>
-            </View>
+            <EmptyState
+              icon="activity"
+              text="No hay incidentes en este momento."
+            />
           ) : (
             <View className="gap-3">
               {incidents.map((incident) => (
@@ -73,7 +64,7 @@ export function PlatformStatusDetails({
               ))}
             </View>
           )}
-        </View>
+        </SettingsGroup>
       ) : null}
     </View>
   );

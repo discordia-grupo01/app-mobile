@@ -22,8 +22,9 @@ import { cn } from "../../../../lib/cn";
 import { useThemeColors } from "../../../../theme/theme-context";
 import { Button } from "../../../../components/ui/Button";
 import { FieldError } from "../../../../components/ui/FieldError";
-import { ModalShell } from "../../../../components/ui/ModalShell";
-import { ModalCloseButton } from "../../../../components/ui/ModalCloseButton";
+import { FormErrorBanner } from "../../../../components/ui/FormErrorBanner";
+import { FullScreenModal } from "../../../../components/ui/FullScreenModal";
+import { FieldLabel } from "../../../../components/ui/FieldLabel";
 
 interface CreateChannelModalProps {
   visible: boolean;
@@ -107,36 +108,35 @@ export function CreateChannelModal({
   }
 
   return (
-    <ModalShell visible={visible} onClose={onClose} className="max-w-110">
-      <ModalCloseButton onPress={onClose} />
-
+    <FullScreenModal
+      visible={visible}
+      title="Crear canal"
+      onClose={onClose}
+      footer={
+        <Button
+          title="Crear canal"
+          onPress={handleSubmit}
+          disabled={!trimmed}
+          isLoading={isSubmitting}
+        />
+      }
+    >
       <ScrollView
-        contentContainerClassName="p-7 pt-8"
+        className="flex-1"
+        contentContainerClassName="px-4.5 pt-5 pb-8"
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View className="mb-5 pr-6">
-          <Text className="text-[17px] font-bold text-content">
-            Crear Canal
-          </Text>
-          <Text className="text-[12px] text-content-subtle mt-1 leading-[17px]">
-            Agrega un canal de texto o voz al servidor.
-          </Text>
-        </View>
+        <Text className="mb-5 text-[14px] leading-5 text-content-muted">
+          Agrega un canal de texto o voz al servidor.
+        </Text>
 
-        {globalError ? (
-          <View className="flex-row items-start gap-2.5 rounded-xl border border-[rgba(224,82,82,0.3)] bg-[rgba(224,82,82,0.1)] px-3.5 py-3 mb-4">
-            <Feather name="alert-circle" size={16} color={colors.danger} />
-            <Text className="flex-1 text-danger text-[13px]">
-              {globalError}
-            </Text>
-          </View>
-        ) : null}
+        <FormErrorBanner message={globalError} />
 
         <View className="mb-4.5">
-          <Text className="text-[11px] font-bold tracking-[1.1px] text-content-subtle mb-2">
-            TIPO DE CANAL
-          </Text>
+          <FieldLabel required className="mb-2">
+            Tipo de canal
+          </FieldLabel>
           <View className="flex-row gap-2">
             <TouchableOpacity
               onPress={() => setKind("text")}
@@ -182,9 +182,9 @@ export function CreateChannelModal({
         </View>
 
         <View className="mb-4.5">
-          <Text className="text-[11px] font-bold tracking-[1.1px] text-content-subtle mb-2">
-            NOMBRE DEL CANAL
-          </Text>
+          <FieldLabel required className="mb-2">
+            Nombre del canal
+          </FieldLabel>
           <View
             className={cn(
               "flex-row items-center gap-2 rounded-xl border bg-surface-input px-3.5 min-h-12",
@@ -211,9 +211,7 @@ export function CreateChannelModal({
         </View>
 
         <View className="mb-4.5">
-          <Text className="text-[11px] font-bold tracking-[1.1px] text-content-subtle mb-2">
-            CATEGORÍA
-          </Text>
+          <FieldLabel className="mb-2">Categoría</FieldLabel>
           <TouchableOpacity
             onPress={() => setIsCategoryDropdownOpen((prev) => !prev)}
             className={cn(
@@ -269,24 +267,8 @@ export function CreateChannelModal({
             </View>
           ) : null}
         </View>
-
-        <View className="flex-row gap-3 mt-2 pt-5 border-t border-t-line">
-          <Button
-            title="Cancelar"
-            variant="secondary"
-            onPress={onClose}
-            style={{ flex: 1, width: undefined }}
-          />
-          <Button
-            title="Crear Canal"
-            onPress={handleSubmit}
-            disabled={!trimmed}
-            isLoading={isSubmitting}
-            style={{ flex: 1, width: undefined }}
-          />
-        </View>
       </ScrollView>
-    </ModalShell>
+    </FullScreenModal>
   );
 }
 

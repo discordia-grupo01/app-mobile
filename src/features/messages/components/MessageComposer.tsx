@@ -15,7 +15,6 @@ import { useEffect, useRef, useState, type ComponentRef } from "react";
 import { Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { cn } from "../../../lib/cn";
 import {
   accountSettingsRequest,
   serverBoostsRequest,
@@ -30,6 +29,7 @@ import { CustomEmojiPremiumOffer } from "../../emojis/components/CustomEmojiPrem
 import { EmojiPreviewChips } from "../../emojis/components/EmojiPreviewChips";
 import type { SendMessageResult } from "../use-channel-messages";
 import { useMentionDraft } from "../useMentionDraft";
+import { useSingleLinePlaceholder } from "../useSingleLinePlaceholder";
 import { AttachmentBoostOffer } from "./AttachmentBoostOffer";
 import { AttachmentChips } from "./AttachmentChips";
 import { AttachmentPremiumOffer } from "./AttachmentPremiumOffer";
@@ -39,6 +39,7 @@ import { EmojiPickerSheet } from "./EmojiPickerSheet";
 import { useMentionDraftChildren } from "./useMentionDraftChildren";
 import { MentionSuggestions } from "./MentionSuggestions";
 import { useMessageMentions } from "./MentionsContext";
+import { CharacterCounter } from "../../../components/ui/CharacterCounter";
 
 const COUNTER_THRESHOLD = MAX_MESSAGE_LENGTH - 200;
 
@@ -76,6 +77,7 @@ export function MessageComposer({
   onOpenPremium = requestPremiumSubscription,
 }: MessageComposerProps) {
   const colors = useThemeColors();
+  const singleLine = useSingleLinePlaceholder(placeholder);
   const insets = useSafeAreaInsets();
   const { sources, resolveMention } = useMessageMentions();
   const draft = useMentionDraft({ sources });
@@ -241,6 +243,17 @@ export function MessageComposer({
           disabled={disabled || isSending || editing !== null}
         />
         <View className="flex-1 justify-center">
+          <Text
+            numberOfLines={1}
+            onTextLayout={singleLine.onTextLayout}
+            pointerEvents="none"
+            importantForAccessibility="no-hide-descendants"
+            accessibilityElementsHidden
+            // Mas angosto que el input: el EditText de Android reserva lugar para el cursor.
+            className="absolute left-0 right-3 text-[15px] opacity-0"
+          >
+            {placeholder}
+          </Text>
           <TextInput
             ref={inputRef}
             // Con menciones el texto va como hijos (cada tramo con su estilo); sin ellas, como `value`.
@@ -254,7 +267,7 @@ export function MessageComposer({
             editable={!disabled && !isSending}
             multiline
             // Nativo: se oculta en el mismo frame de la tecla, sin esperar el render de JS.
-            placeholder={placeholder}
+            placeholder={singleLine.placeholder}
             placeholderTextColor={colors.textSubtle}
             accessibilityLabel={placeholder}
             className="max-h-32 min-h-10 px-0 py-2.5 text-[15px] text-content"
@@ -315,14 +328,11 @@ export function MessageComposer({
       ) : null}
 
       {length >= COUNTER_THRESHOLD ? (
-        <Text
-          className={cn(
-            "mt-1 self-end text-[12px]",
-            length > MAX_MESSAGE_LENGTH ? "text-danger" : "text-highlight",
-          )}
-        >
-          {length}/{MAX_MESSAGE_LENGTH}
-        </Text>
+        <CharacterCounter
+          length={length}
+          max={MAX_MESSAGE_LENGTH}
+          className="mt-1 self-end"
+        />
       ) : null}
 
       <EmojiPickerSheet

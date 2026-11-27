@@ -17,6 +17,7 @@ import { Button } from "../../../../components/ui/Button";
 import { Avatar } from "../../../../components/ui/Avatar";
 import { ModalShell } from "../../../../components/ui/ModalShell";
 import { ModalCloseButton } from "../../../../components/ui/ModalCloseButton";
+import { FieldLabel } from "../../../../components/ui/FieldLabel";
 
 interface JoinServerModalProps {
   visible: boolean;
@@ -147,9 +148,9 @@ export function JoinServerModal({
             ) : null}
 
             <View className="mb-3">
-              <Text className="text-[11px] font-bold tracking-[1.1px] text-content-subtle mb-1.5">
-                ENLACE O CÓDIGO DE INVITACIÓN
-              </Text>
+              <FieldLabel required className="mb-1.5">
+                Enlace o código de invitación
+              </FieldLabel>
               <View
                 className={cn(
                   "flex-row items-center gap-2 rounded-xl border bg-surface-input px-3.5 min-h-12",

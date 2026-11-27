@@ -1,6 +1,7 @@
 import { PERMISSION_COPY, type RolePermission } from "@discordia/client-shared";
 
 import { Text, TouchableOpacity, View } from "react-native";
+import { Switch } from "../../../../components/ui/Switch";
 import { cn } from "../../../../lib/cn";
 
 interface PermissionToggleProps {
@@ -25,7 +26,7 @@ export function PermissionToggle({
       className={cn(
         "flex-row items-center justify-between gap-3 rounded-xl border px-3.5 py-3",
         enabled
-          ? "border-[rgba(36,92,107,0.4)] bg-[rgba(36,92,107,0.12)]"
+          ? "border-accent/40 bg-accent/12"
           : "border-line bg-surface-input",
         disabled && "opacity-50",
       )}
@@ -38,14 +39,12 @@ export function PermissionToggle({
           {copy.desc}
         </Text>
       </View>
-      <View
-        className={cn(
-          "w-10 h-6 rounded-xl p-0.5 justify-center",
-          enabled ? "bg-accent items-end" : "bg-line-strong items-start",
-        )}
-      >
-        <View className="w-5 h-5 rounded-[10px] bg-white" />
-      </View>
+      <Switch
+        checked={enabled}
+        onChange={onChange}
+        label={copy.label}
+        disabled={disabled}
+      />
     </TouchableOpacity>
   );
 }

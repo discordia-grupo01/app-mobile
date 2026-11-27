@@ -1,66 +1,46 @@
-import { type Ban, type UnbanMemberResult } from "@discordia/client-shared";
+import {
+  type Ban,
+  type MemberPageQuery,
+  type UnbanMemberResult,
+} from "@discordia/client-shared";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 
-import { useProfileFallback } from "../../hooks/useProfileFallback";
+import { usePagedList } from "../../hooks/usePagedList";
 import { useRefreshOnChange } from "../../hooks/useRefreshOnChange";
 import { listBans, unbanMember } from "./api";
 
-interface LoadState {
-  bans: Ban[] | null;
-  errorMessage: string;
-}
-
 /**
- * Lista completa de baneados de un servidor, cada uno con el perfil que el
- * back adjunta (solo si falta se pide `GET /users/:id`). `bans` es `null`
- * mientras carga por primera vez; `reload` vuelve a pedir sin vaciar la lista.
- * La busqueda y la paginacion las hace quien lo usa.
+ * Los baneados de un servidor, filtrados por nombre y paginados en el back. Cada uno trae el perfil del usuario (el del baneo, o
+ * `GET /users/:id` si todavia no se replico).
  */
-export function useBanList(serverId: string) {
-  const [state, setState] = useState<LoadState>({
-    bans: null,
-    errorMessage: "",
-  });
-  const [version, setVersion] = useState(0);
+export function useBanList(serverId: string, search: string) {
+  const fetchPage = useCallback(
+    async (query: MemberPageQuery) => {
+      const result = await listBans(serverId, query);
+      return result.ok
+        ? { ok: true as const, items: result.bans, total: result.total }
+        : result;
+    },
+    [serverId],
+  );
+  const list = usePagedList<Ban>({ fetchPage, search });
+  const { total, isSearching, reload } = list;
 
-  useEffect(() => {
-    let cancelled = false;
-    listBans(serverId).then((result) => {
-      if (cancelled) return;
-      setState(
-        result.ok
-          ? { bans: result.bans, errorMessage: "" }
-          : { bans: [], errorMessage: result.message },
-      );
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [serverId, version]);
+  // El total del encabezado es el de todos los baneados, no el de la busqueda.
+  const [allTotal, setAllTotal] = useState(0);
+  if (!isSearching && allTotal !== total) setAllTotal(total);
+
+  useRefreshOnChange({ resources: ["moderation"], serverId }, reload);
 
   const unban = useCallback(
     async (userId: string): Promise<UnbanMemberResult> => {
       const result = await unbanMember(serverId, userId);
-      if (result.ok) {
-        setState((prev) => ({
-          ...prev,
-          bans: prev.bans?.filter((ban) => ban.user_id !== userId) ?? null,
-        }));
-      }
+      if (result.ok) reload();
       return result;
     },
-    [serverId],
+    [serverId, reload],
   );
 
-  const reload = useCallback(() => setVersion((v) => v + 1), []);
-
-  useRefreshOnChange({ resources: ["moderation"], serverId }, reload);
-
-  return {
-    bans: useProfileFallback(state.bans),
-    errorMessage: state.errorMessage,
-    unban,
-    reload,
-  };
+  return { ...list, bans: list.items, allTotal, unban };
 }

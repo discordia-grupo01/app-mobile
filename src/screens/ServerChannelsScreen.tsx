@@ -119,6 +119,8 @@ interface ServerChannelsScreenProps {
   canInvite?: boolean;
   onPermissionsChanged?: () => void;
   onChannelPermissionsSaved?: () => void;
+  /** Último canal abierto en este servidor, para resaltarlo en la lista. */
+  activeChannelId?: string | null;
   onSelectChannel: (channelId: string) => void;
   onOpenDirectMessages: () => void;
   unreadDmCount?: number;
@@ -153,6 +155,7 @@ export function ServerChannelsScreen({
   canInvite = false,
   onPermissionsChanged,
   onChannelPermissionsSaved,
+  activeChannelId = null,
   onSelectChannel,
   onOpenDirectMessages,
   unreadDmCount,
@@ -498,6 +501,7 @@ export function ServerChannelsScreen({
     return {
       channel,
       hasOptions: hasOptionsFor(channel),
+      isActive: channel.id === activeChannelId,
       unread: unreadByChannel[channel.id],
       isMuted:
         notificationSettings !== null &&

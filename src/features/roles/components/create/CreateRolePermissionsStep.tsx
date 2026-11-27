@@ -6,10 +6,10 @@ import {
 import { ScrollView, Text, View } from "react-native";
 
 import { Button } from "../../../../components/ui/Button";
-import { cn } from "../../../../lib/cn";
 
 import { PermissionToggle } from "../shared/PermissionToggle";
 import { RolePreviewBadge } from "../shared/RolePreviewBadge";
+import { SettingsGroupLabel } from "../../../../components/ui/SettingsGroup";
 
 interface CreateRolePermissionsStepProps {
   newName: string;
@@ -47,14 +47,7 @@ export function CreateRolePermissionsStep({
         </Text>
 
         <View className="gap-0">
-          <Text
-            className={cn(
-              "text-[11px] font-bold tracking-[1px] uppercase text-content-subtle",
-              "mb-2.5",
-            )}
-          >
-            Permisos
-          </Text>
+          <SettingsGroupLabel className="mb-2.5">Permisos</SettingsGroupLabel>
           <View className="gap-2">
             {ROLE_PERMISSIONS.map((perm) => (
               <PermissionToggle

@@ -12,7 +12,7 @@ import {
 } from "@discordia/client-shared";
 import { Feather } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 
 import { Button } from "../../../components/ui/Button";
 import { FormErrorBanner } from "../../../components/ui/FormErrorBanner";
@@ -24,6 +24,9 @@ import { DeleteEmojiSheet } from "./DeleteEmojiSheet";
 import { EmojiCapacityCard } from "./EmojiCapacityCard";
 import { EmojiRow } from "./EmojiRow";
 import { UploadEmojiSheet } from "./UploadEmojiSheet";
+import { LoadingSpinner } from "../../../components/ui/LoadingSpinner";
+import { EmptyState } from "../../../components/ui/EmptyState";
+import { SettingsGroup } from "../../../components/ui/SettingsGroup";
 
 interface ServerEmojisStepProps {
   server: ServerSummary;
@@ -135,23 +138,14 @@ export function ServerEmojisStep({
         />
       ) : null}
 
-      {/* Lista de emojis */}
-      <View>
-        <Text className="mb-2 text-[12px] font-bold uppercase tracking-wider text-content-subtle">
-          Emojis del servidor ({emojis.length})
-        </Text>
-
-        <View className="overflow-hidden rounded-2xl border border-line bg-surface-raised">
-          {isLoading && !page ? (
-            <View className="p-8 items-center justify-center">
-              <ActivityIndicator color={colors.accent} />
-            </View>
-          ) : emojis.length === 0 ? (
-            <Text className="p-4.5 text-center text-[13px] text-content-subtle">
-              {EMOJIS_EMPTY_NOTICE}
-            </Text>
-          ) : (
-            emojis.map((emoji) => (
+      <SettingsGroup label="Emojis del servidor" count={emojis.length}>
+        {isLoading && !page ? (
+          <LoadingSpinner />
+        ) : emojis.length === 0 ? (
+          <EmptyState icon="smile" text={EMOJIS_EMPTY_NOTICE} />
+        ) : (
+          <View className="overflow-hidden rounded-2xl border border-line bg-surface-raised">
+            {emojis.map((emoji) => (
               <EmojiRow
                 key={emoji.id}
                 emoji={emoji}
@@ -160,10 +154,10 @@ export function ServerEmojisStep({
                 isPremium={isPremium}
                 onDelete={setEmojiToDelete}
               />
-            ))
-          )}
-        </View>
-      </View>
+            ))}
+          </View>
+        )}
+      </SettingsGroup>
 
       <UploadEmojiSheet
         visible={isUploadOpen}

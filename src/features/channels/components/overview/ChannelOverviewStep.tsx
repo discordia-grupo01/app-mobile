@@ -15,19 +15,8 @@ import { FieldError } from "../../../../components/ui/FieldError";
 import { cn } from "../../../../lib/cn";
 import { useThemeColors } from "../../../../theme/theme-context";
 import type { ChannelOverviewForm } from "./useChannelOverviewForm";
-
-function Counter({ length, max }: { length: number; max: number }) {
-  return (
-    <Text
-      className={cn(
-        "text-[11px]",
-        length > max ? "text-danger" : "text-content-subtle",
-      )}
-    >
-      {length}/{max}
-    </Text>
-  );
-}
+import { FieldLabel } from "../../../../components/ui/FieldLabel";
+import { CharacterCounter } from "../../../../components/ui/CharacterCounter";
 
 interface ChannelOverviewStepProps {
   kind: Channel["kind"];
@@ -41,10 +30,8 @@ export function ChannelOverviewStep({ kind, form }: ChannelOverviewStepProps) {
     <View className="gap-6">
       <View>
         <View className="flex-row items-center justify-between mb-2">
-          <Text className="text-[11px] font-bold tracking-[1.1px] text-content-subtle uppercase">
-            {CHANNEL_NAME_LABEL} <Text className="text-danger">*</Text>
-          </Text>
-          <Counter length={form.name.trim().length} max={MAX_NAME} />
+          <FieldLabel required>{CHANNEL_NAME_LABEL}</FieldLabel>
+          <CharacterCounter length={form.name.trim().length} max={MAX_NAME} />
         </View>
         <View
           className={cn(
@@ -72,10 +59,8 @@ export function ChannelOverviewStep({ kind, form }: ChannelOverviewStepProps) {
       {kind === "text" ? (
         <View>
           <View className="flex-row items-center justify-between mb-2">
-            <Text className="text-[11px] font-bold tracking-[1.1px] text-content-subtle uppercase">
-              {CHANNEL_TOPIC_LABEL}
-            </Text>
-            <Counter
+            <FieldLabel>{CHANNEL_TOPIC_LABEL}</FieldLabel>
+            <CharacterCounter
               length={form.topic.trim().length}
               max={MAX_CHANNEL_TOPIC}
             />

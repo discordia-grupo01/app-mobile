@@ -1,11 +1,12 @@
 import {
   eligibleBanCandidates,
+  type Member,
   type MemberPageQuery,
 } from "@discordia/client-shared";
 
 import { useCallback, useMemo } from "react";
 
-import { useMemberPages } from "../../hooks/useMemberPages";
+import { usePagedList } from "../../hooks/usePagedList";
 import { listMembers } from "../servers/api";
 
 interface UseBanCandidatesOptions {
@@ -13,14 +14,14 @@ interface UseBanCandidatesOptions {
   ownerId: string;
   currentUserId: string | null;
   search: string;
-  /** No pide nada hasta que la pestaña se abre por primera vez. */
+  /** No pide nada hasta que se abre la eleccion por primera vez. */
   enabled: boolean;
 }
 
 /**
  * Miembros que se pueden ofrecer para banear (ver `eligibleBanCandidates`),
- * de a una pagina del back. El propietario y uno mismo se sacan de la pagina,
- * asi que esa pagina muestra uno menos.
+ * paginados en el back. El propietario y uno mismo se sacan de lo
+ * cargado, asi que esa pagina muestra uno menos.
  */
 export function useBanCandidates({
   serverId,
@@ -30,18 +31,30 @@ export function useBanCandidates({
   enabled,
 }: UseBanCandidatesOptions) {
   const fetchPage = useCallback(
-    (query: MemberPageQuery) => listMembers(serverId, query),
+    async (query: MemberPageQuery) => {
+      const result = await listMembers(serverId, query);
+      return result.ok
+        ? { ok: true as const, items: result.members, total: result.total }
+        : result;
+    },
     [serverId],
   );
-  const pages = useMemberPages({ fetchPage, search, enabled });
+  const list = usePagedList<Member>({ fetchPage, search, enabled });
 
   const candidates = useMemo(
     () =>
-      pages.members
-        ? eligibleBanCandidates(pages.members, ownerId, currentUserId)
+      list.items
+        ? eligibleBanCandidates(list.items, ownerId, currentUserId)
         : null,
-    [pages.members, ownerId, currentUserId],
+    [list.items, ownerId, currentUserId],
   );
 
-  return { ...pages, candidates };
+  // El back cuenta al propietario y a uno mismo, que siempre son miembros.
+  const excluded = currentUserId && currentUserId !== ownerId ? 2 : 1;
+
+  return {
+    ...list,
+    candidates,
+    candidatesTotal: Math.max(0, list.total - excluded),
+  };
 }

@@ -40,7 +40,7 @@ import {
   MessageSearchHint,
   MessageSearchSkeleton,
 } from "./MessageSearchStatus";
-import { useModalInsets } from "../../platform-status/hooks/useModalInsets";
+import { useModalInsets } from "../../../hooks/useModalInsets";
 
 interface MessageSearchModalProps {
   visible: boolean;

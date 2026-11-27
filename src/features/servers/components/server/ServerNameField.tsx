@@ -3,11 +3,13 @@ import {
   SERVER_NAME_LABEL,
   SERVER_NAME_PLACEHOLDER,
 } from "@discordia/client-shared";
-import { Text, TextInput, View } from "react-native";
+import { TextInput, View } from "react-native";
 
 import { FieldError } from "../../../../components/ui/FieldError";
 import { cn } from "../../../../lib/cn";
 import { useThemeColors } from "../../../../theme/theme-context";
+import { FieldLabel } from "../../../../components/ui/FieldLabel";
+import { CharacterCounter } from "../../../../components/ui/CharacterCounter";
 
 interface ServerNameFieldProps {
   value: string;
@@ -27,17 +29,8 @@ export function ServerNameField({
   return (
     <View>
       <View className="flex-row items-center justify-between mb-1.5">
-        <Text className="text-[11px] font-bold tracking-[1.1px] text-content-subtle uppercase">
-          {SERVER_NAME_LABEL} <Text className="text-danger">*</Text>
-        </Text>
-        <Text
-          className={cn(
-            "text-[11px]",
-            value.length > MAX_NAME ? "text-danger" : "text-content-subtle",
-          )}
-        >
-          {value.length}/{MAX_NAME}
-        </Text>
+        <FieldLabel required>{SERVER_NAME_LABEL}</FieldLabel>
+        <CharacterCounter length={value.length} max={MAX_NAME} />
       </View>
       <View
         className={cn(

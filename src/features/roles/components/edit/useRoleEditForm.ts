@@ -222,3 +222,5 @@ export function useRoleEditForm(
     handleDelete,
   };
 }
+
+export type RoleEditForm = ReturnType<typeof useRoleEditForm>;

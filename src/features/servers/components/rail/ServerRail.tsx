@@ -58,6 +58,7 @@ function ServerRailIcon({
   onPress: () => void;
   onLongPress?: () => void;
 }) {
+  const colors = useThemeColors();
   const notificationSettings = useOptionalNotificationSettings();
   const pendingReportsContext = usePendingReportsContext();
   const isMuted =
@@ -121,6 +122,14 @@ function ServerRailIcon({
           label={pendingReportsLabel(pendingReports, item.name)}
           className="absolute top-0 right-2 border-2 border-surface-servers"
         />
+      ) : null}
+      {isSuspended ? (
+        <View
+          pointerEvents="none"
+          className="absolute bottom-0 right-2 h-[18px] w-[18px] items-center justify-center rounded-full border-2 border-surface-servers bg-warning"
+        >
+          <Feather name="alert-triangle" size={10} color={colors.onAccent} />
+        </View>
       ) : null}
       {/* Desde el nivel 1, el ícono de nivel en la esquina; con menciones sin
           leer, la esquina es del contador. */}

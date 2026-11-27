@@ -101,7 +101,7 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
       </Text>
 
       <TextField
-        label="CORREO ELECTRÓNICO"
+        label="Correo electrónico"
         placeholder="tu@email.com"
         keyboardType="email-address"
         autoCapitalize="none"

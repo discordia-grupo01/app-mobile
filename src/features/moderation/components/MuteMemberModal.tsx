@@ -34,6 +34,8 @@ import { useThemeColors } from "../../../theme/theme-context";
 import { BanModalHeader } from "../../bans/components/BanModalHeader";
 import { type BanTarget } from "../../bans/types";
 import { muteMember } from "../api";
+import { FieldLabel } from "../../../components/ui/FieldLabel";
+import { CharacterCounter } from "../../../components/ui/CharacterCounter";
 
 const DEFAULT_DURATION_ID = "1h";
 const DURATION_COLUMNS = 3;
@@ -46,10 +48,6 @@ interface MuteMemberModalProps {
   onMuted: (untilAt: string) => void;
 }
 
-/**
- * Silenciar por un tiempo (#60 CA1): se elige la duracion y, opcional, el
- * motivo. Al vencer, el back lo levanta solo (CA2).
- */
 export function MuteMemberModal({
   serverId,
   target,
@@ -119,9 +117,9 @@ export function MuteMemberModal({
           </View>
 
           <View>
-            <Text className="mb-1.5 text-[11px] font-bold uppercase tracking-[1.2px] text-content-subtle">
+            <FieldLabel required className="mb-1.5">
               {MUTE_DURATION_LABEL}
-            </Text>
+            </FieldLabel>
             <View className="gap-2" accessibilityRole="radiogroup">
               {rows.map((row) => (
                 <View key={row[0].id} className="flex-row gap-2">
@@ -163,18 +161,11 @@ export function MuteMemberModal({
 
           <View>
             <View className="mb-1.5 flex-row items-center justify-between gap-2">
-              <Text className="shrink text-[11px] font-bold uppercase tracking-[1.2px] text-content-subtle">
-                {MUTE_REASON_LABEL} (opcional)
-              </Text>
-              <Text
-                className={
-                  reasonError
-                    ? "text-xs text-danger"
-                    : "text-xs text-content-subtle"
-                }
-              >
-                {[...reason].length}/{BAN_REASON_MAX_LENGTH}
-              </Text>
+              <FieldLabel>{MUTE_REASON_LABEL} (opcional)</FieldLabel>
+              <CharacterCounter
+                length={[...reason].length}
+                max={BAN_REASON_MAX_LENGTH}
+              />
             </View>
             <TextInput
               value={reason}

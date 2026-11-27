@@ -16,79 +16,18 @@ import {
   type ServerSummary,
   WORD_FILTER_TITLE,
 } from "@discordia/client-shared";
-import { Feather } from "@expo/vector-icons";
-import { type ComponentProps, type ReactElement, type ReactNode } from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 
 import { Avatar } from "../../../../../components/ui/Avatar";
-import { cn } from "../../../../../lib/cn";
-import { useThemeColors } from "../../../../../theme/theme-context";
+import { SettingsMenuRow } from "../../../../../components/ui/SettingsMenuRow";
+import { BanIcon } from "../../../../bans/components/BanIcon";
 import { BoostsSectionIcon } from "../../../../boosts/components/BoostsSectionIcon";
 import { useServerEmojis } from "../../../../emojis/useServerEmojis";
 import { ReportsBadge } from "../../../../reports/components/shared/ReportsBadge";
 import { resolveServerIconUrl } from "../../../api";
 import type { SettingsStep } from "./SettingsHeader";
-
-type FeatherIconName = ComponentProps<typeof Feather>["name"];
-
-function SettingsRow({
-  icon,
-  title,
-  subtitle,
-  danger,
-  badge,
-  onPress,
-}: {
-  /** Nombre de un icono de Feather, o un icono propio ya dibujado. */
-  icon: FeatherIconName | ReactElement;
-  title: string;
-  subtitle: string;
-  danger?: boolean;
-  /** Va antes de la flecha (por ejemplo, los reportes pendientes). */
-  badge?: ReactNode;
-  onPress: () => void;
-}) {
-  const colors = useThemeColors();
-  return (
-    <TouchableOpacity
-      activeOpacity={0.75}
-      onPress={onPress}
-      className="flex-row items-center gap-4 rounded-2xl border border-line bg-surface-raised p-4"
-      accessibilityRole="button"
-      accessibilityLabel={title}
-    >
-      <View
-        className={cn(
-          "w-11 h-11 rounded-xl items-center justify-center",
-          danger ? "bg-[rgba(224,82,82,0.14)]" : "bg-[rgba(36,92,107,0.3)]",
-        )}
-      >
-        {typeof icon === "string" ? (
-          <Feather
-            name={icon}
-            size={20}
-            color={danger ? colors.danger : colors.sky}
-          />
-        ) : (
-          icon
-        )}
-      </View>
-      <View className="flex-1">
-        <Text
-          className={cn(
-            "text-[16px] font-bold mb-0.5",
-            danger ? "text-danger" : "text-content",
-          )}
-        >
-          {title}
-        </Text>
-        <Text className="text-[13px] text-content-subtle">{subtitle}</Text>
-      </View>
-      {badge}
-      <Feather name="chevron-right" size={18} color={colors.textSubtle} />
-    </TouchableOpacity>
-  );
-}
+import { MenuGroupLabel } from "../../../../../components/ui/MenuGroupLabel";
+import { useThemeColors } from "../../../../../theme/theme-context";
 
 interface SettingsMenuStepProps {
   server: ServerSummary;
@@ -114,16 +53,14 @@ export function SettingsMenuStep({
   pendingReports,
   onSelect,
 }: SettingsMenuStepProps) {
+  const colors = useThemeColors();
   const { page } = useServerEmojis(server.id);
   const emojiBadgeText = page
     ? emojiSlotsBadge(page.emojis.length, page.max_emojis)
     : undefined;
 
   return (
-    <ScrollView
-      className="flex-1"
-      contentContainerClassName="px-4.5 gap-3 pb-6"
-    >
+    <ScrollView className="flex-1" contentContainerClassName="px-4.5 pb-6">
       <View className="items-center pt-7 pb-6">
         <Avatar
           name={server.name}
@@ -139,21 +76,22 @@ export function SettingsMenuStep({
         </Text>
       </View>
 
+      <MenuGroupLabel>Servidor</MenuGroupLabel>
       {canManageServer ? (
-        <SettingsRow
+        <SettingsMenuRow
           icon="edit-2"
           title="Perfil del servidor"
           subtitle="Banner, ícono y nombre"
           onPress={() => onSelect("profile")}
         />
       ) : null}
-      <SettingsRow
+      <SettingsMenuRow
         icon={<BoostsSectionIcon size={22} />}
         title={BOOSTS_SECTION_TITLE}
         subtitle={BOOSTS_SECTION_SUBTITLE}
         onPress={() => onSelect("boosts")}
       />
-      <SettingsRow
+      <SettingsMenuRow
         icon="smile"
         title={EMOJIS_SECTION_TITLE}
         subtitle={EMOJIS_SECTION_SUBTITLE}
@@ -166,8 +104,11 @@ export function SettingsMenuStep({
         }
         onPress={() => onSelect("emojis")}
       />
+      {canManageRoles || canBanMembers ? (
+        <MenuGroupLabel>Miembros</MenuGroupLabel>
+      ) : null}
       {canManageRoles ? (
-        <SettingsRow
+        <SettingsMenuRow
           icon="shield"
           title={ROLES_SECTION_TITLE}
           subtitle={ROLES_SECTION_SUBTITLE}
@@ -175,15 +116,18 @@ export function SettingsMenuStep({
         />
       ) : null}
       {canBanMembers ? (
-        <SettingsRow
-          icon="shield-off"
+        <SettingsMenuRow
+          icon={<BanIcon size={20} color={colors.sky} />}
           title={BANS_SECTION_TITLE}
           subtitle={BANS_SECTION_SUBTITLE}
           onPress={() => onSelect("bans")}
         />
       ) : null}
+      {canManageMessages || canReviewReports ? (
+        <MenuGroupLabel>Moderación</MenuGroupLabel>
+      ) : null}
       {canManageMessages ? (
-        <SettingsRow
+        <SettingsMenuRow
           icon="slash"
           title={WORD_FILTER_TITLE}
           subtitle="Mensajes que no se pueden enviar"
@@ -191,7 +135,7 @@ export function SettingsMenuStep({
         />
       ) : null}
       {canReviewReports ? (
-        <SettingsRow
+        <SettingsMenuRow
           icon="flag"
           title={REPORTS_TITLE}
           subtitle={REPORTS_DESCRIPTION}
@@ -207,7 +151,7 @@ export function SettingsMenuStep({
         />
       ) : null}
       {canReviewReports ? (
-        <SettingsRow
+        <SettingsMenuRow
           icon="file-text"
           title={MODERATION_AUDIT_TITLE}
           subtitle={MODERATION_AUDIT_DESCRIPTION}
@@ -216,8 +160,8 @@ export function SettingsMenuStep({
       ) : null}
       {isOwner ? (
         <>
-          <View className="h-px bg-line mx-1 my-1" />
-          <SettingsRow
+          <View className="mx-1 mb-3 mt-2 h-px bg-line" />
+          <SettingsMenuRow
             icon="trash-2"
             title="Eliminar servidor"
             subtitle="Esta acción no se puede deshacer"

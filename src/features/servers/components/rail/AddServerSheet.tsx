@@ -9,6 +9,7 @@ import {
 } from "react-native";
 
 import { useThemeColors } from "../../../../theme/theme-context";
+import { Button } from "../../../../components/ui/Button";
 
 interface AddServerSheetProps {
   visible: boolean;
@@ -78,15 +79,12 @@ export function AddServerSheet({
             <Feather name="chevron-right" size={18} color={colors.textSubtle} />
           </TouchableOpacity>
 
-          <TouchableOpacity
-            activeOpacity={0.75}
-            className="mt-2 items-center py-3.5 rounded-xl bg-surface-input"
+          <Button
+            title="Cancelar"
+            variant="secondary"
+            className="mt-2"
             onPress={onClose}
-          >
-            <Text className="text-[14px] font-bold text-content-muted">
-              Cancelar
-            </Text>
-          </TouchableOpacity>
+          />
         </View>
       </View>
     </Modal>

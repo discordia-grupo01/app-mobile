@@ -104,7 +104,7 @@ export function RoleOverrideEditor({
 
       {channelPermissionGroupsFor(channelKind).map((group) => (
         <View key={group.title} className="mt-6">
-          <Text className="text-[11px] font-bold tracking-[1.1px] text-content-subtle uppercase mb-2 ml-1">
+          <Text className="text-[14px] font-semibold text-content mb-2 ml-1">
             {group.title}
           </Text>
           <View className="overflow-hidden rounded-2xl border border-line">

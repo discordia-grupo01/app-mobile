@@ -16,6 +16,7 @@ import { Button } from "../../../../components/ui/Button";
 import { ModalShell } from "../../../../components/ui/ModalShell";
 import { ModalCloseButton } from "../../../../components/ui/ModalCloseButton";
 import { useDeleteServerConfirm } from "../../useDeleteServerConfirm";
+import { FieldLabel } from "../../../../components/ui/FieldLabel";
 
 interface DeleteServerFieldsProps {
   serverName: string;
@@ -64,9 +65,9 @@ export function DeleteServerFields({
       ) : null}
 
       <View className="w-full mt-4">
-        <Text className="text-[11px] font-bold tracking-[1.1px] text-content-subtle mb-1.5 uppercase">
+        <FieldLabel required className="mb-1.5">
           {DELETE_SERVER_NAME_LABEL}
-        </Text>
+        </FieldLabel>
         <View className="rounded-xl border border-line bg-surface-input px-3.5 min-h-12 justify-center">
           <TextInput
             value={typedName}

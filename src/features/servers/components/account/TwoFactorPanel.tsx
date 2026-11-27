@@ -1,11 +1,9 @@
 import {
   hasErrors,
-  type SetPasswordErrors,
   type TwoFactorCodeErrors,
   type TwoFactorPasswordErrors,
   type TwoFactorSetup,
   type TwoFactorStatus,
-  validateSetPassword,
   validateTwoFactorActivationCode,
   validateTwoFactorPassword,
 } from "@discordia/client-shared";
@@ -15,13 +13,13 @@ import {
   useCallback,
   useEffect,
   useState,
+  type MutableRefObject,
   type RefObject,
   type ComponentRef,
 } from "react";
-import { ActivityIndicator, ScrollView, View } from "react-native";
+import { ScrollView, View } from "react-native";
 
-import { useThemeColors } from "../../../../theme/theme-context";
-import { setPasswordService } from "../../../auth/service";
+import { useSetPasswordForm } from "../../../auth/useSetPasswordForm";
 import {
   activateTwoFactorService,
   disableTwoFactorService,
@@ -32,13 +30,22 @@ import {
 import { TwoFactorCodesStep } from "./two-factor/TwoFactorCodesStep";
 import { TwoFactorDisabledConfirmationStep } from "./two-factor/TwoFactorDisabledConfirmationStep";
 import { TwoFactorPasswordStep } from "./two-factor/TwoFactorPasswordStep";
-import { TwoFactorSetPasswordStep } from "./two-factor/TwoFactorSetPasswordStep";
+import {
+  TWO_FACTOR_SET_PASSWORD_COPY,
+  TwoFactorSetPasswordStep,
+} from "./two-factor/TwoFactorSetPasswordStep";
 import { TwoFactorSetupStep } from "./two-factor/TwoFactorSetupStep";
 import { TwoFactorStatusStep } from "./two-factor/TwoFactorStatusStep";
+import { LoadingSpinner } from "../../../../components/ui/LoadingSpinner";
 
 interface TwoFactorPanelProps {
+  /** Vuelve a Seguridad. */
   onClose: () => void;
   scrollRef: RefObject<ComponentRef<typeof ScrollView> | null>;
+  /** El titulo del paso va en el encabezado de la hoja, como en web. */
+  onTitleChange: (title: string) => void;
+  /** La flecha de la hoja vuelve un paso adentro del panel. */
+  backRef: MutableRefObject<(() => void) | null>;
 }
 
 type Step =
@@ -50,9 +57,25 @@ type Step =
   | "regenerate"
   | "disabled-confirmation";
 
-export function TwoFactorPanel({ onClose, scrollRef }: TwoFactorPanelProps) {
-  const colors = useThemeColors();
+const STEP_TITLES: Record<Step, string> = {
+  status: "Verificación en dos pasos",
+  "set-password": TWO_FACTOR_SET_PASSWORD_COPY.title,
+  setup: "Conectá tu app autenticadora",
+  codes: "Guardá tus códigos de recuperación",
+  disable: "Desactivar verificación en dos pasos",
+  regenerate: "Generar códigos nuevos",
+  "disabled-confirmation": "Verificación en dos pasos desactivada",
+};
 
+/** Desde estos pasos la flecha sale a Seguridad; desde el resto, vuelve al estado. */
+const EXITS_TO_SECURITY: Step[] = ["status", "setup", "disabled-confirmation"];
+
+export function TwoFactorPanel({
+  onClose,
+  scrollRef,
+  onTitleChange,
+  backRef,
+}: TwoFactorPanelProps) {
   const [step, setStep] = useState<Step>("status");
   const [status, setStatus] = useState<TwoFactorStatus | null>(null);
   const [setup, setSetup] = useState<TwoFactorSetup | null>(null);
@@ -69,12 +92,7 @@ export function TwoFactorPanel({ onClose, scrollRef }: TwoFactorPanelProps) {
   );
   const [copied, setCopied] = useState(false);
 
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [newPasswordErrors, setNewPasswordErrors] = useState<SetPasswordErrors>(
-    {},
-  );
-  const [passwordAlreadySet, setPasswordAlreadySet] = useState(false);
+  const setPasswordForm = useSetPasswordForm(() => void handleStartSetup());
 
   const loadStatus = useCallback(() => {
     return getTwoFactorStatusService().then((result) => {
@@ -116,6 +134,14 @@ export function TwoFactorPanel({ onClose, scrollRef }: TwoFactorPanelProps) {
     scrollRef.current?.scrollTo({ y: 0, animated: false });
   }, [step, scrollRef]);
 
+  useEffect(() => {
+    onTitleChange(STEP_TITLES[step]);
+  }, [step, onTitleChange]);
+
+  useEffect(() => {
+    backRef.current = EXITS_TO_SECURITY.includes(step) ? onClose : backToStatus;
+  });
+
   function resetForms() {
     setCode("");
     setCodeErrors({});
@@ -123,10 +149,7 @@ export function TwoFactorPanel({ onClose, scrollRef }: TwoFactorPanelProps) {
     setPasswordErrors({});
     setFormError(null);
     setCopied(false);
-    setNewPassword("");
-    setConfirmPassword("");
-    setNewPasswordErrors({});
-    setPasswordAlreadySet(false);
+    setPasswordForm.reset();
   }
 
   function backToStatus() {
@@ -154,33 +177,6 @@ export function TwoFactorPanel({ onClose, scrollRef }: TwoFactorPanelProps) {
     }
     setSetup(result.setup);
     setStep("setup");
-  }
-
-  async function handleSetPassword() {
-    const nextErrors = validateSetPassword({
-      password: newPassword,
-      confirmPassword,
-    });
-    setNewPasswordErrors(nextErrors);
-    if (hasErrors(nextErrors)) return;
-
-    setFormError(null);
-    setIsSubmitting(true);
-    const result = await setPasswordService(newPassword);
-    setIsSubmitting(false);
-
-    if (!result.ok) {
-      // Carrera entre pestañas/dispositivos: la cuenta ya consiguió una
-      // contraseña mientras se completaba este paso. No bloquea -- se puede
-      // seguir directo al QR.
-      if (result.alreadySet) {
-        setPasswordAlreadySet(true);
-      }
-      setFormError(result.message);
-      return;
-    }
-
-    void handleStartSetup();
   }
 
   async function handleActivate() {
@@ -252,11 +248,7 @@ export function TwoFactorPanel({ onClose, scrollRef }: TwoFactorPanelProps) {
 
   let content;
   if (isLoading) {
-    content = (
-      <View className="items-center py-10">
-        <ActivityIndicator color={colors.accent} />
-      </View>
-    );
+    content = <LoadingSpinner />;
   } else if (step === "status") {
     content = (
       <TwoFactorStatusStep
@@ -272,23 +264,21 @@ export function TwoFactorPanel({ onClose, scrollRef }: TwoFactorPanelProps) {
           resetForms();
           setStep("disable");
         }}
-        onClose={onClose}
       />
     );
   } else if (step === "set-password") {
     content = (
       <TwoFactorSetPasswordStep
-        password={newPassword}
-        confirmPassword={confirmPassword}
-        errors={newPasswordErrors}
-        formError={formError}
-        alreadySet={passwordAlreadySet}
-        isSubmitting={isSubmitting}
-        onPasswordChange={setNewPassword}
-        onConfirmPasswordChange={setConfirmPassword}
-        onSubmit={handleSetPassword}
+        password={setPasswordForm.password}
+        confirmPassword={setPasswordForm.confirmPassword}
+        errors={setPasswordForm.errors}
+        formError={setPasswordForm.formError ?? formError}
+        alreadySet={setPasswordForm.alreadySet}
+        isSubmitting={setPasswordForm.isSubmitting || isSubmitting}
+        onPasswordChange={setPasswordForm.setPassword}
+        onConfirmPasswordChange={setPasswordForm.setConfirmPassword}
+        onSubmit={() => void setPasswordForm.submit()}
         onContinueAnyway={handleStartSetup}
-        onCancel={backToStatus}
       />
     );
   } else if (step === "setup" && setup) {
@@ -301,7 +291,6 @@ export function TwoFactorPanel({ onClose, scrollRef }: TwoFactorPanelProps) {
         isSubmitting={isSubmitting}
         onCodeChange={setCode}
         onActivate={handleActivate}
-        onCancel={onClose}
       />
     );
   } else if (step === "codes") {
@@ -323,11 +312,6 @@ export function TwoFactorPanel({ onClose, scrollRef }: TwoFactorPanelProps) {
   } else {
     content = (
       <TwoFactorPasswordStep
-        title={
-          step === "disable"
-            ? "Desactivar verificación en dos pasos"
-            : "Generar códigos nuevos"
-        }
         description={
           step === "disable"
             ? "Reingresá tu contraseña para confirmar. Después de esto solo te vamos a pedir tu contraseña para entrar."
@@ -341,7 +325,6 @@ export function TwoFactorPanel({ onClose, scrollRef }: TwoFactorPanelProps) {
         isSubmitting={isSubmitting}
         onPasswordChange={setPassword}
         onConfirm={step === "disable" ? handleDisable : handleRegenerate}
-        onCancel={backToStatus}
       />
     );
   }

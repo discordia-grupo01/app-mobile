@@ -2,16 +2,16 @@ import {
   MODERATION_AUDIT_DESCRIPTION,
   MODERATION_AUDIT_EMPTY,
 } from "@discordia/client-shared";
-import { ActivityIndicator, ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 
 import { FormErrorBanner } from "../../../components/ui/FormErrorBanner";
 import { PaginationFooter } from "../../../components/ui/PaginationFooter";
-import { useThemeColors } from "../../../theme/theme-context";
 import { AuditEntryRow } from "./AuditEntryRow";
 import { useModerationAudit } from "./useModerationAudit";
+import { LoadingSpinner } from "../../../components/ui/LoadingSpinner";
+import { EmptyState } from "../../../components/ui/EmptyState";
 
 export function ModerationAuditStep({ serverId }: { serverId: string }) {
-  const colors = useThemeColors();
   const audit = useModerationAudit(serverId);
 
   return (
@@ -27,13 +27,9 @@ export function ModerationAuditStep({ serverId }: { serverId: string }) {
         <FormErrorBanner message={audit.loadError} />
 
         {audit.entries === null ? (
-          <View className="items-center py-6">
-            <ActivityIndicator size="small" color={colors.accentBright} />
-          </View>
+          <LoadingSpinner />
         ) : audit.entries.length === 0 && !audit.loadError ? (
-          <Text className="py-6 text-center text-[14px] text-content-subtle">
-            {MODERATION_AUDIT_EMPTY}
-          </Text>
+          <EmptyState icon="file-text" text={MODERATION_AUDIT_EMPTY} />
         ) : (
           <View className="gap-3">
             {audit.entries.map((entry) => (
@@ -41,18 +37,18 @@ export function ModerationAuditStep({ serverId }: { serverId: string }) {
             ))}
           </View>
         )}
+        {audit.pageCount > 1 ? (
+          <PaginationFooter
+            className="mt-1"
+            page={audit.page}
+            pageCount={audit.pageCount}
+            range={audit.range}
+            total={audit.total}
+            noun="acciones"
+            onPageChange={audit.setPage}
+          />
+        ) : null}
       </ScrollView>
-
-      {audit.pageCount > 1 ? (
-        <PaginationFooter
-          page={audit.page}
-          pageCount={audit.pageCount}
-          range={audit.range}
-          total={audit.total}
-          noun="acciones"
-          onPageChange={audit.setPage}
-        />
-      ) : null}
     </>
   );
 }

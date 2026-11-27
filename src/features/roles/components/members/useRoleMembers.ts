@@ -5,38 +5,61 @@ import { useEffect, useState } from "react";
 import { listRoleMembers } from "../../api";
 
 /**
- * Cuantos tienen el rol elegido (#58), para el encabezado. Se pide al elegir
- * el rol, asi el contador ya es el real; alcanza con una pagina de 1 porque
- * solo interesa el total. Las listas en si las pagina `RoleMembersStep`.
+ * Cuantos tienen cada rol (#58), para la lista y el encabezado. Alcanza con
+ * una pagina de 1 porque solo interesa el total. Las listas en si las pagina
+ * `RoleMembersStep`.
  */
-export function useRoleMembers(role: Role | undefined) {
+export function useRoleMembers(roles: Role[] | null, selectedId: string) {
   const [counts, setCounts] = useState<Record<string, number>>({});
-  const selectedRoleId = role?.id ?? "";
 
+  const roleIdsKey = (roles ?? [])
+    .filter((role) => !role.is_everyone)
+    .map((role) => role.id)
+    .join(",");
   useEffect(() => {
-    if (!selectedRoleId || counts[selectedRoleId] !== undefined) return;
+    if (!roleIdsKey) return;
     let cancelled = false;
-    listRoleMembers(selectedRoleId, { limit: 1 }).then((result) => {
+    for (const roleId of roleIdsKey.split(",")) {
+      listRoleMembers(roleId, { limit: 1 }).then((result) => {
+        if (cancelled || !result.ok) return;
+        setCounts((prev) =>
+          prev[roleId] === undefined
+            ? { ...prev, [roleId]: result.total }
+            : prev,
+        );
+      });
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [roleIdsKey]);
+
+  // @everyone no entra en la lista de arriba; se pide al elegirlo.
+  useEffect(() => {
+    if (!selectedId || counts[selectedId] !== undefined) return;
+    let cancelled = false;
+    listRoleMembers(selectedId, { limit: 1 }).then((result) => {
       if (cancelled || !result.ok) return;
-      setCounts((prev) => ({ ...prev, [selectedRoleId]: result.total }));
+      setCounts((prev) => ({ ...prev, [selectedId]: result.total }));
     });
     return () => {
       cancelled = true;
     };
-  }, [selectedRoleId, counts]);
+  }, [selectedId, counts]);
 
-  /** Se asigno (+1) o quito (-1) el rol a alguien. */
+  /** Se asigno (+1) o quito (-1) el rol elegido a alguien. */
   function handleMembershipChange(delta: 1 | -1) {
     setCounts((prev) =>
-      prev[selectedRoleId] === undefined
+      prev[selectedId] === undefined
         ? prev
-        : { ...prev, [selectedRoleId]: prev[selectedRoleId] + delta },
+        : { ...prev, [selectedId]: prev[selectedId] + delta },
     );
   }
 
   return {
+    counts,
     /** `null` hasta saber cuantos tienen el rol. */
-    memberCount: counts[selectedRoleId] ?? null,
+    memberCount: counts[selectedId] ?? null,
     handleMembershipChange,
   };
 }

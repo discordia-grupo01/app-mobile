@@ -1,5 +1,5 @@
 import {
-  BOOSTED_SERVERS_PAGE_SIZE,
+  DEFAULT_PAGE_SIZE,
   type BoostedServersPage,
 } from "@discordia/client-shared";
 
@@ -12,7 +12,7 @@ export function useBoostedServersPage() {
   return useOffsetPages({
     fetchPage: listBoostedServersPage,
     countOf: countServers,
-    pageSize: BOOSTED_SERVERS_PAGE_SIZE,
+    pageSize: DEFAULT_PAGE_SIZE,
     refreshOn: { resources: ["boosts"] },
   });
 }

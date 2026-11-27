@@ -17,7 +17,6 @@ import {
 import { Feather } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   ScrollView,
   Text,
   TextInput,
@@ -29,11 +28,12 @@ import { Button } from "../../../../components/ui/Button";
 import { cn } from "../../../../lib/cn";
 import { useThemeColors } from "../../../../theme/theme-context";
 import { listBannedWords, saveBannedWords } from "../../../word-filter/api";
+import { LoadingSpinner } from "../../../../components/ui/LoadingSpinner";
+import { EmptyState } from "../../../../components/ui/EmptyState";
+import { SettingsGroupLabel } from "../../../../components/ui/SettingsGroup";
+import { FieldLabel } from "../../../../components/ui/FieldLabel";
+import { CharacterCounter } from "../../../../components/ui/CharacterCounter";
 
-/**
- * Lista de palabras prohibidas (CA2). Los cambios quedan locales hasta
- * "Guardar cambios", que manda la lista entera.
- */
 export function WordFilterStep({ serverId }: { serverId: string }) {
   const colors = useThemeColors();
   const [saved, setSaved] = useState<string[] | null>(null);
@@ -117,13 +117,14 @@ export function WordFilterStep({ serverId }: { serverId: string }) {
         </View>
       ) : null}
 
-      {saved === null && !loadError ? (
-        <ActivityIndicator className="mt-8" color={colors.textMuted} />
-      ) : null}
+      {saved === null && !loadError ? <LoadingSpinner /> : null}
 
       {saved !== null ? (
         <>
           <View className="px-7 mt-5">
+            <FieldLabel className="mb-2">
+              {WORD_FILTER_INPUT_PLACEHOLDER}
+            </FieldLabel>
             <View className="flex-row items-center gap-2">
               <View
                 className={cn(
@@ -173,17 +174,11 @@ export function WordFilterStep({ serverId }: { serverId: string }) {
 
           <View className="px-7 mt-6">
             <View className="flex-row items-center justify-between mb-2">
-              <Text className="text-[11px] font-bold tracking-[1.1px] text-content-subtle uppercase">
-                {WORD_FILTER_TITLE}
-              </Text>
-              <Text className="text-[11px] text-content-subtle">
-                {words.length}/{BANNED_WORDS_MAX}
-              </Text>
+              <SettingsGroupLabel>{WORD_FILTER_TITLE}</SettingsGroupLabel>
+              <CharacterCounter length={words.length} max={BANNED_WORDS_MAX} />
             </View>
             {words.length === 0 ? (
-              <Text className="text-[13px] text-content-subtle">
-                {WORD_FILTER_EMPTY}
-              </Text>
+              <EmptyState icon="slash" text={WORD_FILTER_EMPTY} />
             ) : (
               <View className="flex-row flex-wrap gap-2">
                 {words.map((word) => (

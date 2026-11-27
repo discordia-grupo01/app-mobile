@@ -4,115 +4,31 @@ import {
   PREMIUM_BRAND_COLORS,
 } from "@discordia/client-shared";
 
-import { Feather } from "@expo/vector-icons";
-import { useState, type ReactNode } from "react";
-import { Pressable, Text, TouchableOpacity, View } from "react-native";
+import { Text, View } from "react-native";
 
-import { withAlpha } from "../../../../../lib/color";
-import { useThemeColors } from "../../../../../theme/theme-context";
+import { MenuGroupLabel } from "../../../../../components/ui/MenuGroupLabel";
+import {
+  SettingsMenuRow,
+  type SettingsMenuRowPressedColors,
+} from "../../../../../components/ui/SettingsMenuRow";
 import {
   BILLING_MENU_ITEMS,
   type BillingMenuTone,
 } from "../../../../billing/components/navigation/billingMenuItems";
 
-interface SettingsRowProps {
-  icon: ReactNode;
-  iconBackground: string;
-  title: string;
-  subtitle: string;
-  onPress: () => void;
-  /**
-   * Las filas de Facturación toman el color del ítem activo de web al
-   * tocarlas: amarillo, o petrol en Boosts.
-   */
-  highlight?: BillingMenuTone;
-}
-
-const HIGHLIGHT_COLORS: Record<
-  BillingMenuTone,
-  { background: string; tile: string; text: string }
-> = {
-  premium: {
-    background: PREMIUM_BRAND_COLORS.yellow,
-    tile: PREMIUM_BRAND_COLORS.deep,
-    text: PREMIUM_BRAND_COLORS.deep,
-  },
-  boost: {
-    background: PREMIUM_BRAND_COLORS.petrol,
-    tile: PREMIUM_BRAND_COLORS.deep,
-    text: PREMIUM_BRAND_COLORS.paper,
-  },
-};
-
-function SettingsRow({
-  icon,
-  iconBackground,
-  title,
-  subtitle,
-  onPress,
-  highlight,
-}: SettingsRowProps) {
-  const colors = useThemeColors();
-  const [isPressed, setIsPressed] = useState(false);
-  const pressedColors =
-    highlight && isPressed ? HIGHLIGHT_COLORS[highlight] : null;
-
-  return (
-    <Pressable
-      className="mb-3 flex-row items-center gap-4 rounded-2xl border border-line bg-surface-raised p-4"
-      style={
-        pressedColors
-          ? {
-              backgroundColor: pressedColors.background,
-              borderColor: pressedColors.background,
-            }
-          : isPressed
-            ? { opacity: 0.75 }
-            : undefined
-      }
-      onPress={onPress}
-      onPressIn={() => setIsPressed(true)}
-      onPressOut={() => setIsPressed(false)}
-      accessibilityRole="button"
-    >
-      <View
-        className="h-11 w-11 items-center justify-center rounded-xl"
-        style={{
-          backgroundColor: pressedColors ? pressedColors.tile : iconBackground,
-        }}
-      >
-        {icon}
-      </View>
-      <View className="flex-1">
-        <Text
-          className="mb-0.5 text-[16px] font-bold text-content"
-          style={pressedColors ? { color: pressedColors.text } : undefined}
-        >
-          {title}
-        </Text>
-        <Text
-          className="text-[13px] text-content-subtle"
-          style={pressedColors ? { color: pressedColors.text } : undefined}
-        >
-          {subtitle}
-        </Text>
-      </View>
-      <Feather
-        name="chevron-right"
-        size={18}
-        color={pressedColors ? pressedColors.text : colors.textSubtle}
-      />
-    </Pressable>
-  );
-}
-
-function GroupLabel({ children }: { children: string }) {
-  return (
-    <Text className="mb-2.5 mt-3 px-1 text-[14px] font-semibold text-content-muted">
-      {children}
-    </Text>
-  );
-}
+const HIGHLIGHT_COLORS: Record<BillingMenuTone, SettingsMenuRowPressedColors> =
+  {
+    premium: {
+      background: PREMIUM_BRAND_COLORS.yellow,
+      tile: PREMIUM_BRAND_COLORS.deep,
+      text: PREMIUM_BRAND_COLORS.deep,
+    },
+    boost: {
+      background: PREMIUM_BRAND_COLORS.petrol,
+      tile: PREMIUM_BRAND_COLORS.deep,
+      text: PREMIUM_BRAND_COLORS.paper,
+    },
+  };
 
 interface AccountSettingsMenuProps {
   onSelectAppearance: () => void;
@@ -131,76 +47,59 @@ export function AccountSettingsMenu({
   onSelectBilling,
   onLogout,
 }: AccountSettingsMenuProps) {
-  const colors = useThemeColors();
-  const skyTint = withAlpha(colors.info, 0.15);
-
   return (
     <View className="px-4.5 pt-2">
-      <GroupLabel>Mi cuenta</GroupLabel>
-      <SettingsRow
-        icon={<Feather name="moon" size={20} color={colors.sky} />}
-        iconBackground={skyTint}
+      <MenuGroupLabel>Mi cuenta</MenuGroupLabel>
+      <SettingsMenuRow
+        icon="moon"
         title="Apariencia"
         subtitle="Tema de la aplicación"
         onPress={onSelectAppearance}
       />
-      <SettingsRow
-        icon={<Feather name="bell" size={20} color={colors.sky} />}
-        iconBackground={skyTint}
+      <SettingsMenuRow
+        icon="bell"
         title="Notificaciones"
         subtitle="Avisos push"
         onPress={onSelectNotifications}
       />
-      <SettingsRow
-        icon={<Feather name="shield" size={20} color={colors.sky} />}
-        iconBackground={withAlpha(PREMIUM_BRAND_COLORS.petrol, 0.3)}
+      <SettingsMenuRow
+        icon="shield"
         title="Seguridad"
         subtitle="Acceso y verificación"
         onPress={onSelectSecurity}
       />
 
-      <GroupLabel>{BILLING_COPY.groupTitle}</GroupLabel>
+      <MenuGroupLabel>{BILLING_COPY.groupTitle}</MenuGroupLabel>
       {BILLING_MENU_ITEMS.map((item) => {
         const Icon = item.icon;
         return (
-          <SettingsRow
+          <SettingsMenuRow
             key={item.id}
             icon={<Icon size={22} />}
-            iconBackground={withAlpha(colors.info, 0.15)}
             title={item.label}
             subtitle={item.description}
-            highlight={item.tone}
+            pressedColors={HIGHLIGHT_COLORS[item.tone]}
             onPress={() => onSelectBilling(item.id)}
           />
         );
       })}
 
-      <GroupLabel>Plataforma</GroupLabel>
-      <SettingsRow
-        icon={<Feather name="activity" size={20} color={colors.sky} />}
-        iconBackground={skyTint}
+      <MenuGroupLabel>Plataforma</MenuGroupLabel>
+      <SettingsMenuRow
+        icon="activity"
         title="Estado de la plataforma"
         subtitle="Servicios e incidentes"
         onPress={onSelectStatus}
       />
 
-      <TouchableOpacity
-        activeOpacity={0.75}
-        className="mt-3 flex-row items-center gap-4 rounded-2xl border border-line bg-surface-raised p-4"
+      <SettingsMenuRow
+        icon="log-out"
+        title="Cerrar sesión"
+        danger
+        showChevron={false}
+        className="mt-3"
         onPress={onLogout}
-        accessibilityRole="button"
-        accessibilityLabel="Cerrar sesión"
-      >
-        <View
-          className="h-11 w-11 items-center justify-center rounded-xl"
-          style={{ backgroundColor: withAlpha(colors.danger, 0.14) }}
-        >
-          <Feather name="log-out" size={20} color={colors.danger} />
-        </View>
-        <Text className="flex-1 text-[16px] font-bold text-danger">
-          Cerrar sesión
-        </Text>
-      </TouchableOpacity>
+      />
 
       <Text className="mt-4 px-1 text-[12px] text-content-subtle">
         Más opciones estarán disponibles próximamente.

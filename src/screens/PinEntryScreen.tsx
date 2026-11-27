@@ -185,7 +185,7 @@ export function PinEntryScreen({
           </Text>
 
           <TextField
-            label="TU PIN"
+            label="Tu PIN"
             placeholder="••••••"
             keyboardType="number-pad"
             maxLength={PIN_MAX_LENGTH}

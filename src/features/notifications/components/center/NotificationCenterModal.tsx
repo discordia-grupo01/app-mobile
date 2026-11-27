@@ -22,7 +22,7 @@ import {
 
 import { Button } from "../../../../components/ui/Button";
 import { useThemeColors } from "../../../../theme/theme-context";
-import { useModalInsets } from "../../../platform-status/hooks/useModalInsets";
+import { useModalInsets } from "../../../../hooks/useModalInsets";
 import type { NotificationCenterState } from "../../useNotificationCenter";
 import { useNotificationCenterView } from "./useNotificationCenterView";
 import {

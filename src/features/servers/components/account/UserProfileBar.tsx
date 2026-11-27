@@ -9,7 +9,7 @@ import {
   VOICE_UNMUTE_LABEL,
 } from "@discordia/client-shared";
 
-import { Feather } from "@expo/vector-icons";
+import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 
@@ -134,9 +134,9 @@ export function UserProfileBar({ userName, onLogout }: UserProfileBarProps) {
               isDeafened ? VOICE_UNDEAFEN_LABEL : VOICE_DEAFEN_LABEL
             }
           >
-            <Feather
-              name="headphones"
-              size={19}
+            <MaterialCommunityIcons
+              name={isDeafened ? "headphones-off" : "headphones"}
+              size={21}
               color={isDeafened ? colors.danger : colors.textSubtle}
             />
           </TouchableOpacity>

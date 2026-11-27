@@ -1,4 +1,5 @@
 import {
+  ACCOUNT_PASSWORD_COPY,
   BILLING_BOOSTS_COPY,
   BILLING_COPY,
   type BillingSection,
@@ -7,7 +8,13 @@ import {
 } from "@discordia/client-shared";
 
 import { Feather } from "@expo/vector-icons";
-import { useEffect, useRef, useState, type ComponentRef } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ComponentRef,
+} from "react";
 import {
   KeyboardAvoidingView,
   Modal,
@@ -21,15 +28,22 @@ import {
 import { BillingSettings } from "../../../billing/BillingSettings";
 import { BillingTabs } from "../../../billing/components/navigation/BillingTabs";
 import { PlatformStatusStep } from "../../../platform-status/components/PlatformStatusStep";
+import { SuccessDialog } from "../../../../components/ui/SuccessDialog";
 import { useThemeColors } from "../../../../theme/theme-context";
+import { useAuth } from "../../../auth/auth-context";
 import { AccountSettingsMenu } from "./account-settings/AccountSettingsMenu";
 import { AppearanceSettingsStep } from "./account-settings/AppearanceSettingsStep";
+import { ChangePasswordStep } from "./account-settings/ChangePasswordStep";
 import { PushSettingsStep } from "./account-settings/PushSettingsStep";
 import { SecuritySettingsStep } from "./account-settings/SecuritySettingsStep";
+import {
+  SET_PASSWORD_COPY,
+  SetPasswordStep,
+} from "./account-settings/SetPasswordStep";
 import { LogoutConfirmModal } from "./LogoutConfirmModal";
 import { PinSetupPanel } from "./PinSetupPanel";
 import { TwoFactorPanel } from "./TwoFactorPanel";
-import { useModalInsets } from "../../../platform-status/hooks/useModalInsets";
+import { useModalInsets } from "../../../../hooks/useModalInsets";
 import { serverBoostsRequest } from "../../../../lib/navigationRequests";
 
 type Section =
@@ -38,6 +52,8 @@ type Section =
   | "notifications"
   | "security"
   | "two-factor"
+  | "change-password"
+  | "set-password"
   | "pin"
   | "status"
   | BillingSection;
@@ -48,6 +64,8 @@ const TITLES: Record<Section, string> = {
   notifications: "Notificaciones",
   security: "Seguridad",
   "two-factor": "Verificación en dos pasos",
+  "change-password": ACCOUNT_PASSWORD_COPY.changeFormTitle,
+  "set-password": SET_PASSWORD_COPY.title,
   pin: "PIN de acceso rápido",
   status: "Estado de la plataforma",
   premium: "Premium",
@@ -63,6 +81,8 @@ const BACK_TARGET: Record<Section, Section> = {
   notifications: "menu",
   security: "menu",
   "two-factor": "security",
+  "change-password": "security",
+  "set-password": "security",
   pin: "security",
   status: "menu",
   premium: "menu",
@@ -96,7 +116,18 @@ export function AccountSettingsSheet({
   const insets = useModalInsets();
   const [section, setSection] = useState<Section>(initialSection ?? "menu");
   const [isConfirmVisible, setIsConfirmVisible] = useState(false);
+  const [passwordSuccess, setPasswordSuccess] = useState<{
+    title: string;
+    body: string;
+  } | null>(null);
+  const { user, updateUser } = useAuth();
   const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
+  const [twoFactorTitle, setTwoFactorTitle] = useState<string | null>(null);
+  const twoFactorBackRef = useRef<(() => void) | null>(null);
+  const title =
+    section === "two-factor" && twoFactorTitle
+      ? twoFactorTitle
+      : TITLES[section];
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ y: 0, animated: false });
@@ -104,6 +135,8 @@ export function AccountSettingsSheet({
 
   function handleClose() {
     setSection("menu");
+    setTwoFactorTitle(null);
+    setPasswordSuccess(null);
     onClose();
   }
 
@@ -119,7 +152,31 @@ export function AccountSettingsSheet({
   }
 
   function goBack() {
+    if (section === "two-factor" && twoFactorBackRef.current) {
+      twoFactorBackRef.current();
+      return;
+    }
     setSection(BACK_TARGET[section]);
+  }
+
+  const exitTwoFactor = useCallback(() => {
+    setTwoFactorTitle(null);
+    twoFactorBackRef.current = null;
+    setSection("security");
+  }, []);
+
+  function openPassword() {
+    setSection(user?.has_password ? "change-password" : "set-password");
+  }
+
+  function switchToSetPassword() {
+    if (user?.has_password) updateUser({ ...user, has_password: false });
+    setSection("set-password");
+  }
+
+  function finishPassword(success: { title: string; body: string }) {
+    setPasswordSuccess(success);
+    setSection("security");
   }
 
   return (
@@ -146,7 +203,7 @@ export function AccountSettingsSheet({
             </TouchableOpacity>
           ) : null}
           <Text className="flex-1 text-[17px] font-bold text-content">
-            {TITLES[section]}
+            {title}
           </Text>
           <TouchableOpacity
             className="w-10 h-10 rounded-xl items-center justify-center"
@@ -180,8 +237,29 @@ export function AccountSettingsSheet({
           ) : section === "security" ? (
             <SecuritySettingsStep
               isPinEnabled={isPinEnabled}
+              hasPassword={user ? user.has_password : null}
               onOpenTwoFactor={() => setSection("two-factor")}
+              onOpenPassword={openPassword}
               onOpenPinSetup={() => setSection("pin")}
+            />
+          ) : section === "change-password" ? (
+            <ChangePasswordStep
+              onChanged={() =>
+                finishPassword({
+                  title: ACCOUNT_PASSWORD_COPY.changedTitle,
+                  body: ACCOUNT_PASSWORD_COPY.changedBody,
+                })
+              }
+              onPasswordNotSet={switchToSetPassword}
+            />
+          ) : section === "set-password" ? (
+            <SetPasswordStep
+              onPasswordReady={() =>
+                finishPassword({
+                  title: ACCOUNT_PASSWORD_COPY.setTitle,
+                  body: ACCOUNT_PASSWORD_COPY.setBody,
+                })
+              }
             />
           ) : section === "status" ? (
             <PlatformStatusStep />
@@ -197,7 +275,12 @@ export function AccountSettingsSheet({
               </View>
             </View>
           ) : section === "two-factor" ? (
-            <TwoFactorPanel onClose={goBack} scrollRef={scrollRef} />
+            <TwoFactorPanel
+              onClose={exitTwoFactor}
+              scrollRef={scrollRef}
+              onTitleChange={setTwoFactorTitle}
+              backRef={twoFactorBackRef}
+            />
           ) : (
             <PinSetupPanel
               isPinEnabled={isPinEnabled}
@@ -212,6 +295,13 @@ export function AccountSettingsSheet({
         visible={isConfirmVisible}
         onClose={() => setIsConfirmVisible(false)}
         onConfirm={handleConfirmLogout}
+      />
+
+      <SuccessDialog
+        visible={passwordSuccess !== null}
+        title={passwordSuccess?.title ?? ""}
+        body={passwordSuccess?.body ?? ""}
+        onClose={() => setPasswordSuccess(null)}
       />
     </Modal>
   );

@@ -114,6 +114,10 @@ export function HomeScreen({
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(
     null,
   );
+  const [lastChannelId, setLastChannelId] = useState<string | null>(null);
+  if (selectedChannelId !== null && selectedChannelId !== lastChannelId) {
+    setLastChannelId(selectedChannelId);
+  }
   const [jumpTarget, setJumpTarget] = useState<MessageJumpTarget | null>(null);
   const jumpNonce = useRef(0);
   const clearJumpTarget = useCallback(() => setJumpTarget(null), []);
@@ -862,6 +866,7 @@ export function HomeScreen({
           canInvite={canInvite}
           onPermissionsChanged={handlePermissionsChanged}
           onChannelPermissionsSaved={handlePermissionsChanged}
+          activeChannelId={lastChannelId}
           onSelectChannel={setSelectedChannelId}
           onOpenDirectMessages={handleOpenDirectMessages}
           unreadDmCount={unreadDmCount}

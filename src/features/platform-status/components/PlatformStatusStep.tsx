@@ -1,20 +1,15 @@
-import { ActivityIndicator, View } from "react-native";
+import { View } from "react-native";
 
 import { FormErrorBanner } from "../../../components/ui/FormErrorBanner";
-import { useThemeColors } from "../../../theme/theme-context";
 import { usePlatformStatus } from "../hooks/usePlatformStatus";
 import { PlatformStatusDetails } from "./PlatformStatusDetails";
+import { LoadingSpinner } from "../../../components/ui/LoadingSpinner";
 
 export function PlatformStatusStep() {
-  const colors = useThemeColors();
   const { state } = usePlatformStatus();
 
   if (state.phase === "loading") {
-    return (
-      <View className="items-center py-16">
-        <ActivityIndicator color={colors.textMuted} />
-      </View>
-    );
+    return <LoadingSpinner />;
   }
 
   if (state.phase === "error") {
