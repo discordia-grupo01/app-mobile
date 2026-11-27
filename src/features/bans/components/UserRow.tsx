@@ -1,10 +1,8 @@
 import { displayNameOf, type UserListItem } from "@discordia/client-shared";
 
-import { Feather } from "@expo/vector-icons";
 import { Text, TouchableOpacity, View } from "react-native";
 
 import { avatarUriOf } from "../../../lib/userProfile";
-import { useThemeColors } from "../../../theme/theme-context";
 import { Avatar } from "../../../components/ui/Avatar";
 import { RowActionButton, type UserRowAction } from "./RowActionButton";
 
@@ -28,7 +26,6 @@ export function UserRow({
   onSelect,
   isDisabled = false,
 }: UserRowProps) {
-  const colors = useThemeColors();
   const name = displayNameOf(item.profile);
 
   return (
@@ -58,9 +55,6 @@ export function UserRow({
             </Text>
           ) : null}
         </View>
-        {onSelect ? (
-          <Feather name="chevron-right" size={16} color={colors.textSubtle} />
-        ) : null}
       </TouchableOpacity>
 
       <View className="shrink-0 flex-row gap-2">
