@@ -1,7 +1,8 @@
 import {
   REPORT_BACK_LABEL,
   REPORT_MESSAGE_LABEL,
-  REPORT_SENT_NOTICE,
+  REPORT_SENT_BODY,
+  REPORT_SENT_TITLE,
   REPORT_USER_LABEL,
   reportCategoriesFor,
 } from "@discordia/client-shared";
@@ -9,10 +10,9 @@ import {
 import { Feather } from "@expo/vector-icons";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 
-import { Button } from "../../components/ui/Button";
 import { ModalCloseButton } from "../../components/ui/ModalCloseButton";
 import { ModalShell } from "../../components/ui/ModalShell";
-import { SuccessNotice } from "../../components/ui/SuccessNotice";
+import { SuccessDialog } from "../../components/ui/SuccessDialog";
 import { useThemeColors } from "../../theme/theme-context";
 import type { ReportTarget } from "./reportTarget";
 import { useReportForm } from "./components/create/useReportForm";
@@ -93,12 +93,7 @@ export function ReportSheet({
         contentContainerClassName="px-5 pb-6"
         keyboardShouldPersistTaps="handled"
       >
-        {form.step === "sent" ? (
-          <View className="gap-4">
-            <SuccessNotice message={REPORT_SENT_NOTICE} />
-            <Button title="Cerrar" variant="secondary" onPress={onClose} />
-          </View>
-        ) : category ? (
+        {form.step === "sent" ? null : category ? (
           <ReportDetailsStep
             preview={preview}
             category={category}
@@ -119,6 +114,13 @@ export function ReportSheet({
           />
         )}
       </ScrollView>
+
+      <SuccessDialog
+        visible={form.step === "sent"}
+        title={REPORT_SENT_TITLE}
+        body={REPORT_SENT_BODY}
+        onClose={onClose}
+      />
     </ModalShell>
   );
 }

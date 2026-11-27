@@ -4,13 +4,11 @@ import { Feather } from "@expo/vector-icons";
 import { Text, View } from "react-native";
 
 import { SettingsMenuRow } from "../../../../../components/ui/SettingsMenuRow";
-import { SuccessNotice } from "../../../../../components/ui/SuccessNotice";
 import { useThemeColors } from "../../../../../theme/theme-context";
 
 interface SecuritySettingsStepProps {
   isPinEnabled: boolean;
   hasPassword: boolean | null;
-  notice: string | null;
   onOpenTwoFactor: () => void;
   onOpenPassword: () => void;
   onOpenPinSetup: () => void;
@@ -19,7 +17,6 @@ interface SecuritySettingsStepProps {
 export function SecuritySettingsStep({
   isPinEnabled,
   hasPassword,
-  notice,
   onOpenTwoFactor,
   onOpenPassword,
   onOpenPinSetup,
@@ -31,12 +28,6 @@ export function SecuritySettingsStep({
       <Text className="mb-4 text-[13px] leading-[18px] text-content-muted">
         Administrá las medidas que protegen tu cuenta.
       </Text>
-
-      {notice ? (
-        <View className="mb-3">
-          <SuccessNotice message={notice} />
-        </View>
-      ) : null}
 
       <SettingsMenuRow
         icon="shield"

@@ -28,6 +28,7 @@ import {
 import { BillingSettings } from "../../../billing/BillingSettings";
 import { BillingTabs } from "../../../billing/components/navigation/BillingTabs";
 import { PlatformStatusStep } from "../../../platform-status/components/PlatformStatusStep";
+import { SuccessDialog } from "../../../../components/ui/SuccessDialog";
 import { useThemeColors } from "../../../../theme/theme-context";
 import { useAuth } from "../../../auth/auth-context";
 import { AccountSettingsMenu } from "./account-settings/AccountSettingsMenu";
@@ -115,7 +116,10 @@ export function AccountSettingsSheet({
   const insets = useModalInsets();
   const [section, setSection] = useState<Section>(initialSection ?? "menu");
   const [isConfirmVisible, setIsConfirmVisible] = useState(false);
-  const [securityNotice, setSecurityNotice] = useState<string | null>(null);
+  const [passwordSuccess, setPasswordSuccess] = useState<{
+    title: string;
+    body: string;
+  } | null>(null);
   const { user, updateUser } = useAuth();
   const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
   const [twoFactorTitle, setTwoFactorTitle] = useState<string | null>(null);
@@ -132,7 +136,7 @@ export function AccountSettingsSheet({
   function handleClose() {
     setSection("menu");
     setTwoFactorTitle(null);
-    setSecurityNotice(null);
+    setPasswordSuccess(null);
     onClose();
   }
 
@@ -152,7 +156,6 @@ export function AccountSettingsSheet({
       twoFactorBackRef.current();
       return;
     }
-    if (section === "security") setSecurityNotice(null);
     setSection(BACK_TARGET[section]);
   }
 
@@ -163,7 +166,6 @@ export function AccountSettingsSheet({
   }, []);
 
   function openPassword() {
-    setSecurityNotice(null);
     setSection(user?.has_password ? "change-password" : "set-password");
   }
 
@@ -172,8 +174,8 @@ export function AccountSettingsSheet({
     setSection("set-password");
   }
 
-  function finishPassword(notice: string) {
-    setSecurityNotice(notice);
+  function finishPassword(success: { title: string; body: string }) {
+    setPasswordSuccess(success);
     setSection("security");
   }
 
@@ -236,19 +238,28 @@ export function AccountSettingsSheet({
             <SecuritySettingsStep
               isPinEnabled={isPinEnabled}
               hasPassword={user ? user.has_password : null}
-              notice={securityNotice}
               onOpenTwoFactor={() => setSection("two-factor")}
               onOpenPassword={openPassword}
               onOpenPinSetup={() => setSection("pin")}
             />
           ) : section === "change-password" ? (
             <ChangePasswordStep
-              onChanged={() => finishPassword(ACCOUNT_PASSWORD_COPY.changed)}
+              onChanged={() =>
+                finishPassword({
+                  title: ACCOUNT_PASSWORD_COPY.changedTitle,
+                  body: ACCOUNT_PASSWORD_COPY.changedBody,
+                })
+              }
               onPasswordNotSet={switchToSetPassword}
             />
           ) : section === "set-password" ? (
             <SetPasswordStep
-              onPasswordReady={() => finishPassword(ACCOUNT_PASSWORD_COPY.set)}
+              onPasswordReady={() =>
+                finishPassword({
+                  title: ACCOUNT_PASSWORD_COPY.setTitle,
+                  body: ACCOUNT_PASSWORD_COPY.setBody,
+                })
+              }
             />
           ) : section === "status" ? (
             <PlatformStatusStep />
@@ -284,6 +295,13 @@ export function AccountSettingsSheet({
         visible={isConfirmVisible}
         onClose={() => setIsConfirmVisible(false)}
         onConfirm={handleConfirmLogout}
+      />
+
+      <SuccessDialog
+        visible={passwordSuccess !== null}
+        title={passwordSuccess?.title ?? ""}
+        body={passwordSuccess?.body ?? ""}
+        onClose={() => setPasswordSuccess(null)}
       />
     </Modal>
   );
