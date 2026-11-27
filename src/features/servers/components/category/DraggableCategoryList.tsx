@@ -133,6 +133,7 @@ export function DraggableCategoryList({
             key={id}
             top={offsets.get(id) ?? 0}
             positioned={positioned}
+            isReordering={draggingId !== null}
             isDragging={draggingId === id}
             onDragStart={() => handleDragStart(id)}
             onDragMove={(dy) => handleDragMove(id, dy)}
@@ -150,6 +151,7 @@ export function DraggableCategoryList({
 function DraggableCategoryRow({
   top,
   positioned,
+  isReordering,
   isDragging,
   onDragStart,
   onDragMove,
@@ -159,6 +161,7 @@ function DraggableCategoryRow({
 }: {
   top: number;
   positioned: boolean;
+  isReordering: boolean;
   isDragging: boolean;
   onDragStart: () => void;
   onDragMove: (dy: number) => void;
@@ -173,18 +176,23 @@ function DraggableCategoryRow({
     topRef.current = top;
   }, [top]);
 
+  // Solo se anima al reordenar o al soltar: si la altura cambia porque algo
+  // terminó de cargar, la fila salta a su lugar sin deslizarse.
+  const wasDraggingRef = useRef(isDragging);
   useEffect(() => {
-    if (!positioned) {
+    const justDropped = wasDraggingRef.current && !isDragging;
+    wasDraggingRef.current = isDragging;
+    if (isDragging) return;
+    if (!positioned || !(isReordering || justDropped)) {
       topAnim.setValue(top);
       return;
     }
-    if (isDragging) return;
     Animated.timing(topAnim, {
       toValue: top,
       duration: 150,
       useNativeDriver: false,
     }).start();
-  }, [top, positioned, isDragging, topAnim]);
+  }, [top, positioned, isReordering, isDragging, topAnim]);
 
   const callbacksRef = useRef({ onDragStart, onDragMove, onDragEnd });
   useEffect(() => {

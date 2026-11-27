@@ -134,6 +134,7 @@ export function DraggableChannelList({
             bucketKey={bucketKey}
             top={offsets[index]}
             height={heights[index]}
+            isReordering={draggingId !== null}
             isDragging={draggingId === id}
             onDragStart={() => handleDragStart(channel)}
             onDragMove={(dy) => handleDragMove(id, dy)}
@@ -151,6 +152,7 @@ function DraggableRow({
   bucketKey,
   top: rowTop,
   height,
+  isReordering,
   isDragging,
   onDragStart,
   onDragMove,
@@ -160,6 +162,7 @@ function DraggableRow({
   bucketKey: string;
   top: number;
   height: number;
+  isReordering: boolean;
   isDragging: boolean;
   onDragStart: () => void;
   onDragMove: (dy: number) => void;
@@ -192,14 +195,23 @@ function DraggableRow({
   const startTopRef = useRef(0);
   const isAwayRef = useRef(false);
 
+  // Solo se anima al reordenar o al soltar: si la altura cambia porque algo
+  // terminó de cargar, la fila salta a su lugar sin deslizarse.
+  const wasDraggingRef = useRef(isDragging);
   useEffect(() => {
+    const justDropped = wasDraggingRef.current && !isDragging;
+    wasDraggingRef.current = isDragging;
     if (isDragging) return;
+    if (!isReordering && !justDropped) {
+      top.setValue(rowTop);
+      return;
+    }
     Animated.timing(top, {
       toValue: rowTop,
       duration: 150,
       useNativeDriver: false,
     }).start();
-  }, [rowTop, isDragging, top]);
+  }, [rowTop, isReordering, isDragging, top]);
 
   const panResponder = useMemo(
     () =>

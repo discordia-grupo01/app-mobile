@@ -117,14 +117,16 @@ export function OwnProfileModal({
   return (
     <ModalShell visible={visible} onClose={onClose} className="max-w-100">
       <Fragment key={openCount}>
-        <ProfileBanner onClose={onClose} />
-
         <ScrollView
           ref={scrollViewRef}
-          contentContainerClassName="px-5.5 pt-17 pb-6.5"
+          contentContainerClassName="px-5.5 pb-6.5"
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
+          <View className="-mx-5.5 mb-17">
+            <ProfileBanner onClose={onClose} />
+          </View>
+
           <View className="mb-4">
             <ProfileNameField
               name={user.name}
@@ -186,13 +188,13 @@ export function OwnProfileModal({
               />
             </View>
           ) : null}
-        </ScrollView>
 
-        <OwnAvatarPicker
-          user={user}
-          onUpload={uploadAvatar}
-          onRemove={removeAvatar}
-        />
+          <OwnAvatarPicker
+            user={user}
+            onUpload={uploadAvatar}
+            onRemove={removeAvatar}
+          />
+        </ScrollView>
       </Fragment>
     </ModalShell>
   );
